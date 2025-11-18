@@ -65,6 +65,24 @@ export default function CadastroEstabelecimento() {
       return;
     }
 
+    if (!formData.categoria) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Selecione uma categoria",
+      });
+      return;
+    }
+
+    if (!formData.periodoValidade) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Selecione o período de validade do benefício",
+      });
+      return;
+    }
+
     const estabelecimentos = JSON.parse(localStorage.getItem("estabelecimentos") || "[]");
     
     if (estabelecimentos.some((e: any) => e.email === formData.email)) {
@@ -218,7 +236,11 @@ export default function CadastroEstabelecimento() {
                 
                 <div className="space-y-2">
                   <Label htmlFor="categoria">Categoria *</Label>
-                  <Select value={formData.categoria} onValueChange={(value) => setFormData({ ...formData, categoria: value })}>
+                  <Select 
+                    value={formData.categoria} 
+                    onValueChange={(value) => setFormData({ ...formData, categoria: value })}
+                    required
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a categoria" />
                     </SelectTrigger>
@@ -271,9 +293,10 @@ export default function CadastroEstabelecimento() {
               <h3 className="text-lg font-semibold mb-4 text-foreground">Contatos e Redes Sociais</h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="telefoneContato">Telefone de Contato</Label>
+                  <Label htmlFor="telefoneContato">Telefone de Contato *</Label>
                   <Input
                     id="telefoneContato"
+                    required
                     placeholder="(00) 00000-0000"
                     value={formData.telefoneContato}
                     onChange={(e) => setFormData({ ...formData, telefoneContato: e.target.value })}
@@ -281,10 +304,11 @@ export default function CadastroEstabelecimento() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="emailContato">Email de Contato</Label>
+                  <Label htmlFor="emailContato">Email de Contato *</Label>
                   <Input
                     id="emailContato"
                     type="email"
+                    required
                     placeholder="contato@estabelecimento.com"
                     value={formData.emailContato}
                     onChange={(e) => setFormData({ ...formData, emailContato: e.target.value })}
@@ -292,11 +316,12 @@ export default function CadastroEstabelecimento() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="instagram">Instagram</Label>
+                  <Label htmlFor="instagram">Instagram *</Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
                     <Input
                       id="instagram"
+                      required
                       placeholder="seuusuario"
                       value={formData.instagram}
                       onChange={(e) => handleInstagramChange(e.target.value)}
@@ -306,11 +331,12 @@ export default function CadastroEstabelecimento() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="facebook">Facebook</Label>
+                  <Label htmlFor="facebook">Facebook *</Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
                     <Input
                       id="facebook"
+                      required
                       placeholder="seuusuario"
                       value={formData.facebook}
                       onChange={(e) => handleFacebookChange(e.target.value)}

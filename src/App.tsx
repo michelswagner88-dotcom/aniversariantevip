@@ -10,6 +10,7 @@ import AreaAniversariante from "./pages/AreaAniversariante";
 import CadastroEstabelecimento from "./pages/CadastroEstabelecimento";
 import LoginEstabelecimento from "./pages/LoginEstabelecimento";
 import AreaEstabelecimento from "./pages/AreaEstabelecimento";
+import CupomView from "./pages/CupomView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/cadastro/estabelecimento" element={<CadastroEstabelecimento />} />
           <Route path="/login/estabelecimento" element={<LoginEstabelecimento />} />
           <Route path="/area-estabelecimento" element={<AreaEstabelecimento />} />
+          <Route path="/cupom/:id" element={<CupomView />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

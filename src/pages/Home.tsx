@@ -20,6 +20,10 @@ const estabelecimentosFicticios = [
     regrasAniversariante: "Válido apenas no dia do aniversário. Apresentar documento com foto.",
     linkCardapioDigital: "https://cardapio.biervila.com.br",
     logoUrl: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=200&h=200&fit=crop",
+    telefoneContato: "(48) 3333-4444",
+    emailContato: "contato@biervila.com.br",
+    instagram: "biervila",
+    facebook: "biervilafln",
   },
   {
     id: "2",
@@ -33,6 +37,10 @@ const estabelecimentosFicticios = [
     regrasAniversariante: "Válido na semana do aniversário. Mesa para no mínimo 2 pessoas.",
     linkCardapioDigital: "https://cardapio.mareterra.com.br",
     logoUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&h=200&fit=crop",
+    telefoneContato: "(48) 3222-5678",
+    emailContato: "reservas@mareterra.com.br",
+    instagram: "mareterra",
+    facebook: "mareterrafloripa",
   },
   {
     id: "3",
@@ -46,6 +54,10 @@ const estabelecimentosFicticios = [
     regrasAniversariante: "Válido até 7 dias após o aniversário. Lista até 00h.",
     linkCardapioDigital: "",
     logoUrl: "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=200&h=200&fit=crop",
+    telefoneContato: "(48) 99999-8888",
+    emailContato: "lista@box32.com.br",
+    instagram: "box32floripa",
+    facebook: "box32oficial",
   },
   {
     id: "4",
@@ -59,6 +71,10 @@ const estabelecimentosFicticios = [
     regrasAniversariante: "Válido no mês do aniversário. Não acumulativo com outras promoções.",
     linkCardapioDigital: "",
     logoUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop",
+    telefoneContato: "(48) 3232-1010",
+    emailContato: "vendas@surflife.com.br",
+    instagram: "surflifebrasil",
+    facebook: "surflifeoficial",
   },
   {
     id: "5",
@@ -72,6 +88,10 @@ const estabelecimentosFicticios = [
     regrasAniversariante: "Válido no dia do aniversário. Não válido para delivery.",
     linkCardapioDigital: "https://cardapio.bellanapoli.com.br",
     logoUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200&h=200&fit=crop",
+    telefoneContato: "(48) 3224-5566",
+    emailContato: "delivery@bellanapoli.com.br",
+    instagram: "bellanapolifloripa",
+    facebook: "bellanapolioficial",
   },
   {
     id: "6",
@@ -85,6 +105,10 @@ const estabelecimentosFicticios = [
     regrasAniversariante: "Válido na semana do aniversário.",
     linkCardapioDigital: "",
     logoUrl: "https://images.unsplash.com/photo-1481833761820-0509d3217039?w=200&h=200&fit=crop",
+    telefoneContato: "(48) 3223-7788",
+    emailContato: "cafe@livrosecafe.com.br",
+    instagram: "cafelivrosfloripa",
+    facebook: "cafelivrosoficial",
   },
 ];
 
@@ -392,6 +416,28 @@ export default function Home() {
                   </a>
                 </div>
               )}
+              
+              {(selectedEstabelecimento.telefoneContato || selectedEstabelecimento.emailContato || 
+                selectedEstabelecimento.instagram || selectedEstabelecimento.facebook) && (
+                <div>
+                  <h4 className="font-semibold mb-2 text-foreground">Contato</h4>
+                  <div className="space-y-1">
+                    {selectedEstabelecimento.telefoneContato && (
+                      <p className="text-sm text-muted-foreground">📞 {selectedEstabelecimento.telefoneContato}</p>
+                    )}
+                    {selectedEstabelecimento.emailContato && (
+                      <p className="text-sm text-muted-foreground">✉️ {selectedEstabelecimento.emailContato}</p>
+                    )}
+                    {selectedEstabelecimento.instagram && (
+                      <p className="text-sm text-muted-foreground">📷 @{selectedEstabelecimento.instagram}</p>
+                    )}
+                    {selectedEstabelecimento.facebook && (
+                      <p className="text-sm text-muted-foreground">👍 @{selectedEstabelecimento.facebook}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <h4 className="font-semibold mb-2 text-foreground">Benefício para Aniversariantes</h4>
                 <p className="text-primary font-medium">{selectedEstabelecimento.beneficiosAniversariante}</p>

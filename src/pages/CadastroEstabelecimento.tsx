@@ -28,12 +28,28 @@ export default function CadastroEstabelecimento() {
     beneficiosAniversariante: "",
     regrasAniversariante: "",
     logoUrl: "",
+    telefoneContato: "",
+    emailContato: "",
+    instagram: "",
+    facebook: "",
   });
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setLogoFile(e.target.files[0]);
     }
+  };
+
+  const handleInstagramChange = (value: string) => {
+    // Remove @ se já existir e adiciona de volta
+    const cleanValue = value.replace(/^@/, "");
+    setFormData({ ...formData, instagram: cleanValue });
+  };
+
+  const handleFacebookChange = (value: string) => {
+    // Remove @ se já existir e adiciona de volta
+    const cleanValue = value.replace(/^@/, "");
+    setFormData({ ...formData, facebook: cleanValue });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -247,7 +263,66 @@ export default function CadastroEstabelecimento() {
                     onChange={(e) => setFormData({ ...formData, linkCardapioDigital: e.target.value })}
                   />
                 </div>
+              </div>
+            </div>
 
+            <div>
+              <h3 className="text-lg font-semibold mb-4 text-foreground">Contatos e Redes Sociais</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="telefoneContato">Telefone de Contato</Label>
+                  <Input
+                    id="telefoneContato"
+                    placeholder="(00) 00000-0000"
+                    value={formData.telefoneContato}
+                    onChange={(e) => setFormData({ ...formData, telefoneContato: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="emailContato">Email de Contato</Label>
+                  <Input
+                    id="emailContato"
+                    type="email"
+                    placeholder="contato@estabelecimento.com"
+                    value={formData.emailContato}
+                    onChange={(e) => setFormData({ ...formData, emailContato: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="instagram">Instagram</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
+                    <Input
+                      id="instagram"
+                      placeholder="seuusuario"
+                      value={formData.instagram}
+                      onChange={(e) => handleInstagramChange(e.target.value)}
+                      className="pl-7"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="facebook">Facebook</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
+                    <Input
+                      id="facebook"
+                      placeholder="seuusuario"
+                      value={formData.facebook}
+                      onChange={(e) => handleFacebookChange(e.target.value)}
+                      className="pl-7"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4 text-foreground">Benefícios</h3>
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="beneficiosAniversariante">Benefícios para Aniversariantes *</Label>
                   <Textarea

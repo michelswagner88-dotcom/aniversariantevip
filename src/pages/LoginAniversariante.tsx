@@ -29,7 +29,7 @@ export default function LoginAniversariante() {
         title: "Bem-vindo!",
         description: "Login realizado com sucesso",
       });
-      navigate("/area-aniversariante");
+      navigate("/");
     } else {
       toast({
         variant: "destructive",

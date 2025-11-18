@@ -58,7 +58,7 @@ export default function CadastroAniversariante() {
       description: "Cadastro realizado com sucesso",
     });
     
-    navigate("/area-aniversariante");
+    navigate("/");
   };
 
   return (

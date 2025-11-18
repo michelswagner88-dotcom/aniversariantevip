@@ -241,27 +241,19 @@ export default function Index() {
             <Crown className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" />
             <h1 className="text-base sm:text-xl md:text-2xl font-bold text-primary whitespace-nowrap">ANIVERSARIANTE VIP</h1>
           </div>
-          <nav className="flex items-center gap-1.5 sm:gap-3">
-            {currentUser ? (
-              <>
-                <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-3" asChild>
-                  <Link to="/area-aniversariante">Área</Link>
-                </Button>
-                <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3" onClick={handleLogout}>
-                  <LogOut className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Sair</span>
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-3" asChild>
-                  <Link to="/login/aniversariante">Aniversariante</Link>
-                </Button>
-                <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3" asChild>
-                  <Link to="/login/estabelecimento">Estabelecimento</Link>
-                </Button>
-              </>
-            )}
+          <nav className="flex items-center gap-1.5 sm:gap-2">
+            <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-3" asChild>
+              <Link to="/login/aniversariante">Sou Aniversariante</Link>
+            </Button>
+            <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-3" asChild>
+              <Link to="/login/estabelecimento">Sou Estabelecimento</Link>
+            </Button>
+            <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3" asChild>
+              <Link to="/login/aniversariante">Login</Link>
+            </Button>
+            <Button variant="default" size="sm" className="text-xs sm:text-sm px-2 sm:px-3" asChild>
+              <Link to="/cadastro/aniversariante">Cadastro</Link>
+            </Button>
           </nav>
         </div>
       </header>
@@ -270,7 +262,7 @@ export default function Index() {
       <section className="py-8 sm:py-12 md:py-16 bg-gradient-to-b from-primary/10 to-background print:hidden">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 text-foreground leading-tight">
-            Seu Aniversário Merece Prêmios Especiais!
+            Seu Aniversário Merece Benefícios Especiais!
           </h2>
           <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto px-2">
             Descubra estabelecimentos parceiros que oferecem benefícios exclusivos para você curtir seu dia especial

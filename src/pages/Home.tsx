@@ -1,8 +1,143 @@
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Gift, Crown } from "lucide-react";
+import { Sparkles, Gift, Crown, MapPin, Clock, Tag } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+
+const estabelecimentosFicticios = [
+  {
+    id: "1",
+    nomeFantasia: "Bier Vila",
+    categoria: "bar",
+    endereco: "Rua Felipe Schmidt, 250 - Centro, Florianópolis - SC",
+    cidade: "Florianópolis",
+    estado: "SC",
+    diasHorarioFuncionamento: "Seg a Sex: 17h às 23h | Sáb e Dom: 12h às 00h",
+    beneficiosAniversariante: "1 cerveja artesanal grátis no dia do aniversário",
+    regrasAniversariante: "Válido apenas no dia do aniversário. Apresentar documento com foto.",
+  },
+  {
+    id: "2",
+    nomeFantasia: "Restaurante Mar & Terra",
+    categoria: "restaurante",
+    endereco: "Av. Beira Mar Norte, 1500 - Centro, Florianópolis - SC",
+    cidade: "Florianópolis",
+    estado: "SC",
+    diasHorarioFuncionamento: "Ter a Dom: 11h30 às 15h | 18h às 23h",
+    beneficiosAniversariante: "Sobremesa grátis para o aniversariante",
+    regrasAniversariante: "Válido na semana do aniversário. Mesa para no mínimo 2 pessoas.",
+  },
+  {
+    id: "3",
+    nomeFantasia: "Box 32",
+    categoria: "balada",
+    endereco: "Rua Jerônimo Coelho, 185 - Centro, Florianópolis - SC",
+    cidade: "Florianópolis",
+    estado: "SC",
+    diasHorarioFuncionamento: "Qua a Sáb: 23h às 05h",
+    beneficiosAniversariante: "Entrada VIP grátis + 1 drink de cortesia",
+    regrasAniversariante: "Válido até 7 dias após o aniversário. Lista até 00h.",
+  },
+  {
+    id: "4",
+    nomeFantasia: "Loja Surf Life",
+    categoria: "loja",
+    endereco: "Rua das Rendeiras, 78 - Lagoa da Conceição, Florianópolis - SC",
+    cidade: "Florianópolis",
+    estado: "SC",
+    diasHorarioFuncionamento: "Seg a Sáb: 9h às 19h",
+    beneficiosAniversariante: "20% de desconto em toda a loja",
+    regrasAniversariante: "Válido no mês do aniversário. Não acumulativo com outras promoções.",
+  },
+  {
+    id: "5",
+    nomeFantasia: "Pizzaria Bella Napoli",
+    categoria: "restaurante",
+    endereco: "Rua Esteves Júnior, 605 - Centro, Florianópolis - SC",
+    cidade: "Florianópolis",
+    estado: "SC",
+    diasHorarioFuncionamento: "Seg a Dom: 18h às 23h30",
+    beneficiosAniversariante: "Pizza grande grátis na compra de 2 pizzas",
+    regrasAniversariante: "Válido no dia do aniversário. Não válido para delivery.",
+  },
+  {
+    id: "6",
+    nomeFantasia: "Café & Livros",
+    categoria: "loja",
+    endereco: "Rua Felipe Schmidt, 390 - Centro, Florianópolis - SC",
+    cidade: "Florianópolis",
+    estado: "SC",
+    diasHorarioFuncionamento: "Seg a Sex: 8h às 20h | Sáb: 9h às 18h",
+    beneficiosAniversariante: "Cappuccino + torta grátis",
+    regrasAniversariante: "Válido na semana do aniversário.",
+  },
+];
 
 export default function Home() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [selectedEstado, setSelectedEstado] = useState("todos");
+  const [selectedCidade, setSelectedCidade] = useState("todos");
+  const [selectedCategoria, setSelectedCategoria] = useState("todos");
+  const [estabelecimentos, setEstabelecimentos] = useState(estabelecimentosFicticios);
+  const [selectedEstabelecimento, setSelectedEstabelecimento] = useState<any>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  useEffect(() => {
+    let filtered = estabelecimentosFicticios;
+
+    if (selectedEstado !== "todos") {
+      filtered = filtered.filter(e => e.estado === selectedEstado);
+    }
+
+    if (selectedCidade !== "todos") {
+      filtered = filtered.filter(e => e.cidade === selectedCidade);
+    }
+
+    if (selectedCategoria !== "todos") {
+      filtered = filtered.filter(e => e.categoria === selectedCategoria);
+    }
+
+    setEstabelecimentos(filtered);
+  }, [selectedEstado, selectedCidade, selectedCategoria]);
+
+  const handleEmitirCupom = (estabelecimento: any) => {
+    const currentUser = localStorage.getItem("currentAniversariante");
+    if (!currentUser) {
+      toast({
+        variant: "destructive",
+        title: "Login necessário",
+        description: "Você precisa estar logado como aniversariante para solicitar cupom",
+      });
+      navigate("/login/aniversariante");
+    } else {
+      setSelectedEstabelecimento(estabelecimento);
+      setDialogOpen(true);
+    }
+  };
+
+  const handleSolicitarCupom = () => {
+    toast({
+      title: "Cupom solicitado!",
+      description: "O estabelecimento irá analisar sua solicitação",
+    });
+    setDialogOpen(false);
+  };
+
+  const getCategoriaLabel = (categoria: string) => {
+    const labels: Record<string, string> = {
+      bar: "Bar",
+      restaurante: "Restaurante",
+      balada: "Balada",
+      loja: "Loja",
+      servico: "Serviço",
+    };
+    return labels[categoria] || categoria;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -89,6 +224,132 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Estabelecimentos Parceiros */}
+      <section className="py-16 px-4">
+        <div className="container mx-auto">
+          <h3 className="text-3xl font-bold text-center mb-8 text-foreground">Estabelecimentos Parceiros</h3>
+          
+          {/* Filtros */}
+          <div className="flex flex-col md:flex-row gap-4 mb-8 max-w-4xl mx-auto">
+            <Select value={selectedEstado} onValueChange={setSelectedEstado}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os estados</SelectItem>
+                <SelectItem value="SC">Santa Catarina</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedCidade} onValueChange={setSelectedCidade}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Cidade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todas as cidades</SelectItem>
+                <SelectItem value="Florianópolis">Florianópolis</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todas categorias</SelectItem>
+                <SelectItem value="bar">Bar</SelectItem>
+                <SelectItem value="restaurante">Restaurante</SelectItem>
+                <SelectItem value="balada">Balada</SelectItem>
+                <SelectItem value="loja">Loja</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Lista de Estabelecimentos */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {estabelecimentos.map((estabelecimento) => (
+              <Card key={estabelecimento.id} className="hover:border-primary transition">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-xl mb-2">{estabelecimento.nomeFantasia}</CardTitle>
+                      <div className="inline-flex items-center gap-1 px-2 py-1 bg-primary/20 rounded text-xs text-primary">
+                        <Tag className="h-3 w-3" />
+                        {getCategoriaLabel(estabelecimento.categoria)}
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-start gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">{estabelecimento.endereco}</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm">
+                    <Clock className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">{estabelecimento.diasHorarioFuncionamento}</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm">
+                    <Gift className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-foreground font-medium">{estabelecimento.beneficiosAniversariante}</span>
+                  </div>
+                  <Button 
+                    className="w-full mt-4" 
+                    onClick={() => handleEmitirCupom(estabelecimento)}
+                  >
+                    Solicitar Cupom
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {estabelecimentos.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Nenhum estabelecimento encontrado com os filtros selecionados.</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Dialog de Detalhes do Estabelecimento */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">{selectedEstabelecimento?.nomeFantasia}</DialogTitle>
+            <DialogDescription>Detalhes do estabelecimento e benefício</DialogDescription>
+          </DialogHeader>
+          {selectedEstabelecimento && (
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold mb-2 text-foreground">Categoria</h4>
+                <p className="text-muted-foreground">{getCategoriaLabel(selectedEstabelecimento.categoria)}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2 text-foreground">Endereço</h4>
+                <p className="text-muted-foreground">{selectedEstabelecimento.endereco}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2 text-foreground">Horário de Funcionamento</h4>
+                <p className="text-muted-foreground">{selectedEstabelecimento.diasHorarioFuncionamento}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2 text-foreground">Benefício para Aniversariantes</h4>
+                <p className="text-primary font-medium">{selectedEstabelecimento.beneficiosAniversariante}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2 text-foreground">Regras</h4>
+                <p className="text-muted-foreground">{selectedEstabelecimento.regrasAniversariante}</p>
+              </div>
+              <Button onClick={handleSolicitarCupom} className="w-full">
+                <Gift className="mr-2 h-4 w-4" />
+                Confirmar Solicitação de Cupom
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-border">

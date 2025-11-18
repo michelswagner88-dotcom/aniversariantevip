@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Crown, LogOut, Edit2, Save, Ticket, Search, Upload } from "lucide-react";
+import { Crown, LogOut, Edit2, Save, Ticket, Search, Upload, Gift } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,12 +14,15 @@ import { supabase } from "@/integrations/supabase/client";
 export default function AreaEstabelecimento() {
   const navigate = useNavigate();
   const { toast } = useToast();
+
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [searchCPF, setSearchCPF] = useState("");
   const [foundAniversariante, setFoundAniversariante] = useState<any>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [cuponsEmitidos, setCuponsEmitidos] = useState(0);
+  const [userId, setUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nomeFantasia: "",
     email: "",
@@ -38,30 +41,54 @@ export default function AreaEstabelecimento() {
   });
 
   useEffect(() => {
-    const currentUser = localStorage.getItem("currentEstabelecimento");
-    if (!currentUser) {
-      navigate("/login/estabelecimento");
-    } else {
-      const user = JSON.parse(currentUser);
-      setUserData(user);
+    checkUser();
+  }, []);
+
+  const checkUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      const currentUser = localStorage.getItem("currentEstabelecimento");
+      if (!currentUser) {
+        navigate("/login/estabelecimento");
+        return;
+      }
+      const localUser = JSON.parse(currentUser);
+      setUserData(localUser);
       setFormData({
-        nomeFantasia: user.nomeFantasia,
-        email: user.email,
-        telefone: user.telefone,
-        categoria: user.categoria,
-        endereco: user.endereco,
-        diasHorarioFuncionamento: user.diasHorarioFuncionamento,
-        linkCardapioDigital: user.linkCardapioDigital,
-        beneficiosAniversariante: user.beneficiosAniversariante,
-        regrasAniversariante: user.regrasAniversariante,
-        logoUrl: user.logoUrl || "",
-        telefoneContato: user.telefoneContato || "",
-        emailContato: user.emailContato || "",
-        instagram: user.instagram || "",
-        facebook: user.facebook || "",
+        nomeFantasia: localUser.nomeFantasia,
+        email: localUser.email,
+        telefone: localUser.telefone,
+        categoria: localUser.categoria,
+        endereco: localUser.endereco,
+        diasHorarioFuncionamento: localUser.diasHorarioFuncionamento,
+        linkCardapioDigital: localUser.linkCardapioDigital,
+        beneficiosAniversariante: localUser.beneficiosAniversariante,
+        regrasAniversariante: localUser.regrasAniversariante,
+        logoUrl: localUser.logoUrl || "",
+        telefoneContato: localUser.telefoneContato || "",
+        emailContato: localUser.emailContato || "",
+        instagram: localUser.instagram || "",
+        facebook: localUser.facebook || "",
       });
+      return;
     }
-  }, [navigate]);
+    setUserId(user.id);
+    loadCuponsEmitidos(user.id);
+  };
+
+  const loadCuponsEmitidos = async (estabelecimentoId: string) => {
+    const { count, error } = await supabase
+      .from("cupons")
+      .select("*", { count: "exact", head: true })
+      .eq("estabelecimento_id", estabelecimentoId);
+
+    if (error) {
+      console.error("Erro ao carregar cupons:", error);
+      return;
+    }
+
+    setCuponsEmitidos(count || 0);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("currentEstabelecimento");
@@ -241,7 +268,20 @@ export default function AreaEstabelecimento() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 space-y-6">
+        <Card className="max-w-3xl mx-auto">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Gift className="h-5 w-5" />
+              Cupons Emitidos
+            </CardTitle>
+            <CardDescription>Total de cupons emitidos até o momento</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold text-primary">{cuponsEmitidos}</div>
+          </CardContent>
+        </Card>
+
         <Card className="max-w-3xl mx-auto">
           <CardHeader>
             <CardTitle className="text-3xl">Dados do Estabelecimento</CardTitle>

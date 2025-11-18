@@ -18,6 +18,7 @@ const estabelecimentosFicticios = [
     diasHorarioFuncionamento: "Seg a Sex: 17h às 23h | Sáb e Dom: 12h às 00h",
     beneficiosAniversariante: "1 cerveja artesanal grátis no dia do aniversário",
     regrasAniversariante: "Válido apenas no dia do aniversário. Apresentar documento com foto.",
+    periodoValidade: "dia",
     linkCardapioDigital: "https://cardapio.biervila.com.br",
     logoUrl: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=200&h=200&fit=crop",
     telefoneContato: "(48) 3333-4444",
@@ -36,6 +37,7 @@ const estabelecimentosFicticios = [
     diasHorarioFuncionamento: "Ter a Dom: 11h30 às 15h | 18h às 23h",
     beneficiosAniversariante: "Sobremesa grátis para o aniversariante",
     regrasAniversariante: "Válido na semana do aniversário. Mesa para no mínimo 2 pessoas.",
+    periodoValidade: "dia",
     linkCardapioDigital: "https://cardapio.mareterra.com.br",
     logoUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&h=200&fit=crop",
     telefoneContato: "(48) 3222-5678",
@@ -54,6 +56,7 @@ const estabelecimentosFicticios = [
     diasHorarioFuncionamento: "Qua a Sáb: 23h às 05h",
     beneficiosAniversariante: "Entrada VIP grátis + 1 drink de cortesia",
     regrasAniversariante: "Válido até 7 dias após o aniversário. Lista até 00h.",
+    periodoValidade: "dia",
     linkCardapioDigital: "",
     logoUrl: "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=200&h=200&fit=crop",
     telefoneContato: "(48) 99999-8888",
@@ -72,6 +75,7 @@ const estabelecimentosFicticios = [
     diasHorarioFuncionamento: "Seg a Sáb: 9h às 19h",
     beneficiosAniversariante: "20% de desconto em toda a loja",
     regrasAniversariante: "Válido no mês do aniversário. Não acumulativo com outras promoções.",
+    periodoValidade: "mes",
     linkCardapioDigital: "",
     logoUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop",
     telefoneContato: "(48) 3232-1010",
@@ -89,6 +93,7 @@ const estabelecimentosFicticios = [
     diasHorarioFuncionamento: "Seg a Dom: 18h às 23h30",
     beneficiosAniversariante: "Pizza grande grátis na compra de 2 pizzas",
     regrasAniversariante: "Válido no dia do aniversário. Não válido para delivery.",
+    periodoValidade: "dia",
     linkCardapioDigital: "https://cardapio.bellanapoli.com.br",
     logoUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200&h=200&fit=crop",
     telefoneContato: "(48) 3224-5566",
@@ -381,6 +386,11 @@ export default function Home() {
                     <Gift className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                     <span className="text-foreground font-medium">{estabelecimento.beneficiosAniversariante}</span>
                   </div>
+                  {estabelecimento.regrasAniversariante && (
+                    <div className="flex items-start gap-2 text-sm">
+                      <span className="text-xs text-muted-foreground italic">{estabelecimento.regrasAniversariante}</span>
+                    </div>
+                  )}
                   <Button 
                     className="w-full mt-4" 
                     onClick={() => handleEmitirCupom(estabelecimento)}

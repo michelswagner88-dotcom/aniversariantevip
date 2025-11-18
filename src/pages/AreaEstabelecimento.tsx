@@ -33,6 +33,7 @@ export default function AreaEstabelecimento() {
     linkCardapioDigital: "",
     beneficiosAniversariante: "",
     regrasAniversariante: "",
+    periodoValidade: "dia", // "dia" ou "mes"
     logoUrl: "",
     telefoneContato: "",
     emailContato: "",
@@ -64,6 +65,7 @@ export default function AreaEstabelecimento() {
         linkCardapioDigital: localUser.linkCardapioDigital,
         beneficiosAniversariante: localUser.beneficiosAniversariante,
         regrasAniversariante: localUser.regrasAniversariante,
+        periodoValidade: localUser.periodoValidade || "dia",
         logoUrl: localUser.logoUrl || "",
         telefoneContato: localUser.telefoneContato || "",
         emailContato: localUser.emailContato || "",
@@ -474,7 +476,25 @@ export default function AreaEstabelecimento() {
                 value={formData.regrasAniversariante}
                 onChange={(e) => setFormData({ ...formData, regrasAniversariante: e.target.value })}
                 disabled={!isEditing}
+                placeholder="Ex: Apresentar documento com foto. Não acumulativo com outras promoções."
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="periodoValidade">Período de Validade do Benefício</Label>
+              <Select 
+                value={formData.periodoValidade} 
+                onValueChange={(value) => setFormData({ ...formData, periodoValidade: value })}
+                disabled={!isEditing}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dia">Somente no dia do aniversário</SelectItem>
+                  <SelectItem value="mes">Durante o mês do aniversário</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex gap-2">

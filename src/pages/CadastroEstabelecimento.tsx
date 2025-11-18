@@ -27,6 +27,7 @@ export default function CadastroEstabelecimento() {
     linkCardapioDigital: "",
     beneficiosAniversariante: "",
     regrasAniversariante: "",
+    periodoValidade: "dia",
     logoUrl: "",
     telefoneContato: "",
     emailContato: "",
@@ -343,6 +344,22 @@ export default function CadastroEstabelecimento() {
                     value={formData.regrasAniversariante}
                     onChange={(e) => setFormData({ ...formData, regrasAniversariante: e.target.value })}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="periodoValidade">Período de Validade do Benefício *</Label>
+                  <Select 
+                    value={formData.periodoValidade} 
+                    onValueChange={(value) => setFormData({ ...formData, periodoValidade: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="dia">Somente no dia do aniversário</SelectItem>
+                      <SelectItem value="mes">Durante o mês do aniversário</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>

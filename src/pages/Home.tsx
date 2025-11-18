@@ -104,9 +104,24 @@ export default function Home() {
     setEstabelecimentos(filtered);
   }, [selectedEstado, selectedCidade, selectedCategoria]);
 
+  // Verificar se há um estabelecimento pendente após login
+  useEffect(() => {
+    const pendingEstabelecimentoId = localStorage.getItem("pendingEstabelecimento");
+    if (pendingEstabelecimentoId) {
+      const estabelecimento = estabelecimentosFicticios.find(e => e.id === pendingEstabelecimentoId);
+      if (estabelecimento) {
+        setSelectedEstabelecimento(estabelecimento);
+        setDialogOpen(true);
+        localStorage.removeItem("pendingEstabelecimento");
+      }
+    }
+  }, []);
+
   const handleEmitirCupom = (estabelecimento: any) => {
     const currentUser = localStorage.getItem("currentAniversariante");
     if (!currentUser) {
+      // Salvar o estabelecimento para abrir após o login
+      localStorage.setItem("pendingEstabelecimento", estabelecimento.id);
       toast({
         variant: "destructive",
         title: "Login necessário",

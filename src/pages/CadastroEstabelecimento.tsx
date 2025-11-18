@@ -6,12 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Crown } from "lucide-react";
+import { Crown, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function CadastroEstabelecimento() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     nomeFantasia: "",
     email: "",
@@ -24,9 +27,16 @@ export default function CadastroEstabelecimento() {
     linkCardapioDigital: "",
     beneficiosAniversariante: "",
     regrasAniversariante: "",
+    logoUrl: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setLogoFile(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (formData.senha !== formData.confirmarSenha) {
@@ -49,14 +59,47 @@ export default function CadastroEstabelecimento() {
       return;
     }
 
-    estabelecimentos.push({
+    let logoUrl = "";
+    
+    // Upload da logo se houver arquivo
+    if (logoFile) {
+      setUploading(true);
+      const fileExt = logoFile.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError, data } = await supabase.storage
+        .from('estabelecimento-logos')
+        .upload(fileName, logoFile);
+
+      if (uploadError) {
+        toast({
+          variant: "destructive",
+          title: "Erro no upload",
+          description: "Não foi possível fazer upload da logo",
+        });
+        setUploading(false);
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('estabelecimento-logos')
+        .getPublicUrl(fileName);
+      
+      logoUrl = publicUrl;
+      setUploading(false);
+    }
+
+    const novoEstabelecimento = {
       ...formData,
+      logoUrl,
       id: Date.now().toString(),
       senhaHash: formData.senha,
-    });
+    };
+
+    estabelecimentos.push(novoEstabelecimento);
     
     localStorage.setItem("estabelecimentos", JSON.stringify(estabelecimentos));
-    localStorage.setItem("currentEstabelecimento", JSON.stringify({ ...formData, id: Date.now().toString() }));
+    localStorage.setItem("currentEstabelecimento", JSON.stringify(novoEstabelecimento));
     
     toast({
       title: "Sucesso!",
@@ -137,6 +180,26 @@ export default function CadastroEstabelecimento() {
                 </div>
                 
                 <div className="space-y-2">
+                  <Label htmlFor="logo">Logo do Estabelecimento</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="logo"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                      className="flex-1"
+                    />
+                    {logoFile && (
+                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Upload className="h-4 w-4" />
+                        {logoFile.name}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Formatos aceitos: JPG, PNG, WEBP (max 5MB)</p>
+                </div>
+                
+                <div className="space-y-2">
                   <Label htmlFor="categoria">Categoria *</Label>
                   <Select value={formData.categoria} onValueChange={(value) => setFormData({ ...formData, categoria: value })}>
                     <SelectTrigger>
@@ -209,7 +272,9 @@ export default function CadastroEstabelecimento() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full">Cadastrar Estabelecimento</Button>
+            <Button type="submit" className="w-full" disabled={uploading}>
+              {uploading ? "Enviando..." : "Cadastrar Estabelecimento"}
+            </Button>
             
             <p className="text-center text-sm text-muted-foreground">
               Já tem uma conta?{" "}

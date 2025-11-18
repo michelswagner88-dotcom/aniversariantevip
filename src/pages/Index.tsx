@@ -631,6 +631,7 @@ export default function Index() {
       balada: "Baladas",
       loja: "Lojas",
       servico: "Serviços",
+      outros: "Outros",
     };
     return labels[categoria] || categoria;
   };
@@ -753,6 +754,7 @@ export default function Index() {
                   <SelectItem value="balada">Baladas</SelectItem>
                   <SelectItem value="loja">Lojas</SelectItem>
                   <SelectItem value="servico">Serviços</SelectItem>
+                  <SelectItem value="outros">Outros</SelectItem>
                 </SelectContent>
               </Select>
 

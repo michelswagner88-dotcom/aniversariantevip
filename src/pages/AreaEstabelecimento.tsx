@@ -6,9 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Crown, LogOut, Edit2, Save, Ticket, Search } from "lucide-react";
+import { Crown, LogOut, Edit2, Save, Ticket, Search, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AreaEstabelecimento() {
   const navigate = useNavigate();
@@ -17,6 +18,8 @@ export default function AreaEstabelecimento() {
   const [userData, setUserData] = useState<any>(null);
   const [searchCPF, setSearchCPF] = useState("");
   const [foundAniversariante, setFoundAniversariante] = useState<any>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     nomeFantasia: "",
     email: "",
@@ -27,6 +30,7 @@ export default function AreaEstabelecimento() {
     linkCardapioDigital: "",
     beneficiosAniversariante: "",
     regrasAniversariante: "",
+    logoUrl: "",
   });
 
   useEffect(() => {
@@ -46,6 +50,7 @@ export default function AreaEstabelecimento() {
         linkCardapioDigital: user.linkCardapioDigital,
         beneficiosAniversariante: user.beneficiosAniversariante,
         regrasAniversariante: user.regrasAniversariante,
+        logoUrl: user.logoUrl || "",
       });
     }
   }, [navigate]);
@@ -55,17 +60,56 @@ export default function AreaEstabelecimento() {
     navigate("/");
   };
 
-  const handleSave = () => {
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setLogoFile(e.target.files[0]);
+    }
+  };
+
+  const handleSave = async () => {
+    let logoUrl = formData.logoUrl;
+
+    // Upload da logo se houver arquivo novo
+    if (logoFile) {
+      setUploading(true);
+      const fileExt = logoFile.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('estabelecimento-logos')
+        .upload(fileName, logoFile);
+
+      if (uploadError) {
+        toast({
+          variant: "destructive",
+          title: "Erro no upload",
+          description: "Não foi possível fazer upload da logo",
+        });
+        setUploading(false);
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('estabelecimento-logos')
+        .getPublicUrl(fileName);
+      
+      logoUrl = publicUrl;
+      setUploading(false);
+    }
+
+    const updatedData = { ...formData, logoUrl };
     const estabelecimentos = JSON.parse(localStorage.getItem("estabelecimentos") || "[]");
     const updatedEstabelecimentos = estabelecimentos.map((e: any) => 
-      e.id === userData.id ? { ...e, ...formData } : e
+      e.id === userData.id ? { ...e, ...updatedData } : e
     );
     
     localStorage.setItem("estabelecimentos", JSON.stringify(updatedEstabelecimentos));
-    localStorage.setItem("currentEstabelecimento", JSON.stringify({ ...userData, ...formData }));
+    localStorage.setItem("currentEstabelecimento", JSON.stringify({ ...userData, ...updatedData }));
     
-    setUserData({ ...userData, ...formData });
+    setUserData({ ...userData, ...updatedData });
+    setFormData(updatedData);
     setIsEditing(false);
+    setLogoFile(null);
     
     toast({
       title: "Sucesso!",
@@ -196,6 +240,38 @@ export default function AreaEstabelecimento() {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="logoUrl">Logo do Estabelecimento</Label>
+              {formData.logoUrl && !isEditing && (
+                <div className="mb-2">
+                  <img src={formData.logoUrl} alt="Logo" className="h-24 w-24 object-cover rounded" />
+                </div>
+              )}
+              {isEditing && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="logo"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                      className="flex-1"
+                    />
+                    {logoFile && (
+                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Upload className="h-4 w-4" />
+                        {logoFile.name}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Formatos aceitos: JPG, PNG, WEBP (max 5MB)</p>
+                </div>
+              )}
+              {!isEditing && !formData.logoUrl && (
+                <p className="text-sm text-muted-foreground">Nenhuma logo cadastrada</p>
+              )}
+            </div>
+
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
@@ -296,11 +372,11 @@ export default function AreaEstabelecimento() {
                 </Button>
               ) : (
                 <>
-                  <Button onClick={handleSave} className="flex-1">
+                  <Button onClick={handleSave} className="flex-1" disabled={uploading}>
                     <Save className="mr-2 h-4 w-4" />
-                    Salvar
+                    {uploading ? "Salvando..." : "Salvar"}
                   </Button>
-                  <Button variant="outline" onClick={() => setIsEditing(false)} className="flex-1">
+                  <Button variant="outline" onClick={() => setIsEditing(false)} className="flex-1" disabled={uploading}>
                     Cancelar
                   </Button>
                 </>

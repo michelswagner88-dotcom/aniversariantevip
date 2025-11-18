@@ -18,6 +18,8 @@ const estabelecimentosFicticios = [
     diasHorarioFuncionamento: "Seg a Sex: 17h às 23h | Sáb e Dom: 12h às 00h",
     beneficiosAniversariante: "1 cerveja artesanal grátis no dia do aniversário",
     regrasAniversariante: "Válido apenas no dia do aniversário. Apresentar documento com foto.",
+    linkCardapioDigital: "https://cardapio.biervila.com.br",
+    logoUrl: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=200&h=200&fit=crop",
   },
   {
     id: "2",
@@ -29,6 +31,8 @@ const estabelecimentosFicticios = [
     diasHorarioFuncionamento: "Ter a Dom: 11h30 às 15h | 18h às 23h",
     beneficiosAniversariante: "Sobremesa grátis para o aniversariante",
     regrasAniversariante: "Válido na semana do aniversário. Mesa para no mínimo 2 pessoas.",
+    linkCardapioDigital: "https://cardapio.mareterra.com.br",
+    logoUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&h=200&fit=crop",
   },
   {
     id: "3",
@@ -40,6 +44,8 @@ const estabelecimentosFicticios = [
     diasHorarioFuncionamento: "Qua a Sáb: 23h às 05h",
     beneficiosAniversariante: "Entrada VIP grátis + 1 drink de cortesia",
     regrasAniversariante: "Válido até 7 dias após o aniversário. Lista até 00h.",
+    linkCardapioDigital: "",
+    logoUrl: "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=200&h=200&fit=crop",
   },
   {
     id: "4",
@@ -51,6 +57,8 @@ const estabelecimentosFicticios = [
     diasHorarioFuncionamento: "Seg a Sáb: 9h às 19h",
     beneficiosAniversariante: "20% de desconto em toda a loja",
     regrasAniversariante: "Válido no mês do aniversário. Não acumulativo com outras promoções.",
+    linkCardapioDigital: "",
+    logoUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop",
   },
   {
     id: "5",
@@ -62,6 +70,8 @@ const estabelecimentosFicticios = [
     diasHorarioFuncionamento: "Seg a Dom: 18h às 23h30",
     beneficiosAniversariante: "Pizza grande grátis na compra de 2 pizzas",
     regrasAniversariante: "Válido no dia do aniversário. Não válido para delivery.",
+    linkCardapioDigital: "https://cardapio.bellanapoli.com.br",
+    logoUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200&h=200&fit=crop",
   },
   {
     id: "6",
@@ -73,6 +83,8 @@ const estabelecimentosFicticios = [
     diasHorarioFuncionamento: "Seg a Sex: 8h às 20h | Sáb: 9h às 18h",
     beneficiosAniversariante: "Cappuccino + torta grátis",
     regrasAniversariante: "Válido na semana do aniversário.",
+    linkCardapioDigital: "",
+    logoUrl: "https://images.unsplash.com/photo-1481833761820-0509d3217039?w=200&h=200&fit=crop",
   },
 ];
 
@@ -286,8 +298,15 @@ export default function Home() {
             {estabelecimentos.map((estabelecimento) => (
               <Card key={estabelecimento.id} className="hover:border-primary transition">
                 <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
+                  <div className="flex items-start gap-3">
+                    {estabelecimento.logoUrl && (
+                      <img 
+                        src={estabelecimento.logoUrl} 
+                        alt={estabelecimento.nomeFantasia}
+                        className="h-16 w-16 object-cover rounded border border-border"
+                      />
+                    )}
+                    <div className="flex-1">
                       <CardTitle className="text-xl mb-2">{estabelecimento.nomeFantasia}</CardTitle>
                       <div className="inline-flex items-center gap-1 px-2 py-1 bg-primary/20 rounded text-xs text-primary">
                         <Tag className="h-3 w-3" />
@@ -332,8 +351,19 @@ export default function Home() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl">{selectedEstabelecimento?.nomeFantasia}</DialogTitle>
-            <DialogDescription>Detalhes do estabelecimento e benefício</DialogDescription>
+            <div className="flex items-center gap-3 mb-2">
+              {selectedEstabelecimento?.logoUrl && (
+                <img 
+                  src={selectedEstabelecimento.logoUrl} 
+                  alt={selectedEstabelecimento.nomeFantasia}
+                  className="h-16 w-16 object-cover rounded border border-border"
+                />
+              )}
+              <div>
+                <DialogTitle className="text-2xl">{selectedEstabelecimento?.nomeFantasia}</DialogTitle>
+                <DialogDescription>Detalhes do estabelecimento e benefício</DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
           {selectedEstabelecimento && (
             <div className="space-y-4">
@@ -349,6 +379,19 @@ export default function Home() {
                 <h4 className="font-semibold mb-2 text-foreground">Horário de Funcionamento</h4>
                 <p className="text-muted-foreground">{selectedEstabelecimento.diasHorarioFuncionamento}</p>
               </div>
+              {selectedEstabelecimento.linkCardapioDigital && (
+                <div>
+                  <h4 className="font-semibold mb-2 text-foreground">Cardápio Digital</h4>
+                  <a 
+                    href={selectedEstabelecimento.linkCardapioDigital} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Ver cardápio online →
+                  </a>
+                </div>
+              )}
               <div>
                 <h4 className="font-semibold mb-2 text-foreground">Benefício para Aniversariantes</h4>
                 <p className="text-primary font-medium">{selectedEstabelecimento.beneficiosAniversariante}</p>

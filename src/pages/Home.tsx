@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Gift, Crown, MapPin, Clock, Tag } from "lucide-react";
+import { Sparkles, Gift, Crown, MapPin, Clock, Tag, Phone, Instagram, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -21,6 +21,7 @@ const estabelecimentosFicticios = [
     linkCardapioDigital: "https://cardapio.biervila.com.br",
     logoUrl: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=200&h=200&fit=crop",
     telefoneContato: "(48) 3333-4444",
+    whatsapp: "(48) 98765-4321",
     emailContato: "contato@biervila.com.br",
     instagram: "biervila",
     facebook: "biervilafln",
@@ -38,6 +39,7 @@ const estabelecimentosFicticios = [
     linkCardapioDigital: "https://cardapio.mareterra.com.br",
     logoUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&h=200&fit=crop",
     telefoneContato: "(48) 3222-5678",
+    whatsapp: "(48) 97654-3210",
     emailContato: "reservas@mareterra.com.br",
     instagram: "mareterra",
     facebook: "mareterrafloripa",
@@ -55,6 +57,7 @@ const estabelecimentosFicticios = [
     linkCardapioDigital: "",
     logoUrl: "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=200&h=200&fit=crop",
     telefoneContato: "(48) 99999-8888",
+    whatsapp: "(48) 96543-2109",
     emailContato: "lista@box32.com.br",
     instagram: "box32floripa",
     facebook: "box32oficial",
@@ -348,6 +351,32 @@ export default function Home() {
                     <Clock className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                     <span className="text-muted-foreground">{estabelecimento.diasHorarioFuncionamento}</span>
                   </div>
+                  {estabelecimento.whatsapp && (
+                    <div className="flex items-start gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <span className="text-muted-foreground">{estabelecimento.whatsapp}</span>
+                    </div>
+                  )}
+                  {estabelecimento.instagram && (
+                    <div className="flex items-start gap-2 text-sm">
+                      <Instagram className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <span className="text-muted-foreground">@{estabelecimento.instagram}</span>
+                    </div>
+                  )}
+                  {estabelecimento.linkCardapioDigital && (
+                    <div className="flex items-start gap-2 text-sm">
+                      <ExternalLink className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <a 
+                        href={estabelecimento.linkCardapioDigital}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Ver Cardápio
+                      </a>
+                    </div>
+                  )}
                   <div className="flex items-start gap-2 text-sm">
                     <Gift className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                     <span className="text-foreground font-medium">{estabelecimento.beneficiosAniversariante}</span>
@@ -356,7 +385,7 @@ export default function Home() {
                     className="w-full mt-4" 
                     onClick={() => handleEmitirCupom(estabelecimento)}
                   >
-                    Solicitar Cupom
+                    Emitir Cupom
                   </Button>
                 </CardContent>
               </Card>
@@ -417,11 +446,15 @@ export default function Home() {
                 </div>
               )}
               
-              {(selectedEstabelecimento.telefoneContato || selectedEstabelecimento.emailContato || 
-                selectedEstabelecimento.instagram || selectedEstabelecimento.facebook) && (
+              {(selectedEstabelecimento.whatsapp || selectedEstabelecimento.telefoneContato || 
+                selectedEstabelecimento.emailContato || selectedEstabelecimento.instagram || 
+                selectedEstabelecimento.facebook) && (
                 <div>
                   <h4 className="font-semibold mb-2 text-foreground">Contato</h4>
                   <div className="space-y-1">
+                    {selectedEstabelecimento.whatsapp && (
+                      <p className="text-sm text-muted-foreground">📱 WhatsApp: {selectedEstabelecimento.whatsapp}</p>
+                    )}
                     {selectedEstabelecimento.telefoneContato && (
                       <p className="text-sm text-muted-foreground">📞 {selectedEstabelecimento.telefoneContato}</p>
                     )}
@@ -448,7 +481,7 @@ export default function Home() {
               </div>
               <Button onClick={handleSolicitarCupom} className="w-full">
                 <Gift className="mr-2 h-4 w-4" />
-                Confirmar Solicitação de Cupom
+                Emitir Cupom
               </Button>
             </div>
           )}

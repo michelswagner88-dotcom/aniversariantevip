@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cupons: {
+        Row: {
+          aniversariante_id: string
+          codigo: string
+          created_at: string
+          data_emissao: string
+          data_uso: string | null
+          data_validade: string | null
+          estabelecimento_id: string
+          id: string
+          usado: boolean
+        }
+        Insert: {
+          aniversariante_id: string
+          codigo: string
+          created_at?: string
+          data_emissao?: string
+          data_uso?: string | null
+          data_validade?: string | null
+          estabelecimento_id: string
+          id?: string
+          usado?: boolean
+        }
+        Update: {
+          aniversariante_id?: string
+          codigo?: string
+          created_at?: string
+          data_emissao?: string
+          data_uso?: string | null
+          data_validade?: string | null
+          estabelecimento_id?: string
+          id?: string
+          usado?: boolean
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

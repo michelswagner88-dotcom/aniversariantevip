@@ -31,6 +31,10 @@ export default function AreaEstabelecimento() {
     beneficiosAniversariante: "",
     regrasAniversariante: "",
     logoUrl: "",
+    telefoneContato: "",
+    emailContato: "",
+    instagram: "",
+    facebook: "",
   });
 
   useEffect(() => {
@@ -51,6 +55,10 @@ export default function AreaEstabelecimento() {
         beneficiosAniversariante: user.beneficiosAniversariante,
         regrasAniversariante: user.regrasAniversariante,
         logoUrl: user.logoUrl || "",
+        telefoneContato: user.telefoneContato || "",
+        emailContato: user.emailContato || "",
+        instagram: user.instagram || "",
+        facebook: user.facebook || "",
       });
     }
   }, [navigate]);
@@ -64,6 +72,16 @@ export default function AreaEstabelecimento() {
     if (e.target.files && e.target.files[0]) {
       setLogoFile(e.target.files[0]);
     }
+  };
+
+  const handleInstagramChange = (value: string) => {
+    const cleanValue = value.replace(/^@/, "");
+    setFormData({ ...formData, instagram: cleanValue });
+  };
+
+  const handleFacebookChange = (value: string) => {
+    const cleanValue = value.replace(/^@/, "");
+    setFormData({ ...formData, facebook: cleanValue });
   };
 
   const handleSave = async () => {
@@ -342,6 +360,61 @@ export default function AreaEstabelecimento() {
                 onChange={(e) => setFormData({ ...formData, linkCardapioDigital: e.target.value })}
                 disabled={!isEditing}
               />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="telefoneContato">Telefone de Contato</Label>
+                <Input
+                  id="telefoneContato"
+                  placeholder="(00) 00000-0000"
+                  value={formData.telefoneContato}
+                  onChange={(e) => setFormData({ ...formData, telefoneContato: e.target.value })}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="emailContato">Email de Contato</Label>
+                <Input
+                  id="emailContato"
+                  type="email"
+                  placeholder="contato@estabelecimento.com"
+                  value={formData.emailContato}
+                  onChange={(e) => setFormData({ ...formData, emailContato: e.target.value })}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="instagram">Instagram</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
+                  <Input
+                    id="instagram"
+                    placeholder="seuusuario"
+                    value={formData.instagram}
+                    onChange={(e) => handleInstagramChange(e.target.value)}
+                    className="pl-7"
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="facebook">Facebook</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
+                  <Input
+                    id="facebook"
+                    placeholder="seuusuario"
+                    value={formData.facebook}
+                    onChange={(e) => handleFacebookChange(e.target.value)}
+                    className="pl-7"
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">

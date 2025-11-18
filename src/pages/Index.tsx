@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Crown, Gift, MapPin, Search, LogOut, Download, User, Calendar, Building, X } from "lucide-react";
+import { Crown, Gift, MapPin, Search, LogOut, Download, User, Calendar, Building, X, Phone, Clock, ExternalLink, Instagram } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -114,6 +114,8 @@ export default function Index() {
   const [estabelecimentos, setEstabelecimentos] = useState(estabelecimentosFicticios);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoria, setSelectedCategoria] = useState<string>("todas");
+  const [selectedEstado, setSelectedEstado] = useState<string>("todos");
+  const [selectedCidade, setSelectedCidade] = useState<string>("todas");
   const [selectedEstabelecimento, setSelectedEstabelecimento] = useState<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -207,10 +209,18 @@ export default function Index() {
     return labels[categoria] || categoria;
   };
 
+  // Get unique states and cities
+  const estados = Array.from(new Set(estabelecimentos.map(e => e.estado))).sort();
+  const cidadesDisponiveis = selectedEstado === "todos" 
+    ? Array.from(new Set(estabelecimentos.map(e => e.cidade))).sort()
+    : Array.from(new Set(estabelecimentos.filter(e => e.estado === selectedEstado).map(e => e.cidade))).sort();
+
   const filteredEstabelecimentos = estabelecimentos.filter((est) => {
     const matchesSearch = est.nomeFantasia.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategoria = selectedCategoria === "todas" || est.categoria === selectedCategoria;
-    return matchesSearch && matchesCategoria;
+    const matchesEstado = selectedEstado === "todos" || est.estado === selectedEstado;
+    const matchesCidade = selectedCidade === "todas" || est.cidade === selectedCidade;
+    return matchesSearch && matchesCategoria && matchesEstado && matchesCidade;
   });
 
   const handleLogout = () => {
@@ -281,19 +291,49 @@ export default function Index() {
                 className="pl-9 sm:pl-10 h-11 sm:h-10 text-base"
               />
             </div>
-            <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-              <SelectTrigger className="w-full h-11 sm:h-10 text-base">
-                <SelectValue placeholder="Todas as Categorias" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas as Categorias</SelectItem>
-                <SelectItem value="bar">Bares</SelectItem>
-                <SelectItem value="restaurante">Restaurantes</SelectItem>
-                <SelectItem value="balada">Baladas</SelectItem>
-                <SelectItem value="loja">Lojas</SelectItem>
-                <SelectItem value="servico">Serviços</SelectItem>
-              </SelectContent>
-            </Select>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
+                <SelectTrigger className="w-full h-11 sm:h-10 text-base">
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as Categorias</SelectItem>
+                  <SelectItem value="bar">Bares</SelectItem>
+                  <SelectItem value="restaurante">Restaurantes</SelectItem>
+                  <SelectItem value="balada">Baladas</SelectItem>
+                  <SelectItem value="loja">Lojas</SelectItem>
+                  <SelectItem value="servico">Serviços</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedEstado} onValueChange={(value) => {
+                setSelectedEstado(value);
+                setSelectedCidade("todas");
+              }}>
+                <SelectTrigger className="w-full h-11 sm:h-10 text-base">
+                  <SelectValue placeholder="Estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Estados</SelectItem>
+                  {estados.map(estado => (
+                    <SelectItem key={estado} value={estado}>{estado}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedCidade} onValueChange={setSelectedCidade}>
+                <SelectTrigger className="w-full h-11 sm:h-10 text-base">
+                  <SelectValue placeholder="Cidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as Cidades</SelectItem>
+                  {cidadesDisponiveis.map(cidade => (
+                    <SelectItem key={cidade} value={cidade}>{cidade}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </section>
@@ -320,6 +360,48 @@ export default function Index() {
                     <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                     <span className="line-clamp-2">{estabelecimento.endereco}</span>
                   </div>
+
+                  {estabelecimento.diasHorarioFuncionamento && (
+                    <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm">{estabelecimento.diasHorarioFuncionamento}</span>
+                    </div>
+                  )}
+
+                  {estabelecimento.telefoneContato && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Phone className="h-4 w-4 flex-shrink-0" />
+                      <a href={`tel:${estabelecimento.telefoneContato}`} className="hover:text-primary transition-colors">
+                        {estabelecimento.telefoneContato}
+                      </a>
+                    </div>
+                  )}
+
+                  {estabelecimento.instagram && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Instagram className="h-4 w-4 flex-shrink-0" />
+                      <a 
+                        href={`https://instagram.com/${estabelecimento.instagram}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="hover:text-primary transition-colors"
+                      >
+                        @{estabelecimento.instagram}
+                      </a>
+                    </div>
+                  )}
+
+                  {estabelecimento.linkCardapioDigital && (
+                    <a 
+                      href={estabelecimento.linkCardapioDigital} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-primary hover:underline"
+                    >
+                      <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                      Ver Cardápio Digital
+                    </a>
+                  )}
                   
                   <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
                     <p className="text-sm font-semibold text-primary mb-1">🎁 Benefício</p>

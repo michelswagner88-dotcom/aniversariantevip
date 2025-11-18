@@ -387,8 +387,9 @@ export default function Home() {
                     <span className="text-foreground font-medium">{estabelecimento.beneficiosAniversariante}</span>
                   </div>
                   {estabelecimento.regrasAniversariante && (
-                    <div className="flex items-start gap-2 text-sm">
-                      <span className="text-xs text-muted-foreground italic">{estabelecimento.regrasAniversariante}</span>
+                    <div className="text-xs text-muted-foreground italic space-y-1">
+                      <div>{estabelecimento.regrasAniversariante}</div>
+                      <div>Apresentar cupom emitido.</div>
                     </div>
                   )}
                   <Button 

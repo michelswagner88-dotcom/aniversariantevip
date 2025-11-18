@@ -3,10 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Crown, Gift, MapPin, Search, LogOut, Download, User, Calendar, Building, X, Phone, Clock, ExternalLink, Instagram } from "lucide-react";
+import { Crown, Gift, MapPin, Search, LogOut, Download, User, Calendar, Building, X, Phone, Clock, ExternalLink, Instagram, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { NavLink } from "@/components/NavLink";
 
 const estabelecimentosFicticios = [
@@ -242,18 +243,49 @@ export default function Index() {
             <h1 className="text-base sm:text-xl md:text-2xl font-bold text-primary whitespace-nowrap">ANIVERSARIANTE VIP</h1>
           </div>
           <nav className="flex items-center gap-1.5 sm:gap-2">
-            <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-3" asChild>
-              <Link to="/login/aniversariante">Sou Aniversariante</Link>
-            </Button>
-            <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-3" asChild>
-              <Link to="/login/estabelecimento">Sou Estabelecimento</Link>
-            </Button>
-            <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3" asChild>
-              <Link to="/login/aniversariante">Login</Link>
-            </Button>
-            <Button variant="default" size="sm" className="text-xs sm:text-sm px-2 sm:px-3" asChild>
-              <Link to="/cadastro/aniversariante">Cadastro</Link>
-            </Button>
+            {/* Aniversariante Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
+                  Aniversariante
+                  <ChevronDown className="ml-1 h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link to="/login/aniversariante" className="cursor-pointer w-full">
+                    Login
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/cadastro/aniversariante" className="cursor-pointer w-full">
+                    Cadastro
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Estabelecimento Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
+                  Estabelecimento
+                  <ChevronDown className="ml-1 h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link to="/login/estabelecimento" className="cursor-pointer w-full">
+                    Login
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/cadastro/estabelecimento" className="cursor-pointer w-full">
+                    Cadastro
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </nav>
         </div>
       </header>

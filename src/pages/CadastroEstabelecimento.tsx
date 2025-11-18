@@ -22,6 +22,8 @@ export default function CadastroEstabelecimento() {
     senha: "",
     confirmarSenha: "",
     categoria: "",
+    estado: "",
+    cidade: "",
     endereco: "",
     diasHorarioFuncionamento: "",
     linkCardapioDigital: "",
@@ -53,6 +55,21 @@ export default function CadastroEstabelecimento() {
     setFormData({ ...formData, facebook: cleanValue });
   };
 
+  const estadosCidades: Record<string, string[]> = {
+    "SC": ["Florianópolis", "São José", "Palhoça", "Biguaçu"],
+    "PR": ["Curitiba"],
+    "RS": ["Porto Alegre"],
+    "MG": ["Belo Horizonte"],
+    "RJ": ["Rio de Janeiro"],
+    "SP": ["São Paulo"],
+    "GO": ["Goiânia"],
+    "DF": ["Brasília"],
+  };
+
+  const handleEstadoChange = (value: string) => {
+    setFormData({ ...formData, estado: value, cidade: "" });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -70,6 +87,24 @@ export default function CadastroEstabelecimento() {
         variant: "destructive",
         title: "Erro",
         description: "Selecione uma categoria",
+      });
+      return;
+    }
+
+    if (!formData.estado) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Selecione um estado",
+      });
+      return;
+    }
+
+    if (!formData.cidade) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Selecione uma cidade",
       });
       return;
     }
@@ -250,8 +285,53 @@ export default function CadastroEstabelecimento() {
                       <SelectItem value="balada">Balada</SelectItem>
                       <SelectItem value="loja">Loja</SelectItem>
                       <SelectItem value="servico">Serviço</SelectItem>
+                      <SelectItem value="outros">Outros</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="estado">Estado *</Label>
+                    <Select 
+                      value={formData.estado} 
+                      onValueChange={handleEstadoChange}
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o estado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="SC">Santa Catarina (SC)</SelectItem>
+                        <SelectItem value="PR">Paraná (PR)</SelectItem>
+                        <SelectItem value="RS">Rio Grande do Sul (RS)</SelectItem>
+                        <SelectItem value="MG">Minas Gerais (MG)</SelectItem>
+                        <SelectItem value="RJ">Rio de Janeiro (RJ)</SelectItem>
+                        <SelectItem value="SP">São Paulo (SP)</SelectItem>
+                        <SelectItem value="GO">Goiás (GO)</SelectItem>
+                        <SelectItem value="DF">Distrito Federal (DF)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cidade">Cidade *</Label>
+                    <Select 
+                      value={formData.cidade} 
+                      onValueChange={(value) => setFormData({ ...formData, cidade: value })}
+                      required
+                      disabled={!formData.estado}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a cidade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {formData.estado && estadosCidades[formData.estado]?.map((cidade) => (
+                          <SelectItem key={cidade} value={cidade}>{cidade}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -259,7 +339,7 @@ export default function CadastroEstabelecimento() {
                   <Input
                     id="endereco"
                     required
-                    placeholder="Rua, número, bairro, cidade, estado, CEP"
+                    placeholder="Rua, número, bairro, CEP"
                     value={formData.endereco}
                     onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
                   />

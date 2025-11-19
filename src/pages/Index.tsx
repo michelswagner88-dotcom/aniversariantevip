@@ -623,7 +623,19 @@ export default function Index() {
   const handlePrintCupom = () => {
     if (!cupomRef.current) return;
     
-    // Criar um link temporário para download
+    // Capturar os estilos computados do elemento
+    const styles = Array.from(document.styleSheets)
+      .map(styleSheet => {
+        try {
+          return Array.from(styleSheet.cssRules)
+            .map(rule => rule.cssText)
+            .join('\n');
+        } catch (e) {
+          return '';
+        }
+      })
+      .join('\n');
+    
     const printContent = cupomRef.current.innerHTML;
     const printWindow = window.open('', '_blank');
     if (printWindow) {
@@ -633,15 +645,25 @@ export default function Index() {
         <head>
           <title>Aniversariante VIP</title>
           <style>
-            body { margin: 0; padding: 20px; font-family: system-ui; }
-            @media print { body { margin: 0; } }
+            ${styles}
+            body { 
+              margin: 0; 
+              padding: 20px; 
+              background: hsl(0, 0%, 5%);
+              font-family: system-ui, -apple-system, sans-serif;
+            }
+            @media print { 
+              body { margin: 0; padding: 0; }
+            }
           </style>
         </head>
         <body>${printContent}</body>
         </html>
       `);
       printWindow.document.close();
-      printWindow.print();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
     }
   };
 

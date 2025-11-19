@@ -743,7 +743,7 @@ export default function Index() {
       <section className="py-8 sm:py-12 md:py-16 bg-gradient-to-b from-primary/10 to-background print:hidden">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 text-foreground leading-tight">
-            Seu aniversário merece ser especial
+            O seu aniversário merece ser especial!
           </h2>
           <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto px-2">
             Descubra estabelecimentos parceiros que oferecem descontos e benefícios exclusivos.

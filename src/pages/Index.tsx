@@ -621,50 +621,7 @@ export default function Index() {
   };
 
   const handlePrintCupom = () => {
-    if (!cupomRef.current) return;
-    
-    // Capturar os estilos computados do elemento
-    const styles = Array.from(document.styleSheets)
-      .map(styleSheet => {
-        try {
-          return Array.from(styleSheet.cssRules)
-            .map(rule => rule.cssText)
-            .join('\n');
-        } catch (e) {
-          return '';
-        }
-      })
-      .join('\n');
-    
-    const printContent = cupomRef.current.innerHTML;
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Aniversariante VIP</title>
-          <style>
-            ${styles}
-            body { 
-              margin: 0; 
-              padding: 20px; 
-              background: hsl(0, 0%, 5%);
-              font-family: system-ui, -apple-system, sans-serif;
-            }
-            @media print { 
-              body { margin: 0; padding: 0; }
-            }
-          </style>
-        </head>
-        <body>${printContent}</body>
-        </html>
-      `);
-      printWindow.document.close();
-      setTimeout(() => {
-        printWindow.print();
-      }, 250);
-    }
+    window.print();
   };
 
   const getCategoriaLabel = (categoria: string) => {
@@ -1067,7 +1024,7 @@ export default function Index() {
             <div className="p-3 sm:p-4 border-t flex flex-col sm:flex-row gap-2 print:hidden">
               <Button onClick={handlePrintCupom} className="flex-1 h-12 text-base font-semibold">
                 <Download className="mr-2 h-5 w-5" />
-                Salvar / Imprimir
+                Imprimir / Salvar
               </Button>
               <Button variant="outline" onClick={() => setShowCupom(false)} className="flex-1 h-12 text-base font-semibold">
                 Fechar

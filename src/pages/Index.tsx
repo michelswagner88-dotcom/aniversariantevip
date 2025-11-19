@@ -746,7 +746,7 @@ export default function Index() {
             O seu aniversário merece ser especial!
           </h2>
           <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto px-2">
-            Descubra estabelecimentos parceiros que oferecem descontos e benefícios exclusivos.
+            Descubra estabelecimentos parceiros que oferecem descontos e benefícios exclusivos. Faça completo.
           </p>
         </div>
       </section>

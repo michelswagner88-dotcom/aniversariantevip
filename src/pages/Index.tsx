@@ -979,61 +979,61 @@ export default function Index() {
               </Button>
             </div>
             
-            <div ref={cupomRef} className="p-4 sm:p-6 md:p-8">
-              <Card className="bg-gradient-to-br from-primary/10 via-background to-primary/5 border-2 border-primary shadow-lg">
+            <div ref={cupomRef} className="p-4 sm:p-6 md:p-8 bg-[hsl(0,0%,5%)]">
+              <Card className="bg-gradient-to-br from-[hsl(45,100%,51%)] via-[hsl(0,0%,8%)] to-[hsl(45,100%,35%)] border-4 border-[hsl(45,100%,51%)] shadow-2xl">
                 <CardContent className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-5">
-                  <div className="text-center space-y-2 pb-3 sm:pb-4 border-b-2 border-dashed border-primary/30">
+                  <div className="text-center space-y-2 pb-3 sm:pb-4 border-b-4 border-dashed border-[hsl(45,100%,51%)]">
                     {cupomGerado.estabelecimentoLogo ? (
                       <img 
                         src={cupomGerado.estabelecimentoLogo} 
                         alt={cupomGerado.estabelecimentoNome}
-                        className="h-12 w-12 sm:h-16 sm:w-16 mx-auto rounded-full object-cover mb-2"
+                        className="h-12 w-12 sm:h-16 sm:w-16 mx-auto rounded-full object-cover mb-2 border-2 border-[hsl(45,100%,51%)]"
                       />
                     ) : (
-                      <Building className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-primary mb-2" />
+                      <Building className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-[hsl(45,100%,51%)] mb-2" />
                     )}
-                    <h2 className="text-xl sm:text-2xl font-bold text-primary">🎂 CUPOM DE ANIVERSÁRIO</h2>
-                    <p className="text-base sm:text-lg font-semibold">{cupomGerado.estabelecimentoNome}</p>
+                    <h2 className="text-xl sm:text-2xl font-bold text-[hsl(45,100%,51%)] drop-shadow-lg">🎂 CUPOM DE ANIVERSÁRIO</h2>
+                    <p className="text-base sm:text-lg font-semibold text-[hsl(45,100%,70%)]">{cupomGerado.estabelecimentoNome}</p>
                   </div>
 
                   <div className="space-y-2 sm:space-y-3">
-                    <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-background/50 rounded-lg">
-                      <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-[hsl(0,0%,8%)] rounded-lg border border-[hsl(45,100%,51%)]">
+                      <User className="h-4 w-4 sm:h-5 sm:w-5 text-[hsl(45,100%,51%)] mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm text-muted-foreground">Aniversariante</p>
-                        <p className="font-semibold text-sm sm:text-base break-words">{cupomGerado.aniversarianteNome}</p>
+                        <p className="text-xs sm:text-sm text-[hsl(45,100%,70%)]">Aniversariante</p>
+                        <p className="font-semibold text-sm sm:text-base break-words text-[hsl(45,100%,70%)]">{cupomGerado.aniversarianteNome}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-background/50 rounded-lg">
-                      <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-[hsl(0,0%,8%)] rounded-lg border border-[hsl(45,100%,51%)]">
+                      <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-[hsl(45,100%,51%)] mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
-                        <p className="text-xs sm:text-sm text-muted-foreground">Data de Nascimento</p>
-                        <p className="font-semibold text-sm sm:text-base">
+                        <p className="text-xs sm:text-sm text-[hsl(45,100%,70%)]">Data de Nascimento</p>
+                        <p className="font-semibold text-sm sm:text-base text-[hsl(45,100%,70%)]">
                           {new Date(cupomGerado.aniversarianteDataNascimento).toLocaleDateString('pt-BR')}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-background/50 rounded-lg">
-                      <Gift className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-[hsl(0,0%,8%)] rounded-lg border border-[hsl(45,100%,51%)]">
+                      <Gift className="h-4 w-4 sm:h-5 sm:w-5 text-[hsl(45,100%,51%)] mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm text-muted-foreground">Regras</p>
-                        <p className="text-xs sm:text-sm break-words">{cupomGerado.regras}</p>
+                        <p className="text-xs sm:text-sm text-[hsl(45,100%,70%)]">Regras</p>
+                        <p className="text-xs sm:text-sm break-words text-[hsl(45,100%,70%)]">{cupomGerado.regras}</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-3 sm:p-4 bg-primary/10 rounded-lg border border-primary/20 text-center">
-                    <p className="text-xs text-muted-foreground mb-1">Código</p>
-                    <p className="text-xl sm:text-2xl font-bold text-primary font-mono tracking-wider break-all">{cupomGerado.codigo}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                  <div className="p-3 sm:p-4 bg-[hsl(0,0%,5%)] rounded-lg border-2 border-[hsl(45,100%,51%)] text-center">
+                    <p className="text-xs text-[hsl(45,100%,70%)] mb-1">Código</p>
+                    <p className="text-xl sm:text-2xl font-bold text-[hsl(45,100%,51%)] font-mono tracking-wider break-all">{cupomGerado.codigo}</p>
+                    <p className="text-xs text-[hsl(45,100%,70%)] mt-1">
                       Emitido: {new Date(cupomGerado.dataEmissao).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
 
-                  <div className="pt-3 sm:pt-4 border-t-2 border-dashed border-primary/30">
-                    <p className="text-xs sm:text-sm text-center text-muted-foreground italic">
+                  <div className="pt-3 sm:pt-4 border-t-4 border-dashed border-[hsl(45,100%,51%)]">
+                    <p className="text-xs sm:text-sm text-center text-[hsl(45,100%,70%)] italic font-semibold">
                       📸 Tire print ou salve este cupom<br />
                       e apresente no estabelecimento
                     </p>

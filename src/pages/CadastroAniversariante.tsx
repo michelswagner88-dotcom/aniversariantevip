@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Crown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,10 +16,27 @@ export default function CadastroAniversariante() {
     cpf: "",
     email: "",
     telefone: "",
+    estado: "",
+    cidade: "",
     dataNascimento: "",
     senha: "",
     confirmarSenha: "",
   });
+
+  const estadosCidades: Record<string, string[]> = {
+    "SC": ["Florianópolis", "São José", "Palhoça", "Biguaçu"],
+    "PR": ["Curitiba"],
+    "RS": ["Porto Alegre"],
+    "MG": ["Belo Horizonte"],
+    "RJ": ["Rio de Janeiro"],
+    "SP": ["São Paulo"],
+    "GO": ["Goiânia"],
+    "DF": ["Brasília"],
+  };
+
+  const handleEstadoChange = (value: string) => {
+    setFormData({ ...formData, estado: value, cidade: "" });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,6 +131,44 @@ export default function CadastroAniversariante() {
                   value={formData.telefone}
                   onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
                 />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="estado">Estado *</Label>
+                <Select value={formData.estado} onValueChange={handleEstadoChange} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(estadosCidades).map((estado) => (
+                      <SelectItem key={estado} value={estado}>
+                        {estado}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cidade">Cidade *</Label>
+                <Select 
+                  value={formData.cidade} 
+                  onValueChange={(value) => setFormData({ ...formData, cidade: value })}
+                  disabled={!formData.estado}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={formData.estado ? "Selecione a cidade" : "Selecione o estado primeiro"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formData.estado && estadosCidades[formData.estado]?.map((cidade) => (
+                      <SelectItem key={cidade} value={cidade}>
+                        {cidade}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

@@ -651,6 +651,28 @@ export default function Index() {
     return matchesSearch && matchesCategoria && matchesEstado && matchesCidade;
   });
 
+  // Group establishments by state and city
+  const groupedEstabelecimentos = filteredEstabelecimentos.reduce((acc, est) => {
+    const key = `${est.estado} - ${est.cidade}`;
+    if (!acc[key]) {
+      acc[key] = {
+        estado: est.estado,
+        cidade: est.cidade,
+        estabelecimentos: []
+      };
+    }
+    acc[key].estabelecimentos.push(est);
+    return acc;
+  }, {} as Record<string, { estado: string; cidade: string; estabelecimentos: typeof estabelecimentos }>);
+
+  // Sort groups by state then city
+  const sortedGroups = Object.values(groupedEstabelecimentos).sort((a, b) => {
+    if (a.estado !== b.estado) {
+      return a.estado.localeCompare(b.estado);
+    }
+    return a.cidade.localeCompare(b.cidade);
+  });
+
   const handleLogout = () => {
     localStorage.removeItem("currentAniversariante");
     setCurrentUser(null);
@@ -792,9 +814,23 @@ export default function Index() {
 
       {/* Cards */}
       <section className="py-6 sm:py-8 md:py-12 bg-background print:hidden">
-        <div className="container mx-auto px-3 sm:px-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-7xl mx-auto">
-            {filteredEstabelecimentos.map((estabelecimento) => (
+        <div className="container mx-auto px-3 sm:px-4 max-w-7xl">
+          {sortedGroups.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-lg">Nenhum estabelecimento encontrado.</p>
+            </div>
+          ) : (
+            sortedGroups.map((group) => (
+              <div key={`${group.estado}-${group.cidade}`} className="mb-12">
+                <div className="mb-6">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-primary flex items-center gap-2">
+                    <MapPin className="h-6 w-6" />
+                    {group.estado} - {group.cidade}
+                  </h2>
+                  <div className="h-1 w-20 bg-primary/60 mt-2 rounded-full"></div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {group.estabelecimentos.map((estabelecimento) => (
               <Card key={estabelecimento.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="h-40 sm:h-48 overflow-hidden">
                   <img
@@ -874,14 +910,9 @@ export default function Index() {
                 </CardContent>
               </Card>
             ))}
-          </div>
-
-          {filteredEstabelecimentos.length === 0 && (
-            <div className="text-center py-12 px-4">
-              <p className="text-muted-foreground text-base sm:text-lg">
-                Nenhum estabelecimento encontrado.
-              </p>
-            </div>
+                </div>
+              </div>
+            ))
           )}
         </div>
       </section>

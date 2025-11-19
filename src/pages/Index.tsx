@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Crown, Gift, MapPin, Search, LogOut, Download, User, Calendar, Building, X, Phone, Clock, ExternalLink, Instagram, ChevronDown } from "lucide-react";
+import { Crown, Gift, MapPin, Search, LogOut, Download, User, Calendar, Building, X, Phone, Clock, ExternalLink, Instagram, ChevronDown, Mail } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1034,10 +1035,234 @@ export default function Index() {
         </div>
       )}
 
+      {/* Como Funciona - Aniversariante */}
+      <section id="como-funciona-aniversariante" className="py-12 sm:py-16 bg-muted/50 print:hidden">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 text-primary">Como Funciona para Aniversariantes</h2>
+          <div className="max-w-3xl mx-auto space-y-6 text-muted-foreground">
+            <div className="bg-card p-6 rounded-lg border">
+              <h3 className="font-semibold text-lg mb-3 text-foreground flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                1. Faça seu cadastro simples
+              </h3>
+              <p>Crie sua conta gratuitamente na plataforma Aniversariante VIP com seus dados básicos.</p>
+            </div>
+            <div className="bg-card p-6 rounded-lg border">
+              <h3 className="font-semibold text-lg mb-3 text-foreground flex items-center gap-2">
+                <Gift className="h-5 w-5 text-primary" />
+                2. Emita seus cupons
+              </h3>
+              <p>Navegue pelos estabelecimentos parceiros e emita cupons em quantos locais quiser, respeitando as regras de cada um.</p>
+            </div>
+            <div className="bg-card p-6 rounded-lg border">
+              <h3 className="font-semibold text-lg mb-3 text-foreground flex items-center gap-2">
+                <Crown className="h-5 w-5 text-primary" />
+                3. Aproveite seus benefícios
+              </h3>
+              <p>Apresente o cupom no estabelecimento no dia ou período permitido e aproveite seu benefício de aniversário!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Como Funciona - Estabelecimento */}
+      <section id="como-funciona-estabelecimento" className="py-12 sm:py-16 print:hidden">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 text-primary">Como Funciona para Estabelecimentos</h2>
+          <div className="max-w-3xl mx-auto space-y-6 text-muted-foreground">
+            <div className="bg-card p-6 rounded-lg border">
+              <h3 className="font-semibold text-lg mb-3 text-foreground flex items-center gap-2">
+                <Building className="h-5 w-5 text-primary" />
+                1. Cadastre seu estabelecimento
+              </h3>
+              <p>Preencha seus dados, escolha a categoria (bar, restaurante, balada, loja, serviço, etc.) e informe endereço completo.</p>
+            </div>
+            <div className="bg-card p-6 rounded-lg border">
+              <h3 className="font-semibold text-lg mb-3 text-foreground flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" />
+                2. Configure dias, horários e cardápio
+              </h3>
+              <p>Informe seus dias e horários de funcionamento. Se tiver, adicione o link do seu cardápio digital.</p>
+            </div>
+            <div className="bg-card p-6 rounded-lg border">
+              <h3 className="font-semibold text-lg mb-3 text-foreground flex items-center gap-2">
+                <Gift className="h-5 w-5 text-primary" />
+                3. Defina benefícios e regras
+              </h3>
+              <p>Escreva os benefícios para aniversariantes e as regras (ex.: dia válido, quantidade de pessoas, necessidade de reserva, documento, etc.).</p>
+            </div>
+            <div className="bg-card p-6 rounded-lg border">
+              <h3 className="font-semibold text-lg mb-3 text-foreground flex items-center gap-2">
+                <Crown className="h-5 w-5 text-primary" />
+                4. Receba os clientes
+              </h3>
+              <p>Os aniversariantes cadastrados emitem cupons e visitam seu estabelecimento seguindo suas condições!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Vantagens para Estabelecimentos */}
+      <section id="vantagens-estabelecimentos" className="py-12 sm:py-16 bg-muted/50 print:hidden">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 text-primary">Vantagens de Ser Parceiro</h2>
+          <div className="max-w-3xl mx-auto grid md:grid-cols-2 gap-6">
+            <div className="bg-card p-6 rounded-lg border">
+              <h3 className="font-semibold text-lg mb-3 text-foreground">👥 Atração de Grupos</h3>
+              <p className="text-muted-foreground">Um aniversariante raramente vem sozinho - traga grupos inteiros para seu estabelecimento.</p>
+            </div>
+            <div className="bg-card p-6 rounded-lg border">
+              <h3 className="font-semibold text-lg mb-3 text-foreground">📈 Mais Movimento</h3>
+              <p className="text-muted-foreground">Aumente o movimento em dias estratégicos e fortaleça sua marca.</p>
+            </div>
+            <div className="bg-card p-6 rounded-lg border">
+              <h3 className="font-semibold text-lg mb-3 text-foreground">🎯 Marketing Direcionado</h3>
+              <p className="text-muted-foreground">Presença em um guia específico de aniversários, focado no seu público-alvo.</p>
+            </div>
+            <div className="bg-card p-6 rounded-lg border">
+              <h3 className="font-semibold text-lg mb-3 text-foreground">💰 Baixo Custo</h3>
+              <p className="text-muted-foreground">Investimento muito menor comparado a outras campanhas de marketing tradicionais.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="py-12 sm:py-16 print:hidden">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 text-primary">Perguntas Frequentes</h2>
+          <div className="max-w-3xl mx-auto">
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="item-1">
+                <AccordionTrigger className="text-left">
+                  O aniversariante precisa pagar para usar a plataforma?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Não. O cadastro é gratuito para o aniversariante. Ele pode emitir cupons em quantos estabelecimentos quiser, respeitando as regras de cada local.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="item-2">
+                <AccordionTrigger className="text-left">
+                  O cupom garante reserva automática?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Não necessariamente. Cada estabelecimento define suas regras. Alguns podem exigir reserva antecipada; outros funcionam por ordem de chegada. As condições aparecem na descrição de cada benefício.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="item-3">
+                <AccordionTrigger className="text-left">
+                  Sou dono de um estabelecimento. Tenho custo para entrar?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Em breve haverá planos mensais acessíveis. No início, podemos oferecer um período promocional para você testar os resultados. O cadastro inicial serve para entrar em contato e alinhar os detalhes.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="item-4">
+                <AccordionTrigger className="text-left">
+                  Posso alterar os benefícios ou regras depois de cadastrado?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Sim. O estabelecimento pode atualizar benefícios, regras, horários e link de cardápio pela área logada da plataforma.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="bg-muted py-6 sm:py-8 mt-12 sm:mt-16 print:hidden">
-        <div className="container mx-auto px-4 text-center text-muted-foreground text-sm">
-          <p>&copy; 2024 Aniversariante VIP - Todos os direitos reservados</p>
+      <footer className="bg-card border-t print:hidden">
+        <div className="container mx-auto px-4 py-8 sm:py-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            {/* Coluna Aniversariantes */}
+            <div>
+              <h3 className="text-lg font-bold text-primary mb-4">Aniversariantes</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>
+                  <a href="#como-funciona-aniversariante" className="hover:text-primary transition-colors">
+                    Como funciona
+                  </a>
+                </li>
+                <li>
+                  <Link to="/cadastro/aniversariante" className="hover:text-primary transition-colors">
+                    Cadastrar
+                  </Link>
+                </li>
+                <li>
+                  <a href="#faq" className="hover:text-primary transition-colors">
+                    FAQ
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Coluna Estabelecimentos */}
+            <div>
+              <h3 className="text-lg font-bold text-primary mb-4">Estabelecimentos</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>
+                  <a href="#como-funciona-estabelecimento" className="hover:text-primary transition-colors">
+                    Como funciona
+                  </a>
+                </li>
+                <li>
+                  <Link to="/cadastro/estabelecimento" className="hover:text-primary transition-colors">
+                    Seja parceiro
+                  </Link>
+                </li>
+                <li>
+                  <a href="#vantagens-estabelecimentos" className="hover:text-primary transition-colors">
+                    Vantagens
+                  </a>
+                </li>
+                <li>
+                  <a href="#suporte" className="hover:text-primary transition-colors">
+                    Suporte
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Coluna Suporte */}
+            <div id="suporte">
+              <h3 className="text-lg font-bold text-primary mb-4">Suporte</h3>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-primary flex-shrink-0" />
+                  <a href="https://wa.me/5548996243161" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                    (48) 99624-3161
+                  </a>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-primary flex-shrink-0" />
+                  <a href="mailto:aniversariantevip@gmail.com" className="hover:text-primary transition-colors">
+                    aniversariantevip@gmail.com
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Redes Sociais */}
+          <div className="border-t pt-6">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <p className="text-sm text-muted-foreground">
+                &copy; 2024 Aniversariante VIP - Todos os direitos reservados
+              </p>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-muted-foreground">Siga-nos:</span>
+                <a
+                  href="https://www.instagram.com/aniversariantevip"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:text-primary/80 transition-colors"
+                  aria-label="Instagram"
+                >
+                  <Instagram className="h-5 w-5" />
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

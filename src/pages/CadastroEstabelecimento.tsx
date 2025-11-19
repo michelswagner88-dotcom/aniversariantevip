@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Crown, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { resizeImage } from "@/lib/imageUtils";
 
 export default function CadastroEstabelecimento() {
   const navigate = useNavigate();
@@ -37,9 +38,42 @@ export default function CadastroEstabelecimento() {
     facebook: "",
   });
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setLogoFile(e.target.files[0]);
+      const file = e.target.files[0];
+      
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Por favor, selecione um arquivo de imagem válido",
+        });
+        return;
+      }
+      
+      try {
+        toast({
+          title: "Processando imagem...",
+          description: "Ajustando dimensões da imagem",
+        });
+        
+        // Redimensionar imagem antes de salvar
+        const resizedFile = await resizeImage(file, 800, 800, 0.85);
+        setLogoFile(resizedFile);
+        
+        toast({
+          title: "Imagem processada",
+          description: "A imagem foi ajustada com sucesso",
+        });
+      } catch (error) {
+        console.error("Erro ao processar imagem:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível processar a imagem",
+        });
+      }
     }
   };
 

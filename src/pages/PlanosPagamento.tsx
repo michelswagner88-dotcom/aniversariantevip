@@ -12,7 +12,8 @@ const PLANS = {
     name: "Mensal",
     price: "R$ 49,00",
     period: "/mês",
-    priceId: "price_1SVcAsAcRKjU8CGQeMIdjUdC",
+    subscriptionPriceId: "price_1SVcAsAcRKjU8CGQeMIdjUdC",
+    oneTimePriceId: "price_1SVe7TAcRKjU8CGQaRy3sobz",
     totalValue: "R$ 49,00",
     commitment: "1 mês",
     savings: null,
@@ -22,7 +23,8 @@ const PLANS = {
     name: "Trimestral",
     price: "R$ 43,00",
     period: "/mês",
-    priceId: "price_1SVcR8AcRKjU8CGQGKl8Kda6",
+    subscriptionPriceId: "price_1SVcR8AcRKjU8CGQGKl8Kda6",
+    oneTimePriceId: "price_1SVe7yAcRKjU8CGQqXpLDknu",
     totalValue: "R$ 129,00",
     commitment: "3 meses",
     savings: "Economize 12%",
@@ -32,7 +34,8 @@ const PLANS = {
     name: "Semestral",
     price: "R$ 40,00",
     period: "/mês",
-    priceId: "price_1SVcRIAcRKjU8CGQlSnekIxY",
+    subscriptionPriceId: "price_1SVcRIAcRKjU8CGQlSnekIxY",
+    oneTimePriceId: "price_1SVeA4AcRKjU8CGQlslQYa9L",
     totalValue: "R$ 240,00",
     commitment: "6 meses",
     savings: "Economize 18%",
@@ -42,7 +45,8 @@ const PLANS = {
     name: "Anual",
     price: "R$ 37,42",
     period: "/mês",
-    priceId: "price_1SVcRSAcRKjU8CGQZzNaPbcA",
+    subscriptionPriceId: "price_1SVcRSAcRKjU8CGQZzNaPbcA",
+    oneTimePriceId: "price_1SVeAEAcRKjU8CGQfXMeTVOj",
     totalValue: "R$ 449,00",
     commitment: "12 meses",
     savings: "Economize 24%",
@@ -62,7 +66,7 @@ export default function PlanosPagamento() {
   const [loading, setLoading] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleSubscribe = async (priceId: string, planName: string) => {
+  const handleSubscribe = async (priceId: string, planName: string, paymentType: 'subscription' | 'onetime') => {
     try {
       setLoading(priceId);
       
@@ -74,7 +78,7 @@ export default function PlanosPagamento() {
       }
 
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId },
+        body: { priceId, paymentType },
       });
 
       if (error) throw error;
@@ -141,14 +145,25 @@ export default function PlanosPagamento() {
                   ))}
                 </ul>
 
-                <Button
-                  className="w-full"
-                  variant={plan.popular ? "default" : "outline"}
-                  onClick={() => handleSubscribe(plan.priceId, plan.name)}
-                  disabled={loading !== null}
-                >
-                  {loading === plan.priceId ? "Processando..." : "Assinar Agora"}
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    className="w-full"
+                    variant={plan.popular ? "default" : "outline"}
+                    onClick={() => handleSubscribe(plan.subscriptionPriceId, plan.name, 'subscription')}
+                    disabled={loading !== null}
+                  >
+                    {loading === plan.subscriptionPriceId ? "Processando..." : "Parcelar no Cartão"}
+                  </Button>
+                  
+                  <Button
+                    className="w-full"
+                    variant="secondary"
+                    onClick={() => handleSubscribe(plan.oneTimePriceId, plan.name, 'onetime')}
+                    disabled={loading !== null}
+                  >
+                    {loading === plan.oneTimePriceId ? "Processando..." : "PIX ou Boleto à Vista"}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

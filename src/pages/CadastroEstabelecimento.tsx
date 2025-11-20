@@ -30,7 +30,9 @@ export default function CadastroEstabelecimento() {
     linkCardapioDigital: "",
     beneficiosAniversariante: "",
     regrasAniversariante: "",
-    periodoValidade: "dia",
+    validoDia: false,
+    validoSemana: false,
+    validoMes: false,
     logoUrl: "",
     telefoneContato: "",
     emailContato: "",
@@ -125,6 +127,15 @@ export default function CadastroEstabelecimento() {
       return;
     }
 
+    if (!formData.validoDia && !formData.validoSemana && !formData.validoMes) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Selecione pelo menos um período de validade",
+      });
+      return;
+    }
+
     if (!formData.estado) {
       toast({
         variant: "destructive",
@@ -139,15 +150,6 @@ export default function CadastroEstabelecimento() {
         variant: "destructive",
         title: "Erro",
         description: "Selecione uma cidade",
-      });
-      return;
-    }
-
-    if (!formData.periodoValidade) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Selecione o período de validade do benefício",
       });
       return;
     }
@@ -486,20 +488,47 @@ export default function CadastroEstabelecimento() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="periodoValidade">Período de Validade do Benefício *</Label>
-                  <Select 
-                    value={formData.periodoValidade} 
-                    onValueChange={(value) => setFormData({ ...formData, periodoValidade: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="dia">Somente no dia do aniversário</SelectItem>
-                      <SelectItem value="mes">Durante o mês do aniversário</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-3">
+                  <Label>Período de Validade do Benefício *</Label>
+                  <p className="text-sm text-muted-foreground mb-2">Selecione quando o benefício pode ser utilizado (pode escolher mais de uma opção)</p>
+                  <div className="space-y-3 border rounded-lg p-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="validoDia"
+                        checked={formData.validoDia}
+                        onChange={(e) => setFormData({ ...formData, validoDia: e.target.checked })}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <Label htmlFor="validoDia" className="font-normal cursor-pointer">
+                        Válido no dia do aniversário
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="validoSemana"
+                        checked={formData.validoSemana}
+                        onChange={(e) => setFormData({ ...formData, validoSemana: e.target.checked })}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <Label htmlFor="validoSemana" className="font-normal cursor-pointer">
+                        Válido na semana do aniversário
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="validoMes"
+                        checked={formData.validoMes}
+                        onChange={(e) => setFormData({ ...formData, validoMes: e.target.checked })}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <Label htmlFor="validoMes" className="font-normal cursor-pointer">
+                        Válido no mês do aniversário
+                      </Label>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

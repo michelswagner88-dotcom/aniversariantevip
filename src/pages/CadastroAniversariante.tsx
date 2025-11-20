@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Crown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { aniversarianteSchema } from "@/lib/validation";
 
 export default function CadastroAniversariante() {
   const navigate = useNavigate();
@@ -42,23 +43,29 @@ export default function CadastroAniversariante() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.senha !== formData.confirmarSenha) {
+    // Validate form data with Zod
+    const validationResult = aniversarianteSchema.safeParse(formData);
+    
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors;
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "As senhas não conferem",
+        title: "Erro de validação",
+        description: errors[0]?.message || "Verifique os campos do formulário",
       });
       return;
     }
 
+    const validatedData = validationResult.data;
+
     try {
       // Criar usuário no Supabase Auth
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.senha,
+        email: validatedData.email,
+        password: validatedData.senha,
         options: {
           data: {
-            nome: formData.nomeCompleto,
+            nome: validatedData.nomeCompleto,
           },
           emailRedirectTo: `${window.location.origin}/`,
         },
@@ -77,14 +84,14 @@ export default function CadastroAniversariante() {
 
       if (roleError) throw roleError;
 
-      // Inserir dados específicos do aniversariante
+      // Inserir dados específicos do aniversariante (using validated data)
       const { error: profileError } = await supabase
         .from("aniversariantes")
         .insert({
           id: authData.user.id,
-          cpf: formData.cpf,
-          data_nascimento: formData.dataNascimento,
-          telefone: formData.telefone,
+          cpf: validatedData.cpf, // Already cleaned by zod transform
+          data_nascimento: validatedData.dataNascimento,
+          telefone: validatedData.telefone, // Already cleaned by zod transform
         });
 
       if (profileError) throw profileError;

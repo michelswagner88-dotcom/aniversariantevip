@@ -911,22 +911,35 @@ export default function Index() {
                     </a>
                   )}
                   
-                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
-                    <p className="text-sm font-semibold text-primary mb-1">🎁 Benefício</p>
-                    <p className="text-sm sm:text-base text-foreground">{estabelecimento.beneficiosAniversariante}</p>
-                  </div>
+                  {currentUser ? (
+                    <>
+                      <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                        <p className="text-sm font-semibold text-primary mb-1">🎁 Benefício</p>
+                        <p className="text-sm sm:text-base text-foreground">{estabelecimento.beneficiosAniversariante}</p>
+                      </div>
 
-                  <div className="text-xs sm:text-sm text-muted-foreground italic">
-                    <div>{estabelecimento.regrasAniversariante}</div>
-                    <div className="mt-1">Apresentar cupom emitido.</div>
-                  </div>
-                  
-                  <Button 
-                    className="w-full h-11 text-base font-semibold" 
-                    onClick={() => handleEmitirCupom(estabelecimento)}
-                  >
-                    Emitir Cupom
-                  </Button>
+                      <div className="text-xs sm:text-sm text-muted-foreground italic">
+                        <div>{estabelecimento.regrasAniversariante}</div>
+                        <div className="mt-1">Apresentar cupom emitido.</div>
+                      </div>
+                      
+                      <Button 
+                        className="w-full h-11 text-base font-semibold" 
+                        onClick={() => handleEmitirCupom(estabelecimento)}
+                      >
+                        Emitir Cupom
+                      </Button>
+                    </>
+                  ) : (
+                    <Link to="/cadastro/aniversariante" className="block">
+                      <Button 
+                        variant="outline"
+                        className="w-full h-11 text-base font-semibold" 
+                      >
+                        Veja os Benefícios
+                      </Button>
+                    </Link>
+                  )}
                 </CardContent>
               </Card>
             ))}

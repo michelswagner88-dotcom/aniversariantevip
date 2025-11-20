@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Crown, Gift, MapPin, Search, LogOut, Download, User, Calendar, Building, X, Phone, Clock, ExternalLink, Instagram, ChevronDown, Mail, Heart, Menu } from "lucide-react";
+import { Crown, Gift, MapPin, Search, LogOut, Download, User, Calendar, Building, X, Phone, Clock, ExternalLink, Instagram, ChevronDown, Mail, Heart, Menu, Shield } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -550,6 +550,7 @@ export default function Index() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [cupomGerado, setCupomGerado] = useState<any>(null);
   const [showCupom, setShowCupom] = useState(false);
+  const [hasAdmins, setHasAdmins] = useState<boolean | null>(null);
 
   useEffect(() => {
     const user = localStorage.getItem("currentAniversariante");
@@ -568,7 +569,24 @@ export default function Index() {
       const parsed = JSON.parse(estabelecimentosCadastrados);
       setEstabelecimentos([...estabelecimentosFicticios, ...parsed]);
     }
+
+    // Verificar se há admins cadastrados
+    checkAdmins();
   }, []);
+
+  const checkAdmins = async () => {
+    try {
+      const { count } = await supabase
+        .from('user_roles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'admin');
+
+      setHasAdmins((count ?? 0) > 0);
+    } catch (error) {
+      console.error("Erro ao verificar admins:", error);
+      setHasAdmins(null);
+    }
+  };
 
   useEffect(() => {
     const pendingId = localStorage.getItem("pendingEstabelecimento");
@@ -753,6 +771,14 @@ export default function Index() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                {hasAdmins === false && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/setup-admin" className="cursor-pointer w-full">
+                      <Shield className="mr-2 h-4 w-4" />
+                      Setup Inicial
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link to="/login/colaborador" className="cursor-pointer w-full">
                     Acessar Painel

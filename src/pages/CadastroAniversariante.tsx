@@ -15,7 +15,6 @@ export default function CadastroAniversariante() {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     nomeCompleto: "",
-    cpf: "",
     email: "",
     telefone: "",
     estado: "",
@@ -43,29 +42,23 @@ export default function CadastroAniversariante() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate form data with Zod
-    const validationResult = aniversarianteSchema.safeParse(formData);
-    
-    if (!validationResult.success) {
-      const errors = validationResult.error.errors;
+    if (formData.senha !== formData.confirmarSenha) {
       toast({
         variant: "destructive",
         title: "Erro de validação",
-        description: errors[0]?.message || "Verifique os campos do formulário",
+        description: "As senhas não coincidem",
       });
       return;
     }
 
-    const validatedData = validationResult.data;
-
     try {
       // Criar usuário no Supabase Auth
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: validatedData.email,
-        password: validatedData.senha,
+        email: formData.email,
+        password: formData.senha,
         options: {
           data: {
-            nome: validatedData.nomeCompleto,
+            nome: formData.nomeCompleto,
           },
           emailRedirectTo: `${window.location.origin}/`,
         },
@@ -84,14 +77,14 @@ export default function CadastroAniversariante() {
 
       if (roleError) throw roleError;
 
-      // Inserir dados específicos do aniversariante (using validated data)
+      // Inserir dados específicos do aniversariante
       const { error: profileError } = await supabase
         .from("aniversariantes")
         .insert({
           id: authData.user.id,
-          cpf: validatedData.cpf, // Already cleaned by zod transform
-          data_nascimento: validatedData.dataNascimento,
-          telefone: validatedData.telefone, // Already cleaned by zod transform
+          cpf: "",
+          data_nascimento: formData.dataNascimento,
+          telefone: formData.telefone,
         });
 
       if (profileError) throw profileError;
@@ -124,25 +117,14 @@ export default function CadastroAniversariante() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="nomeCompleto">Nome Completo *</Label>
-                <Input
-                  id="nomeCompleto"
-                  required
-                  value={formData.nomeCompleto}
-                  onChange={(e) => setFormData({ ...formData, nomeCompleto: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cpf">CPF *</Label>
-                <Input
-                  id="cpf"
-                  required
-                  value={formData.cpf}
-                  onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="nomeCompleto">Nome Completo *</Label>
+              <Input
+                id="nomeCompleto"
+                required
+                value={formData.nomeCompleto}
+                onChange={(e) => setFormData({ ...formData, nomeCompleto: e.target.value })}
+              />
             </div>
             
             <div className="grid md:grid-cols-2 gap-4">

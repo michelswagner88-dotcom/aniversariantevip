@@ -8,6 +8,7 @@ import CadastroAniversariante from "./pages/CadastroAniversariante";
 import LoginAniversariante from "./pages/LoginAniversariante";
 import AreaAniversariante from "./pages/AreaAniversariante";
 import CadastroEstabelecimento from "./pages/CadastroEstabelecimento";
+import PlanosPagamento from "./pages/PlanosPagamento";
 import LoginEstabelecimento from "./pages/LoginEstabelecimento";
 import AreaEstabelecimento from "./pages/AreaEstabelecimento";
 import LoginColaborador from "./pages/LoginColaborador";
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/login/colaborador" element={<LoginColaborador />} />
           <Route path="/area-colaborador" element={<AreaColaborador />} />
           <Route path="/setup-admin" element={<SetupAdmin />} />
+          <Route path="/planos" element={<PlanosPagamento />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

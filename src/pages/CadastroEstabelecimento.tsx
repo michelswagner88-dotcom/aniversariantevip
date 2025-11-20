@@ -6,16 +6,26 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Crown, Upload } from "lucide-react";
+import { Crown, Upload, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { resizeImage } from "@/lib/imageUtils";
+
+type HorarioFuncionamento = {
+  id: string;
+  dias: string[];
+  abertura: string;
+  fechamento: string;
+};
 
 export default function CadastroEstabelecimento() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [horariosFuncionamento, setHorariosFuncionamento] = useState<HorarioFuncionamento[]>([
+    { id: '1', dias: [], abertura: '', fechamento: '' }
+  ]);
   const [formData, setFormData] = useState({
     nomeFantasia: "",
     email: "",
@@ -26,7 +36,6 @@ export default function CadastroEstabelecimento() {
     estado: "",
     cidade: "",
     endereco: "",
-    diasHorarioFuncionamento: "",
     linkCardapioDigital: "",
     beneficiosAniversariante: "",
     regrasAniversariante: "",
@@ -39,6 +48,56 @@ export default function CadastroEstabelecimento() {
     instagram: "",
     facebook: "",
   });
+
+  const diasSemana = [
+    { value: 'segunda', label: 'Segunda' },
+    { value: 'terca', label: 'Terça' },
+    { value: 'quarta', label: 'Quarta' },
+    { value: 'quinta', label: 'Quinta' },
+    { value: 'sexta', label: 'Sexta' },
+    { value: 'sabado', label: 'Sábado' },
+    { value: 'domingo', label: 'Domingo' },
+  ];
+
+  const adicionarHorario = () => {
+    setHorariosFuncionamento([
+      ...horariosFuncionamento,
+      { id: Date.now().toString(), dias: [], abertura: '', fechamento: '' }
+    ]);
+  };
+
+  const removerHorario = (id: string) => {
+    setHorariosFuncionamento(horariosFuncionamento.filter(h => h.id !== id));
+  };
+
+  const atualizarHorario = (id: string, campo: keyof HorarioFuncionamento, valor: any) => {
+    setHorariosFuncionamento(horariosFuncionamento.map(h => 
+      h.id === id ? { ...h, [campo]: valor } : h
+    ));
+  };
+
+  const toggleDia = (horarioId: string, dia: string) => {
+    const horario = horariosFuncionamento.find(h => h.id === horarioId);
+    if (!horario) return;
+
+    const novosDias = horario.dias.includes(dia)
+      ? horario.dias.filter(d => d !== dia)
+      : [...horario.dias, dia];
+
+    atualizarHorario(horarioId, 'dias', novosDias);
+  };
+
+  const formatarHorarios = () => {
+    return horariosFuncionamento
+      .filter(h => h.dias.length > 0 && h.abertura && h.fechamento)
+      .map(h => {
+        const diasFormatados = h.dias
+          .map(d => diasSemana.find(ds => ds.value === d)?.label)
+          .join(', ');
+        return `${diasFormatados}: ${h.abertura} às ${h.fechamento}`;
+      })
+      .join(' | ');
+  };
 
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -136,20 +195,13 @@ export default function CadastroEstabelecimento() {
       return;
     }
 
-    if (!formData.estado) {
+    const horarioFormatado = formatarHorarios();
+    
+    if (!horarioFormatado) {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Selecione um estado",
-      });
-      return;
-    }
-
-    if (!formData.cidade) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Selecione uma cidade",
+        description: "Configure pelo menos um horário de funcionamento",
       });
       return;
     }
@@ -197,6 +249,7 @@ export default function CadastroEstabelecimento() {
 
     const novoEstabelecimento = {
       ...formData,
+      diasHorarioFuncionamento: horarioFormatado,
       logoUrl,
       id: Date.now().toString(),
       senhaHash: formData.senha,
@@ -381,15 +434,97 @@ export default function CadastroEstabelecimento() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="diasHorarioFuncionamento">Dias e Horário de Funcionamento *</Label>
-                  <Textarea
-                    id="diasHorarioFuncionamento"
-                    required
-                    placeholder="Ex: Seg a Sex: 18h às 23h | Sáb e Dom: 19h às 02h"
-                    value={formData.diasHorarioFuncionamento}
-                    onChange={(e) => setFormData({ ...formData, diasHorarioFuncionamento: e.target.value })}
-                  />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label>Horários de Funcionamento *</Label>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={adicionarHorario}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Adicionar Horário
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {horariosFuncionamento.map((horario, index) => (
+                      <Card key={horario.id} className="p-4">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold text-sm">Período {index + 1}</h4>
+                            {horariosFuncionamento.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removerHorario(horario.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label className="text-sm">Dias da Semana</Label>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {diasSemana.map((dia) => (
+                                <div key={dia.value} className="flex items-center space-x-2">
+                                  <input
+                                    type="checkbox"
+                                    id={`${horario.id}-${dia.value}`}
+                                    checked={horario.dias.includes(dia.value)}
+                                    onChange={() => toggleDia(horario.id, dia.value)}
+                                    className="h-4 w-4 rounded border-gray-300"
+                                  />
+                                  <Label 
+                                    htmlFor={`${horario.id}-${dia.value}`}
+                                    className="text-sm font-normal cursor-pointer"
+                                  >
+                                    {dia.label}
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`abertura-${horario.id}`} className="text-sm">
+                                Horário de Abertura
+                              </Label>
+                              <Input
+                                id={`abertura-${horario.id}`}
+                                type="time"
+                                value={horario.abertura}
+                                onChange={(e) => atualizarHorario(horario.id, 'abertura', e.target.value)}
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`fechamento-${horario.id}`} className="text-sm">
+                                Horário de Fechamento
+                              </Label>
+                              <Input
+                                id={`fechamento-${horario.id}`}
+                                type="time"
+                                value={horario.fechamento}
+                                onChange={(e) => atualizarHorario(horario.id, 'fechamento', e.target.value)}
+                                required
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                  
+                  {formatarHorarios() && (
+                    <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                      <strong>Prévia:</strong> {formatarHorarios()}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">

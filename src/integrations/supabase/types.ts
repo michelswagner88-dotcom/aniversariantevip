@@ -38,6 +38,33 @@ export type Database = {
         }
         Relationships: []
       }
+      aniversariantes: {
+        Row: {
+          cpf: string
+          created_at: string | null
+          data_nascimento: string
+          id: string
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cpf: string
+          created_at?: string | null
+          data_nascimento: string
+          id: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cpf?: string
+          created_at?: string | null
+          data_nascimento?: string
+          id?: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       cupons: {
         Row: {
           aniversariante_id: string
@@ -71,6 +98,45 @@ export type Database = {
           estabelecimento_id?: string
           id?: string
           usado?: boolean
+        }
+        Relationships: []
+      }
+      estabelecimentos: {
+        Row: {
+          cnpj: string
+          created_at: string | null
+          descricao_beneficio: string | null
+          endereco: string | null
+          id: string
+          logo_url: string | null
+          nome_fantasia: string | null
+          razao_social: string
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cnpj: string
+          created_at?: string | null
+          descricao_beneficio?: string | null
+          endereco?: string | null
+          id: string
+          logo_url?: string | null
+          nome_fantasia?: string | null
+          razao_social: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cnpj?: string
+          created_at?: string | null
+          descricao_beneficio?: string | null
+          endereco?: string | null
+          id?: string
+          logo_url?: string | null
+          nome_fantasia?: string | null
+          razao_social?: string
+          telefone?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }

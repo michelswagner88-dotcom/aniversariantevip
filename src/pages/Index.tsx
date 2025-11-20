@@ -554,7 +554,13 @@ export default function Index() {
   useEffect(() => {
     const user = localStorage.getItem("currentAniversariante");
     if (user) {
-      setCurrentUser(JSON.parse(user));
+      const userData = JSON.parse(user);
+      setCurrentUser(userData);
+      
+      // Filtrar automaticamente pelo estado do usuário
+      if (userData.estado) {
+        setSelectedEstado(userData.estado);
+      }
     }
 
     const estabelecimentosCadastrados = localStorage.getItem("estabelecimentos");

@@ -968,20 +968,40 @@ export default function Index() {
                 </div>
               )}
 
-              <div>
-                <h4 className="font-semibold mb-2 text-base">Benefício</h4>
-                <p className="text-sm sm:text-base text-primary font-medium">{selectedEstabelecimento.beneficiosAniversariante}</p>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold mb-2 text-base">Regras</h4>
-                <p className="text-sm sm:text-base text-muted-foreground">{selectedEstabelecimento.regrasAniversariante}</p>
-              </div>
-              
-              <Button onClick={handleSolicitarCupom} className="w-full h-12 text-base font-semibold">
-                <Gift className="mr-2 h-5 w-5" />
-                Emitir Cupom
-              </Button>
+              {currentUser ? (
+                <>
+                  <div>
+                    <h4 className="font-semibold mb-2 text-base">🎁 Benefício</h4>
+                    <p className="text-sm sm:text-base text-primary font-medium">{selectedEstabelecimento.beneficiosAniversariante}</p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-semibold mb-2 text-base">Regras</h4>
+                    <p className="text-sm sm:text-base text-muted-foreground">{selectedEstabelecimento.regrasAniversariante}</p>
+                  </div>
+                  
+                  <Button onClick={handleSolicitarCupom} className="w-full h-12 text-base font-semibold">
+                    <Gift className="mr-2 h-5 w-5" />
+                    Emitir Cupom
+                  </Button>
+                </>
+              ) : (
+                <div className="bg-primary/10 border border-primary/20 rounded-lg p-6 text-center space-y-4">
+                  <div className="space-y-2">
+                    <Gift className="h-12 w-12 mx-auto text-primary" />
+                    <h4 className="font-semibold text-lg">Faça login para ver os benefícios</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Cadastre-se gratuitamente e tenha acesso aos benefícios exclusivos para aniversariantes
+                    </p>
+                  </div>
+                  <Link to="/cadastro/aniversariante">
+                    <Button className="w-full h-12 text-base font-semibold">
+                      <User className="mr-2 h-5 w-5" />
+                      Cadastrar Agora
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

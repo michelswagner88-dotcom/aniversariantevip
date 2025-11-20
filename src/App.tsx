@@ -12,6 +12,7 @@ import LoginEstabelecimento from "./pages/LoginEstabelecimento";
 import AreaEstabelecimento from "./pages/AreaEstabelecimento";
 import LoginColaborador from "./pages/LoginColaborador";
 import AreaColaborador from "./pages/AreaColaborador";
+import SetupAdmin from "./pages/SetupAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/area-estabelecimento" element={<AreaEstabelecimento />} />
           <Route path="/login/colaborador" element={<LoginColaborador />} />
           <Route path="/area-colaborador" element={<AreaColaborador />} />
+          <Route path="/setup-admin" element={<SetupAdmin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

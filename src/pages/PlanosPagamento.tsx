@@ -13,30 +13,38 @@ const PLANS = {
     price: "R$ 49,00",
     period: "/mês",
     priceId: "price_1SVcAsAcRKjU8CGQeMIdjUdC",
+    totalValue: "R$ 49,00",
+    commitment: "1 mês",
     savings: null,
     popular: false,
   },
   quarterly: {
     name: "Trimestral",
-    price: "R$ 129,00",
-    period: "/trimestre",
-    priceId: "price_1SVcB7AcRKjU8CGQjqMzv4fx",
+    price: "R$ 43,00",
+    period: "/mês",
+    priceId: "price_1SVcR8AcRKjU8CGQGKl8Kda6",
+    totalValue: "R$ 129,00",
+    commitment: "3 meses",
     savings: "Economize 12%",
     popular: false,
   },
   semester: {
     name: "Semestral",
-    price: "R$ 239,00",
-    period: "/semestre",
-    priceId: "price_1SVcBPAcRKjU8CGQbUILm2OU",
-    savings: "Economize 19%",
+    price: "R$ 40,00",
+    period: "/mês",
+    priceId: "price_1SVcRIAcRKjU8CGQlSnekIxY",
+    totalValue: "R$ 240,00",
+    commitment: "6 meses",
+    savings: "Economize 18%",
     popular: false,
   },
   annual: {
     name: "Anual",
-    price: "R$ 449,00",
-    period: "/ano",
-    priceId: "price_1SVcBhAcRKjU8CGQ9OBmBh9e",
+    price: "R$ 37,42",
+    period: "/mês",
+    priceId: "price_1SVcRSAcRKjU8CGQZzNaPbcA",
+    totalValue: "R$ 449,00",
+    commitment: "12 meses",
     savings: "Economize 24%",
     popular: true,
   },
@@ -113,6 +121,9 @@ export default function PlanosPagamento() {
                     {plan.period}
                   </span>
                 </CardDescription>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Total: {plan.totalValue} • Compromisso: {plan.commitment}
+                </p>
                 {plan.savings && (
                   <Badge variant="secondary" className="w-fit mt-2">
                     {plan.savings}

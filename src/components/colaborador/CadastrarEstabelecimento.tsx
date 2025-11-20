@@ -6,11 +6,18 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Building2, Loader2, Upload } from "lucide-react";
+import { Building2, Loader2, Upload, Plus, Trash2 } from "lucide-react";
 import { z } from "zod";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { resizeImage } from "@/lib/imageUtils";
+
+type HorarioFuncionamento = {
+  id: string;
+  dias: string[];
+  abertura: string;
+  fechamento: string;
+};
 
 const estabelecimentoSchema = z.object({
   email: z.string().email("Email inválido").max(255),
@@ -28,6 +35,9 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
   const [loading, setLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
+  const [horariosFuncionamento, setHorariosFuncionamento] = useState<HorarioFuncionamento[]>([
+    { id: '1', dias: [], abertura: '', fechamento: '' }
+  ]);
   
   const [formData, setFormData] = useState({
     email: "",
@@ -37,8 +47,59 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
     cnpj: "",
     telefone: "",
     endereco: "",
+    categoria: "",
     descricaoBeneficio: "",
   });
+
+  const diasSemana = [
+    { value: 'segunda', label: 'Segunda' },
+    { value: 'terca', label: 'Terça' },
+    { value: 'quarta', label: 'Quarta' },
+    { value: 'quinta', label: 'Quinta' },
+    { value: 'sexta', label: 'Sexta' },
+    { value: 'sabado', label: 'Sábado' },
+    { value: 'domingo', label: 'Domingo' },
+  ];
+
+  const adicionarHorario = () => {
+    setHorariosFuncionamento([
+      ...horariosFuncionamento,
+      { id: Date.now().toString(), dias: [], abertura: '', fechamento: '' }
+    ]);
+  };
+
+  const removerHorario = (id: string) => {
+    setHorariosFuncionamento(horariosFuncionamento.filter(h => h.id !== id));
+  };
+
+  const atualizarHorario = (id: string, campo: keyof HorarioFuncionamento, valor: any) => {
+    setHorariosFuncionamento(horariosFuncionamento.map(h => 
+      h.id === id ? { ...h, [campo]: valor } : h
+    ));
+  };
+
+  const toggleDia = (horarioId: string, dia: string) => {
+    const horario = horariosFuncionamento.find(h => h.id === horarioId);
+    if (!horario) return;
+
+    const novosDias = horario.dias.includes(dia)
+      ? horario.dias.filter(d => d !== dia)
+      : [...horario.dias, dia];
+
+    atualizarHorario(horarioId, 'dias', novosDias);
+  };
+
+  const formatarHorarios = () => {
+    return horariosFuncionamento
+      .filter(h => h.dias.length > 0 && h.abertura && h.fechamento)
+      .map(h => {
+        const diasFormatados = h.dias
+          .map(d => diasSemana.find(ds => ds.value === d)?.label)
+          .join(', ');
+        return `${diasFormatados}: ${h.abertura} às ${h.fechamento}`;
+      })
+      .join(' | ');
+  };
 
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -144,10 +205,12 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
         cnpj: "",
         telefone: "",
         endereco: "",
+        categoria: "",
         descricaoBeneficio: "",
       });
       setLogoFile(null);
       setLogoPreview("");
+      setHorariosFuncionamento([{ id: '1', dias: [], abertura: '', fechamento: '' }]);
       
       if (onSuccess) onSuccess();
     } catch (error: any) {
@@ -259,6 +322,27 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="categoria">Categoria</Label>
+              <Select 
+                value={formData.categoria} 
+                onValueChange={(value) => setFormData({ ...formData, categoria: value })}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a categoria" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="bar">Bar</SelectItem>
+                  <SelectItem value="restaurante">Restaurante</SelectItem>
+                  <SelectItem value="balada">Balada</SelectItem>
+                  <SelectItem value="loja">Loja</SelectItem>
+                  <SelectItem value="servico">Serviço</SelectItem>
+                  <SelectItem value="outros">Outros</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="endereco">Endereço</Label>
               <Input
                 id="endereco"
@@ -267,6 +351,91 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                 required
                 maxLength={500}
               />
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Horários de Funcionamento</Label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={adicionarHorario}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Horário
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                {horariosFuncionamento.map((horario, index) => (
+                  <Card key={horario.id} className="p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold text-sm">Período {index + 1}</h4>
+                        {horariosFuncionamento.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removerHorario(horario.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="text-sm">Dias da Semana</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {diasSemana.map((dia) => (
+                            <div key={dia.value} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={`${horario.id}-${dia.value}`}
+                                checked={horario.dias.includes(dia.value)}
+                                onChange={() => toggleDia(horario.id, dia.value)}
+                                className="h-4 w-4 rounded border-gray-300 cursor-pointer"
+                              />
+                              <Label 
+                                htmlFor={`${horario.id}-${dia.value}`}
+                                className="text-sm font-normal cursor-pointer"
+                              >
+                                {dia.label}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor={`abertura-${horario.id}`} className="text-sm">
+                            Horário de Abertura
+                          </Label>
+                          <Input
+                            id={`abertura-${horario.id}`}
+                            type="time"
+                            value={horario.abertura}
+                            onChange={(e) => atualizarHorario(horario.id, 'abertura', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`fechamento-${horario.id}`} className="text-sm">
+                            Horário de Fechamento
+                          </Label>
+                          <Input
+                            id={`fechamento-${horario.id}`}
+                            type="time"
+                            value={horario.fechamento}
+                            onChange={(e) => atualizarHorario(horario.id, 'fechamento', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2">

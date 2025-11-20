@@ -563,11 +563,6 @@ export default function Index() {
       }
     }
 
-    const estabelecimentosCadastrados = localStorage.getItem("estabelecimentos");
-    if (estabelecimentosCadastrados) {
-      const parsed = JSON.parse(estabelecimentosCadastrados);
-      setEstabelecimentos([...estabelecimentosFicticios, ...parsed]);
-    }
   }, []);
 
   useEffect(() => {

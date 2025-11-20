@@ -47,36 +47,75 @@ export default function AreaEstabelecimento() {
   }, []);
 
   const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      const currentUser = localStorage.getItem("currentEstabelecimento");
-      if (!currentUser) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
         navigate("/login/estabelecimento");
         return;
       }
-      const localUser = JSON.parse(currentUser);
-      setUserData(localUser);
-      setFormData({
-        nomeFantasia: localUser.nomeFantasia,
-        email: localUser.email,
-        telefone: localUser.telefone,
-        categoria: localUser.categoria,
-        endereco: localUser.endereco,
-        diasHorarioFuncionamento: localUser.diasHorarioFuncionamento,
-        linkCardapioDigital: localUser.linkCardapioDigital,
-        beneficiosAniversariante: localUser.beneficiosAniversariante,
-        regrasAniversariante: localUser.regrasAniversariante,
-        periodoValidade: localUser.periodoValidade || "dia",
-        logoUrl: localUser.logoUrl || "",
-        telefoneContato: localUser.telefoneContato || "",
-        emailContato: localUser.emailContato || "",
-        instagram: localUser.instagram || "",
-        facebook: localUser.facebook || "",
-      });
-      return;
+
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id);
+
+      if (!roles?.some(r => r.role === "estabelecimento")) {
+        navigate("/login/estabelecimento");
+        return;
+      }
+
+      const { data: estabelecimento } = await supabase
+        .from("estabelecimentos")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+
+      if (estabelecimento) {
+        setUserId(session.user.id);
+        setUserData({
+          id: estabelecimento.id,
+          email: session.user.email || "",
+          razaoSocial: estabelecimento.razao_social,
+          nomeFantasia: estabelecimento.nome_fantasia || "",
+          cnpj: estabelecimento.cnpj,
+          telefone: estabelecimento.telefone || "",
+          categoria: "",
+          endereco: estabelecimento.endereco || "",
+          diasHorarioFuncionamento: "",
+          linkCardapioDigital: "",
+          beneficiosAniversariante: estabelecimento.descricao_beneficio || "",
+          regrasAniversariante: "",
+          periodoValidade: "dia",
+          logoUrl: estabelecimento.logo_url || "",
+          telefoneContato: "",
+          emailContato: "",
+          instagram: "",
+          facebook: "",
+        });
+        setFormData({
+          nomeFantasia: estabelecimento.nome_fantasia || "",
+          email: session.user.email || "",
+          telefone: estabelecimento.telefone || "",
+          categoria: "",
+          endereco: estabelecimento.endereco || "",
+          diasHorarioFuncionamento: "",
+          linkCardapioDigital: "",
+          beneficiosAniversariante: estabelecimento.descricao_beneficio || "",
+          regrasAniversariante: "",
+          periodoValidade: "dia",
+          logoUrl: estabelecimento.logo_url || "",
+          telefoneContato: "",
+          emailContato: "",
+          instagram: "",
+          facebook: "",
+        });
+        await loadCuponsEmitidos(session.user.id);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      navigate("/login/estabelecimento");
     }
-    setUserId(user.id);
-    loadCuponsEmitidos(user.id);
   };
 
   const loadCuponsEmitidos = async (estabelecimentoId: string) => {
@@ -93,8 +132,8 @@ export default function AreaEstabelecimento() {
     setCuponsEmitidos(count || 0);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("currentEstabelecimento");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate("/");
   };
 
@@ -148,54 +187,64 @@ export default function AreaEstabelecimento() {
   };
 
   const handleSave = async () => {
-    let logoUrl = formData.logoUrl;
+    if (!userData) return;
 
-    // Upload da logo se houver arquivo novo
-    if (logoFile) {
-      setUploading(true);
-      const fileExt = logoFile.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('estabelecimento-logos')
-        .upload(fileName, logoFile);
+    try {
+      let logoUrl = formData.logoUrl;
 
-      if (uploadError) {
-        toast({
-          variant: "destructive",
-          title: "Erro no upload",
-          description: "Não foi possível fazer upload da logo",
-        });
+      // Upload da logo se houver arquivo novo
+      if (logoFile) {
+        setUploading(true);
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `${userId}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('estabelecimento-logos')
+          .upload(fileName, logoFile, {
+            upsert: true
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('estabelecimento-logos')
+          .getPublicUrl(fileName);
+        
+        logoUrl = publicUrl;
         setUploading(false);
-        return;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('estabelecimento-logos')
-        .getPublicUrl(fileName);
-      
-      logoUrl = publicUrl;
-      setUploading(false);
-    }
+      const { error } = await supabase
+        .from("estabelecimentos")
+        .update({
+          nome_fantasia: formData.nomeFantasia,
+          telefone: formData.telefone,
+          endereco: formData.endereco,
+          descricao_beneficio: formData.beneficiosAniversariante,
+          logo_url: logoUrl,
+        })
+        .eq("id", userId);
 
-    const updatedData = { ...formData, logoUrl };
-    const estabelecimentos = JSON.parse(localStorage.getItem("estabelecimentos") || "[]");
-    const updatedEstabelecimentos = estabelecimentos.map((e: any) => 
-      e.id === userData.id ? { ...e, ...updatedData } : e
-    );
-    
-    localStorage.setItem("estabelecimentos", JSON.stringify(updatedEstabelecimentos));
-    localStorage.setItem("currentEstabelecimento", JSON.stringify({ ...userData, ...updatedData }));
-    
-    setUserData({ ...userData, ...updatedData });
-    setFormData(updatedData);
-    setIsEditing(false);
-    setLogoFile(null);
-    
-    toast({
-      title: "Sucesso!",
-      description: "Dados atualizados com sucesso",
-    });
+      if (error) throw error;
+
+      const updatedData = { ...formData, logoUrl };
+      setUserData({ ...userData, ...updatedData });
+      setFormData(updatedData);
+      setIsEditing(false);
+      setLogoFile(null);
+      
+      toast({
+        title: "Sucesso!",
+        description: "Dados atualizados com sucesso",
+      });
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível salvar as alterações",
+      });
+    }
   };
 
   const handleSearchAniversariante = () => {

@@ -206,66 +206,88 @@ export default function CadastroEstabelecimento() {
       return;
     }
 
-    const estabelecimentos = JSON.parse(localStorage.getItem("estabelecimentos") || "[]");
-    
-    if (estabelecimentos.some((e: any) => e.email === formData.email)) {
+    setUploading(true);
+
+    try {
+      // Create user account
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.senha,
+        options: {
+          emailRedirectTo: `${window.location.origin}/area-estabelecimento`,
+          data: {
+            nome: formData.nomeFantasia,
+          },
+        },
+      });
+
+      if (signUpError) throw signUpError;
+      if (!authData.user) throw new Error("Erro ao criar usuário");
+
+      // Add estabelecimento role
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .insert({
+          user_id: authData.user.id,
+          role: "estabelecimento",
+        });
+
+      if (roleError) throw roleError;
+
+      let logoUrl = "";
+      
+      // Upload da logo se houver arquivo
+      if (logoFile) {
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `${authData.user.id}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('estabelecimento-logos')
+          .upload(fileName, logoFile, {
+            upsert: true
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('estabelecimento-logos')
+          .getPublicUrl(fileName);
+        
+        logoUrl = publicUrl;
+      }
+
+      // Insert establishment data
+      const { error: estabError } = await supabase
+        .from("estabelecimentos")
+        .insert({
+          id: authData.user.id,
+          razao_social: formData.nomeFantasia,
+          nome_fantasia: formData.nomeFantasia,
+          cnpj: "",
+          telefone: formData.telefone,
+          endereco: formData.endereco,
+          descricao_beneficio: formData.beneficiosAniversariante,
+          logo_url: logoUrl,
+        });
+
+      if (estabError) throw estabError;
+
+      toast({
+        title: "Sucesso!",
+        description: "Cadastro realizado com sucesso! Verifique seu email para confirmar.",
+      });
+
+      navigate("/login/estabelecimento");
+    } catch (error: any) {
+      console.error("Erro ao cadastrar:", error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "E-mail já cadastrado",
+        description: error.message || "Não foi possível cadastrar o estabelecimento. Tente novamente.",
       });
-      return;
-    }
-
-    let logoUrl = "";
-    
-    // Upload da logo se houver arquivo
-    if (logoFile) {
-      setUploading(true);
-      const fileExt = logoFile.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      
-      const { error: uploadError, data } = await supabase.storage
-        .from('estabelecimento-logos')
-        .upload(fileName, logoFile);
-
-      if (uploadError) {
-        toast({
-          variant: "destructive",
-          title: "Erro no upload",
-          description: "Não foi possível fazer upload da logo",
-        });
-        setUploading(false);
-        return;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('estabelecimento-logos')
-        .getPublicUrl(fileName);
-      
-      logoUrl = publicUrl;
+    } finally {
       setUploading(false);
     }
-
-    const novoEstabelecimento = {
-      ...formData,
-      diasHorarioFuncionamento: horarioFormatado,
-      logoUrl,
-      id: Date.now().toString(),
-      senhaHash: formData.senha,
-    };
-
-    estabelecimentos.push(novoEstabelecimento);
-    
-    localStorage.setItem("estabelecimentos", JSON.stringify(estabelecimentos));
-    localStorage.setItem("currentEstabelecimento", JSON.stringify(novoEstabelecimento));
-    
-    toast({
-      title: "Sucesso!",
-      description: "Cadastro realizado com sucesso",
-    });
-    
-    navigate("/area-estabelecimento");
   };
 
   return (

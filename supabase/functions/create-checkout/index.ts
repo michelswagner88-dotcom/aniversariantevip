@@ -35,10 +35,10 @@ serve(async (req) => {
     
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const { priceId } = await req.json();
+    const { priceId, paymentType = 'subscription' } = await req.json();
     if (!priceId) throw new Error("Price ID is required");
     
-    logStep("Price ID received", { priceId });
+    logStep("Price ID and payment type received", { priceId, paymentType });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
       apiVersion: "2025-08-27.basil" 
@@ -54,7 +54,7 @@ serve(async (req) => {
       logStep("No existing customer, will create on checkout");
     }
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionConfig: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
@@ -63,10 +63,22 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
-      mode: "subscription",
+      mode: paymentType === 'onetime' ? 'payment' : 'subscription',
       success_url: `${req.headers.get("origin")}/area-estabelecimento?success=true`,
       cancel_url: `${req.headers.get("origin")}/area-estabelecimento?canceled=true`,
-    });
+    };
+
+    // Enable PIX and boleto for one-time payments
+    if (paymentType === 'onetime') {
+      sessionConfig.payment_method_types = ['card', 'boleto'];
+      sessionConfig.payment_method_options = {
+        boleto: {
+          expires_after_days: 3,
+        },
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
 

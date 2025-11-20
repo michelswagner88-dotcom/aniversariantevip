@@ -10,6 +10,7 @@ import { Crown, Upload, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { resizeImage } from "@/lib/imageUtils";
+import { estabelecimentoSchema } from "@/lib/validation";
 
 type HorarioFuncionamento = {
   id: string;
@@ -168,14 +169,27 @@ export default function CadastroEstabelecimento() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.senha !== formData.confirmarSenha) {
+    // Validate core fields with Zod
+    const validationResult = estabelecimentoSchema.safeParse({
+      nomeFantasia: formData.nomeFantasia,
+      email: formData.email,
+      telefone: formData.telefone,
+      endereco: formData.endereco,
+      senha: formData.senha,
+      confirmarSenha: formData.confirmarSenha,
+    });
+    
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors;
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "As senhas não conferem",
+        title: "Erro de validação",
+        description: errors[0]?.message || "Verifique os campos do formulário",
       });
       return;
     }
+
+    const validatedData = validationResult.data;
 
     if (!formData.categoria) {
       toast({
@@ -209,14 +223,14 @@ export default function CadastroEstabelecimento() {
     setUploading(true);
 
     try {
-      // Create user account
+      // Create user account with validated data
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.senha,
+        email: validatedData.email,
+        password: validatedData.senha,
         options: {
           emailRedirectTo: `${window.location.origin}/area-estabelecimento`,
           data: {
-            nome: formData.nomeFantasia,
+            nome: validatedData.nomeFantasia,
           },
         },
       });
@@ -256,16 +270,16 @@ export default function CadastroEstabelecimento() {
         logoUrl = publicUrl;
       }
 
-      // Insert establishment data
+      // Insert establishment data with validated fields
       const { error: estabError } = await supabase
         .from("estabelecimentos")
         .insert({
           id: authData.user.id,
-          razao_social: formData.nomeFantasia,
-          nome_fantasia: formData.nomeFantasia,
-          cnpj: "",
-          telefone: formData.telefone,
-          endereco: formData.endereco,
+          razao_social: validatedData.nomeFantasia,
+          nome_fantasia: validatedData.nomeFantasia,
+          cnpj: "", // Empty CNPJ is allowed by constraint
+          telefone: validatedData.telefone, // Already cleaned by zod transform
+          endereco: validatedData.endereco,
           descricao_beneficio: formData.beneficiosAniversariante,
           logo_url: logoUrl,
         });

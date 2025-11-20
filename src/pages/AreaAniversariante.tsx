@@ -1,66 +1,126 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Crown, LogOut, Edit2, Save } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Crown, LogOut, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-export default function AreaAniversariante() {
+const AreaAniversariante = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    nomeCompleto: "",
-    cpf: "",
+    nome: "",
     email: "",
+    cpf: "",
     telefone: "",
     dataNascimento: "",
   });
 
   useEffect(() => {
-    const currentUser = localStorage.getItem("currentAniversariante");
-    if (!currentUser) {
-      navigate("/login/aniversariante");
-    } else {
-      const user = JSON.parse(currentUser);
-      setUserData(user);
-      setFormData({
-        nomeCompleto: user.nomeCompleto,
-        cpf: user.cpf,
-        email: user.email,
-        telefone: user.telefone,
-        dataNascimento: user.dataNascimento,
-      });
-    }
+    const checkAuthAndLoadData = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          navigate("/login/aniversariante");
+          return;
+        }
+
+        // Verificar se é aniversariante
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .eq('role', 'aniversariante')
+          .single();
+
+        if (!roles) {
+          await supabase.auth.signOut();
+          navigate("/login/aniversariante");
+          return;
+        }
+
+        // Carregar dados do perfil e aniversariante
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        const { data: aniversariante } = await supabase
+          .from('aniversariantes')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile && aniversariante) {
+          setFormData({
+            nome: profile.nome || "",
+            email: profile.email || "",
+            cpf: aniversariante.cpf || "",
+            telefone: aniversariante.telefone || "",
+            dataNascimento: aniversariante.data_nascimento || "",
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        toast.error("Erro ao carregar dados");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuthAndLoadData();
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("currentAniversariante");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("Logout realizado com sucesso!");
     navigate("/");
   };
 
-  const handleSave = () => {
-    const aniversariantes = JSON.parse(localStorage.getItem("aniversariantes") || "[]");
-    const updatedAniversariantes = aniversariantes.map((a: any) => 
-      a.id === userData.id ? { ...a, ...formData, dataNascimento: userData.dataNascimento } : a
-    );
-    
-    localStorage.setItem("aniversariantes", JSON.stringify(updatedAniversariantes));
-    localStorage.setItem("currentAniversariante", JSON.stringify({ ...userData, ...formData, dataNascimento: userData.dataNascimento }));
-    
-    setUserData({ ...userData, ...formData, dataNascimento: userData.dataNascimento });
-    setIsEditing(false);
-    
-    toast({
-      title: "Sucesso!",
-      description: "Dados atualizados com sucesso",
-    });
+  const handleSave = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Atualizar perfil
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ nome: formData.nome })
+        .eq('id', session.user.id);
+
+      if (profileError) throw profileError;
+
+      // Atualizar dados do aniversariante
+      const { error: anivError } = await supabase
+        .from('aniversariantes')
+        .update({
+          telefone: formData.telefone,
+        })
+        .eq('id', session.user.id);
+
+      if (anivError) throw anivError;
+
+      setIsEditing(false);
+      toast.success("Dados atualizados com sucesso!");
+    } catch (error: any) {
+      toast.error("Erro ao atualizar dados");
+      console.error("Erro:", error);
+    }
   };
 
-  if (!userData) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -85,11 +145,11 @@ export default function AreaAniversariante() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="nomeCompleto">Nome Completo</Label>
+              <Label htmlFor="nome">Nome Completo</Label>
               <Input
-                id="nomeCompleto"
-                value={formData.nomeCompleto}
-                onChange={(e) => setFormData({ ...formData, nomeCompleto: e.target.value })}
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                 disabled={!isEditing}
               />
             </div>
@@ -111,9 +171,10 @@ export default function AreaAniversariante() {
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                disabled={!isEditing}
+                disabled
+                className="bg-muted"
               />
+              <p className="text-xs text-muted-foreground">O email não pode ser alterado</p>
             </div>
 
             <div className="space-y-2">
@@ -131,23 +192,21 @@ export default function AreaAniversariante() {
               <Input
                 id="dataNascimento"
                 type="date"
-                value={userData.dataNascimento}
+                value={formData.dataNascimento}
                 disabled
                 className="bg-muted"
               />
-              <p className="text-xs text-muted-foreground">A data de nascimento não pode ser alterada após o cadastro</p>
+              <p className="text-xs text-muted-foreground">A data de nascimento não pode ser alterada</p>
             </div>
 
             <div className="flex gap-2">
               {!isEditing ? (
                 <Button onClick={() => setIsEditing(true)} className="w-full">
-                  <Edit2 className="mr-2 h-4 w-4" />
                   Editar meus dados
                 </Button>
               ) : (
                 <>
                   <Button onClick={handleSave} className="flex-1">
-                    <Save className="mr-2 h-4 w-4" />
                     Salvar
                   </Button>
                   <Button variant="outline" onClick={() => setIsEditing(false)} className="flex-1">
@@ -161,4 +220,6 @@ export default function AreaAniversariante() {
       </div>
     </div>
   );
-}
+};
+
+export default AreaAniversariante;

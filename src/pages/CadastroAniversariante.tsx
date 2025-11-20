@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Crown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function CadastroAniversariante() {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ export default function CadastroAniversariante() {
     setFormData({ ...formData, estado: value, cidade: "" });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (formData.senha !== formData.confirmarSenha) {
@@ -50,33 +51,58 @@ export default function CadastroAniversariante() {
       return;
     }
 
-    // Simulação de cadastro - será substituído pelo backend
-    const aniversariantes = JSON.parse(localStorage.getItem("aniversariantes") || "[]");
-    
-    if (aniversariantes.some((a: any) => a.email === formData.email)) {
+    try {
+      // Criar usuário no Supabase Auth
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.senha,
+        options: {
+          data: {
+            nome: formData.nomeCompleto,
+          },
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (signUpError) throw signUpError;
+      if (!authData.user) throw new Error("Falha ao criar usuário");
+
+      // Adicionar role de aniversariante
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .insert({
+          user_id: authData.user.id,
+          role: "aniversariante",
+        });
+
+      if (roleError) throw roleError;
+
+      // Inserir dados específicos do aniversariante
+      const { error: profileError } = await supabase
+        .from("aniversariantes")
+        .insert({
+          id: authData.user.id,
+          cpf: formData.cpf,
+          data_nascimento: formData.dataNascimento,
+          telefone: formData.telefone,
+        });
+
+      if (profileError) throw profileError;
+
+      toast({
+        title: "Sucesso!",
+        description: "Cadastro realizado com sucesso. Você já pode fazer login.",
+      });
+      
+      navigate("/login/aniversariante");
+    } catch (error: any) {
+      console.error("Erro no cadastro:", error);
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "E-mail já cadastrado",
+        title: "Erro no cadastro",
+        description: error.message || "Não foi possível completar o cadastro",
       });
-      return;
     }
-
-    aniversariantes.push({
-      ...formData,
-      id: Date.now().toString(),
-      senhaHash: formData.senha,
-    });
-    
-    localStorage.setItem("aniversariantes", JSON.stringify(aniversariantes));
-    localStorage.setItem("currentAniversariante", JSON.stringify({ ...formData, id: Date.now().toString() }));
-    
-    toast({
-      title: "Sucesso!",
-      description: "Cadastro realizado com sucesso",
-    });
-    
-    navigate("/");
   };
 
   return (

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { LogOut, Users, Building2, Ticket, TrendingUp, Shield } from "lucide-react";
 import { Session } from "@supabase/supabase-js";
 import { GerenciarColaboradores } from "@/components/colaborador/GerenciarColaboradores";
+import { CadastrarEstabelecimento } from "@/components/colaborador/CadastrarEstabelecimento";
 
 const AreaColaborador = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -207,13 +208,16 @@ const AreaColaborador = () => {
 
           <TabsContent value="estabelecimentos">
             <Card>
-              <CardHeader>
-                <CardTitle>Gerenciar Estabelecimentos</CardTitle>
-                <CardDescription>Lista de todos os estabelecimentos cadastrados</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Gerenciar Estabelecimentos</CardTitle>
+                  <CardDescription>Lista de todos os estabelecimentos cadastrados</CardDescription>
+                </div>
+                <CadastrarEstabelecimento onSuccess={carregarMetricas} />
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Listagem e edição serão implementadas em breve...
+                  Total de {metricas.totalEstabelecimentos} estabelecimento(s) cadastrado(s)
                 </p>
               </CardContent>
             </Card>

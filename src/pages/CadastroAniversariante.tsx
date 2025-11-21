@@ -118,7 +118,13 @@ export default function CadastroAniversariante() {
         },
       });
 
-      if (signUpError) throw signUpError;
+      if (signUpError) {
+        // Traduzir erros comuns do Supabase
+        if (signUpError.message.includes("already registered")) {
+          throw new Error("Usuário já cadastrado");
+        }
+        throw new Error(signUpError.message);
+      }
       if (!authData.user) throw new Error("Falha ao criar usuário");
 
       // Adicionar role de aniversariante

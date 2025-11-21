@@ -14,197 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Sidebar, SidebarContent, SidebarProvider, SidebarTrigger, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from "@/components/ui/sidebar";
 
 const estabelecimentosFicticios = [
-  // Estabelecimentos reais de Florianópolis
-  {
-    id: "1",
-    nomeFantasia: "Botequim Floripa",
-    categoria: "bar",
-    endereco: "Avenida Rio Branco, 632, Centro, Florianópolis - SC, 88015-200",
-    cidade: "Florianópolis",
-    estado: "SC",
-    diasHorarioFuncionamento: "Segunda a sábado: 11h30 - 24h",
-    beneficiosAniversariante: "Rodada de chopp (220ml) por conta do estabelecimento",
-    regrasAniversariante: "Necessário fazer reserva prévia. Válido no dia do aniversário.",
-    periodoValidade: "dia",
-    linkCardapioDigital: "",
-    logoUrl: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=400&fit=crop&auto=format&fm=webp&q=75",
-    telefoneContato: "(48) 3333-1234",
-    whatsapp: "(48) 99968-0345",
-    emailContato: "contato@botequimfloripa.com.br",
-    instagram: "botequimfloripa",
-    facebook: "",
-  },
-  {
-    id: "2",
-    nomeFantasia: "Guacamole Cocina Mexicana",
-    categoria: "restaurante",
-    endereco: "Avenida Jornalista Rubens Arruda Ramos, 2006, Centro, Florianópolis - SC",
-    cidade: "Florianópolis",
-    estado: "SC",
-    diasHorarioFuncionamento: "Dom a Qui: 18:30 - 00h | Sex e Sáb: 18:30 - 00:30h",
-    beneficiosAniversariante: "Sobremesa com velinha, dose de tequila com ritual do tequileiro e isenção do couvert artístico. Com 10+ acompanhantes: garrafa de vodka/gin ou 50% off (máx R$200)",
-    regrasAniversariante: "Válido na semana do aniversário. Necessário reserva antecipada. Consumo exclusivo no local.",
-    periodoValidade: "semana",
-    linkCardapioDigital: "",
-    logoUrl: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&h=400&fit=crop&auto=format&fm=webp&q=75",
-    telefoneContato: "(48) 3225-0900",
-    whatsapp: "",
-    emailContato: "floripa@guacamole.com.br",
-    instagram: "guacamole.floripa",
-    facebook: "",
-  },
-  {
-    id: "3",
-    nomeFantasia: "Didge Steakhouse Pub",
-    categoria: "bar",
-    endereco: "Av. Beira Mar Norte, 1976 - Centro, Florianópolis - SC, 88015-700",
-    cidade: "Florianópolis",
-    estado: "SC",
-    diasHorarioFuncionamento: "Terça a Domingo: 18h45 à 01h",
-    beneficiosAniversariante: "1 shot temático Ned Kelly, 1 sobremesa Strawberry Ozzy Ice Cream e isenção do couvert artístico. Reservas 10+ ganham garrafa de Vodka Smirnoff ou Gin",
-    regrasAniversariante: "Válido na semana do aniversário. Não cumulativo. Isenção de couvert apenas em dias de música ao vivo.",
-    periodoValidade: "semana",
-    linkCardapioDigital: "",
-    logoUrl: "https://images.unsplash.com/photo-1546039907-7fa05f864c02?w=400&h=400&fit=crop&auto=format&fm=webp&q=75",
-    telefoneContato: "(48) 99204-7090",
-    whatsapp: "(48) 99204-7090",
-    emailContato: "didge.floripa@gmail.com",
-    instagram: "didge.floripa",
-    facebook: "",
-  },
-  {
-    id: "4",
-    nomeFantasia: "Dona Delícia Restaurante & Bar",
-    categoria: "restaurante",
-    endereco: "Rua Felipe Schmidt, 554, Loja 4, Centro, Florianópolis - SC, 88010-001",
-    cidade: "Florianópolis",
-    estado: "SC",
-    diasHorarioFuncionamento: "Segunda a sexta: almoço e happy hour | Dom (Rua Padre Roma): 11h30 - 15h",
-    beneficiosAniversariante: "Bolo e garrafa de espumante trazendo 10 convidados pagantes",
-    regrasAniversariante: "Necessário reserva antecipada. Benefício exclusivo para aniversários.",
-    periodoValidade: "dia",
-    linkCardapioDigital: "",
-    logoUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=400&fit=crop&auto=format&fm=webp&q=75",
-    telefoneContato: "(48) 3225-8376",
-    whatsapp: "",
-    emailContato: "contato@donadelicia.com.br",
-    instagram: "rededonadelicia",
-    facebook: "",
-  },
-  {
-    id: "5",
-    nomeFantasia: "Wooden Tap Beer",
-    categoria: "bar",
-    endereco: "Travessa Albertina Ganzo, 33 - Centro, Florianópolis - SC, 88015-210",
-    cidade: "Florianópolis",
-    estado: "SC",
-    diasHorarioFuncionamento: "Ter-Qua: 16:30 - 00h | Qui-Sáb: 17:30 - 01h",
-    beneficiosAniversariante: "Sobremesa e R$100 de consumação",
-    regrasAniversariante: "Necessário levar 10 convidados. Entrar em contato na semana do aniversário.",
-    periodoValidade: "semana",
-    linkCardapioDigital: "",
-    logoUrl: "https://images.unsplash.com/photo-1436076863939-06870fe779c2?w=400&h=400&fit=crop&auto=format&fm=webp&q=75",
-    telefoneContato: "+55 48 99608-6195",
-    whatsapp: "48996086195",
-    emailContato: "contato@woodentap.com.br",
-    instagram: "woodenbeerfloripa",
-    facebook: "",
-  },
-  {
-    id: "6",
-    nomeFantasia: "Taberna Ibérica",
-    categoria: "restaurante",
-    endereco: "Rua Felipe Schmidt, 1333, Centro, Florianópolis - SC",
-    cidade: "Florianópolis",
-    estado: "SC",
-    diasHorarioFuncionamento: "Segunda a Sábado: 12h - 15h e 18:30 - 00h",
-    beneficiosAniversariante: "Presente especial/sobremesa com vela. Cortesia no prato principal com 10+ convidados pagantes",
-    regrasAniversariante: "Necessário fazer reserva. Apresentar documento com foto. Confirmar benefício no momento da reserva.",
-    periodoValidade: "dia",
-    linkCardapioDigital: "",
-    logoUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=400&fit=crop&auto=format&fm=webp&q=75",
-    telefoneContato: "(48) 3225-0913",
-    whatsapp: "(48) 99115-7807",
-    emailContato: "contato@tabernaiberica.com.br",
-    instagram: "tabernaiberica",
-    facebook: "",
-  },
-  {
-    id: "7",
-    nomeFantasia: "Boteco Cascaes",
-    categoria: "bar",
-    endereco: "R. Jerônimo Coelho, 60 - Box 02 N - Centro, Florianópolis - SC, 88010-907",
-    cidade: "Florianópolis",
-    estado: "SC",
-    diasHorarioFuncionamento: "Seg-Sáb: 10h - 22h | Dom: 11h - 17h",
-    beneficiosAniversariante: "Primeira rodada de chopp em dobro",
-    regrasAniversariante: "Trazer mínimo 4 acompanhantes. Apresentar documento de identificação.",
-    periodoValidade: "dia",
-    linkCardapioDigital: "",
-    logoUrl: "https://images.unsplash.com/photo-1515161318750-781d6122e367?w=400&h=400&fit=crop&auto=format&fm=webp&q=75",
-    telefoneContato: "+55 48 3206-1223",
-    whatsapp: "",
-    emailContato: "contato@botecocascaes.com.br",
-    instagram: "botecocascaes",
-    facebook: "",
-  },
-  {
-    id: "8",
-    nomeFantasia: "Guacamole Taqueria - Top Market",
-    categoria: "restaurante",
-    endereco: "Rua Hoepcke, 168 - Centro, Florianópolis - SC, 88010-130",
-    cidade: "Florianópolis",
-    estado: "SC",
-    diasHorarioFuncionamento: "Dom-Ter: 11:30 - 22h | Qua-Sáb: 11:30 - 00h",
-    beneficiosAniversariante: "Mini churros exclusivos, shot de tequila e isenção de couvert. Com 5 pagantes no rodízio: isenção. Com 10+: garrafa vodka/gin ou R$100 (consumo mín R$200)",
-    regrasAniversariante: "Válido no dia do rodízio com 5 pagantes ou reserva 10+ convidados. Confirmar no momento da reserva.",
-    periodoValidade: "dia",
-    linkCardapioDigital: "",
-    logoUrl: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&h=400&fit=crop&auto=format&fm=webp&q=75",
-    telefoneContato: "(11) 99751-2529",
-    whatsapp: "",
-    emailContato: "taqueria@guacamole.com.br",
-    instagram: "guacataqueriatopmarket",
-    facebook: "",
-  },
-  {
-    id: "9",
-    nomeFantasia: "Top Market Floripa - Trattoria Carbone",
-    categoria: "restaurante",
-    endereco: "R. Hoepcke, 168 - Centro, Florianópolis - SC, 88010-130",
-    cidade: "Florianópolis",
-    estado: "SC",
-    diasHorarioFuncionamento: "Seg-Sex: 11:30 - 22:30 | Sáb: 11:30 - 23:30 | Dom: 11:30 - 21:30",
-    beneficiosAniversariante: "Dose de tequila com ritual do tequileiro",
-    regrasAniversariante: "Válido somente na semana do aniversário. Apresentar documento com foto.",
-    periodoValidade: "semana",
-    linkCardapioDigital: "",
-    logoUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=400&fit=crop&auto=format&fm=webp&q=75",
-    telefoneContato: "(47) 99668-1218",
-    whatsapp: "(47) 99668-1218",
-    emailContato: "contato@topmarketfloripa.com.br",
-    instagram: "topmarketfloripa",
-    facebook: "",
-  },
-  {
-    id: "10",
-    nomeFantasia: "Le Rose Restaurante e Café",
-    categoria: "restaurante",
-    endereco: "R. Bocaiúva, 2224 - Loja 1 - Centro, Florianópolis - SC, 88015-530",
-    cidade: "Florianópolis",
-    estado: "SC",
-    diasHorarioFuncionamento: "Todos os dias: 11h - 23h",
-    beneficiosAniversariante: "Mini bolinho de cortesia montado na hora",
-    regrasAniversariante: "Mediante reserva. Sem número mínimo de convidados.",
-    periodoValidade: "dia",
-    linkCardapioDigital: "",
-    logoUrl: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=400&fit=crop&auto=format&fm=webp&q=75",
-    telefoneContato: "+55 48 99184-6565",
-    whatsapp: "48991846565",
-    emailContato: "contato@leroserestaurante.com.br",
-    instagram: "lerose.restaurante.e.cafe",
-    facebook: "",
-  },
+  // Estabelecimentos exemplo de outras cidades (manter para demonstração)
   // Outros estabelecimentos de SC
   {
     id: "11",
@@ -657,6 +467,7 @@ export default function Index() {
   const { toast } = useToast();
   const cupomRef = useRef<HTMLDivElement>(null);
   const [estabelecimentos, setEstabelecimentos] = useState(estabelecimentosFicticios);
+  const [loadingEstabelecimentos, setLoadingEstabelecimentos] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoria, setSelectedCategoria] = useState<string>("todas");
   const [selectedEstado, setSelectedEstado] = useState<string>("todos");
@@ -666,6 +477,54 @@ export default function Index() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [cupomGerado, setCupomGerado] = useState<any>(null);
   const [showCupom, setShowCupom] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  // Buscar estabelecimentos do banco de dados
+  useEffect(() => {
+    const fetchEstabelecimentos = async () => {
+      try {
+        setLoadingEstabelecimentos(true);
+        const { data, error } = await supabase
+          .from('estabelecimentos')
+          .select('*');
+
+        if (error) {
+          console.error('Erro ao buscar estabelecimentos:', error);
+          return;
+        }
+        
+        // Mapear estabelecimentos do banco para o formato da UI
+        const estabelecimentosReais = (data || []).map(est => ({
+          id: est.id,
+          nomeFantasia: est.nome_fantasia || est.razao_social,
+          categoria: "restaurante", // Default, pode ser melhorado com uma coluna categoria
+          endereco: est.endereco || "",
+          cidade: "Florianópolis", // Por enquanto fixo, pode ser melhorado
+          estado: "SC",
+          diasHorarioFuncionamento: "",
+          beneficiosAniversariante: est.descricao_beneficio || "",
+          regrasAniversariante: "Consulte o estabelecimento para detalhes",
+          periodoValidade: "dia",
+          linkCardapioDigital: "",
+          logoUrl: est.logo_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=400&fit=crop",
+          telefoneContato: est.telefone || "",
+          whatsapp: est.telefone || "",
+          emailContato: "",
+          instagram: "",
+          facebook: "",
+        }));
+
+        // Combinar estabelecimentos reais com os fictícios
+        setEstabelecimentos([...estabelecimentosReais, ...estabelecimentosFicticios]);
+      } catch (error) {
+        console.error('Erro ao buscar estabelecimentos:', error);
+      } finally {
+        setLoadingEstabelecimentos(false);
+      }
+    };
+
+    fetchEstabelecimentos();
+  }, []);
 
   useEffect(() => {
     const user = localStorage.getItem("currentAniversariante");

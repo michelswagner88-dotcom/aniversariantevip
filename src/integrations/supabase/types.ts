@@ -103,10 +103,13 @@ export type Database = {
       }
       estabelecimentos: {
         Row: {
+          categoria: string | null
+          cidade: string | null
           cnpj: string
           created_at: string | null
           descricao_beneficio: string | null
           endereco: string | null
+          estado: string | null
           id: string
           logo_url: string | null
           nome_fantasia: string | null
@@ -116,10 +119,13 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          categoria?: string | null
+          cidade?: string | null
           cnpj: string
           created_at?: string | null
           descricao_beneficio?: string | null
           endereco?: string | null
+          estado?: string | null
           id?: string
           logo_url?: string | null
           nome_fantasia?: string | null
@@ -129,10 +135,13 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          categoria?: string | null
+          cidade?: string | null
           cnpj?: string
           created_at?: string | null
           descricao_beneficio?: string | null
           endereco?: string | null
+          estado?: string | null
           id?: string
           logo_url?: string | null
           nome_fantasia?: string | null

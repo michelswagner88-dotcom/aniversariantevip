@@ -48,6 +48,8 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
     telefone: "",
     endereco: "",
     categoria: "",
+    cidade: "",
+    estado: "",
     descricaoBeneficio: "",
   });
 
@@ -179,9 +181,12 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
           cnpj: validatedData.cnpj.replace(/\D/g, ''),
           telefone: validatedData.telefone,
           endereco: validatedData.endereco,
+          cidade: formData.cidade,
+          estado: formData.estado,
+          categoria: formData.categoria,
           descricao_beneficio: validatedData.descricaoBeneficio,
           logo_url: logoUrl,
-          tem_conta_acesso: true, // Marca que este estabelecimento tem conta de acesso
+          tem_conta_acesso: true,
         });
 
       if (estabError) throw estabError;
@@ -207,6 +212,8 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
         telefone: "",
         endereco: "",
         categoria: "",
+        cidade: "",
+        estado: "",
         descricaoBeneficio: "",
       });
       setLogoFile(null);
@@ -341,6 +348,43 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                   <SelectItem value="outros">Outros</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="estado">Estado</Label>
+                <Select 
+                  value={formData.estado} 
+                  onValueChange={(value) => setFormData({ ...formData, estado: value, cidade: "" })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="SC">Santa Catarina</SelectItem>
+                    <SelectItem value="PR">Paraná</SelectItem>
+                    <SelectItem value="RS">Rio Grande do Sul</SelectItem>
+                    <SelectItem value="SP">São Paulo</SelectItem>
+                    <SelectItem value="RJ">Rio de Janeiro</SelectItem>
+                    <SelectItem value="MG">Minas Gerais</SelectItem>
+                    <SelectItem value="GO">Goiás</SelectItem>
+                    <SelectItem value="DF">Distrito Federal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cidade">Cidade</Label>
+                <Input
+                  id="cidade"
+                  value={formData.cidade}
+                  onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                  required
+                  placeholder="Digite a cidade"
+                  maxLength={100}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

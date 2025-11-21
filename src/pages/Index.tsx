@@ -497,10 +497,10 @@ export default function Index() {
         const estabelecimentosReais = (data || []).map(est => ({
           id: est.id,
           nomeFantasia: est.nome_fantasia || est.razao_social,
-          categoria: "restaurante", // Default, pode ser melhorado com uma coluna categoria
+          categoria: est.categoria || "outros",
           endereco: est.endereco || "",
-          cidade: "Florianópolis", // Por enquanto fixo, pode ser melhorado
-          estado: "SC",
+          cidade: est.cidade || "Sem cidade",
+          estado: est.estado || "SC",
           diasHorarioFuncionamento: "",
           beneficiosAniversariante: est.descricao_beneficio || "",
           regrasAniversariante: "Consulte o estabelecimento para detalhes",

@@ -39,51 +39,43 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
     try {
       setLoading(true);
       
-      // Buscar IDs dos estabelecimentos
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'estabelecimento');
-
-      if (rolesError) throw rolesError;
-
-      if (!roles || roles.length === 0) {
-        setEstabelecimentos([]);
-        return;
-      }
-
-      const userIds = roles.map(r => r.user_id);
-
-      // Buscar profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-
-      // Buscar dados específicos de estabelecimentos
+      // Buscar TODOS os estabelecimentos (com ou sem conta de acesso)
       const { data: estabData, error: estabError } = await supabase
         .from('estabelecimentos')
         .select('*')
-        .in('id', userIds);
+        .order('created_at', { ascending: false });
 
       if (estabError) throw estabError;
 
+      // Buscar profiles para estabelecimentos que têm conta
+      const estabComConta = estabData?.filter(e => e.tem_conta_acesso) || [];
+      const userIds = estabComConta.map(e => e.id);
+
+      let profiles: any[] = [];
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('id', userIds);
+
+        if (profilesError) throw profilesError;
+        profiles = profilesData || [];
+      }
+
       // Combinar dados
-      const combined = profiles?.map(profile => {
-        const estab = estabData?.find(e => e.id === profile.id);
+      const combined = estabData?.map(estab => {
+        const profile = profiles.find(p => p.id === estab.id);
         return {
-          id: profile.id,
-          nome_fantasia: estab?.nome_fantasia,
-          razao_social: estab?.razao_social || 'Sem razão social',
-          cnpj: estab?.cnpj || '',
-          email: profile.email,
-          telefone: estab?.telefone,
-          endereco: estab?.endereco,
-          logo_url: estab?.logo_url,
-          descricao_beneficio: estab?.descricao_beneficio,
-          created_at: profile.created_at || ''
+          id: estab.id,
+          nome_fantasia: estab.nome_fantasia,
+          razao_social: estab.razao_social || 'Sem razão social',
+          cnpj: estab.cnpj || '',
+          email: profile?.email || 'Sem email (cadastro sem conta)',
+          telefone: estab.telefone,
+          endereco: estab.endereco,
+          logo_url: estab.logo_url,
+          descricao_beneficio: estab.descricao_beneficio,
+          created_at: estab.created_at || ''
         };
       }) || [];
 

@@ -287,6 +287,7 @@ export default function CadastroEstabelecimento() {
           endereco: validatedData.endereco,
           descricao_beneficio: formData.beneficiosAniversariante,
           logo_url: logoUrl,
+          tem_conta_acesso: true, // Marca que este estabelecimento tem conta de acesso
         });
 
       if (estabError) throw estabError;

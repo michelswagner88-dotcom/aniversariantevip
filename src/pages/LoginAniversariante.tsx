@@ -1,16 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Crown } from "lucide-react";
+import { Crown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function LoginAniversariante() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [pageReady, setPageReady] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     senha: "",
@@ -18,6 +19,10 @@ export default function LoginAniversariante() {
   const [showRecuperarSenha, setShowRecuperarSenha] = useState(false);
   const [emailRecuperacao, setEmailRecuperacao] = useState("");
   const [enviandoEmail, setEnviandoEmail] = useState(false);
+
+  useEffect(() => {
+    setPageReady(true);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

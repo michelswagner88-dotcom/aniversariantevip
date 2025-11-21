@@ -1,9 +1,11 @@
+import { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CookieConsent } from "@/components/CookieConsent";
+import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 import CadastroAniversariante from "./pages/CadastroAniversariante";
 import LoginAniversariante from "./pages/LoginAniversariante";
@@ -17,6 +19,15 @@ import AreaColaborador from "./pages/AreaColaborador";
 import SetupAdmin from "./pages/SetupAdmin";
 import NotFound from "./pages/NotFound";
 
+const LoadingScreen = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="flex flex-col items-center gap-4">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <p className="text-sm text-muted-foreground">Carregando...</p>
+    </div>
+  </div>
+);
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -25,20 +36,22 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/cadastro/aniversariante" element={<CadastroAniversariante />} />
-          <Route path="/login/aniversariante" element={<LoginAniversariante />} />
-          <Route path="/area-aniversariante" element={<AreaAniversariante />} />
-          <Route path="/cadastro/estabelecimento" element={<CadastroEstabelecimento />} />
-          <Route path="/login/estabelecimento" element={<LoginEstabelecimento />} />
-          <Route path="/area-estabelecimento" element={<AreaEstabelecimento />} />
-          <Route path="/login/colaborador" element={<LoginColaborador />} />
-          <Route path="/area-colaborador" element={<AreaColaborador />} />
-          <Route path="/setup-admin" element={<SetupAdmin />} />
-          <Route path="/planos" element={<PlanosPagamento />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<LoadingScreen />}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/cadastro/aniversariante" element={<CadastroAniversariante />} />
+            <Route path="/login/aniversariante" element={<LoginAniversariante />} />
+            <Route path="/area-aniversariante" element={<AreaAniversariante />} />
+            <Route path="/cadastro/estabelecimento" element={<CadastroEstabelecimento />} />
+            <Route path="/login/estabelecimento" element={<LoginEstabelecimento />} />
+            <Route path="/area-estabelecimento" element={<AreaEstabelecimento />} />
+            <Route path="/login/colaborador" element={<LoginColaborador />} />
+            <Route path="/area-colaborador" element={<AreaColaborador />} />
+            <Route path="/setup-admin" element={<SetupAdmin />} />
+            <Route path="/planos" element={<PlanosPagamento />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
         <CookieConsent />
       </BrowserRouter>
     </TooltipProvider>

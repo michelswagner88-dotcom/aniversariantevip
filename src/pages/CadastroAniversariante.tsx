@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Crown } from "lucide-react";
+import { Crown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { aniversarianteSchema } from "@/lib/validation";
@@ -13,6 +13,7 @@ import { aniversarianteSchema } from "@/lib/validation";
 export default function CadastroAniversariante() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [pageReady, setPageReady] = useState(false);
   const [formData, setFormData] = useState({
     nomeCompleto: "",
     email: "",
@@ -23,6 +24,10 @@ export default function CadastroAniversariante() {
     senha: "",
     confirmarSenha: "",
   });
+
+  useEffect(() => {
+    setPageReady(true);
+  }, []);
 
   const estadosCidades: Record<string, string[]> = {
     "SC": ["Florianópolis", "São José", "Palhoça", "Biguaçu"],
@@ -104,6 +109,14 @@ export default function CadastroAniversariante() {
       });
     }
   };
+
+  if (!pageReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">

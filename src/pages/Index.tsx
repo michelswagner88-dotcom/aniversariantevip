@@ -913,7 +913,7 @@ export default function Index() {
                         variant="outline"
                         className="w-full h-11 text-base font-semibold" 
                       >
-                        Veja os Benefícios
+                        Ver os Benefícios
                       </Button>
                     </Link>
                   )}

@@ -58,20 +58,36 @@ export default function CadastroAniversariante() {
     }
 
     try {
-      // Verificar se email já existe
-      const { data: existingEmail } = await supabase
+      // Verificar se existe cadastro completo
+      const { data: existingProfile } = await supabase
         .from("profiles")
-        .select("email")
+        .select("id, email")
         .eq("email", formData.email)
         .maybeSingle();
 
-      if (existingEmail) {
-        toast({
-          variant: "destructive",
-          title: "Email já cadastrado",
-          description: "Este email já está sendo usado por outra conta",
-        });
-        return;
+      if (existingProfile) {
+        // Verificar se o cadastro está completo
+        const { data: aniversarianteData } = await supabase
+          .from("aniversariantes")
+          .select("id")
+          .eq("id", existingProfile.id)
+          .maybeSingle();
+
+        if (aniversarianteData) {
+          toast({
+            variant: "destructive",
+            title: "Email já cadastrado",
+            description: "Este email já está sendo usado por outra conta",
+          });
+          return;
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Cadastro incompleto detectado",
+            description: "Por favor, entre em contato com o suporte para liberar seu cadastro",
+          });
+          return;
+        }
       }
 
       // Verificar se CPF já existe

@@ -8,7 +8,8 @@ import { toast } from "sonner";
 import { LogOut, Users, Building2, Ticket, TrendingUp, Shield } from "lucide-react";
 import { Session } from "@supabase/supabase-js";
 import { GerenciarColaboradores } from "@/components/colaborador/GerenciarColaboradores";
-import { CadastrarEstabelecimento } from "@/components/colaborador/CadastrarEstabelecimento";
+import { GerenciarAniversariantes } from "@/components/colaborador/GerenciarAniversariantes";
+import { GerenciarEstabelecimentos } from "@/components/colaborador/GerenciarEstabelecimentos";
 
 const AreaColaborador = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -193,34 +194,11 @@ const AreaColaborador = () => {
           </TabsContent>
 
           <TabsContent value="aniversariantes">
-            <Card>
-              <CardHeader>
-                <CardTitle>Gerenciar Aniversariantes</CardTitle>
-                <CardDescription>Lista de todos os aniversariantes cadastrados</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Listagem e edição serão implementadas em breve...
-                </p>
-              </CardContent>
-            </Card>
+            <GerenciarAniversariantes />
           </TabsContent>
 
           <TabsContent value="estabelecimentos">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Gerenciar Estabelecimentos</CardTitle>
-                  <CardDescription>Lista de todos os estabelecimentos cadastrados</CardDescription>
-                </div>
-                <CadastrarEstabelecimento onSuccess={carregarMetricas} />
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Total de {metricas.totalEstabelecimentos} estabelecimento(s) cadastrado(s)
-                </p>
-              </CardContent>
-            </Card>
+            <GerenciarEstabelecimentos onUpdate={carregarMetricas} />
           </TabsContent>
 
           <TabsContent value="colaboradores">

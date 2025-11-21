@@ -17,6 +17,7 @@ export default function CadastroAniversariante() {
   const [formData, setFormData] = useState({
     nomeCompleto: "",
     email: "",
+    cpf: "",
     telefone: "",
     estado: "",
     cidade: "",
@@ -57,6 +58,54 @@ export default function CadastroAniversariante() {
     }
 
     try {
+      // Verificar se email já existe
+      const { data: existingEmail } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("email", formData.email)
+        .single();
+
+      if (existingEmail) {
+        toast({
+          variant: "destructive",
+          title: "Email já cadastrado",
+          description: "Este email já está sendo usado por outra conta",
+        });
+        return;
+      }
+
+      // Verificar se CPF já existe
+      const { data: existingCPF } = await supabase
+        .from("aniversariantes")
+        .select("cpf")
+        .eq("cpf", formData.cpf.replace(/\D/g, ""))
+        .single();
+
+      if (existingCPF) {
+        toast({
+          variant: "destructive",
+          title: "CPF já cadastrado",
+          description: "Este CPF já está cadastrado no sistema",
+        });
+        return;
+      }
+
+      // Verificar se telefone já existe
+      const { data: existingPhone } = await supabase
+        .from("aniversariantes")
+        .select("telefone")
+        .eq("telefone", formData.telefone.replace(/\D/g, ""))
+        .single();
+
+      if (existingPhone) {
+        toast({
+          variant: "destructive",
+          title: "Telefone já cadastrado",
+          description: "Este telefone já está cadastrado no sistema",
+        });
+        return;
+      }
+
       // Criar usuário no Supabase Auth
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
@@ -87,9 +136,9 @@ export default function CadastroAniversariante() {
         .from("aniversariantes")
         .insert({
           id: authData.user.id,
-          cpf: "",
+          cpf: formData.cpf.replace(/\D/g, ""),
           data_nascimento: formData.dataNascimento,
-          telefone: formData.telefone,
+          telefone: formData.telefone.replace(/\D/g, ""),
         });
 
       if (profileError) throw profileError;
@@ -140,6 +189,25 @@ export default function CadastroAniversariante() {
               />
             </div>
             
+            <div className="space-y-2">
+              <Label htmlFor="cpf">CPF *</Label>
+              <Input
+                id="cpf"
+                required
+                placeholder="000.000.000-00"
+                maxLength={14}
+                value={formData.cpf}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "");
+                  const formatted = value
+                    .replace(/(\d{3})(\d)/, "$1.$2")
+                    .replace(/(\d{3})(\d)/, "$1.$2")
+                    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+                  setFormData({ ...formData, cpf: formatted });
+                }}
+              />
+            </div>
+
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail *</Label>
@@ -156,8 +224,16 @@ export default function CadastroAniversariante() {
                 <Input
                   id="telefone"
                   required
+                  placeholder="(00) 00000-0000"
+                  maxLength={15}
                   value={formData.telefone}
-                  onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "");
+                    const formatted = value
+                      .replace(/(\d{2})(\d)/, "($1) $2")
+                      .replace(/(\d{5})(\d)/, "$1-$2");
+                    setFormData({ ...formData, telefone: formatted });
+                  }}
                 />
               </div>
             </div>

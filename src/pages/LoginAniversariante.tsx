@@ -12,90 +12,109 @@ export default function LoginAniversariante() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [pageReady, setPageReady] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     senha: "",
   });
-  const [showRecuperarSenha, setShowRecuperarSenha] = useState(false);
-  const [emailRecuperacao, setEmailRecuperacao] = useState("");
-  const [enviandoEmail, setEnviandoEmail] = useState(false);
 
   useEffect(() => {
-    setPageReady(true);
-  }, []);
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id);
 
-  const handleSubmit = (e: React.FormEvent) => {
+        if (roles?.some(r => r.role === "aniversariante")) {
+          navigate("/area-aniversariante");
+          return;
+        }
+      }
+      setPageReady(true);
+    };
+    checkUser();
+  }, [navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const aniversariantes = JSON.parse(localStorage.getItem("aniversariantes") || "[]");
-    const usuario = aniversariantes.find(
-      (a: any) => a.email === formData.email && a.senhaHash === formData.senha
-    );
+    setLoading(true);
 
-    if (usuario) {
-      localStorage.setItem("currentAniversariante", JSON.stringify(usuario));
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.senha,
+      });
+
+      if (error) throw error;
+
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id);
+
+      if (!roles?.some(r => r.role === "aniversariante")) {
+        await supabase.auth.signOut();
+        throw new Error("Usuário não é um aniversariante");
+      }
+
       toast({
         title: "Bem-vindo!",
         description: "Login realizado com sucesso",
       });
-      navigate("/");
-    } else {
+      navigate("/area-aniversariante");
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "E-mail ou senha incorretos",
+        description: error.message || "E-mail ou senha incorretos",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleRecuperarSenha = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setEnviandoEmail(true);
+  const handleRecuperarSenha = async () => {
+    if (!formData.email) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Digite seu e-mail no campo acima",
+      });
+      return;
+    }
 
     try {
-      const aniversariantes = JSON.parse(localStorage.getItem("aniversariantes") || "[]");
-      const usuario = aniversariantes.find((a: any) => a.email === emailRecuperacao);
-
-      if (!usuario) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "E-mail não encontrado",
-        });
-        setEnviandoEmail(false);
-        return;
-      }
-
-      const { error } = await supabase.functions.invoke("enviar-senha", {
-        body: {
-          email: emailRecuperacao,
-          tipo: "aniversariante",
-          senha: usuario.senhaHash,
-        },
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: `${window.location.origin}/area-aniversariante`,
       });
 
       if (error) throw error;
 
       toast({
         title: "Email enviado!",
-        description: "Verifique sua caixa de entrada com sua senha",
+        description: "Verifique sua caixa de entrada para redefinir sua senha",
       });
-      setShowRecuperarSenha(false);
-      setEmailRecuperacao("");
-    } catch (error) {
-      console.error("Erro ao enviar email:", error);
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erro",
         description: "Não foi possível enviar o email. Tente novamente.",
       });
-    } finally {
-      setEnviandoEmail(false);
     }
   };
 
+  if (!pageReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -128,34 +147,17 @@ export default function LoginAniversariante() {
               />
             </div>
 
-            <Button type="submit" className="w-full">Entrar</Button>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Entrando..." : "Entrar"}
+            </Button>
 
             <button
               type="button"
-              onClick={() => setShowRecuperarSenha(!showRecuperarSenha)}
+              onClick={handleRecuperarSenha}
               className="w-full text-center text-sm text-primary hover:underline mt-2"
             >
               Esqueci minha senha
             </button>
-
-            {showRecuperarSenha && (
-              <form onSubmit={handleRecuperarSenha} className="space-y-4 pt-4 border-t">
-                <div className="space-y-2">
-                  <Label htmlFor="emailRecuperacao">Digite seu e-mail</Label>
-                  <Input
-                    id="emailRecuperacao"
-                    type="email"
-                    required
-                    value={emailRecuperacao}
-                    onChange={(e) => setEmailRecuperacao(e.target.value)}
-                    placeholder="seu@email.com"
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={enviandoEmail}>
-                  {enviandoEmail ? "Enviando..." : "Enviar senha por email"}
-                </Button>
-              </form>
-            )}
             
             <p className="text-center text-sm text-muted-foreground mt-4">
               Não tem uma conta?{" "}

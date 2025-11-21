@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Crown } from "lucide-react";
+import { Crown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function LoginEstabelecimento() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [pageReady, setPageReady] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     senha: "",
@@ -28,8 +29,10 @@ export default function LoginEstabelecimento() {
 
         if (roles?.some(r => r.role === "estabelecimento")) {
           navigate("/area-estabelecimento");
+          return;
         }
       }
+      setPageReady(true);
     };
     checkUser();
   }, [navigate]);
@@ -102,8 +105,16 @@ export default function LoginEstabelecimento() {
     }
   };
 
+  if (!pageReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">

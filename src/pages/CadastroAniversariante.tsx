@@ -63,7 +63,7 @@ export default function CadastroAniversariante() {
         .from("profiles")
         .select("email")
         .eq("email", formData.email)
-        .single();
+        .maybeSingle();
 
       if (existingEmail) {
         toast({
@@ -79,7 +79,7 @@ export default function CadastroAniversariante() {
         .from("aniversariantes")
         .select("cpf")
         .eq("cpf", formData.cpf.replace(/\D/g, ""))
-        .single();
+        .maybeSingle();
 
       if (existingCPF) {
         toast({
@@ -95,7 +95,7 @@ export default function CadastroAniversariante() {
         .from("aniversariantes")
         .select("telefone")
         .eq("telefone", formData.telefone.replace(/\D/g, ""))
-        .single();
+        .maybeSingle();
 
       if (existingPhone) {
         toast({

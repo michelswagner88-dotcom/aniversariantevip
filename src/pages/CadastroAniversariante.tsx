@@ -126,7 +126,7 @@ export default function CadastroAniversariante() {
             <Crown className="h-12 w-12 text-primary" />
           </div>
           <CardTitle className="text-3xl">Cadastro de Aniversariante</CardTitle>
-          <CardDescription>Preencha seus dados para começar a receber benefícios</CardDescription>
+          <CardDescription>Preencha seus dados para ter acesso aos benefícios</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

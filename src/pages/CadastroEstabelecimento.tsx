@@ -282,12 +282,15 @@ export default function CadastroEstabelecimento() {
           id: authData.user.id,
           razao_social: validatedData.nomeFantasia,
           nome_fantasia: validatedData.nomeFantasia,
-          cnpj: "", // Empty CNPJ is allowed by constraint
-          telefone: validatedData.telefone, // Already cleaned by zod transform
+          cnpj: "",
+          telefone: validatedData.telefone,
           endereco: validatedData.endereco,
+          cidade: formData.cidade,
+          estado: formData.estado,
+          categoria: formData.categoria,
           descricao_beneficio: formData.beneficiosAniversariante,
           logo_url: logoUrl,
-          tem_conta_acesso: true, // Marca que este estabelecimento tem conta de acesso
+          tem_conta_acesso: true,
         });
 
       if (estabError) throw estabError;

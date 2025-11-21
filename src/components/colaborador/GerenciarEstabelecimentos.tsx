@@ -19,6 +19,9 @@ type Estabelecimento = {
   email: string;
   telefone: string | null;
   endereco: string | null;
+  cidade: string | null;
+  estado: string | null;
+  categoria: string | null;
   logo_url: string | null;
   descricao_beneficio: string | null;
   created_at: string;
@@ -73,6 +76,9 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
           email: profile?.email || 'Sem email (cadastro sem conta)',
           telefone: estab.telefone,
           endereco: estab.endereco,
+          cidade: estab.cidade,
+          estado: estab.estado,
+          categoria: estab.categoria,
           logo_url: estab.logo_url,
           descricao_beneficio: estab.descricao_beneficio,
           created_at: estab.created_at || ''
@@ -168,7 +174,7 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome Fantasia</TableHead>
-                  <TableHead>Razão Social</TableHead>
+                  <TableHead>Cidade/Estado</TableHead>
                   <TableHead>CNPJ</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Telefone</TableHead>
@@ -190,7 +196,9 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
                         {estab.nome_fantasia || '-'}
                       </div>
                     </TableCell>
-                    <TableCell>{estab.razao_social}</TableCell>
+                    <TableCell>
+                      {estab.cidade && estab.estado ? `${estab.cidade} - ${estab.estado}` : '-'}
+                    </TableCell>
                     <TableCell>{estab.cnpj}</TableCell>
                     <TableCell>{estab.email}</TableCell>
                     <TableCell>{estab.telefone || '-'}</TableCell>

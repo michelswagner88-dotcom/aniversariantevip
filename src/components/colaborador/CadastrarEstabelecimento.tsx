@@ -181,6 +181,7 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
           endereco: validatedData.endereco,
           descricao_beneficio: validatedData.descricaoBeneficio,
           logo_url: logoUrl,
+          tem_conta_acesso: true, // Marca que este estabelecimento tem conta de acesso
         });
 
       if (estabError) throw estabError;

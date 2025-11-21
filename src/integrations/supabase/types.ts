@@ -112,6 +112,7 @@ export type Database = {
           nome_fantasia: string | null
           razao_social: string
           telefone: string | null
+          tem_conta_acesso: boolean | null
           updated_at: string | null
         }
         Insert: {
@@ -119,11 +120,12 @@ export type Database = {
           created_at?: string | null
           descricao_beneficio?: string | null
           endereco?: string | null
-          id: string
+          id?: string
           logo_url?: string | null
           nome_fantasia?: string | null
           razao_social: string
           telefone?: string | null
+          tem_conta_acesso?: boolean | null
           updated_at?: string | null
         }
         Update: {
@@ -136,6 +138,7 @@ export type Database = {
           nome_fantasia?: string | null
           razao_social?: string
           telefone?: string | null
+          tem_conta_acesso?: boolean | null
           updated_at?: string | null
         }
         Relationships: []

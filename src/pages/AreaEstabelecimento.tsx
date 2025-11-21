@@ -247,46 +247,91 @@ export default function AreaEstabelecimento() {
     }
   };
 
-  const handleSearchAniversariante = () => {
-    const aniversariantes = JSON.parse(localStorage.getItem("aniversariantes") || "[]");
-    const found = aniversariantes.find((a: any) => a.cpf === searchCPF);
-    
-    if (found) {
-      setFoundAniversariante(found);
-    } else {
+  const handleSearchAniversariante = async () => {
+    try {
+      const { data: aniversariante, error: anivError } = await supabase
+        .from("aniversariantes")
+        .select("*")
+        .eq("cpf", searchCPF)
+        .single();
+
+      if (anivError || !aniversariante) {
+        toast({
+          variant: "destructive",
+          title: "Não encontrado",
+          description: "Nenhum aniversariante encontrado com este CPF",
+        });
+        setFoundAniversariante(null);
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", aniversariante.id)
+        .single();
+
+      if (profileError || !profile) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Erro ao buscar dados do aniversariante",
+        });
+        setFoundAniversariante(null);
+        return;
+      }
+
+      setFoundAniversariante({
+        id: aniversariante.id,
+        nomeCompleto: profile.nome,
+        cpf: aniversariante.cpf,
+        dataNascimento: aniversariante.data_nascimento,
+      });
+    } catch (error) {
+      console.error("Erro ao buscar aniversariante:", error);
       toast({
         variant: "destructive",
-        title: "Não encontrado",
-        description: "Nenhum aniversariante encontrado com este CPF",
+        title: "Erro",
+        description: "Erro ao buscar aniversariante",
       });
       setFoundAniversariante(null);
     }
   };
 
-  const handleEmitirCupom = () => {
-    if (!foundAniversariante) return;
+  const handleEmitirCupom = async () => {
+    if (!foundAniversariante || !userId) return;
 
-    const cupons = JSON.parse(localStorage.getItem("cupons") || "[]");
-    const novoCupom = {
-      id: Date.now().toString(),
-      estabelecimentoId: userData.id,
-      estabelecimentoNome: userData.nomeFantasia,
-      aniversarianteNome: foundAniversariante.nomeCompleto,
-      aniversarianteDataNascimento: foundAniversariante.dataNascimento,
-      dataEmissao: new Date().toISOString(),
-      usado: false,
-    };
+    try {
+      const codigo = `ANIV-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+      
+      const { error } = await supabase
+        .from("cupons")
+        .insert({
+          codigo: codigo,
+          estabelecimento_id: userId,
+          aniversariante_id: foundAniversariante.id,
+          data_emissao: new Date().toISOString(),
+          usado: false,
+        });
 
-    cupons.push(novoCupom);
-    localStorage.setItem("cupons", JSON.stringify(cupons));
+      if (error) throw error;
 
-    toast({
-      title: "Cupom Emitido!",
-      description: `Cupom emitido para ${foundAniversariante.nomeCompleto}`,
-    });
+      toast({
+        title: "Cupom Emitido!",
+        description: `Cupom emitido para ${foundAniversariante.nomeCompleto}`,
+      });
 
-    setSearchCPF("");
-    setFoundAniversariante(null);
+      setSearchCPF("");
+      setFoundAniversariante(null);
+      await loadCuponsEmitidos(userId);
+    } catch (error: any) {
+      console.error("Erro ao emitir cupom:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível emitir o cupom. Tente novamente.",
+      });
+    }
   };
 
   if (!userData) return null;

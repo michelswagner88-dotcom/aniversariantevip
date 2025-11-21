@@ -477,7 +477,7 @@ export default function Index() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [cupomGerado, setCupomGerado] = useState<any>(null);
   const [showCupom, setShowCupom] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
 
   // Buscar estabelecimentos do banco de dados
   useEffect(() => {
@@ -527,35 +527,101 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    const user = localStorage.getItem("currentAniversariante");
-    if (user) {
-      const userData = JSON.parse(user);
-      setCurrentUser(userData);
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       
-      // Filtrar automaticamente pelo estado do usuário
-      if (userData.estado) {
-        setSelectedEstado(userData.estado);
-      }
-    }
+      if (session) {
+        setSession(session);
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id);
 
+        if (roles?.some(r => r.role === "aniversariante")) {
+          const { data: aniversariante } = await supabase
+            .from("aniversariantes")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
+
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
+
+          if (aniversariante && profile) {
+            const userData = {
+              id: session.user.id,
+              nomeCompleto: profile.nome,
+              email: profile.email,
+              cpf: aniversariante.cpf,
+              dataNascimento: aniversariante.data_nascimento,
+            };
+            setCurrentUser(userData);
+          }
+        }
+      }
+    };
+
+    checkUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        setSession(null);
+      } else if (event === 'SIGNED_IN' && session) {
+        setSession(session);
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id);
+
+        if (roles?.some(r => r.role === "aniversariante")) {
+          const { data: aniversariante } = await supabase
+            .from("aniversariantes")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
+
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
+
+          if (aniversariante && profile) {
+            const userData = {
+              id: session.user.id,
+              nomeCompleto: profile.nome,
+              email: profile.email,
+              cpf: aniversariante.cpf,
+              dataNascimento: aniversariante.data_nascimento,
+            };
+            setCurrentUser(userData);
+          }
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    const pendingId = localStorage.getItem("pendingEstabelecimento");
+    const pendingId = sessionStorage.getItem("pendingEstabelecimento");
     if (pendingId && currentUser) {
       const estabelecimento = estabelecimentos.find((e) => e.id === pendingId);
       if (estabelecimento) {
         setSelectedEstabelecimento(estabelecimento);
         setDialogOpen(true);
-        localStorage.removeItem("pendingEstabelecimento");
+        sessionStorage.removeItem("pendingEstabelecimento");
       }
     }
   }, [currentUser, estabelecimentos]);
 
   const handleEmitirCupom = (estabelecimento: any) => {
-    const currentUserData = localStorage.getItem("currentAniversariante");
-    if (!currentUserData) {
-      localStorage.setItem("pendingEstabelecimento", estabelecimento.id);
+    if (!currentUser || !session) {
+      sessionStorage.setItem("pendingEstabelecimento", estabelecimento.id);
       toast({
         variant: "destructive",
         title: "Login Necessário",
@@ -568,35 +634,56 @@ export default function Index() {
     }
   };
 
-  const handleSolicitarCupom = () => {
+  const handleSolicitarCupom = async () => {
     if (!currentUser || !selectedEstabelecimento) return;
 
-    const novoCupom = {
-      id: Date.now().toString(),
-      estabelecimentoId: selectedEstabelecimento.id,
-      estabelecimentoNome: selectedEstabelecimento.nomeFantasia,
-      estabelecimentoLogo: selectedEstabelecimento.logoUrl,
-      aniversarianteId: currentUser.id,
-      aniversarianteNome: currentUser.nomeCompleto,
-      aniversarianteDataNascimento: currentUser.dataNascimento,
-      regras: selectedEstabelecimento.regrasAniversariante,
-      codigo: `ANIV-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-      dataEmissao: new Date().toISOString(),
-      usado: false,
-    };
+    try {
+      const codigo = `ANIV-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+      
+      const { data: cupom, error } = await supabase
+        .from("cupons")
+        .insert({
+          codigo: codigo,
+          estabelecimento_id: selectedEstabelecimento.id,
+          aniversariante_id: currentUser.id,
+          data_emissao: new Date().toISOString(),
+          usado: false,
+        })
+        .select()
+        .single();
 
-    const cupons = JSON.parse(localStorage.getItem("cupons") || "[]");
-    cupons.push(novoCupom);
-    localStorage.setItem("cupons", JSON.stringify(cupons));
+      if (error) throw error;
 
-    setCupomGerado(novoCupom);
-    setDialogOpen(false);
-    setShowCupom(true);
+      const novoCupom = {
+        id: cupom.id,
+        estabelecimentoId: selectedEstabelecimento.id,
+        estabelecimentoNome: selectedEstabelecimento.nomeFantasia,
+        estabelecimentoLogo: selectedEstabelecimento.logoUrl,
+        aniversarianteId: currentUser.id,
+        aniversarianteNome: currentUser.nomeCompleto,
+        aniversarianteDataNascimento: currentUser.dataNascimento,
+        regras: selectedEstabelecimento.regrasAniversariante,
+        codigo: codigo,
+        dataEmissao: new Date().toISOString(),
+        usado: false,
+      };
 
-    toast({
-      title: "Cupom Emitido!",
-      description: "Seu cupom foi gerado com sucesso",
-    });
+      setCupomGerado(novoCupom);
+      setDialogOpen(false);
+      setShowCupom(true);
+
+      toast({
+        title: "Cupom Emitido!",
+        description: "Seu cupom foi gerado com sucesso",
+      });
+    } catch (error: any) {
+      console.error("Erro ao emitir cupom:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível emitir o cupom. Tente novamente.",
+      });
+    }
   };
 
   const handlePrintCupom = () => {
@@ -651,9 +738,10 @@ export default function Index() {
     return a.cidade.localeCompare(b.cidade);
   });
 
-  const handleLogout = () => {
-    localStorage.removeItem("currentAniversariante");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setCurrentUser(null);
+    setSession(null);
     toast({
       title: "Até Logo!",
       description: "Você foi desconectado com sucesso",

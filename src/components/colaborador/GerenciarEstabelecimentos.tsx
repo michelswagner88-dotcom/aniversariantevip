@@ -21,7 +21,7 @@ type Estabelecimento = {
   endereco: string | null;
   cidade: string | null;
   estado: string | null;
-  categoria: string | null;
+  categoria: string[] | null;
   logo_url: string | null;
   descricao_beneficio: string | null;
   created_at: string;

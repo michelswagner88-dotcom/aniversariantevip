@@ -47,10 +47,13 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
     cnpj: "",
     telefone: "",
     endereco: "",
-    categoria: "",
+    categorias: [] as string[],
     cidade: "",
     estado: "",
     descricaoBeneficio: "",
+    linkCardapio: "",
+    regrasUtilizacao: "",
+    periodoValidade: "dia_aniversario",
   });
 
   const diasSemana = [

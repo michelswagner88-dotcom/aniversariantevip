@@ -103,7 +103,7 @@ export type Database = {
       }
       estabelecimentos: {
         Row: {
-          categoria: string | null
+          categoria: string[] | null
           cidade: string | null
           cnpj: string
           created_at: string | null
@@ -111,15 +111,18 @@ export type Database = {
           endereco: string | null
           estado: string | null
           id: string
+          link_cardapio: string | null
           logo_url: string | null
           nome_fantasia: string | null
+          periodo_validade_beneficio: string | null
           razao_social: string
+          regras_utilizacao: string | null
           telefone: string | null
           tem_conta_acesso: boolean | null
           updated_at: string | null
         }
         Insert: {
-          categoria?: string | null
+          categoria?: string[] | null
           cidade?: string | null
           cnpj: string
           created_at?: string | null
@@ -127,15 +130,18 @@ export type Database = {
           endereco?: string | null
           estado?: string | null
           id?: string
+          link_cardapio?: string | null
           logo_url?: string | null
           nome_fantasia?: string | null
+          periodo_validade_beneficio?: string | null
           razao_social: string
+          regras_utilizacao?: string | null
           telefone?: string | null
           tem_conta_acesso?: boolean | null
           updated_at?: string | null
         }
         Update: {
-          categoria?: string | null
+          categoria?: string[] | null
           cidade?: string | null
           cnpj?: string
           created_at?: string | null
@@ -143,9 +149,12 @@ export type Database = {
           endereco?: string | null
           estado?: string | null
           id?: string
+          link_cardapio?: string | null
           logo_url?: string | null
           nome_fantasia?: string | null
+          periodo_validade_beneficio?: string | null
           razao_social?: string
+          regras_utilizacao?: string | null
           telefone?: string | null
           tem_conta_acesso?: boolean | null
           updated_at?: string | null

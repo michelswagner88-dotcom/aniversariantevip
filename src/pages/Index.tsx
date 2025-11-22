@@ -137,7 +137,7 @@ const Index = () => {
           </h1>
           
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in">
-            Descubra centenas de estabelecimentos parceiros com benefícios exclusivos para o seu dia especial
+            Encontre estabelecimentos com benefícios especiais para o seu aniversário: do grande dia ao mês inteiro de comemoração.
           </p>
 
           {!currentUser && (

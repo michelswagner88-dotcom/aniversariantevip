@@ -15,6 +15,7 @@ import { Sidebar, SidebarContent, SidebarProvider, SidebarTrigger, SidebarGroup,
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
+import { useFavoritos } from "@/hooks/useFavoritos";
 
 const estabelecimentosFicticios = [
   // Estabelecimentos exemplo de outras cidades (manter para demonstração)
@@ -501,6 +502,15 @@ export default function Index() {
   const [cupomGerado, setCupomGerado] = useState<any>(null);
   const [showCupom, setShowCupom] = useState(false);
   const [session, setSession] = useState<any>(null);
+  
+  // Hook de favoritos
+  const { favoritos, toggleFavorito, isFavorito, loading: favoritosLoading } = useFavoritos(currentUser?.id || null);
+
+  // Função para abrir Google Maps
+  const openGoogleMaps = (endereco: string) => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`;
+    window.open(url, '_blank');
+  };
 
   // Buscar estabelecimentos do banco de dados
   useEffect(() => {
@@ -788,78 +798,8 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border print:hidden sticky top-0 bg-background z-40 shadow-sm">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Crown className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" />
-            <h1 className="text-base sm:text-xl md:text-2xl font-bold text-primary whitespace-nowrap">ANIVERSARIANTE VIP</h1>
-          </div>
-          <nav className="flex items-center gap-1.5 sm:gap-2">
-            {/* Aniversariante Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
-                  Aniversariante
-                  <ChevronDown className="ml-1 h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link to="/login/aniversariante" className="cursor-pointer w-full">
-                    Login
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/cadastro/aniversariante" className="cursor-pointer w-full">
-                    Cadastro
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Estabelecimento Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
-                  Estabelecimento
-                  <ChevronDown className="ml-1 h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link to="/login/estabelecimento" className="cursor-pointer w-full">
-                    Login
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/cadastro/estabelecimento" className="cursor-pointer w-full">
-                    Cadastro
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Colaborador Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
-                  Colaborador
-                  <ChevronDown className="ml-1 h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link to="/login/colaborador" className="cursor-pointer w-full">
-                    Acessar Painel
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </nav>
-        </div>
-      </header>
-
+      <Header />
+      <div className="pt-16">
       {/* Hero */}
       <section className="py-8 sm:py-12 md:py-16 bg-gradient-to-b from-primary/10 to-background print:hidden">
         <div className="container mx-auto px-4 text-center">
@@ -951,26 +891,52 @@ export default function Index() {
                   <div className="h-1 w-20 bg-primary/60 mt-2 rounded-full"></div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  {group.estabelecimentos.map((estabelecimento) => (
-              <Card key={estabelecimento.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="h-40 sm:h-48 overflow-hidden">
+                  {group.estabelecimentos.map((estabelecimento, index) => (
+              <Card 
+                key={estabelecimento.id} 
+                className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="relative h-40 sm:h-48 overflow-hidden group">
                   <img
                     src={estabelecimento.logoUrl}
                     alt={estabelecimento.nomeFantasia}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                     loading="lazy"
                     decoding="async"
                   />
+                  {/* Botão de favorito */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorito(estabelecimento.id);
+                    }}
+                    disabled={favoritosLoading}
+                    className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-all duration-200 ${
+                      isFavorito(estabelecimento.id)
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                        : 'bg-background/80 text-foreground hover:bg-background'
+                    }`}
+                  >
+                    <Heart 
+                      className={`h-5 w-5 transition-all ${
+                        isFavorito(estabelecimento.id) ? 'fill-current' : ''
+                      }`}
+                    />
+                  </button>
                 </div>
                 <CardHeader className="p-4 sm:p-6">
                   <CardTitle className="text-lg sm:text-xl mb-1">{estabelecimento.nomeFantasia}</CardTitle>
                   <p className="text-sm text-muted-foreground">{getCategoriaLabel(estabelecimento.categoria)}</p>
                 </CardHeader>
                 <CardContent className="space-y-3 p-4 sm:p-6 pt-0">
-                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <span className="line-clamp-2">{estabelecimento.endereco}</span>
-                  </div>
+                  <button
+                    onClick={() => openGoogleMaps(estabelecimento.endereco)}
+                    className="flex items-start gap-2 text-sm text-muted-foreground hover:text-primary transition-colors w-full text-left group"
+                  >
+                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                    <span className="line-clamp-2 group-hover:underline">{estabelecimento.endereco}</span>
+                  </button>
 
                   {estabelecimento.diasHorarioFuncionamento && (
                     <div className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -1083,10 +1049,13 @@ export default function Index() {
 
               <div>
                 <h4 className="font-semibold mb-2 text-base">Localização</h4>
-                <p className="text-sm sm:text-base text-muted-foreground flex items-start gap-2">
-                  <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
-                  {selectedEstabelecimento.endereco}
-                </p>
+                <button
+                  onClick={() => openGoogleMaps(selectedEstabelecimento.endereco)}
+                  className="text-sm sm:text-base text-muted-foreground flex items-start gap-2 hover:text-primary transition-colors group w-full text-left"
+                >
+                  <MapPin className="h-4 w-4 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                  <span className="group-hover:underline">{selectedEstabelecimento.endereco}</span>
+                </button>
               </div>
 
               {selectedEstabelecimento.diasHorarioFuncionamento && (
@@ -1358,100 +1327,8 @@ export default function Index() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-card border-t print:hidden">
-        <div className="container mx-auto px-4 py-8 sm:py-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-            {/* Coluna Aniversariantes */}
-            <div>
-              <h3 className="text-lg font-bold text-primary mb-4">Aniversariantes</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>
-                  <a href="#como-funciona-aniversariante" className="hover:text-primary transition-colors">
-                    Como funciona
-                  </a>
-                </li>
-                <li>
-                  <Link to="/cadastro/aniversariante" className="hover:text-primary transition-colors">
-                    Cadastrar
-                  </Link>
-                </li>
-                <li>
-                  <a href="#faq" className="hover:text-primary transition-colors">
-                    FAQ
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Coluna Estabelecimentos */}
-            <div>
-              <h3 className="text-lg font-bold text-primary mb-4">Estabelecimentos</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>
-                  <a href="#como-funciona-estabelecimento" className="hover:text-primary transition-colors">
-                    Como funciona
-                  </a>
-                </li>
-                <li>
-                  <Link to="/cadastro/estabelecimento" className="hover:text-primary transition-colors">
-                    Seja parceiro
-                  </Link>
-                </li>
-                <li>
-                  <a href="#vantagens-estabelecimentos" className="hover:text-primary transition-colors">
-                    Vantagens
-                  </a>
-                </li>
-                <li>
-                  <a href="#suporte" className="hover:text-primary transition-colors">
-                    Suporte
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Coluna Suporte */}
-            <div id="suporte">
-              <h3 className="text-lg font-bold text-primary mb-4">Suporte</h3>
-              <ul className="space-y-3 text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-primary flex-shrink-0" />
-                  <a href="https://wa.me/5548996243161" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                    (48) 99624-3161
-                  </a>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-primary flex-shrink-0" />
-                  <a href="mailto:aniversariantevip@gmail.com" className="hover:text-primary transition-colors">
-                    aniversariantevip@gmail.com
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Redes Sociais */}
-          <div className="border-t pt-6">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <p className="text-sm text-muted-foreground">
-                &copy; 2024 Aniversariante VIP - Todos os direitos reservados
-              </p>
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">Siga-nos:</span>
-                <a
-                  href="https://www.instagram.com/aniversariantevip"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:text-primary/80 transition-colors"
-                  aria-label="Instagram"
-                >
-                  <Instagram className="h-5 w-5" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
+      </div>
+      <Footer />
     </div>
   );
 }

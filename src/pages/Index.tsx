@@ -12,6 +12,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { NavLink } from "@/components/NavLink";
 import { supabase } from "@/integrations/supabase/client";
 import { Sidebar, SidebarContent, SidebarProvider, SidebarTrigger, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from "@/components/ui/sidebar";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 
 const estabelecimentosFicticios = [
   // Estabelecimentos exemplo de outras cidades (manter para demonstração)

@@ -18,6 +18,9 @@ import LoginColaborador from "./pages/LoginColaborador";
 import AreaColaborador from "./pages/AreaColaborador";
 import SetupAdmin from "./pages/SetupAdmin";
 import NotFound from "./pages/NotFound";
+import ComoFunciona from "./pages/ComoFunciona";
+import SejaParceito from "./pages/SejaParceito";
+import FAQ from "./pages/FAQ";
 
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -39,6 +42,9 @@ const App = () => (
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/como-funciona" element={<ComoFunciona />} />
+            <Route path="/seja-parceiro" element={<SejaParceito />} />
+            <Route path="/faq" element={<FAQ />} />
             <Route path="/cadastro/aniversariante" element={<CadastroAniversariante />} />
             <Route path="/login/aniversariante" element={<LoginAniversariante />} />
             <Route path="/area-aniversariante" element={<AreaAniversariante />} />

@@ -4,6 +4,8 @@ import { HelpCircle, Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { CONTATOS } from "@/lib/constants";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 export default function FAQ() {
   const faqItems = [
@@ -43,6 +45,8 @@ export default function FAQ() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
+      <div className="pt-16">
       {/* Hero */}
       <section className="relative bg-gradient-to-b from-primary/10 to-background py-20">
         <div className="container mx-auto px-4 text-center">
@@ -101,6 +105,8 @@ export default function FAQ() {
           </div>
         </div>
       </section>
+      </div>
+      <Footer />
     </div>
   );
 }

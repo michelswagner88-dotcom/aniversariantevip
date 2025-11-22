@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Building2, FileText, Settings, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 export default function SejaParceiro() {
   const passos = [
@@ -56,6 +58,8 @@ export default function SejaParceiro() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
+      <div className="pt-16">
       {/* Hero */}
       <section className="relative bg-gradient-to-b from-primary/10 to-background py-20">
         <div className="container mx-auto px-4 text-center">
@@ -161,6 +165,8 @@ export default function SejaParceiro() {
           </div>
         </div>
       </section>
+      </div>
+      <Footer />
     </div>
   );
 }

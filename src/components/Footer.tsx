@@ -30,7 +30,7 @@ export const Footer = () => {
                 to="/como-funciona" 
                 className="text-xs text-muted-foreground hover:text-primary transition-colors"
               >
-                Como funciona
+                Como Funciona
               </Link>
               <Link 
                 to="/cadastro/aniversariante" 
@@ -57,13 +57,13 @@ export const Footer = () => {
                 to="/seja-parceiro" 
                 className="text-xs text-muted-foreground hover:text-primary transition-colors"
               >
-                Seja parceiro
+                Seja Parceiro
               </Link>
               <Link 
                 to="/planos" 
                 className="text-xs text-muted-foreground hover:text-primary transition-colors"
               >
-                Planos para estabelecimentos
+                Planos para Estabelecimentos
               </Link>
               <Link 
                 to="/login/estabelecimento" 
@@ -105,7 +105,7 @@ export const Footer = () => {
             </div>
 
             <h4 className="font-semibold text-foreground mb-2 text-xs uppercase tracking-wider">
-              Redes sociais
+              Redes Sociais
             </h4>
             <a
               href={CONTATOS.instagram}

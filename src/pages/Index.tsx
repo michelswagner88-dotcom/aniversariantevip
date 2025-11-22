@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { CATEGORIAS_ESTABELECIMENTO, ESTADOS_CIDADES } from "@/lib/constants";
+import { CATEGORIAS_ESTABELECIMENTO, ESTADOS_CIDADES, ESTADOS } from "@/lib/constants";
 import { useFavoritos } from "@/hooks/useFavoritos";
 
 interface Estabelecimento {
@@ -176,9 +176,9 @@ const Index = () => {
                   <SelectValue placeholder="Selecione o Estado" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  {Object.keys(ESTADOS_CIDADES).map(estado => (
-                    <SelectItem key={estado} value={estado} className="text-base py-3">
-                      {estado}
+                  {ESTADOS.map(estado => (
+                    <SelectItem key={estado.value} value={estado.value} className="text-base py-3">
+                      {estado.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

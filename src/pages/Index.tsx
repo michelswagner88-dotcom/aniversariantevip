@@ -140,33 +140,33 @@ const Index = () => {
       <Header />
 
       {/* Hero Section Premium */}
-      <section className="relative py-24 sm:py-40 overflow-hidden mb-12">
+      <section className="relative py-16 sm:py-24 md:py-32 overflow-hidden mb-8">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-background" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.1),transparent_50%)]" />
         
         <div className="container relative mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 px-6 py-3 bg-primary/10 border border-primary/20 rounded-full mb-8 animate-fade-in">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <span className="text-sm sm:text-base font-semibold text-primary uppercase tracking-wide">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-6 animate-fade-in">
+            <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-semibold text-primary uppercase tracking-wide leading-tight">
               O MAIOR GUIA DE BENEFÍCIOS PARA ANIVERSARIANTES DO BRASIL
             </span>
           </div>
           
-          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-foreground leading-tight animate-fade-in">
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-foreground leading-tight animate-fade-in px-2">
             Seu Aniversário<br />
             <span className="text-primary">Merece Celebração</span>
           </h1>
           
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-12 animate-fade-in px-4 leading-relaxed">
             Encontre estabelecimentos com benefícios especiais para o seu aniversário: do grande dia ao mês inteiro de comemoração.
           </p>
 
           {!currentUser && (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in">
-              <Button size="lg" asChild className="text-base">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-fade-in px-4">
+              <Button size="lg" asChild className="text-sm sm:text-base w-full sm:w-auto min-h-[48px]">
                 <a href="/cadastro/aniversariante">Cadastrar-se Grátis</a>
               </Button>
-              <Button size="lg" variant="outline" asChild className="text-base">
+              <Button size="lg" variant="outline" asChild className="text-sm sm:text-base w-full sm:w-auto min-h-[48px]">
                 <a href="/login/aniversariante">Já sou cadastrado</a>
               </Button>
             </div>
@@ -175,27 +175,29 @@ const Index = () => {
       </section>
 
       {/* Filtros */}
-      <section className="py-8 bg-card/50 border-y border-border">
+      <section className="py-6 sm:py-8 bg-card/50 border-y border-border">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col gap-4 max-w-5xl mx-auto">
+          <div className="flex flex-col gap-3 sm:gap-4 max-w-5xl mx-auto">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                 placeholder="Buscar estabelecimento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-12"
+                className="pl-10 h-12 sm:h-14 text-base"
               />
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-                <SelectTrigger className="h-12">
+                <SelectTrigger className="h-12 sm:h-14 text-base">
                   <SelectValue placeholder="Selecione a categoria" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
                   {CATEGORIAS_ESTABELECIMENTO.map(cat => (
-                    <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                    <SelectItem key={cat.value} value={cat.value} className="text-base py-3">
+                      {cat.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -208,12 +210,14 @@ const Index = () => {
                 }}
                 disabled={!selectedCategoria}
               >
-                <SelectTrigger className="h-12">
+                <SelectTrigger className="h-12 sm:h-14 text-base">
                   <SelectValue placeholder="Selecione o estado" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
                   {estados.map(estado => (
-                    <SelectItem key={estado} value={estado}>{estado}</SelectItem>
+                    <SelectItem key={estado} value={estado} className="text-base py-3">
+                      {estado}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -223,12 +227,14 @@ const Index = () => {
                 onValueChange={setSelectedCidade}
                 disabled={!selectedEstado}
               >
-                <SelectTrigger className="h-12">
+                <SelectTrigger className="h-12 sm:h-14 text-base">
                   <SelectValue placeholder="Selecione a cidade" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
                   {cidadesDisponiveis.map(cidade => (
-                    <SelectItem key={cidade} value={cidade}>{cidade}</SelectItem>
+                    <SelectItem key={cidade} value={cidade} className="text-base py-3">
+                      {cidade}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -241,42 +247,42 @@ const Index = () => {
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4 max-w-7xl">
           {!selectedCategoria ? (
-            <div className="text-center py-20">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                <Search className="h-8 w-8 text-primary" />
+            <div className="text-center py-12 sm:py-20 px-4">
+              <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary/10 mb-4">
+                <Search className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-display font-bold text-foreground mb-2">
+              <h3 className="text-xl sm:text-2xl font-display font-bold text-foreground mb-2">
                 Comece sua busca
               </h3>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-base sm:text-lg text-muted-foreground px-4">
                 Selecione uma categoria para ver os estabelecimentos disponíveis
               </p>
             </div>
           ) : sortedGroups.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-lg text-muted-foreground">
+            <div className="text-center py-12 sm:py-20 px-4">
+              <p className="text-base sm:text-lg text-muted-foreground">
                 Nenhum estabelecimento encontrado com os filtros selecionados.
               </p>
             </div>
           ) : (
             sortedGroups.map((group) => (
-              <div key={`${group.estado}-${group.cidade}`} className="mb-16">
-                <div className="mb-8">
-                  <h2 className="text-3xl font-display font-bold text-foreground flex items-center gap-3">
-                    <MapPin className="h-8 w-8 text-primary" />
-                    {group.cidade}, {group.estado}
+              <div key={`${group.estado}-${group.cidade}`} className="mb-12 sm:mb-16">
+                <div className="mb-6 sm:mb-8 px-2">
+                  <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground flex items-center gap-2 sm:gap-3">
+                    <MapPin className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" />
+                    <span className="break-words">{group.cidade}, {group.estado}</span>
                   </h2>
-                  <div className="h-1 w-24 bg-primary/60 mt-3 rounded-full" />
+                  <div className="h-1 w-20 sm:w-24 bg-primary/60 mt-3 rounded-full" />
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {group.estabelecimentos.map((estabelecimento, index) => (
                     <Card 
                       key={estabelecimento.id} 
-                      className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 animate-fade-in group"
+                      className="overflow-hidden hover:shadow-2xl transition-all duration-300 sm:hover:-translate-y-2 animate-fade-in group"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
-                      <div className="relative h-48 overflow-hidden">
+                      <div className="relative h-44 sm:h-48 overflow-hidden">
                         <img
                           src={estabelecimento.logo_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=400&fit=crop"}
                           alt={estabelecimento.nome_fantasia || "Estabelecimento"}
@@ -292,11 +298,12 @@ const Index = () => {
                               toggleFavorito(estabelecimento.id);
                             }}
                             disabled={favoritosLoading}
-                            className={`absolute top-4 right-4 p-2.5 rounded-full backdrop-blur-md transition-all duration-200 ${
+                            className={`absolute top-3 right-3 p-3 rounded-full backdrop-blur-md transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center ${
                               isFavorito(estabelecimento.id)
                                 ? 'bg-primary text-primary-foreground shadow-lg scale-110'
                                 : 'bg-background/80 text-foreground hover:bg-background hover:scale-105'
                             }`}
+                            aria-label={isFavorito(estabelecimento.id) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                           >
                             <Heart 
                               className={`h-5 w-5 transition-all ${
@@ -306,20 +313,23 @@ const Index = () => {
                           </button>
                         )}
                         
-                        <Badge className="absolute bottom-4 left-4 bg-primary/90 backdrop-blur-sm">
+                        <Badge className="absolute bottom-3 left-3 bg-primary/90 backdrop-blur-sm text-xs sm:text-sm px-2 py-1">
                           {getCategoriaLabel(estabelecimento.categoria)}
                         </Badge>
                       </div>
                       
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-xl">{estabelecimento.nome_fantasia}</CardTitle>
+                      <CardHeader className="pb-3 px-4 sm:px-6">
+                        <CardTitle className="text-lg sm:text-xl leading-tight break-words">
+                          {estabelecimento.nome_fantasia}
+                        </CardTitle>
                       </CardHeader>
                       
-                      <CardContent className="space-y-3">
+                      <CardContent className="space-y-3 px-4 sm:px-6 pb-4 sm:pb-6">
                         {estabelecimento.endereco && (
                           <button
                             onClick={() => openGoogleMaps(estabelecimento.endereco)}
-                            className="flex items-start gap-2 text-sm text-muted-foreground hover:text-primary transition-colors w-full text-left group/link"
+                            className="flex items-start gap-2 text-sm text-muted-foreground hover:text-primary transition-colors w-full text-left group/link min-h-[44px] py-2"
+                            aria-label="Abrir no Google Maps"
                           >
                             <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 group-hover/link:scale-110 transition-transform" />
                             <span className="line-clamp-2 group-hover/link:underline">{estabelecimento.endereco}</span>
@@ -327,9 +337,13 @@ const Index = () => {
                         )}
 
                         {estabelecimento.telefone && (
-                          <a href={`tel:${estabelecimento.telefone}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                            <Phone className="h-4 w-4" />
-                            {estabelecimento.telefone}
+                          <a 
+                            href={`tel:${estabelecimento.telefone}`} 
+                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors min-h-[44px] py-2"
+                            aria-label="Ligar para o estabelecimento"
+                          >
+                            <Phone className="h-4 w-4 flex-shrink-0" />
+                            <span>{estabelecimento.telefone}</span>
                           </a>
                         )}
 
@@ -338,27 +352,28 @@ const Index = () => {
                             href={estabelecimento.link_cardapio} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm text-primary hover:underline"
+                            className="flex items-center gap-2 text-sm text-primary hover:underline min-h-[44px] py-2"
+                            aria-label="Ver cardápio"
                           >
-                            <ExternalLink className="h-4 w-4" />
-                            Ver Cardápio
+                            <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                            <span>Ver Cardápio</span>
                           </a>
                         )}
                         
                         {currentUser && estabelecimento.descricao_beneficio && (
                           <>
-                            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 mt-4">
+                            <div className="p-3 sm:p-4 bg-primary/5 rounded-lg border border-primary/20 mt-3">
                               <p className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
-                                <Sparkles className="h-4 w-4" />
+                                <Sparkles className="h-4 w-4 flex-shrink-0" />
                                 Benefício Exclusivo
                               </p>
-                              <p className="text-sm text-foreground leading-relaxed">
+                              <p className="text-sm text-foreground leading-relaxed break-words">
                                 {estabelecimento.descricao_beneficio}
                               </p>
                             </div>
 
                             {estabelecimento.regras_utilizacao && (
-                              <p className="text-xs text-muted-foreground italic">
+                              <p className="text-xs text-muted-foreground italic break-words leading-relaxed">
                                 {estabelecimento.regras_utilizacao}
                               </p>
                             )}
@@ -366,12 +381,17 @@ const Index = () => {
                         )}
 
                         {!currentUser && (
-                          <div className="p-4 bg-muted/50 rounded-lg border border-border mt-4">
-                            <p className="text-sm text-muted-foreground text-center">
-                              <a href="/cadastro/aniversariante" className="text-primary hover:underline font-medium">
-                                Cadastre-se grátis
-                              </a> para ver os benefícios
+                          <div className="p-3 sm:p-4 bg-muted/50 rounded-lg border border-border mt-3">
+                            <p className="text-sm text-muted-foreground text-center mb-2 leading-relaxed">
+                              Cadastre-se para ver os benefícios exclusivos
                             </p>
+                            <Button 
+                              size="sm" 
+                              asChild 
+                              className="w-full text-xs sm:text-sm min-h-[40px]"
+                            >
+                              <a href="/cadastro/aniversariante">Cadastrar agora</a>
+                            </Button>
                           </div>
                         )}
                       </CardContent>

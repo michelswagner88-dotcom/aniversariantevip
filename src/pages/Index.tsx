@@ -462,11 +462,31 @@ const estabelecimentosFicticios = [
   },
 ];
 
+type Estabelecimento = {
+  id: string;
+  nomeFantasia: string;
+  categoria: string | string[];
+  endereco: string;
+  cidade: string;
+  estado: string;
+  diasHorarioFuncionamento: string;
+  beneficiosAniversariante: string;
+  regrasAniversariante: string;
+  periodoValidade: string;
+  linkCardapioDigital: string;
+  logoUrl: string;
+  telefoneContato: string;
+  whatsapp: string;
+  emailContato: string;
+  instagram: string;
+  facebook: string;
+};
+
 export default function Index() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const cupomRef = useRef<HTMLDivElement>(null);
-  const [estabelecimentos, setEstabelecimentos] = useState(estabelecimentosFicticios);
+  const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>(estabelecimentosFicticios);
   const [loadingEstabelecimentos, setLoadingEstabelecimentos] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoria, setSelectedCategoria] = useState<string>("todas");
@@ -690,15 +710,30 @@ export default function Index() {
     window.print();
   };
 
-  const getCategoriaLabel = (categoria: string) => {
+  const getCategoriaLabel = (categoria: string | string[]) => {
     const labels: Record<string, string> = {
       bar: "Bares",
+      bares: "Bares",
       restaurante: "Restaurantes",
+      restaurantes: "Restaurantes",
       balada: "Baladas",
+      casas_noturnas: "Casas noturnas",
       loja: "Lojas",
+      lojas: "Lojas",
       servico: "Serviços",
+      servicos: "Serviços",
+      cafeterias: "Cafeterias",
+      confeitarias: "Confeitarias",
+      entretenimento: "Entretenimento",
+      farmacias: "Farmácias",
+      hoteis_pousadas: "Hotéis / pousadas",
+      sorveterias: "Sorveterias",
       outros: "Outros",
     };
+    
+    if (Array.isArray(categoria)) {
+      return categoria.map(cat => labels[cat] || cat).join(", ");
+    }
     return labels[categoria] || categoria;
   };
 

@@ -186,10 +186,13 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
           endereco: validatedData.endereco,
           cidade: formData.cidade,
           estado: formData.estado,
-          categoria: formData.categoria,
+          categoria: formData.categorias.length > 0 ? formData.categorias : null,
           descricao_beneficio: validatedData.descricaoBeneficio,
           logo_url: logoUrl,
           tem_conta_acesso: true,
+          link_cardapio: formData.linkCardapio || null,
+          regras_utilizacao: formData.regrasUtilizacao || null,
+          periodo_validade_beneficio: formData.periodoValidade,
         });
 
       if (estabError) throw estabError;
@@ -214,10 +217,13 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
         cnpj: "",
         telefone: "",
         endereco: "",
-        categoria: "",
+        categorias: [],
         cidade: "",
         estado: "",
         descricaoBeneficio: "",
+        linkCardapio: "",
+        regrasUtilizacao: "",
+        periodoValidade: "dia_aniversario",
       });
       setLogoFile(null);
       setLogoPreview("");
@@ -333,24 +339,44 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="categoria">Categoria</Label>
-              <Select 
-                value={formData.categoria} 
-                onValueChange={(value) => setFormData({ ...formData, categoria: value })}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a categoria" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  <SelectItem value="bar">Bar</SelectItem>
-                  <SelectItem value="restaurante">Restaurante</SelectItem>
-                  <SelectItem value="balada">Balada</SelectItem>
-                  <SelectItem value="loja">Loja</SelectItem>
-                  <SelectItem value="servico">Serviço</SelectItem>
-                  <SelectItem value="outros">Outros</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Categorias (selecione uma ou mais)</Label>
+              <div className="grid grid-cols-2 gap-3 p-4 border rounded-md">
+                {[
+                  { value: "bares", label: "Bares" },
+                  { value: "cafeterias", label: "Cafeterias" },
+                  { value: "casas_noturnas", label: "Casas noturnas" },
+                  { value: "confeitarias", label: "Confeitarias" },
+                  { value: "entretenimento", label: "Entretenimento" },
+                  { value: "farmacias", label: "Farmácias" },
+                  { value: "hoteis_pousadas", label: "Hotéis / pousadas" },
+                  { value: "lojas", label: "Lojas" },
+                  { value: "restaurantes", label: "Restaurantes" },
+                  { value: "servicos", label: "Serviços" },
+                  { value: "sorveterias", label: "Sorveterias" },
+                ].map((cat) => (
+                  <div key={cat.value} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={cat.value}
+                      checked={formData.categorias.includes(cat.value)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({ ...formData, categorias: [...formData.categorias, cat.value] });
+                        } else {
+                          setFormData({ ...formData, categorias: formData.categorias.filter(c => c !== cat.value) });
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-gray-300 cursor-pointer"
+                    />
+                    <Label htmlFor={cat.value} className="text-sm font-normal cursor-pointer">
+                      {cat.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              {formData.categorias.length === 0 && (
+                <p className="text-sm text-muted-foreground">Selecione pelo menos uma categoria</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

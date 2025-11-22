@@ -133,7 +133,7 @@ const Index = () => {
           </h1>
           
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-12 animate-fade-in px-4 leading-relaxed">
-            Encontre estabelecimentos com benefícios especiais para o seu aniversário: do grande dia ao mês inteiro de comemoração.
+            Encontre estabelecimentos com benefícios especiais para o seu aniversário: do mês inteiro ao grande dia de comemoração.
           </p>
 
           {!currentUser && (

@@ -143,7 +143,7 @@ const Index = () => {
                 <a href="/cadastro/aniversariante">Cadastrar-se Grátis</a>
               </Button>
               <Button size="lg" variant="outline" asChild className="text-sm sm:text-base w-full sm:w-auto min-h-[48px]">
-                <a href="/login/aniversariante">Já sou cadastrado</a>
+                <a href="/login/aniversariante">Já Sou Cadastrado</a>
               </Button>
             </div>
           )}
@@ -241,7 +241,7 @@ const Index = () => {
                 <Search className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
               </div>
               <h3 className="text-xl sm:text-2xl font-display font-bold text-foreground mb-2">
-                Comece sua busca
+                Comece Sua Busca
               </h3>
               <p className="text-base sm:text-lg text-muted-foreground px-4">
                 Selecione uma categoria para ver os estabelecimentos disponíveis
@@ -379,7 +379,7 @@ const Index = () => {
                               asChild 
                               className="w-full text-xs sm:text-sm min-h-[40px]"
                             >
-                              <a href="/cadastro/aniversariante">Cadastrar agora</a>
+                              <a href="/cadastro/aniversariante">Cadastrar Agora</a>
                             </Button>
                           </div>
                         )}

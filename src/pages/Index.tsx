@@ -78,7 +78,7 @@ const Index = () => {
     window.open(url, "_blank");
   };
 
-  // Filtros - só mostra se categoria estiver selecionada
+  // Filtros
   const estabelecimentosFiltrados = selectedCategoria 
     ? estabelecimentos.filter((est) => {
         const matchesSearch = est.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
@@ -110,30 +110,6 @@ const Index = () => {
     if (a.estado !== b.estado) return a.estado.localeCompare(b.estado);
     return a.cidade.localeCompare(b.cidade);
   });
-
-  // Estados e cidades disponíveis (baseado na categoria selecionada)
-  const estabelecimentosDaCategoria = selectedCategoria
-    ? estabelecimentos.filter((est) =>
-        Array.isArray(est.categoria)
-          ? est.categoria.includes(selectedCategoria)
-          : est.categoria === selectedCategoria
-      )
-    : [];
-
-  const estados = Array.from(
-    new Set(estabelecimentosDaCategoria.map((e) => e.estado).filter(Boolean))
-  ) as string[];
-
-  const cidadesDisponiveis = selectedEstado
-    ? Array.from(
-        new Set(
-          estabelecimentosDaCategoria
-            .filter((e) => e.estado === selectedEstado)
-            .map((e) => e.cidade)
-            .filter(Boolean)
-        )
-      ) as string[]
-    : [];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -208,13 +184,12 @@ const Index = () => {
                   setSelectedEstado(value);
                   setSelectedCidade("");
                 }}
-                disabled={!selectedCategoria}
               >
                 <SelectTrigger className="h-12 sm:h-14 text-base">
                   <SelectValue placeholder="Selecione o estado" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  {estados.map(estado => (
+                  {Object.keys(ESTADOS_CIDADES).map(estado => (
                     <SelectItem key={estado} value={estado} className="text-base py-3">
                       {estado}
                     </SelectItem>
@@ -228,10 +203,10 @@ const Index = () => {
                 disabled={!selectedEstado}
               >
                 <SelectTrigger className="h-12 sm:h-14 text-base">
-                  <SelectValue placeholder="Selecione a cidade" />
+                  <SelectValue placeholder={selectedEstado ? "Selecione a cidade" : "Selecione o estado primeiro"} />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  {cidadesDisponiveis.map(cidade => (
+                  {selectedEstado && ESTADOS_CIDADES[selectedEstado as keyof typeof ESTADOS_CIDADES]?.map(cidade => (
                     <SelectItem key={cidade} value={cidade} className="text-base py-3">
                       {cidade}
                     </SelectItem>

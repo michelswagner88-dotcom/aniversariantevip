@@ -243,6 +243,20 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Contador de Resultados */}
+      {selectedCategoria && (
+        <div className="container mx-auto px-4 max-w-7xl pt-6">
+          <p className="text-sm sm:text-base text-muted-foreground">
+            <span className="font-semibold text-foreground">
+              {estabelecimentosFiltrados.length}
+            </span>{" "}
+            {estabelecimentosFiltrados.length === 1 
+              ? "estabelecimento encontrado" 
+              : "estabelecimentos encontrados"}
+          </p>
+        </div>
+      )}
+
       {/* Listagem de Estabelecimentos */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4 max-w-7xl">

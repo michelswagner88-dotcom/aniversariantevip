@@ -72,6 +72,16 @@ All colors MUST be HSL.
       opacity: 1;
     }
   }
+  
+  /* Hover scale utility */
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-105;
+  }
+  
+  /* Interactive hover effects */
+  button, a {
+    @apply transition-all duration-200;
+  }
 }
 
 @media print {

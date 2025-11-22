@@ -1,16 +1,19 @@
 // Constantes do sistema Aniversariante VIP
 
 export const CATEGORIAS_ESTABELECIMENTO = [
-  { value: "bares", label: "Bares" },
+  { value: "academias_estudios", label: "Academias/Estúdios" },
+  { value: "baladas_vida_noturna", label: "Baladas/Vida noturna" },
+  { value: "barbearias", label: "Barbearias" },
+  { value: "bares_pubs", label: "Bares/Pubs" },
   { value: "cafeterias", label: "Cafeterias" },
-  { value: "casas_noturnas", label: "Casas noturnas" },
-  { value: "confeitarias", label: "Confeitarias" },
   { value: "entretenimento", label: "Entretenimento" },
-  { value: "farmacias", label: "Farmácias" },
-  { value: "hoteis_pousadas", label: "Hotéis / pousadas" },
-  { value: "lojas", label: "Lojas" },
+  { value: "hoteis_pousadas", label: "Hotéis/Pousadas" },
+  { value: "lojas_presente_variedades", label: "Lojas de Presente/Variedades" },
+  { value: "lojas_roupas_acessorios", label: "Lojas de Roupas/Acessórios" },
+  { value: "lojas_suplementos", label: "Lojas de Suplementos" },
+  { value: "padarias_confeitarias", label: "Padarias/Confeitarias" },
   { value: "restaurantes", label: "Restaurantes" },
-  { value: "servicos", label: "Serviços" },
+  { value: "saloes_beleza_estetica", label: "Salões de beleza/Estética" },
   { value: "sorveterias", label: "Sorveterias" },
 ] as const;
 

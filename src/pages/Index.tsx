@@ -119,7 +119,7 @@ const Index = () => {
       <Header />
 
       {/* Hero Section Premium */}
-      <section className="relative py-20 sm:py-32 overflow-hidden">
+      <section className="relative py-24 sm:py-40 overflow-hidden mb-12">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-background" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.1),transparent_50%)]" />
         
@@ -134,8 +134,8 @@ const Index = () => {
             <span className="text-primary">Merece Celebração</span>
           </h1>
           
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 animate-fade-in">
-            Descubra centenas de estabelecimentos parceiros com benefícios exclusivos para o seu dia especial
+          <p className="text-lg sm:text-xl md:text-2xl font-semibold text-primary max-w-3xl mx-auto mb-12 animate-fade-in uppercase tracking-wide">
+            O MAIOR GUIA DE BENEFÍCIOS PARA ANIVERSARIANTES DO BRASIL
           </p>
 
           {!currentUser && (

@@ -15,6 +15,8 @@ export const CATEGORIAS_ESTABELECIMENTO = [
   { value: "restaurantes", label: "Restaurantes" },
   { value: "saloes_beleza_estetica", label: "Salões de Beleza/Estética" },
   { value: "sorveterias", label: "Sorveterias" },
+  { value: "outros_comercios", label: "Outros Comércios" },
+  { value: "servicos", label: "Serviços" },
 ] as const;
 
 export const PERIODOS_VALIDADE = [

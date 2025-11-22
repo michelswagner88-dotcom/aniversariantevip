@@ -110,7 +110,9 @@ export type Database = {
           descricao_beneficio: string | null
           endereco: string | null
           estado: string | null
+          horario_funcionamento: string | null
           id: string
+          instagram: string | null
           link_cardapio: string | null
           logo_url: string | null
           nome_fantasia: string | null
@@ -129,7 +131,9 @@ export type Database = {
           descricao_beneficio?: string | null
           endereco?: string | null
           estado?: string | null
+          horario_funcionamento?: string | null
           id?: string
+          instagram?: string | null
           link_cardapio?: string | null
           logo_url?: string | null
           nome_fantasia?: string | null
@@ -148,7 +152,9 @@ export type Database = {
           descricao_beneficio?: string | null
           endereco?: string | null
           estado?: string | null
+          horario_funcionamento?: string | null
           id?: string
+          instagram?: string | null
           link_cardapio?: string | null
           logo_url?: string | null
           nome_fantasia?: string | null

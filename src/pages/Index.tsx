@@ -173,7 +173,7 @@ const Index = () => {
                 }}
               >
                 <SelectTrigger className="h-12 sm:h-14 text-base">
-                  <SelectValue placeholder="Selecione o estado" />
+                  <SelectValue placeholder="Selecione o Estado" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
                   {Object.keys(ESTADOS_CIDADES).map(estado => (
@@ -190,7 +190,7 @@ const Index = () => {
                 disabled={!selectedEstado}
               >
                 <SelectTrigger className="h-12 sm:h-14 text-base">
-                  <SelectValue placeholder={selectedEstado ? "Selecione a cidade" : "Selecione o estado primeiro"} />
+                  <SelectValue placeholder={selectedEstado ? "Selecione a Cidade" : "Selecione o Estado primeiro"} />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
                   {selectedEstado && ESTADOS_CIDADES[selectedEstado as keyof typeof ESTADOS_CIDADES]?.map(cidade => (
@@ -203,7 +203,7 @@ const Index = () => {
 
               <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
                 <SelectTrigger className="h-12 sm:h-14 text-base">
-                  <SelectValue placeholder="Selecione a categoria" />
+                  <SelectValue placeholder="Selecione a Categoria" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
                   {CATEGORIAS_ESTABELECIMENTO.map(cat => (

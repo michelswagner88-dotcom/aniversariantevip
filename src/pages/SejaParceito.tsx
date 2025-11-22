@@ -76,7 +76,7 @@ export default function SejaParceiro() {
       {/* Passos */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Como começar</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Como Começar</h2>
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {passos.map((passo, index) => (
               <Card 
@@ -114,7 +114,7 @@ export default function SejaParceiro() {
       <section className="py-16 bg-gradient-to-b from-background to-primary/5">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-4">
-            Vantagens de ser parceiro Aniversariante VIP
+            Vantagens de Ser Parceiro Aniversariante VIP
           </h2>
           <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
             Descubra como a parceria pode transformar seu negócio
@@ -146,7 +146,7 @@ export default function SejaParceiro() {
       {/* CTA */}
       <section className="py-16">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Pronto para ser parceiro?</h2>
+          <h2 className="text-3xl font-bold mb-4">Pronto Para Ser Parceiro?</h2>
           <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
             Cadastre seu estabelecimento e comece a atrair mais clientes agora mesmo
           </p>

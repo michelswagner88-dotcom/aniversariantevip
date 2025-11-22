@@ -89,7 +89,7 @@ export default function ComoFunciona() {
       {/* CTA */}
       <section className="py-16 bg-gradient-to-t from-primary/10 to-background">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Pronto para começar?</h2>
+          <h2 className="text-3xl font-bold mb-4">Pronto Para Começar?</h2>
           <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
             Crie sua conta gratuita agora e comece a aproveitar benefícios exclusivos no seu aniversário
           </p>
@@ -97,7 +97,7 @@ export default function ComoFunciona() {
             <Link to="/cadastro-aniversariante">
               <Button size="lg" className="text-lg px-8">
                 <Crown className="mr-2 h-5 w-5" />
-                Cadastrar-se Grátis
+                Cadastrar-Se Grátis
               </Button>
             </Link>
             <Link to="/">

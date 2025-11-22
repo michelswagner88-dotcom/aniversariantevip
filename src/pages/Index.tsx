@@ -124,9 +124,12 @@ const Index = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.1),transparent_50%)]" />
         
         <div className="container relative mx-auto px-4 text-center">
-          <p className="text-xl sm:text-2xl md:text-3xl font-bold text-primary max-w-4xl mx-auto mb-8 animate-fade-in uppercase tracking-wide">
-            O MAIOR GUIA DE BENEFÍCIOS PARA ANIVERSARIANTES DO BRASIL
-          </p>
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-primary/10 border border-primary/20 rounded-full mb-8 animate-fade-in">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <span className="text-sm sm:text-base font-semibold text-primary uppercase tracking-wide">
+              O MAIOR GUIA DE BENEFÍCIOS PARA ANIVERSARIANTES DO BRASIL
+            </span>
+          </div>
           
           <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-foreground leading-tight animate-fade-in">
             Seu Aniversário<br />

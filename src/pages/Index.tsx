@@ -30,9 +30,9 @@ interface Estabelecimento {
 const Index = () => {
   const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategoria, setSelectedCategoria] = useState("todas");
-  const [selectedEstado, setSelectedEstado] = useState("todos");
-  const [selectedCidade, setSelectedCidade] = useState("todas");
+  const [selectedCategoria, setSelectedCategoria] = useState("");
+  const [selectedEstado, setSelectedEstado] = useState("");
+  const [selectedCidade, setSelectedCidade] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
   const { favoritos, toggleFavorito, isFavorito, loading: favoritosLoading } = useFavoritos(currentUser?.id || null);
@@ -78,16 +78,19 @@ const Index = () => {
     window.open(url, "_blank");
   };
 
-  // Filtros
-  const estabelecimentosFiltrados = estabelecimentos.filter((est) => {
-    const matchesSearch = est.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-    const matchesCategoria = selectedCategoria === "todas" || 
-      (Array.isArray(est.categoria) ? est.categoria.includes(selectedCategoria) : est.categoria === selectedCategoria);
-    const matchesEstado = selectedEstado === "todos" || est.estado === selectedEstado;
-    const matchesCidade = selectedCidade === "todas" || est.cidade === selectedCidade;
+  // Filtros - só mostra se categoria estiver selecionada
+  const estabelecimentosFiltrados = selectedCategoria 
+    ? estabelecimentos.filter((est) => {
+        const matchesSearch = est.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+        const matchesCategoria = Array.isArray(est.categoria) 
+          ? est.categoria.includes(selectedCategoria) 
+          : est.categoria === selectedCategoria;
+        const matchesEstado = !selectedEstado || est.estado === selectedEstado;
+        const matchesCidade = !selectedCidade || est.cidade === selectedCidade;
 
-    return matchesSearch && matchesCategoria && matchesEstado && matchesCidade;
-  });
+        return matchesSearch && matchesCategoria && matchesEstado && matchesCidade;
+      })
+    : [];
 
   // Agrupamento por localização
   const estabelecimentosAgrupados = estabelecimentosFiltrados.reduce((acc, est) => {
@@ -108,11 +111,29 @@ const Index = () => {
     return a.cidade.localeCompare(b.cidade);
   });
 
-  // Estados e cidades disponíveis
-  const estados = Array.from(new Set(estabelecimentos.map(e => e.estado).filter(Boolean))) as string[];
-  const cidadesDisponiveis = selectedEstado === "todos" 
-    ? Array.from(new Set(estabelecimentos.map(e => e.cidade).filter(Boolean))) as string[]
-    : Array.from(new Set(estabelecimentos.filter(e => e.estado === selectedEstado).map(e => e.cidade).filter(Boolean))) as string[];
+  // Estados e cidades disponíveis (baseado na categoria selecionada)
+  const estabelecimentosDaCategoria = selectedCategoria
+    ? estabelecimentos.filter((est) =>
+        Array.isArray(est.categoria)
+          ? est.categoria.includes(selectedCategoria)
+          : est.categoria === selectedCategoria
+      )
+    : [];
+
+  const estados = Array.from(
+    new Set(estabelecimentosDaCategoria.map((e) => e.estado).filter(Boolean))
+  ) as string[];
+
+  const cidadesDisponiveis = selectedEstado
+    ? Array.from(
+        new Set(
+          estabelecimentosDaCategoria
+            .filter((e) => e.estado === selectedEstado)
+            .map((e) => e.cidade)
+            .filter(Boolean)
+        )
+      ) as string[]
+    : [];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -170,37 +191,42 @@ const Index = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Categoria" />
+                  <SelectValue placeholder="Selecione a categoria" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas as Categorias</SelectItem>
+                <SelectContent className="bg-background z-50">
                   {CATEGORIAS_ESTABELECIMENTO.map(cat => (
                     <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={selectedEstado} onValueChange={(value) => {
-                setSelectedEstado(value);
-                setSelectedCidade("todas");
-              }}>
+              <Select 
+                value={selectedEstado} 
+                onValueChange={(value) => {
+                  setSelectedEstado(value);
+                  setSelectedCidade("");
+                }}
+                disabled={!selectedCategoria}
+              >
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Estado" />
+                  <SelectValue placeholder="Selecione o estado" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os Estados</SelectItem>
+                <SelectContent className="bg-background z-50">
                   {estados.map(estado => (
                     <SelectItem key={estado} value={estado}>{estado}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={selectedCidade} onValueChange={setSelectedCidade}>
+              <Select 
+                value={selectedCidade} 
+                onValueChange={setSelectedCidade}
+                disabled={!selectedEstado}
+              >
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Cidade" />
+                  <SelectValue placeholder="Selecione a cidade" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas as Cidades</SelectItem>
+                <SelectContent className="bg-background z-50">
                   {cidadesDisponiveis.map(cidade => (
                     <SelectItem key={cidade} value={cidade}>{cidade}</SelectItem>
                   ))}
@@ -214,9 +240,23 @@ const Index = () => {
       {/* Listagem de Estabelecimentos */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4 max-w-7xl">
-          {sortedGroups.length === 0 ? (
+          {!selectedCategoria ? (
             <div className="text-center py-20">
-              <p className="text-lg text-muted-foreground">Nenhum estabelecimento encontrado.</p>
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                <Search className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-2xl font-display font-bold text-foreground mb-2">
+                Comece sua busca
+              </h3>
+              <p className="text-lg text-muted-foreground">
+                Selecione uma categoria para ver os estabelecimentos disponíveis
+              </p>
+            </div>
+          ) : sortedGroups.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-lg text-muted-foreground">
+                Nenhum estabelecimento encontrado com os filtros selecionados.
+              </p>
             </div>
           ) : (
             sortedGroups.map((group) => (

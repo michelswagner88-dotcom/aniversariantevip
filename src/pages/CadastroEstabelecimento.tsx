@@ -736,7 +736,7 @@ export default function CadastroEstabelecimento() {
             <p className="text-center text-sm text-muted-foreground">
               Já tem uma conta?{" "}
               <Link to="/login/estabelecimento" className="text-primary hover:underline">
-                Faça login
+                Faça Login
               </Link>
             </p>
           </form>

@@ -156,13 +156,13 @@ export default function LoginAniversariante() {
               onClick={handleRecuperarSenha}
               className="w-full text-center text-sm text-primary hover:underline mt-2"
             >
-              Esqueci minha senha
+              Esqueci Minha Senha
             </button>
             
             <p className="text-center text-sm text-muted-foreground mt-4">
               Não tem uma conta?{" "}
               <Link to="/cadastro/aniversariante" className="text-primary hover:underline">
-                Cadastre-se
+                Cadastre-Se
               </Link>
             </p>
           </form>

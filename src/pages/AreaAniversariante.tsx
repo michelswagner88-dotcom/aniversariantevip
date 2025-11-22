@@ -202,7 +202,7 @@ const AreaAniversariante = () => {
             <div className="flex gap-2">
               {!isEditing ? (
                 <Button onClick={() => setIsEditing(true)} className="w-full">
-                  Editar meus dados
+                  Editar Meus Dados
                 </Button>
               ) : (
                 <>

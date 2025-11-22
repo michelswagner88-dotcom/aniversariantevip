@@ -85,7 +85,7 @@ export default function FAQ() {
       {/* Contact CTA */}
       <section className="py-16 bg-gradient-to-t from-primary/10 to-background">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ainda tem dúvidas?</h2>
+          <h2 className="text-3xl font-bold mb-4">Ainda Tem Dúvidas?</h2>
           <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
             Entre em contato conosco. Estamos aqui para ajudar!
           </p>

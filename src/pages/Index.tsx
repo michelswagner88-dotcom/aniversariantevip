@@ -154,14 +154,30 @@ const Index = () => {
       <section className="py-6 sm:py-8 bg-card/50 border-y border-border">
         <div className="container mx-auto px-4">
           <div className="flex flex-col gap-3 sm:gap-4 max-w-5xl mx-auto">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Buscar estabelecimento..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-12 sm:h-14 text-base"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar estabelecimento..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-12 sm:h-14 text-base"
+                />
+              </div>
+              {(selectedEstado || selectedCidade || selectedCategoria || searchTerm) && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedEstado("");
+                    setSelectedCidade("");
+                    setSelectedCategoria("");
+                    setSearchTerm("");
+                  }}
+                  className="h-12 sm:h-14 px-4 whitespace-nowrap"
+                >
+                  Limpar Filtros
+                </Button>
+              )}
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

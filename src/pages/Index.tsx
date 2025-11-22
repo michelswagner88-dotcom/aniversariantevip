@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
+import { CATEGORIAS_ESTABELECIMENTO, ESTADOS_CIDADES } from "@/lib/constants";
 import { useFavoritos } from "@/hooks/useFavoritos";
 
 interface Estabelecimento {
@@ -244,7 +244,7 @@ const Index = () => {
       </section>
 
       {/* Contador de Resultados */}
-      {selectedCategoria && (
+      {(selectedCategoria || selectedEstado || selectedCidade) && (
         <div className="container mx-auto px-4 max-w-7xl pt-6">
           <p className="text-sm sm:text-base text-muted-foreground">
             <span className="font-semibold text-foreground">

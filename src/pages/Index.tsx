@@ -24,6 +24,8 @@ interface Estabelecimento {
   periodo_validade_beneficio: string | null;
   logo_url: string | null;
   telefone: string | null;
+  instagram: string | null;
+  horario_funcionamento: string | null;
 }
 
 const Index = () => {
@@ -350,38 +352,64 @@ const Index = () => {
                             <span>{estabelecimento.telefone}</span>
                           </a>
                         )}
+
+                        {estabelecimento.horario_funcionamento && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground min-h-[44px] py-2">
+                            <Clock className="h-4 w-4 flex-shrink-0" />
+                            <span>{estabelecimento.horario_funcionamento}</span>
+                          </div>
+                        )}
+
+                        {estabelecimento.instagram && (
+                          <a 
+                            href={`https://instagram.com/${estabelecimento.instagram.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors min-h-[44px] py-2"
+                            aria-label="Ver Instagram"
+                          >
+                            <Instagram className="h-4 w-4 flex-shrink-0" />
+                            <span>{estabelecimento.instagram}</span>
+                          </a>
+                        )}
                         
-                        {currentUser && estabelecimento.descricao_beneficio && (
+                        {currentUser ? (
                           <>
                             <div className="p-3 sm:p-4 bg-primary/5 rounded-lg border border-primary/20 mt-3">
                               <p className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
                                 <Sparkles className="h-4 w-4 flex-shrink-0" />
-                                Benefício Exclusivo
+                                Benefícios e Regras
                               </p>
-                              <p className="text-sm text-foreground leading-relaxed break-words">
-                                {estabelecimento.descricao_beneficio}
-                              </p>
+                              {estabelecimento.descricao_beneficio && (
+                                <p className="text-sm text-foreground leading-relaxed break-words mb-2">
+                                  {estabelecimento.descricao_beneficio}
+                                </p>
+                              )}
+                              {estabelecimento.regras_utilizacao && (
+                                <p className="text-xs text-muted-foreground italic break-words leading-relaxed mt-2 pt-2 border-t border-primary/10">
+                                  {estabelecimento.regras_utilizacao}
+                                </p>
+                              )}
                             </div>
 
-                            {estabelecimento.regras_utilizacao && (
-                              <p className="text-xs text-muted-foreground italic break-words leading-relaxed">
-                                {estabelecimento.regras_utilizacao}
-                              </p>
-                            )}
+                            <Button 
+                              className="w-full mt-3"
+                              onClick={() => window.location.href = `/area/aniversariante?emitir=${estabelecimento.id}`}
+                            >
+                              Emitir Cupom
+                            </Button>
                           </>
-                        )}
-
-                        {!currentUser && (
+                        ) : (
                           <div className="p-3 sm:p-4 bg-muted/50 rounded-lg border border-border mt-3">
                             <p className="text-sm text-muted-foreground text-center mb-2 leading-relaxed">
-                              Cadastre-se para ver os benefícios exclusivos
+                              Faça cadastro para ver os benefícios exclusivos
                             </p>
                             <Button 
-                              size="sm" 
+                              variant="outline"
                               asChild 
                               className="w-full text-xs sm:text-sm min-h-[40px]"
                             >
-                              <a href="/cadastro/aniversariante">Cadastrar Agora</a>
+                              <a href="/cadastro/aniversariante">Ver Benefícios</a>
                             </Button>
                           </div>
                         )}

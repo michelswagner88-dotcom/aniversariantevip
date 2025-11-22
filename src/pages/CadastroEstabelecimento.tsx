@@ -10,7 +10,7 @@ import { Crown, Upload, Plus, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { resizeImage } from "@/lib/imageUtils";
-import { estabelecimentoSchema } from "@/lib/validation";
+import { estabelecimentoSchema, generateFakeCNPJ } from "@/lib/validation";
 import { ESTADOS_CIDADES, ESTADOS } from "@/lib/constants";
 
 type HorarioFuncionamento = {
@@ -265,7 +265,7 @@ export default function CadastroEstabelecimento() {
           id: authData.user.id,
           razao_social: validatedData.nomeFantasia,
           nome_fantasia: validatedData.nomeFantasia,
-          cnpj: "",
+          cnpj: generateFakeCNPJ(), // Auto-generated CNPJ
           telefone: validatedData.telefone,
           endereco: validatedData.endereco,
           cidade: formData.cidade,

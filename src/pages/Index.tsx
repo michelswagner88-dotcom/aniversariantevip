@@ -400,17 +400,24 @@ const Index = () => {
                             </Button>
                           </>
                         ) : (
-                          <div className="p-3 sm:p-4 bg-muted/50 rounded-lg border border-border mt-3">
-                            <p className="text-sm text-muted-foreground text-center mb-2 leading-relaxed">
-                              Faça cadastro para ver os benefícios exclusivos
-                            </p>
-                            <Button 
-                              variant="outline"
-                              asChild 
-                              className="w-full text-xs sm:text-sm min-h-[40px]"
-                            >
-                              <a href="/cadastro/aniversariante">Ver Benefícios</a>
-                            </Button>
+                          <div className="relative p-4 sm:p-6 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-lg border-2 border-primary/30 mt-3 overflow-hidden animate-fade-in">
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,hsl(var(--primary)/0.15),transparent_70%)]" />
+                            <div className="relative z-10 text-center space-y-3">
+                              <div className="flex items-center justify-center gap-2">
+                                <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+                                <Sparkles className="h-4 w-4 text-primary animate-pulse" style={{ animationDelay: '0.3s' }} />
+                              </div>
+                              <p className="text-base sm:text-lg font-bold text-primary leading-tight">
+                                Faça o cadastro para<br />ver os benefícios!!
+                              </p>
+                              <Button 
+                                asChild 
+                                size="lg"
+                                className="w-full min-h-[48px] text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                              >
+                                <a href="/cadastro/aniversariante">Ver Benefícios</a>
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </CardContent>

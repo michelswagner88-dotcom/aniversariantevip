@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Edit, Loader2, Search, Building2, ExternalLink } from "lucide-react";
+import { Edit, Loader2, Search, Building2, ExternalLink, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { CadastrarEstabelecimento } from "./CadastrarEstabelecimento";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 type Estabelecimento = {
   id: string;
@@ -33,6 +34,7 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
   const [searchTerm, setSearchTerm] = useState("");
   const [editando, setEditando] = useState<Estabelecimento | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
 
   useEffect(() => {
     carregarEstabelecimentos();
@@ -106,8 +108,12 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
         .from('estabelecimentos')
         .update({
           nome_fantasia: editando.nome_fantasia,
+          razao_social: editando.razao_social,
+          cnpj: editando.cnpj,
           telefone: editando.telefone,
           endereco: editando.endereco,
+          cidade: editando.cidade,
+          estado: editando.estado,
           descricao_beneficio: editando.descricao_beneficio
         })
         .eq('id', editando.id);
@@ -122,6 +128,59 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
       toast.error("Erro ao salvar alterações");
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const handleExcluir = async (id: string) => {
+    try {
+      setExcluindo(true);
+
+      // Deletar cupons do estabelecimento
+      const { error: cuponsError } = await supabase
+        .from('cupons')
+        .delete()
+        .eq('estabelecimento_id', id);
+
+      if (cuponsError) throw cuponsError;
+
+      // Deletar favoritos
+      const { error: favoritosError } = await supabase
+        .from('favoritos')
+        .delete()
+        .eq('estabelecimento_id', id);
+
+      if (favoritosError) throw favoritosError;
+
+      // Deletar role se existir
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', id);
+
+      // Deletar estabelecimento
+      const { error: estabError } = await supabase
+        .from('estabelecimentos')
+        .delete()
+        .eq('id', id);
+
+      if (estabError) throw estabError;
+
+      // Deletar profile se existir
+      await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', id);
+
+      // Tentar deletar usuário do auth (pode falhar se não tiver service role)
+      await supabase.auth.admin.deleteUser(id).catch(() => {});
+
+      toast.success("Estabelecimento excluído com sucesso!");
+      await carregarEstabelecimentos();
+    } catch (error: any) {
+      console.error("Erro ao excluir:", error);
+      toast.error("Erro ao excluir estabelecimento");
+    } finally {
+      setExcluindo(false);
     }
   };
 
@@ -203,16 +262,17 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
                     <TableCell>{estab.email}</TableCell>
                     <TableCell>{estab.telefone || '-'}</TableCell>
                     <TableCell className="text-right">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditando(estab)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
+                      <div className="flex items-center justify-end gap-1">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditando(estab)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
                         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>Editar Estabelecimento</DialogTitle>
@@ -243,20 +303,50 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
                               
                               <div>
                                 <Label>Razão Social</Label>
-                                <Input value={editando.razao_social} disabled className="bg-muted" />
-                                <p className="text-xs text-muted-foreground mt-1">Razão social não pode ser alterada</p>
+                                <Input 
+                                  value={editando.razao_social}
+                                  onChange={(e) => setEditando({...editando, razao_social: e.target.value})}
+                                />
                               </div>
                               
                               <div>
                                 <Label>CNPJ</Label>
-                                <Input value={editando.cnpj} disabled className="bg-muted" />
-                                <p className="text-xs text-muted-foreground mt-1">CNPJ não pode ser alterado</p>
+                                <Input 
+                                  value={editando.cnpj}
+                                  onChange={(e) => setEditando({...editando, cnpj: e.target.value})}
+                                  placeholder="00.000.000/0000-00"
+                                />
                               </div>
                               
                               <div>
                                 <Label>Email</Label>
-                                <Input value={editando.email} disabled className="bg-muted" />
-                                <p className="text-xs text-muted-foreground mt-1">Email não pode ser alterado</p>
+                                <Input 
+                                  type="email"
+                                  value={editando.email} 
+                                  disabled 
+                                  className="bg-muted" 
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">Email está vinculado à conta de acesso</p>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Cidade</Label>
+                                  <Input
+                                    value={editando.cidade || ''}
+                                    onChange={(e) => setEditando({...editando, cidade: e.target.value})}
+                                    placeholder="Cidade"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Estado</Label>
+                                  <Input
+                                    value={editando.estado || ''}
+                                    onChange={(e) => setEditando({...editando, estado: e.target.value})}
+                                    placeholder="UF"
+                                    maxLength={2}
+                                  />
+                                </div>
                               </div>
                               
                               <div>
@@ -304,7 +394,39 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
                             </div>
                           )}
                         </DialogContent>
-                      </Dialog>
+                        </Dialog>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir <strong>{estab.nome_fantasia || estab.razao_social}</strong>? 
+                                Esta ação é irreversível e removerá todos os dados, incluindo cupons e favoritos associados.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleExcluir(estab.id)}
+                                disabled={excluindo}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                {excluindo ? "Excluindo..." : "Excluir"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

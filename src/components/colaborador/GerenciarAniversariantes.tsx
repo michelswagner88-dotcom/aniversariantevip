@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Edit, Loader2, Search, User } from "lucide-react";
+import { Edit, Loader2, Search, User, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 type Aniversariante = {
   id: string;
@@ -25,6 +26,7 @@ export function GerenciarAniversariantes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [editando, setEditando] = useState<Aniversariante | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
 
   useEffect(() => {
     carregarAniversariantes();
@@ -97,7 +99,10 @@ export function GerenciarAniversariantes() {
       // Atualizar profile
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ nome: editando.nome })
+        .update({ 
+          nome: editando.nome,
+          email: editando.email 
+        })
         .eq('id', editando.id);
 
       if (profileError) throw profileError;
@@ -106,6 +111,7 @@ export function GerenciarAniversariantes() {
       const { error: anivError } = await supabase
         .from('aniversariantes')
         .update({
+          cpf: editando.cpf,
           telefone: editando.telefone,
           data_nascimento: editando.data_nascimento
         })
@@ -121,6 +127,48 @@ export function GerenciarAniversariantes() {
       toast.error("Erro ao salvar alterações");
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const handleExcluir = async (id: string) => {
+    try {
+      setExcluindo(true);
+
+      // Deletar role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', id);
+
+      if (roleError) throw roleError;
+
+      // Deletar aniversariante
+      const { error: anivError } = await supabase
+        .from('aniversariantes')
+        .delete()
+        .eq('id', id);
+
+      if (anivError) throw anivError;
+
+      // Deletar profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', id);
+
+      if (profileError) throw profileError;
+
+      // Deletar usuário do auth (requer service role, então pode falhar)
+      // mas não vamos bloquear a exclusão por isso
+      await supabase.auth.admin.deleteUser(id).catch(() => {});
+
+      toast.success("Aniversariante excluído com sucesso!");
+      await carregarAniversariantes();
+    } catch (error: any) {
+      console.error("Erro ao excluir:", error);
+      toast.error("Erro ao excluir aniversariante");
+    } finally {
+      setExcluindo(false);
     }
   };
 
@@ -188,16 +236,17 @@ export function GerenciarAniversariantes() {
                       {aniv.data_nascimento ? new Date(aniv.data_nascimento).toLocaleDateString('pt-BR') : '-'}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditando(aniv)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
+                      <div className="flex items-center justify-end gap-1">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditando(aniv)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
                             <DialogTitle>Editar Aniversariante</DialogTitle>
@@ -218,14 +267,20 @@ export function GerenciarAniversariantes() {
                               
                               <div>
                                 <Label>Email</Label>
-                                <Input value={editando.email} disabled className="bg-muted" />
-                                <p className="text-xs text-muted-foreground mt-1">Email não pode ser alterado</p>
+                                <Input 
+                                  type="email"
+                                  value={editando.email}
+                                  onChange={(e) => setEditando({...editando, email: e.target.value})}
+                                />
                               </div>
                               
                               <div>
                                 <Label>CPF</Label>
-                                <Input value={editando.cpf} disabled className="bg-muted" />
-                                <p className="text-xs text-muted-foreground mt-1">CPF não pode ser alterado</p>
+                                <Input 
+                                  value={editando.cpf}
+                                  onChange={(e) => setEditando({...editando, cpf: e.target.value})}
+                                  placeholder="000.000.000-00"
+                                />
                               </div>
                               
                               <div>
@@ -263,7 +318,39 @@ export function GerenciarAniversariantes() {
                             </div>
                           )}
                         </DialogContent>
-                      </Dialog>
+                        </Dialog>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir <strong>{aniv.nome}</strong>? 
+                                Esta ação é irreversível e removerá todos os dados, incluindo cupons associados.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleExcluir(aniv.id)}
+                                disabled={excluindo}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                {excluindo ? "Excluindo..." : "Excluir"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

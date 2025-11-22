@@ -28,7 +28,7 @@ export default function LoginAniversariante() {
           .eq("user_id", session.user.id);
 
         if (roles?.some(r => r.role === "aniversariante")) {
-          navigate("/area-aniversariante");
+          navigate("/");
           return;
         }
       }
@@ -63,7 +63,7 @@ export default function LoginAniversariante() {
         title: "Bem-vindo!",
         description: "Login realizado com sucesso",
       });
-      navigate("/area-aniversariante");
+      navigate("/");
     } catch (error: any) {
       toast({
         variant: "destructive",

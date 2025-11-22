@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Crown, LogOut, Loader2 } from "lucide-react";
+import { Crown, LogOut, Loader2, Home } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -130,10 +130,16 @@ const AreaAniversariante = () => {
             <Crown className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold text-primary">ANIVERSARIANTE VIP</h1>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sair
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/")}>
+              <Home className="mr-2 h-4 w-4" />
+              Início
+            </Button>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
+            </Button>
+          </div>
         </div>
       </header>
 

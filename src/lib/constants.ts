@@ -52,7 +52,7 @@ export const ESTADOS_CIDADES = {
   "SP": ["São Paulo"],
   "PR": ["Curitiba"],
   "RS": ["Porto Alegre"],
-  "SC": ["Florianópolis", "São José", "Palhoça", "Biguaçu", "Chapecó", "Criciúma", "Balneário Camboriú", "Joinville"],
+  "SC": ["Balneário Camboriú", "Biguaçu", "Chapecó", "Criciúma", "Florianópolis", "Joinville", "Palhoça", "São José"],
 } as const;
 
 export const ESTADOS = [

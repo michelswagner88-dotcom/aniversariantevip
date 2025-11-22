@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { resizeImage } from "@/lib/imageUtils";
 import { estabelecimentoSchema } from "@/lib/validation";
+import { ESTADOS_CIDADES, ESTADOS } from "@/lib/constants";
 
 type HorarioFuncionamento = {
   id: string;
@@ -156,35 +157,6 @@ export default function CadastroEstabelecimento() {
     setFormData({ ...formData, facebook: cleanValue });
   };
 
-  const estadosCidades: Record<string, string[]> = {
-    "AC": ["Rio Branco"],
-    "AL": ["Maceió"],
-    "AP": ["Macapá"],
-    "AM": ["Manaus"],
-    "BA": ["Salvador"],
-    "CE": ["Fortaleza"],
-    "DF": ["Brasília"],
-    "ES": ["Vitória"],
-    "GO": ["Goiânia"],
-    "MA": ["São Luís"],
-    "MT": ["Cuiabá"],
-    "MS": ["Campo Grande"],
-    "MG": ["Belo Horizonte"],
-    "PA": ["Belém"],
-    "PB": ["João Pessoa"],
-    "PR": ["Curitiba"],
-    "PE": ["Recife"],
-    "PI": ["Teresina"],
-    "RJ": ["Rio de Janeiro"],
-    "RN": ["Natal"],
-    "RS": ["Porto Alegre"],
-    "RO": ["Porto Velho"],
-    "RR": ["Boa Vista"],
-    "SC": ["Florianópolis", "São José", "Palhoça", "Biguaçu"],
-    "SP": ["São Paulo"],
-    "SE": ["Aracaju"],
-    "TO": ["Palmas"],
-  };
 
   const handleEstadoChange = (value: string) => {
     setFormData({ ...formData, estado: value, cidade: "" });
@@ -483,14 +455,11 @@ export default function CadastroEstabelecimento() {
                         <SelectValue placeholder="Selecione o estado" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="SC">Santa Catarina (SC)</SelectItem>
-                        <SelectItem value="PR">Paraná (PR)</SelectItem>
-                        <SelectItem value="RS">Rio Grande do Sul (RS)</SelectItem>
-                        <SelectItem value="MG">Minas Gerais (MG)</SelectItem>
-                        <SelectItem value="RJ">Rio de Janeiro (RJ)</SelectItem>
-                        <SelectItem value="SP">São Paulo (SP)</SelectItem>
-                        <SelectItem value="GO">Goiás (GO)</SelectItem>
-                        <SelectItem value="DF">Distrito Federal (DF)</SelectItem>
+                        {ESTADOS.map((estado) => (
+                          <SelectItem key={estado.value} value={estado.value}>
+                            {estado.label} ({estado.value})
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -507,7 +476,7 @@ export default function CadastroEstabelecimento() {
                         <SelectValue placeholder="Selecione a cidade" />
                       </SelectTrigger>
                       <SelectContent>
-                        {formData.estado && estadosCidades[formData.estado]?.map((cidade) => (
+                        {formData.estado && ESTADOS_CIDADES[formData.estado as keyof typeof ESTADOS_CIDADES]?.map((cidade) => (
                           <SelectItem key={cidade} value={cidade}>{cidade}</SelectItem>
                         ))}
                       </SelectContent>

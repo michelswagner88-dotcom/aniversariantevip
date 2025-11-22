@@ -9,6 +9,7 @@ import { Crown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { aniversarianteSchema } from "@/lib/validation";
+import { ESTADOS_CIDADES, ESTADOS } from "@/lib/constants";
 
 export default function CadastroAniversariante() {
   const navigate = useNavigate();
@@ -30,35 +31,6 @@ export default function CadastroAniversariante() {
     setPageReady(true);
   }, []);
 
-  const estadosCidades: Record<string, string[]> = {
-    "AC": ["Rio Branco"],
-    "AL": ["Maceió"],
-    "AP": ["Macapá"],
-    "AM": ["Manaus"],
-    "BA": ["Salvador"],
-    "CE": ["Fortaleza"],
-    "DF": ["Brasília"],
-    "ES": ["Vitória"],
-    "GO": ["Goiânia"],
-    "MA": ["São Luís"],
-    "MT": ["Cuiabá"],
-    "MS": ["Campo Grande"],
-    "MG": ["Belo Horizonte"],
-    "PA": ["Belém"],
-    "PB": ["João Pessoa"],
-    "PR": ["Curitiba"],
-    "PE": ["Recife"],
-    "PI": ["Teresina"],
-    "RJ": ["Rio de Janeiro"],
-    "RN": ["Natal"],
-    "RS": ["Porto Alegre"],
-    "RO": ["Porto Velho"],
-    "RR": ["Boa Vista"],
-    "SC": ["Florianópolis", "São José", "Palhoça", "Biguaçu"],
-    "SP": ["São Paulo"],
-    "SE": ["Aracaju"],
-    "TO": ["Palmas"],
-  };
 
   const handleEstadoChange = (value: string) => {
     setFormData({ ...formData, estado: value, cidade: "" });
@@ -287,9 +259,9 @@ export default function CadastroAniversariante() {
                     <SelectValue placeholder="Selecione o estado" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.keys(estadosCidades).map((estado) => (
-                      <SelectItem key={estado} value={estado}>
-                        {estado}
+                    {ESTADOS.map((estado) => (
+                      <SelectItem key={estado.value} value={estado.value}>
+                        {estado.label} ({estado.value})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -307,7 +279,7 @@ export default function CadastroAniversariante() {
                     <SelectValue placeholder={formData.estado ? "Selecione a cidade" : "Selecione o estado primeiro"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {formData.estado && estadosCidades[formData.estado]?.map((cidade) => (
+                    {formData.estado && ESTADOS_CIDADES[formData.estado as keyof typeof ESTADOS_CIDADES]?.map((cidade) => (
                       <SelectItem key={cidade} value={cidade}>
                         {cidade}
                       </SelectItem>

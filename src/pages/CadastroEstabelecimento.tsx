@@ -39,7 +39,6 @@ export default function CadastroEstabelecimento() {
     estado: "",
     cidade: "",
     endereco: "",
-    linkCardapioDigital: "",
     beneficiosAniversariante: "",
     regrasAniversariante: "",
     validoDia: false,
@@ -49,7 +48,6 @@ export default function CadastroEstabelecimento() {
     telefoneContato: "",
     emailContato: "",
     instagram: "",
-    facebook: "",
   });
 
   useEffect(() => {
@@ -149,12 +147,6 @@ export default function CadastroEstabelecimento() {
     // Remove @ se já existir e adiciona de volta
     const cleanValue = value.replace(/^@/, "");
     setFormData({ ...formData, instagram: cleanValue });
-  };
-
-  const handleFacebookChange = (value: string) => {
-    // Remove @ se já existir e adiciona de volta
-    const cleanValue = value.replace(/^@/, "");
-    setFormData({ ...formData, facebook: cleanValue });
   };
 
 
@@ -587,17 +579,6 @@ export default function CadastroEstabelecimento() {
                     </div>
                   )}
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="linkCardapioDigital">Link do Cardápio Digital</Label>
-                  <Input
-                    id="linkCardapioDigital"
-                    type="url"
-                    placeholder="https://"
-                    value={formData.linkCardapioDigital}
-                    onChange={(e) => setFormData({ ...formData, linkCardapioDigital: e.target.value })}
-                  />
-                </div>
               </div>
             </div>
 
@@ -637,21 +618,6 @@ export default function CadastroEstabelecimento() {
                       placeholder="seuusuario"
                       value={formData.instagram}
                       onChange={(e) => handleInstagramChange(e.target.value)}
-                      className="pl-7"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="facebook">Facebook *</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
-                    <Input
-                      id="facebook"
-                      required
-                      placeholder="seuusuario"
-                      value={formData.facebook}
-                      onChange={(e) => handleFacebookChange(e.target.value)}
                       className="pl-7"
                     />
                   </div>

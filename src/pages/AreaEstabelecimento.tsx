@@ -31,7 +31,6 @@ export default function AreaEstabelecimento() {
     categoria: "",
     endereco: "",
     diasHorarioFuncionamento: "",
-    linkCardapioDigital: "",
     beneficiosAniversariante: "",
     regrasAniversariante: "",
     periodoValidade: "dia", // "dia" ou "mes"
@@ -39,7 +38,6 @@ export default function AreaEstabelecimento() {
     telefoneContato: "",
     emailContato: "",
     instagram: "",
-    facebook: "",
   });
 
   useEffect(() => {
@@ -83,7 +81,6 @@ export default function AreaEstabelecimento() {
           categoria: "",
           endereco: estabelecimento.endereco || "",
           diasHorarioFuncionamento: "",
-          linkCardapioDigital: "",
           beneficiosAniversariante: estabelecimento.descricao_beneficio || "",
           regrasAniversariante: "",
           periodoValidade: "dia",
@@ -91,7 +88,6 @@ export default function AreaEstabelecimento() {
           telefoneContato: "",
           emailContato: "",
           instagram: "",
-          facebook: "",
         });
         setFormData({
           nomeFantasia: estabelecimento.nome_fantasia || "",
@@ -100,7 +96,6 @@ export default function AreaEstabelecimento() {
           categoria: "",
           endereco: estabelecimento.endereco || "",
           diasHorarioFuncionamento: "",
-          linkCardapioDigital: "",
           beneficiosAniversariante: estabelecimento.descricao_beneficio || "",
           regrasAniversariante: "",
           periodoValidade: "dia",
@@ -108,7 +103,6 @@ export default function AreaEstabelecimento() {
           telefoneContato: "",
           emailContato: "",
           instagram: "",
-          facebook: "",
         });
         await loadCuponsEmitidos(session.user.id);
       }
@@ -179,11 +173,6 @@ export default function AreaEstabelecimento() {
   const handleInstagramChange = (value: string) => {
     const cleanValue = value.replace(/^@/, "");
     setFormData({ ...formData, instagram: cleanValue });
-  };
-
-  const handleFacebookChange = (value: string) => {
-    const cleanValue = value.replace(/^@/, "");
-    setFormData({ ...formData, facebook: cleanValue });
   };
 
   const handleSave = async () => {
@@ -522,16 +511,6 @@ export default function AreaEstabelecimento() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="linkCardapioDigital">Link do Cardápio Digital</Label>
-              <Input
-                id="linkCardapioDigital"
-                value={formData.linkCardapioDigital}
-                onChange={(e) => setFormData({ ...formData, linkCardapioDigital: e.target.value })}
-                disabled={!isEditing}
-              />
-            </div>
-
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="telefoneContato">Telefone de Contato</Label>
@@ -565,21 +544,6 @@ export default function AreaEstabelecimento() {
                     placeholder="seuusuario"
                     value={formData.instagram}
                     onChange={(e) => handleInstagramChange(e.target.value)}
-                    className="pl-7"
-                    disabled={!isEditing}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="facebook">Facebook</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
-                  <Input
-                    id="facebook"
-                    placeholder="seuusuario"
-                    value={formData.facebook}
-                    onChange={(e) => handleFacebookChange(e.target.value)}
                     className="pl-7"
                     disabled={!isEditing}
                   />

@@ -24,7 +24,6 @@ interface Estabelecimento {
   periodo_validade_beneficio: string | null;
   logo_url: string | null;
   telefone: string | null;
-  link_cardapio: string | null;
 }
 
 const Index = () => {
@@ -349,19 +348,6 @@ const Index = () => {
                           >
                             <Phone className="h-4 w-4 flex-shrink-0" />
                             <span>{estabelecimento.telefone}</span>
-                          </a>
-                        )}
-
-                        {estabelecimento.link_cardapio && (
-                          <a 
-                            href={estabelecimento.link_cardapio} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm text-primary hover:underline min-h-[44px] py-2"
-                            aria-label="Ver cardápio"
-                          >
-                            <ExternalLink className="h-4 w-4 flex-shrink-0" />
-                            <span>Ver Cardápio</span>
                           </a>
                         )}
                         

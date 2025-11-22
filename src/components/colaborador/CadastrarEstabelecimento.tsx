@@ -24,11 +24,15 @@ const estabelecimentoSchema = z.object({
   senha: z.string().min(6, "Senha deve ter no mínimo 6 caracteres").max(100),
   nomeFantasia: z.string().trim().min(3, "Nome deve ter no mínimo 3 caracteres").max(100),
   razaoSocial: z.string().trim().min(3).max(200),
-  cnpj: z.string().trim().min(14, "CNPJ inválido").max(18),
   telefone: z.string().trim().max(20),
   endereco: z.string().trim().max(500),
   descricaoBeneficio: z.string().trim().max(1000),
 });
+
+// Helper to generate fake CNPJ for database
+const generateFakeCNPJ = (): string => {
+  return Math.floor(Math.random() * 100000000000000).toString().padStart(14, '0');
+};
 
 export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -44,7 +48,6 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
     senha: "",
     nomeFantasia: "",
     razaoSocial: "",
-    cnpj: "",
     telefone: "",
     endereco: "",
     categorias: [] as string[],
@@ -181,7 +184,7 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
           id: userId,
           razao_social: validatedData.razaoSocial,
           nome_fantasia: validatedData.nomeFantasia,
-          cnpj: validatedData.cnpj.replace(/\D/g, ''),
+          cnpj: generateFakeCNPJ(), // Auto-generated CNPJ
           telefone: validatedData.telefone,
           endereco: validatedData.endereco,
           cidade: formData.cidade,
@@ -214,7 +217,6 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
         senha: "",
         nomeFantasia: "",
         razaoSocial: "",
-        cnpj: "",
         telefone: "",
         endereco: "",
         categorias: [],
@@ -311,18 +313,6 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                 onChange={(e) => setFormData({ ...formData, razaoSocial: e.target.value })}
                 required
                 maxLength={200}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cnpj">CNPJ</Label>
-              <Input
-                id="cnpj"
-                value={formData.cnpj}
-                onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
-                required
-                placeholder="00.000.000/0000-00"
-                maxLength={18}
               />
             </div>
 

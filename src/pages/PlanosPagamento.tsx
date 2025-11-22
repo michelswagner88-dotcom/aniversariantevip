@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 
 const CATEGORIAS_PREMIUM = ["Bar", "Restaurante", "Balada"];
 
@@ -131,6 +132,11 @@ export default function PlanosPagamento() {
 
   const isPremium = CATEGORIAS_PREMIUM.includes(categoria);
   const PLANS = isPremium ? PREMIUM_PLANS : STANDARD_PLANS;
+  
+  // Get formatted category label
+  const categoriaFormatada = CATEGORIAS_ESTABELECIMENTO.find(
+    cat => cat.value === categoria
+  )?.label || categoria;
 
   const handleSubscribe = async (priceId: string, planName: string, paymentType: 'subscription' | 'onetime') => {
     try {
@@ -169,7 +175,7 @@ export default function PlanosPagamento() {
         <div className="container mx-auto px-4 py-16">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Planos para {categoria}
+              Planos para {categoriaFormatada}
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Selecione o plano ideal para o seu estabelecimento e comece a atrair mais clientes

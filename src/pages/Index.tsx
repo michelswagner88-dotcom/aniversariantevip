@@ -124,18 +124,17 @@ const Index = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.1),transparent_50%)]" />
         
         <div className="container relative mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-6 animate-fade-in">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Benefícios Exclusivos</span>
-          </div>
+          <p className="text-xl sm:text-2xl md:text-3xl font-bold text-primary max-w-4xl mx-auto mb-8 animate-fade-in uppercase tracking-wide">
+            O MAIOR GUIA DE BENEFÍCIOS PARA ANIVERSARIANTES DO BRASIL
+          </p>
           
           <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-foreground leading-tight animate-fade-in">
             Seu Aniversário<br />
             <span className="text-primary">Merece Celebração</span>
           </h1>
           
-          <p className="text-lg sm:text-xl md:text-2xl font-semibold text-primary max-w-3xl mx-auto mb-12 animate-fade-in uppercase tracking-wide">
-            O MAIOR GUIA DE BENEFÍCIOS PARA ANIVERSARIANTES DO BRASIL
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in">
+            Descubra centenas de estabelecimentos parceiros com benefícios exclusivos para o seu dia especial
           </p>
 
           {!currentUser && (

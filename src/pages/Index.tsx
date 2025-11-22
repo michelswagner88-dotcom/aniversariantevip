@@ -165,19 +165,6 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-                <SelectTrigger className="h-12 sm:h-14 text-base">
-                  <SelectValue placeholder="Selecione a categoria" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  {CATEGORIAS_ESTABELECIMENTO.map(cat => (
-                    <SelectItem key={cat.value} value={cat.value} className="text-base py-3">
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
               <Select 
                 value={selectedEstado} 
                 onValueChange={(value) => {
@@ -213,6 +200,19 @@ const Index = () => {
                   ))}
                 </SelectContent>
               </Select>
+
+              <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
+                <SelectTrigger className="h-12 sm:h-14 text-base">
+                  <SelectValue placeholder="Selecione a categoria" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {CATEGORIAS_ESTABELECIMENTO.map(cat => (
+                    <SelectItem key={cat.value} value={cat.value} className="text-base py-3">
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -235,7 +235,7 @@ const Index = () => {
       {/* Listagem de Estabelecimentos */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4 max-w-7xl">
-          {!selectedCategoria ? (
+          {!selectedEstado ? (
             <div className="text-center py-12 sm:py-20 px-4">
               <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary/10 mb-4">
                 <Search className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
@@ -244,7 +244,7 @@ const Index = () => {
                 Comece Sua Busca
               </h3>
               <p className="text-base sm:text-lg text-muted-foreground px-4">
-                Selecione uma categoria para ver os estabelecimentos disponíveis
+                Selecione um estado para ver os estabelecimentos disponíveis
               </p>
             </div>
           ) : sortedGroups.length === 0 ? (

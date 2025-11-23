@@ -38,6 +38,7 @@ export default function AreaEstabelecimento() {
     telefoneContato: "",
     emailContato: "",
     instagram: "",
+    site: "",
   });
 
   useEffect(() => {
@@ -78,31 +79,33 @@ export default function AreaEstabelecimento() {
           nomeFantasia: estabelecimento.nome_fantasia || "",
           cnpj: estabelecimento.cnpj,
           telefone: estabelecimento.telefone || "",
-          categoria: "",
+          categoria: Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria || "",
           endereco: estabelecimento.endereco || "",
-          diasHorarioFuncionamento: "",
+          diasHorarioFuncionamento: estabelecimento.horario_funcionamento || "",
           beneficiosAniversariante: estabelecimento.descricao_beneficio || "",
-          regrasAniversariante: "",
-          periodoValidade: "dia",
+          regrasAniversariante: estabelecimento.regras_utilizacao || "",
+          periodoValidade: estabelecimento.periodo_validade_beneficio || "dia",
           logoUrl: estabelecimento.logo_url || "",
           telefoneContato: "",
           emailContato: "",
-          instagram: "",
+          instagram: estabelecimento.instagram || "",
+          site: estabelecimento.site || "",
         });
         setFormData({
           nomeFantasia: estabelecimento.nome_fantasia || "",
           email: session.user.email || "",
           telefone: estabelecimento.telefone || "",
-          categoria: "",
+          categoria: Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria || "",
           endereco: estabelecimento.endereco || "",
-          diasHorarioFuncionamento: "",
+          diasHorarioFuncionamento: estabelecimento.horario_funcionamento || "",
           beneficiosAniversariante: estabelecimento.descricao_beneficio || "",
-          regrasAniversariante: "",
-          periodoValidade: "dia",
+          regrasAniversariante: estabelecimento.regras_utilizacao || "",
+          periodoValidade: estabelecimento.periodo_validade_beneficio || "dia",
           logoUrl: estabelecimento.logo_url || "",
           telefoneContato: "",
           emailContato: "",
-          instagram: "",
+          instagram: estabelecimento.instagram || "",
+          site: estabelecimento.site || "",
         });
         await loadCuponsEmitidos(session.user.id);
       }
@@ -178,6 +181,16 @@ export default function AreaEstabelecimento() {
   const handleSave = async () => {
     if (!userData) return;
 
+    // Validações dos campos obrigatórios
+    if (!formData.endereco || !formData.diasHorarioFuncionamento || !formData.telefone) {
+      toast({
+        variant: "destructive",
+        title: "Campos obrigatórios",
+        description: "Preencha Endereço, Horário de Funcionamento e Telefone antes de salvar",
+      });
+      return;
+    }
+
     try {
       let logoUrl = formData.logoUrl;
 
@@ -209,8 +222,14 @@ export default function AreaEstabelecimento() {
           nome_fantasia: formData.nomeFantasia,
           telefone: formData.telefone,
           endereco: formData.endereco,
+          horario_funcionamento: formData.diasHorarioFuncionamento,
           descricao_beneficio: formData.beneficiosAniversariante,
+          regras_utilizacao: formData.regrasAniversariante,
+          periodo_validade_beneficio: formData.periodoValidade,
+          instagram: formData.instagram,
+          site: formData.site,
           logo_url: logoUrl,
+          categoria: formData.categoria ? [formData.categoria] : null,
         })
         .eq("id", userId);
 
@@ -492,51 +511,49 @@ export default function AreaEstabelecimento() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="endereco">Endereço Completo</Label>
+              <Label htmlFor="endereco">
+                Endereço Completo <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="endereco"
                 value={formData.endereco}
                 onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
                 disabled={!isEditing}
+                required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="diasHorarioFuncionamento">Dias e Horário de Funcionamento</Label>
+              <Label htmlFor="diasHorarioFuncionamento">
+                Dias e Horário de Funcionamento <span className="text-destructive">*</span>
+              </Label>
               <Textarea
                 id="diasHorarioFuncionamento"
+                placeholder="Ex: Seg a Sex: 10h às 22h | Sáb e Dom: 12h às 00h"
                 value={formData.diasHorarioFuncionamento}
                 onChange={(e) => setFormData({ ...formData, diasHorarioFuncionamento: e.target.value })}
                 disabled={!isEditing}
+                required
               />
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="telefoneContato">Telefone de Contato</Label>
+                <Label htmlFor="telefone">
+                  Telefone <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="telefoneContato"
+                  id="telefone"
                   placeholder="(00) 00000-0000"
-                  value={formData.telefoneContato}
-                  onChange={(e) => setFormData({ ...formData, telefoneContato: e.target.value })}
+                  value={formData.telefone}
+                  onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
                   disabled={!isEditing}
+                  required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="emailContato">Email de Contato</Label>
-                <Input
-                  id="emailContato"
-                  type="email"
-                  placeholder="contato@estabelecimento.com"
-                  value={formData.emailContato}
-                  onChange={(e) => setFormData({ ...formData, emailContato: e.target.value })}
-                  disabled={!isEditing}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="instagram">Instagram</Label>
+                <Label htmlFor="instagram">Instagram (opcional)</Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
                   <Input
@@ -548,6 +565,17 @@ export default function AreaEstabelecimento() {
                     disabled={!isEditing}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="site">Site (opcional)</Label>
+                <Input
+                  id="site"
+                  placeholder="www.seusite.com.br"
+                  value={formData.site}
+                  onChange={(e) => setFormData({ ...formData, site: e.target.value })}
+                  disabled={!isEditing}
+                />
               </div>
             </div>
 

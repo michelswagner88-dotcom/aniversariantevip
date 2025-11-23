@@ -119,6 +119,7 @@ export type Database = {
           periodo_validade_beneficio: string | null
           razao_social: string
           regras_utilizacao: string | null
+          site: string | null
           telefone: string | null
           tem_conta_acesso: boolean | null
           updated_at: string | null
@@ -140,6 +141,7 @@ export type Database = {
           periodo_validade_beneficio?: string | null
           razao_social: string
           regras_utilizacao?: string | null
+          site?: string | null
           telefone?: string | null
           tem_conta_acesso?: boolean | null
           updated_at?: string | null
@@ -161,6 +163,7 @@ export type Database = {
           periodo_validade_beneficio?: string | null
           razao_social?: string
           regras_utilizacao?: string | null
+          site?: string | null
           telefone?: string | null
           tem_conta_acesso?: boolean | null
           updated_at?: string | null

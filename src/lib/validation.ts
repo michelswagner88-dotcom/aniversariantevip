@@ -147,9 +147,6 @@ export const estabelecimentoSchema = z.object({
     .email("Email inválido")
     .max(255, "Email deve ter no máximo 255 caracteres"),
   telefone: phoneSchema,
-  endereco: z.string()
-    .min(10, "Endereço deve ter pelo menos 10 caracteres")
-    .max(255, "Endereço deve ter no máximo 255 caracteres"),
   senha: z.string()
     .min(6, "Senha deve ter pelo menos 6 caracteres"),
   confirmarSenha: z.string(),

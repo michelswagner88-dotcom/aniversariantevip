@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Crown, Upload, Plus, Trash2, Loader2 } from "lucide-react";
+import { Crown, Upload, Plus, Trash2, Loader2, MapPin } from "lucide-react";
+import MapboxMap from "@/components/MapboxMap";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { resizeImage } from "@/lib/imageUtils";
@@ -37,9 +38,15 @@ export default function CadastroEstabelecimento() {
     senha: "",
     confirmarSenha: "",
     categorias: [] as string[],
-    estado: "",
+    cep: "",
+    logradouro: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
     cidade: "",
-    endereco: "",
+    estado: "",
+    latitude: -23.5505,
+    longitude: -46.6333,
     beneficiosAniversariante: "",
     regrasAniversariante: "",
     validoDia: false,
@@ -50,10 +57,71 @@ export default function CadastroEstabelecimento() {
     emailContato: "",
     instagram: "",
   });
+  const [buscandoCep, setBuscandoCep] = useState(false);
 
   useEffect(() => {
     setPageReady(true);
   }, []);
+
+  const buscarCep = async (cep: string) => {
+    const cepLimpo = cep.replace(/\D/g, "");
+    
+    if (cepLimpo.length !== 8) return;
+    
+    setBuscandoCep(true);
+    
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+      const data = await response.json();
+      
+      if (data.erro) {
+        toast({
+          variant: "destructive",
+          title: "CEP não encontrado",
+          description: "Verifique o CEP digitado e tente novamente",
+        });
+        return;
+      }
+      
+      // Geocode address to get coordinates
+      const addressQuery = `${data.logradouro}, ${data.bairro}, ${data.localidade}, ${data.uf}, Brasil`;
+      const geocodeResponse = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(addressQuery)}.json?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`
+      );
+      const geocodeData = await geocodeResponse.json();
+      
+      let lat = -23.5505;
+      let lng = -46.6333;
+      
+      if (geocodeData.features && geocodeData.features.length > 0) {
+        [lng, lat] = geocodeData.features[0].center;
+      }
+      
+      setFormData({
+        ...formData,
+        cep,
+        logradouro: data.logradouro || "",
+        bairro: data.bairro || "",
+        cidade: data.localidade || "",
+        estado: data.uf || "",
+        latitude: lat,
+        longitude: lng,
+      });
+      
+      toast({
+        title: "Endereço encontrado!",
+        description: "Os campos foram preenchidos automaticamente",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao buscar CEP",
+        description: "Não foi possível buscar o endereço. Tente novamente.",
+      });
+    } finally {
+      setBuscandoCep(false);
+    }
+  };
 
   const diasSemana = [
     { value: 'segunda', label: 'Segunda' },
@@ -164,7 +232,6 @@ export default function CadastroEstabelecimento() {
       cnpj: formData.cnpj,
       email: formData.email,
       telefone: formData.telefone,
-      endereco: formData.endereco,
       senha: formData.senha,
       confirmarSenha: formData.confirmarSenha,
     });
@@ -286,9 +353,15 @@ export default function CadastroEstabelecimento() {
           nome_fantasia: validatedData.nomeFantasia,
           cnpj: validatedData.cnpj,
           telefone: validatedData.telefone,
-          endereco: validatedData.endereco,
+          cep: formData.cep.replace(/\D/g, ""),
+          logradouro: formData.logradouro,
+          numero: formData.numero,
+          complemento: formData.complemento,
+          bairro: formData.bairro,
           cidade: formData.cidade,
           estado: formData.estado,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
           categoria: formData.categorias.length > 0 ? formData.categorias : null,
           descricao_beneficio: formData.beneficiosAniversariante,
           logo_url: logoUrl,
@@ -474,56 +547,125 @@ export default function CadastroEstabelecimento() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Localização
+                  </h4>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="estado">Estado *</Label>
-                    <Select 
-                      value={formData.estado} 
-                      onValueChange={handleEstadoChange}
+                    <Label htmlFor="cep">CEP *</Label>
+                    <Input
+                      id="cep"
                       required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o estado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ESTADOS.map((estado) => (
-                          <SelectItem key={estado.value} value={estado.value}>
-                            {estado.label} ({estado.value})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="00000-000"
+                      maxLength={9}
+                      value={formData.cep}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "");
+                        const formatted = value.replace(/(\d{5})(\d)/, "$1-$2");
+                        setFormData({ ...formData, cep: formatted });
+                        
+                        if (value.length === 8) {
+                          buscarCep(formatted);
+                        }
+                      }}
+                      disabled={buscandoCep}
+                    />
+                    {buscandoCep && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Buscando endereço...
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="logradouro">Rua/Logradouro *</Label>
+                      <Input
+                        id="logradouro"
+                        required
+                        value={formData.logradouro}
+                        onChange={(e) => setFormData({ ...formData, logradouro: e.target.value })}
+                        placeholder="Ex: Rua das Flores"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="numero">Número *</Label>
+                      <Input
+                        id="numero"
+                        required
+                        value={formData.numero}
+                        onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                        placeholder="Ex: 123"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="bairro">Bairro *</Label>
+                      <Input
+                        id="bairro"
+                        required
+                        value={formData.bairro}
+                        onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+                        placeholder="Ex: Centro"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="complemento">Complemento</Label>
+                      <Input
+                        id="complemento"
+                        value={formData.complemento}
+                        onChange={(e) => setFormData({ ...formData, complemento: e.target.value })}
+                        placeholder="Ex: Sala 101"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cidade">Cidade *</Label>
+                      <Input
+                        id="cidade"
+                        required
+                        value={formData.cidade}
+                        onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                        placeholder="Ex: São Paulo"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="estado">Estado *</Label>
+                      <Select value={formData.estado} onValueChange={handleEstadoChange} required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o estado" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ESTADOS.map((estado) => (
+                            <SelectItem key={estado.value} value={estado.value}>
+                              {estado.label} ({estado.value})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="cidade">Cidade *</Label>
-                    <Select 
-                      value={formData.cidade} 
-                      onValueChange={(value) => setFormData({ ...formData, cidade: value })}
-                      required
-                      disabled={!formData.estado}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a cidade" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {formData.estado && ESTADOS_CIDADES[formData.estado as keyof typeof ESTADOS_CIDADES]?.map((cidade) => (
-                          <SelectItem key={cidade} value={cidade}>{cidade}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Localização no Mapa</Label>
+                    <MapboxMap 
+                      latitude={formData.latitude}
+                      longitude={formData.longitude}
+                      onLocationChange={(lat, lng) => {
+                        setFormData({ ...formData, latitude: lat, longitude: lng });
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Arraste o marcador para ajustar a localização precisa do estabelecimento
+                    </p>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="endereco">Endereço Completo *</Label>
-                  <Input
-                    id="endereco"
-                    required
-                    placeholder="Rua, número, bairro, CEP"
-                    value={formData.endereco}
-                    onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-                  />
                 </div>
 
                 <div className="space-y-4">

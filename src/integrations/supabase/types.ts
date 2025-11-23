@@ -101,6 +101,41 @@ export type Database = {
         }
         Relationships: []
       }
+      estabelecimento_analytics: {
+        Row: {
+          data_evento: string
+          estabelecimento_id: string
+          id: string
+          metadata: Json | null
+          tipo_evento: string
+          user_id: string | null
+        }
+        Insert: {
+          data_evento?: string
+          estabelecimento_id: string
+          id?: string
+          metadata?: Json | null
+          tipo_evento: string
+          user_id?: string | null
+        }
+        Update: {
+          data_evento?: string
+          estabelecimento_id?: string
+          id?: string
+          metadata?: Json | null
+          tipo_evento?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estabelecimento_analytics_estabelecimento_id_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estabelecimentos: {
         Row: {
           categoria: string[] | null

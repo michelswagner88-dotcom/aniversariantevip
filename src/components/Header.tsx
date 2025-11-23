@@ -12,7 +12,6 @@ export const Header = () => {
     { href: "/", label: "Início" },
     { href: "/como-funciona", label: "Como Funciona" },
     { href: "/seja-parceiro", label: "Seja Parceiro" },
-    { href: "/planos", label: "Planos" },
     { href: "/meus-cupons", label: "Meus Cupons" },
     { href: "/faq", label: "FAQ" },
   ];

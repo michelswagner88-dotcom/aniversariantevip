@@ -53,7 +53,6 @@ export default function ComoFunciona() {
       {/* Passos */}
       <section className="py-20 bg-gradient-to-b from-background to-primary/5">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Passo a Passo</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {passos.map((passo, index) => (
               <Card 

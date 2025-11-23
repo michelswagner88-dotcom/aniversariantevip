@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Crown, LogOut, Loader2, Home, Ticket } from "lucide-react";
+import { Crown, LogOut, Loader2, Home, Ticket, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -162,6 +162,27 @@ const AreaAniversariante = () => {
               >
                 <Ticket className="mr-2 h-5 w-5" />
                 Ver Meus Cupons
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Card de Favoritos */}
+          <Card className="bg-gradient-to-br from-pink-500/10 via-pink-500/5 to-background border-pink-500/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <Heart className="h-6 w-6 text-pink-500" />
+                Meus Favoritos
+              </CardTitle>
+              <CardDescription>Veja seus estabelecimentos favoritos</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => navigate("/meus-favoritos")} 
+                className="w-full bg-pink-500 hover:bg-pink-600"
+                size="lg"
+              >
+                <Heart className="mr-2 h-5 w-5" />
+                Ver Meus Favoritos
               </Button>
             </CardContent>
           </Card>

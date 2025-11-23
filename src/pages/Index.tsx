@@ -513,7 +513,7 @@ const Index = () => {
 
                             <Button 
                               className="w-full mt-3"
-                              onClick={() => window.location.href = `/area/aniversariante?emitir=${estabelecimento.id}`}
+                              onClick={() => window.location.href = `/emitir-cupom?estabelecimento=${estabelecimento.id}`}
                             >
                               Emitir Cupom
                             </Button>

@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { BenefitsBanner } from "@/components/BenefitsBanner";
 import { CATEGORIAS_ESTABELECIMENTO, ESTADOS_CIDADES, ESTADOS } from "@/lib/constants";
 import { useFavoritos } from "@/hooks/useFavoritos";
 
@@ -150,6 +151,9 @@ const Index = () => {
           )}
         </div>
       </section>
+
+      {/* Benefits Banner */}
+      {!currentUser && <BenefitsBanner />}
 
       {/* Filtros */}
       <section className="py-6 sm:py-8 bg-card/50 border-y border-border">

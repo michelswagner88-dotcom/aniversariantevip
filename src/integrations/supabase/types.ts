@@ -40,26 +40,47 @@ export type Database = {
       }
       aniversariantes: {
         Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          complemento: string | null
           cpf: string
           created_at: string | null
           data_nascimento: string
+          estado: string | null
           id: string
+          logradouro: string | null
+          numero: string | null
           telefone: string | null
           updated_at: string | null
         }
         Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
           cpf: string
           created_at?: string | null
           data_nascimento: string
+          estado?: string | null
           id: string
+          logradouro?: string | null
+          numero?: string | null
           telefone?: string | null
           updated_at?: string | null
         }
         Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
           cpf?: string
           created_at?: string | null
           data_nascimento?: string
+          estado?: string | null
           id?: string
+          logradouro?: string | null
+          numero?: string | null
           telefone?: string | null
           updated_at?: string | null
         }

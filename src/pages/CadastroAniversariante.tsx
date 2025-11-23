@@ -20,17 +20,66 @@ export default function CadastroAniversariante() {
     email: "",
     cpf: "",
     telefone: "",
-    estado: "",
+    cep: "",
+    logradouro: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
     cidade: "",
+    estado: "",
     dataNascimento: "",
     senha: "",
     confirmarSenha: "",
   });
+  const [buscandoCep, setBuscandoCep] = useState(false);
 
   useEffect(() => {
     setPageReady(true);
   }, []);
 
+  const buscarCep = async (cep: string) => {
+    const cepLimpo = cep.replace(/\D/g, "");
+    
+    if (cepLimpo.length !== 8) return;
+    
+    setBuscandoCep(true);
+    
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+      const data = await response.json();
+      
+      if (data.erro) {
+        toast({
+          variant: "destructive",
+          title: "CEP não encontrado",
+          description: "Verifique o CEP digitado e tente novamente",
+        });
+        return;
+      }
+      
+      setFormData({
+        ...formData,
+        cep,
+        logradouro: data.logradouro || "",
+        bairro: data.bairro || "",
+        cidade: data.localidade || "",
+        estado: data.uf || "",
+      });
+      
+      toast({
+        title: "Endereço encontrado!",
+        description: "Os campos foram preenchidos automaticamente",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao buscar CEP",
+        description: "Não foi possível buscar o endereço. Tente novamente.",
+      });
+    } finally {
+      setBuscandoCep(false);
+    }
+  };
 
   const handleEstadoChange = (value: string) => {
     setFormData({ ...formData, estado: value, cidade: "" });
@@ -136,6 +185,13 @@ export default function CadastroAniversariante() {
           cpf: formData.cpf.replace(/\D/g, ""),
           data_nascimento: formData.dataNascimento,
           telefone: formData.telefone.replace(/\D/g, ""),
+          cep: formData.cep.replace(/\D/g, ""),
+          logradouro: formData.logradouro,
+          numero: formData.numero,
+          complemento: formData.complemento,
+          bairro: formData.bairro,
+          cidade: formData.cidade,
+          estado: formData.estado,
         });
 
       if (profileError) throw profileError;
@@ -235,7 +291,89 @@ export default function CadastroAniversariante() {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="cep">CEP *</Label>
+              <Input
+                id="cep"
+                required
+                placeholder="00000-000"
+                maxLength={9}
+                value={formData.cep}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "");
+                  const formatted = value.replace(/(\d{5})(\d)/, "$1-$2");
+                  setFormData({ ...formData, cep: formatted });
+                  
+                  if (value.length === 8) {
+                    buscarCep(formatted);
+                  }
+                }}
+                disabled={buscandoCep}
+              />
+              {buscandoCep && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Buscando endereço...
+                </p>
+              )}
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="logradouro">Rua/Logradouro *</Label>
+                <Input
+                  id="logradouro"
+                  required
+                  value={formData.logradouro}
+                  onChange={(e) => setFormData({ ...formData, logradouro: e.target.value })}
+                  placeholder="Ex: Rua das Flores"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="numero">Número *</Label>
+                <Input
+                  id="numero"
+                  required
+                  value={formData.numero}
+                  onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                  placeholder="Ex: 123"
+                />
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="bairro">Bairro *</Label>
+                <Input
+                  id="bairro"
+                  required
+                  value={formData.bairro}
+                  onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+                  placeholder="Ex: Centro"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="complemento">Complemento</Label>
+                <Input
+                  id="complemento"
+                  value={formData.complemento}
+                  onChange={(e) => setFormData({ ...formData, complemento: e.target.value })}
+                  placeholder="Ex: Apto 101"
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cidade">Cidade *</Label>
+                <Input
+                  id="cidade"
+                  required
+                  value={formData.cidade}
+                  onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                  placeholder="Ex: São Paulo"
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="estado">Estado *</Label>
                 <Select value={formData.estado} onValueChange={handleEstadoChange} required>
@@ -246,26 +384,6 @@ export default function CadastroAniversariante() {
                     {ESTADOS.map((estado) => (
                       <SelectItem key={estado.value} value={estado.value}>
                         {estado.label} ({estado.value})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cidade">Cidade *</Label>
-                <Select 
-                  value={formData.cidade} 
-                  onValueChange={(value) => setFormData({ ...formData, cidade: value })}
-                  disabled={!formData.estado}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={formData.estado ? "Selecione a cidade" : "Selecione o estado primeiro"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {formData.estado && ESTADOS_CIDADES[formData.estado as keyof typeof ESTADOS_CIDADES]?.map((cidade) => (
-                      <SelectItem key={cidade} value={cidade}>
-                        {cidade}
                       </SelectItem>
                     ))}
                   </SelectContent>

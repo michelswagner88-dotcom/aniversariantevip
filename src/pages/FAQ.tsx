@@ -35,7 +35,7 @@ export default function FAQ() {
     },
     {
       pergunta: "O que acontece se eu perder meu cupom?",
-      resposta: "Você pode acessar sua conta a qualquer momento e visualizar novamente todos os cupons emitidos. Recomendamos fazer screenshot ou salvar em seu celular para fácil acesso.",
+      resposta: "Você pode acessar sua conta a qualquer momento e visualizar novamente todos os cupons emitidos. Recomendamos tirar um print ou salvar em seu celular para fácil acesso.",
     },
     {
       pergunta: "Como faço para me tornar parceiro?",

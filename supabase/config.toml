@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.send-birthday-reminder]
 verify_jwt = false
+
+[functions.emit-coupon]
+verify_jwt = false
+
+[functions.validate-coupon]
+verify_jwt = false

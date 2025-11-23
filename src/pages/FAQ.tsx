@@ -27,7 +27,7 @@ export default function FAQ() {
     },
     {
       pergunta: "Posso usar o cupom em qualquer dia?",
-      resposta: "Depende das regras de utilização cada estabelecimento. Alguns permitem uso apenas no dia do aniversário, outros na semana ou mês do aniversário. Sempre verifique as condições específicas antes de visitar.",
+      resposta: "Depende das regras de utilização de cada estabelecimento. Alguns permitem uso apenas no dia do aniversário, outros na semana ou mês do aniversário. Sempre verifique as condições específicas antes de visitar.",
     },
     {
       pergunta: "Preciso apresentar documento?",

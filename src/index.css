@@ -133,6 +133,11 @@ All colors MUST be HSL.
       scroll-padding-top: 5rem;
     }
   }
+  
+  /* Pause animation utility */
+  .pause {
+    animation-play-state: paused !important;
+  }
 }
 
 @media print {

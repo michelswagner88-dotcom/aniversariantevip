@@ -22,11 +22,19 @@ export const Header = () => {
       <div className="container mx-auto px-4">
         {/* Barra Superior - Logo + Áreas de Acesso */}
         <div className="flex items-center justify-between h-14 border-b border-border/50">
-          {/* Logo Text */}
-          <Link to="/" className="group flex items-center">
-            <h1 className="font-modern font-extrabold text-2xl md:text-3xl lg:text-4xl tracking-wider uppercase bg-gradient-to-r from-vip-gold via-vip-gold-light to-vip-gold bg-clip-text text-transparent transition-all duration-300 group-hover:scale-105 group-hover:tracking-widest whitespace-nowrap">
-              Aniversariante VIP
-            </h1>
+          {/* Logo Marquee */}
+          <Link to="/" className="group flex items-center flex-1 overflow-hidden relative max-w-[calc(100%-180px)] lg:max-w-[calc(100%-420px)]">
+            <div className="flex animate-marquee group-hover:pause whitespace-nowrap">
+              <span className="font-modern font-extrabold text-2xl md:text-3xl lg:text-4xl tracking-wider uppercase bg-gradient-to-r from-vip-gold via-vip-gold-light to-vip-gold bg-clip-text text-transparent px-8">
+                ANIVERSARIANTE VIP
+              </span>
+              <span className="font-modern font-extrabold text-2xl md:text-3xl lg:text-4xl tracking-wider uppercase bg-gradient-to-r from-vip-gold via-vip-gold-light to-vip-gold bg-clip-text text-transparent px-8">
+                ANIVERSARIANTE VIP
+              </span>
+              <span className="font-modern font-extrabold text-2xl md:text-3xl lg:text-4xl tracking-wider uppercase bg-gradient-to-r from-vip-gold via-vip-gold-light to-vip-gold bg-clip-text text-transparent px-8">
+                ANIVERSARIANTE VIP
+              </span>
+            </div>
           </Link>
 
           {/* Desktop - Áreas de Acesso + Theme Toggle */}

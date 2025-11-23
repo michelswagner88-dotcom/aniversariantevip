@@ -31,7 +31,7 @@ export default function FAQ() {
     },
     {
       pergunta: "Preciso apresentar documento?",
-      resposta: "Na maioria dos casos, sim. É necessário apresentar um documento com foto que comprove sua identidade e data de nascimento para validar o cupom no estabelecimento.",
+      resposta: "Isso varia conforme o estabelecimento parceiro. Para evitar qualquer problema, nossa recomendação é sempre levar um documento com foto. As regras específicas de cada benefício estão descritas no cupom.",
     },
     {
       pergunta: "O que acontece se eu perder meu cupom?",

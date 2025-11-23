@@ -22,6 +22,10 @@ export default function FAQ() {
       resposta: "Sim, 100% gratuito! Acesse a plataforma e emita seus cupons sem pagar nada. Você só aproveita os benefícios.",
     },
     {
+      pergunta: "E para o estabelecimento, como funciona?",
+      resposta: "Para os estabelecimentos parceiros, existe uma mensalidade simbólica, com opções de planos trimestrais, semestrais e anuais.",
+    },
+    {
       pergunta: "Como sei se o estabelecimento está ativo?",
       resposta: "Todos os estabelecimentos listados na plataforma estão ativos e participando do programa. Se houver alguma mudança, atualizamos imediatamente a listagem.",
     },

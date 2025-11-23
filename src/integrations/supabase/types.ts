@@ -159,9 +159,12 @@ export type Database = {
       }
       estabelecimentos: {
         Row: {
+          bairro: string | null
           categoria: string[] | null
+          cep: string | null
           cidade: string | null
           cnpj: string
+          complemento: string | null
           created_at: string | null
           descricao_beneficio: string | null
           endereco: string | null
@@ -169,9 +172,13 @@ export type Database = {
           horario_funcionamento: string | null
           id: string
           instagram: string | null
+          latitude: number | null
           link_cardapio: string | null
           logo_url: string | null
+          logradouro: string | null
+          longitude: number | null
           nome_fantasia: string | null
+          numero: string | null
           periodo_validade_beneficio: string | null
           razao_social: string
           regras_utilizacao: string | null
@@ -182,9 +189,12 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          bairro?: string | null
           categoria?: string[] | null
+          cep?: string | null
           cidade?: string | null
           cnpj: string
+          complemento?: string | null
           created_at?: string | null
           descricao_beneficio?: string | null
           endereco?: string | null
@@ -192,9 +202,13 @@ export type Database = {
           horario_funcionamento?: string | null
           id?: string
           instagram?: string | null
+          latitude?: number | null
           link_cardapio?: string | null
           logo_url?: string | null
+          logradouro?: string | null
+          longitude?: number | null
           nome_fantasia?: string | null
+          numero?: string | null
           periodo_validade_beneficio?: string | null
           razao_social: string
           regras_utilizacao?: string | null
@@ -205,9 +219,12 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          bairro?: string | null
           categoria?: string[] | null
+          cep?: string | null
           cidade?: string | null
           cnpj?: string
+          complemento?: string | null
           created_at?: string | null
           descricao_beneficio?: string | null
           endereco?: string | null
@@ -215,9 +232,13 @@ export type Database = {
           horario_funcionamento?: string | null
           id?: string
           instagram?: string | null
+          latitude?: number | null
           link_cardapio?: string | null
           logo_url?: string | null
+          logradouro?: string | null
+          longitude?: number | null
           nome_fantasia?: string | null
+          numero?: string | null
           periodo_validade_beneficio?: string | null
           razao_social?: string
           regras_utilizacao?: string | null

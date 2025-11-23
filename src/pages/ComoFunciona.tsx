@@ -97,7 +97,7 @@ export default function ComoFunciona() {
             <Link to="/cadastro-aniversariante">
               <Button size="lg" className="text-lg px-10 py-6 uppercase font-semibold">
                 <Crown className="mr-2 h-6 w-6" />
-                Cadastrar-Se Grátis
+                Cadastre-Se Grátis
               </Button>
             </Link>
             <Link to="/">

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { CakeIcon, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -12,6 +13,7 @@ export const Header = () => {
     { href: "/como-funciona", label: "Como Funciona" },
     { href: "/seja-parceiro", label: "Seja Parceiro" },
     { href: "/planos", label: "Planos" },
+    { href: "/meus-cupons", label: "Meus Cupons" },
     { href: "/faq", label: "FAQ" },
   ];
 
@@ -28,8 +30,9 @@ export const Header = () => {
             </span>
           </Link>
 
-          {/* Desktop - Áreas de Acesso */}
+          {/* Desktop - Áreas de Acesso + Theme Toggle */}
           <div className="hidden lg:flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" size="sm" asChild className="text-xs h-8">
               <Link to="/login/aniversariante">Área do Aniversariante</Link>
             </Button>
@@ -41,17 +44,20 @@ export const Header = () => {
             </Button>
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 text-foreground"
-          >
-            {mobileMenuOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
-            )}
-          </button>
+          {/* Mobile Menu Button + Theme Toggle */}
+          <div className="lg:hidden flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-foreground"
+            >
+              {mobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Menu de Navegação - Desktop */}

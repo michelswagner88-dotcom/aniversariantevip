@@ -10,6 +10,44 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 5%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 5%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 5%;
+
+    --primary: 45 100% 51%;
+    --primary-foreground: 0 0% 5%;
+
+    --secondary: 45 15% 95%;
+    --secondary-foreground: 0 0% 5%;
+
+    --muted: 45 15% 95%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 45 100% 51%;
+    --accent-foreground: 0 0% 5%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 45 20% 85%;
+    --input: 45 20% 90%;
+    --ring: 45 100% 51%;
+
+    --radius: 0.5rem;
+
+    --vip-gold: 45 100% 51%;
+    --vip-gold-light: 45 100% 70%;
+    --vip-gold-dark: 45 100% 35%;
+    --vip-black: 0 0% 5%;
+    --vip-dark: 0 0% 8%;
+  }
+
+  .dark {
     --background: 0 0% 5%;
     --foreground: 45 100% 70%;
 
@@ -37,14 +75,6 @@ All colors MUST be HSL.
     --border: 45 30% 25%;
     --input: 0 0% 15%;
     --ring: 45 100% 51%;
-
-    --radius: 0.5rem;
-
-    --vip-gold: 45 100% 51%;
-    --vip-gold-light: 45 100% 70%;
-    --vip-gold-dark: 45 100% 35%;
-    --vip-black: 0 0% 5%;
-    --vip-dark: 0 0% 8%;
   }
 }
 

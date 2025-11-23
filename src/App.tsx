@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CookieConsent } from "@/components/CookieConsent";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 import CadastroAniversariante from "./pages/CadastroAniversariante";
@@ -22,6 +23,9 @@ import NotFound from "./pages/NotFound";
 import ComoFunciona from "./pages/ComoFunciona";
 import SejaParceito from "./pages/SejaParceito";
 import FAQ from "./pages/FAQ";
+import MeusCupons from "./pages/MeusCupons";
+import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
+import TermosUso from "./pages/TermosUso";
 
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -36,34 +40,39 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Suspense fallback={<LoadingScreen />}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/como-funciona" element={<ComoFunciona />} />
-            <Route path="/seja-parceiro" element={<SejaParceito />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/cadastro/aniversariante" element={<CadastroAniversariante />} />
-            <Route path="/login/aniversariante" element={<LoginAniversariante />} />
-            <Route path="/area-aniversariante" element={<AreaAniversariante />} />
-            <Route path="/cadastro/estabelecimento" element={<CadastroEstabelecimento />} />
-            <Route path="/login/estabelecimento" element={<LoginEstabelecimento />} />
-            <Route path="/area-estabelecimento" element={<AreaEstabelecimento />} />
-            <Route path="/login/colaborador" element={<LoginColaborador />} />
-            <Route path="/area-colaborador" element={<AreaColaborador />} />
-            <Route path="/setup-admin" element={<SetupAdmin />} />
-            <Route path="/selecionar-categoria" element={<SelecionarCategoria />} />
-            <Route path="/planos-pagamento" element={<PlanosPagamento />} />
-            <Route path="/planos" element={<PlanosPagamento />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-        <CookieConsent />
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider defaultTheme="dark" storageKey="vip-theme">
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Suspense fallback={<LoadingScreen />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/como-funciona" element={<ComoFunciona />} />
+              <Route path="/seja-parceiro" element={<SejaParceito />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/meus-cupons" element={<MeusCupons />} />
+              <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
+              <Route path="/termos-uso" element={<TermosUso />} />
+              <Route path="/cadastro/aniversariante" element={<CadastroAniversariante />} />
+              <Route path="/login/aniversariante" element={<LoginAniversariante />} />
+              <Route path="/area-aniversariante" element={<AreaAniversariante />} />
+              <Route path="/cadastro/estabelecimento" element={<CadastroEstabelecimento />} />
+              <Route path="/login/estabelecimento" element={<LoginEstabelecimento />} />
+              <Route path="/area-estabelecimento" element={<AreaEstabelecimento />} />
+              <Route path="/login/colaborador" element={<LoginColaborador />} />
+              <Route path="/area-colaborador" element={<AreaColaborador />} />
+              <Route path="/setup-admin" element={<SetupAdmin />} />
+              <Route path="/selecionar-categoria" element={<SelecionarCategoria />} />
+              <Route path="/planos-pagamento" element={<PlanosPagamento />} />
+              <Route path="/planos" element={<PlanosPagamento />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+          <CookieConsent />
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

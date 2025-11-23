@@ -26,10 +26,6 @@ export default function FAQ() {
       resposta: "Para os estabelecimentos parceiros, existe uma mensalidade simbólica, com opções de planos trimestrais, semestrais e anuais.",
     },
     {
-      pergunta: "Como sei se o estabelecimento está ativo?",
-      resposta: "Todos os estabelecimentos listados na plataforma estão ativos e participando do programa. Se houver alguma mudança, atualizamos imediatamente a listagem.",
-    },
-    {
       pergunta: "Posso usar o cupom em qualquer dia?",
       resposta: "Depende das regras de cada estabelecimento. Alguns permitem uso apenas no dia do aniversário, outros na semana ou mês do aniversário. Sempre verifique as condições específicas antes de visitar.",
     },

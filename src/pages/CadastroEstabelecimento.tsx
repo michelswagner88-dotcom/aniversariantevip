@@ -580,17 +580,18 @@ export default function CadastroEstabelecimento() {
                     )}
                   </div>
 
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="logradouro">Rua/Logradouro *</Label>
-                      <Input
-                        id="logradouro"
-                        required
-                        value={formData.logradouro}
-                        onChange={(e) => setFormData({ ...formData, logradouro: e.target.value })}
-                        placeholder="Ex: Rua das Flores"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="logradouro">Rua/Logradouro *</Label>
+                    <Input
+                      id="logradouro"
+                      required
+                      value={formData.logradouro}
+                      onChange={(e) => setFormData({ ...formData, logradouro: e.target.value })}
+                      placeholder="Ex: Rua das Flores"
+                    />
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="numero">Número *</Label>
                       <Input
@@ -599,19 +600,6 @@ export default function CadastroEstabelecimento() {
                         value={formData.numero}
                         onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
                         placeholder="Ex: 123"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="bairro">Bairro *</Label>
-                      <Input
-                        id="bairro"
-                        required
-                        value={formData.bairro}
-                        onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
-                        placeholder="Ex: Centro"
                       />
                     </div>
                     <div className="space-y-2">
@@ -623,6 +611,17 @@ export default function CadastroEstabelecimento() {
                         placeholder="Ex: Sala 101"
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="bairro">Bairro *</Label>
+                    <Input
+                      id="bairro"
+                      required
+                      value={formData.bairro}
+                      onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+                      placeholder="Ex: Centro"
+                    />
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">

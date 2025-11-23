@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Crown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +18,7 @@ export default function LoginAniversariante() {
     email: "",
     senha: "",
   });
+  const [manterLogado, setManterLogado] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -147,6 +149,20 @@ export default function LoginAniversariante() {
               />
             </div>
 
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="manter-logado" 
+                checked={manterLogado}
+                onCheckedChange={(checked) => setManterLogado(checked as boolean)}
+              />
+              <Label 
+                htmlFor="manter-logado" 
+                className="text-sm font-normal cursor-pointer"
+              >
+                Manter-me logado
+              </Label>
+            </div>
+
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Entrando..." : "Entrar"}
             </Button>
@@ -159,12 +175,16 @@ export default function LoginAniversariante() {
               Esqueci Minha Senha
             </button>
             
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              Não tem uma conta?{" "}
-              <Link to="/cadastro/aniversariante" className="text-primary hover:underline">
-                Cadastre-Se
+            <div className="text-center mt-6 p-4 bg-muted/50 rounded-lg border border-border">
+              <p className="text-sm text-muted-foreground mb-2">
+                Ainda não tem uma conta?
+              </p>
+              <Link to="/cadastro/aniversariante">
+                <Button variant="outline" className="w-full">
+                  Cadastre-se Gratuitamente
+                </Button>
               </Link>
-            </p>
+            </div>
           </form>
         </CardContent>
       </Card>

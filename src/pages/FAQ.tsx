@@ -11,11 +11,11 @@ export default function FAQ() {
   const faqItems = [
     {
       pergunta: "Posso usar vários benefícios no mesmo mês?",
-      resposta: "Sim. Você pode emitir cupons para quantos estabelecimentos quiser, desde que respeite as regras de utilização de cada local.",
+      resposta: "Sim. Você pode emitir cupons para quantos estabelecimentos desejar, desde que respeite as regras de utilização de cada local.",
     },
     {
       pergunta: "Preciso sempre reservar antes de usar o benefício?",
-      resposta: "Não necessariamente. Alguns estabelecimentos podem exigir reserva antecipada, outros funcionam por ordem de chegada. Sempre confira as condições na descrição de cada benefício.",
+      resposta: "Não necessariamente. Alguns estabelecimentos podem exigir reserva antecipada, enquanto outros funcionam por ordem de chegada. Sempre confira as condições de uso na descrição de cada benefício.",
     },
     {
       pergunta: "O serviço é totalmente gratuito?",

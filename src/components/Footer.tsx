@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Mail, Phone } from "lucide-react";
 import { CONTATOS } from "@/lib/constants";
-import logo from "@/assets/logo.png";
+import { Logo } from "@/components/Logo";
 
 export const Footer = () => {
   return (
@@ -10,12 +10,8 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Coluna 1 - Marca */}
           <div>
-            <Link to="/" className="flex items-center mb-3 group">
-              <img 
-                src={logo} 
-                alt="Aniversariante VIP" 
-                className="h-16 w-auto transition-transform group-hover:scale-105"
-              />
+            <Link to="/" className="block mb-4 group">
+              <Logo size="lg" showText />
             </Link>
             <p className="text-xs text-muted-foreground leading-relaxed">
               Guia de benefícios para aniversariantes em todo o Brasil.

@@ -26,6 +26,7 @@ import FAQ from "./pages/FAQ";
 import MeusCupons from "./pages/MeusCupons";
 import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import TermosUso from "./pages/TermosUso";
+import ResetPassword from "./pages/ResetPassword";
 
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/meus-cupons" element={<MeusCupons />} />
               <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
               <Route path="/termos-uso" element={<TermosUso />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/cadastro/aniversariante" element={<CadastroAniversariante />} />
               <Route path="/login/aniversariante" element={<LoginAniversariante />} />
               <Route path="/area-aniversariante" element={<AreaAniversariante />} />

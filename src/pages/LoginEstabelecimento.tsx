@@ -88,7 +88,7 @@ export default function LoginEstabelecimento() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-        redirectTo: `${window.location.origin}/area-estabelecimento`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
 
       if (error) throw error;

@@ -329,12 +329,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      emit_coupon: {
+        Args: { p_aniversariante_id: string; p_estabelecimento_id: string }
+        Returns: {
+          codigo: string
+          cupom_id: string
+          data_emissao: string
+          data_validade: string
+          error_message: string
+        }[]
+      }
+      generate_unique_coupon_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      use_coupon: {
+        Args: { p_codigo: string; p_estabelecimento_id: string }
+        Returns: {
+          cupom_data: Json
+          message: string
+          success: boolean
+        }[]
       }
     }
     Enums: {

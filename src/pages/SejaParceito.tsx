@@ -149,11 +149,6 @@ export default function SejaParceiro() {
                 Cadastrar Estabelecimento
               </Button>
             </Link>
-          <Link to="/selecionar-categoria">
-            <Button size="lg" variant="outline" className="text-lg px-8">
-              Ver Planos e Preços
-            </Button>
-          </Link>
           </div>
         </div>
       </section>

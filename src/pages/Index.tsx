@@ -34,7 +34,7 @@ interface Estabelecimento {
 const Index = () => {
   const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategoria, setSelectedCategoria] = useState("");
+  const [selectedCategoria, setSelectedCategoria] = useState("todas");
   const [selectedEstado, setSelectedEstado] = useState("");
   const [selectedCidade, setSelectedCidade] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -121,18 +121,18 @@ const Index = () => {
   };
 
   // Filtros
-  const estabelecimentosFiltrados = selectedCategoria 
-    ? estabelecimentos.filter((est) => {
-        const matchesSearch = est.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-        const matchesCategoria = Array.isArray(est.categoria) 
-          ? est.categoria.includes(selectedCategoria) 
-          : est.categoria === selectedCategoria;
-        const matchesEstado = !selectedEstado || est.estado === selectedEstado;
-        const matchesCidade = !selectedCidade || est.cidade === selectedCidade;
+  const estabelecimentosFiltrados = estabelecimentos.filter((est) => {
+    const matchesSearch = !searchTerm || est.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+    const matchesCategoria = !selectedCategoria || selectedCategoria === "todas"
+      ? true 
+      : Array.isArray(est.categoria) 
+        ? est.categoria.includes(selectedCategoria) 
+        : est.categoria === selectedCategoria;
+    const matchesEstado = !selectedEstado || est.estado === selectedEstado;
+    const matchesCidade = !selectedCidade || est.cidade === selectedCidade;
 
-        return matchesSearch && matchesCategoria && matchesEstado && matchesCidade;
-      })
-    : [];
+    return matchesSearch && matchesCategoria && matchesEstado && matchesCidade;
+  });
 
   // Agrupamento por localização
   const estabelecimentosAgrupados = estabelecimentosFiltrados.reduce((acc, est) => {
@@ -209,13 +209,13 @@ const Index = () => {
                   className="pl-10 h-12 sm:h-14 text-base"
                 />
               </div>
-              {(selectedEstado || selectedCidade || selectedCategoria || searchTerm) && (
+              {(selectedEstado || selectedCidade || (selectedCategoria && selectedCategoria !== "todas") || searchTerm) && (
                 <Button
                   variant="outline"
                   onClick={() => {
                     setSelectedEstado("");
                     setSelectedCidade("");
-                    setSelectedCategoria("");
+                    setSelectedCategoria("todas");
                     setSearchTerm("");
                   }}
                   className="h-12 sm:h-14 px-4 whitespace-nowrap"
@@ -267,7 +267,7 @@ const Index = () => {
                   <SelectValue placeholder="Selecione a Categoria" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  <SelectItem value="" className="text-base py-3 font-semibold">
+                  <SelectItem value="todas" className="text-base py-3 font-semibold">
                     Ver Todas Categorias
                   </SelectItem>
                   {CATEGORIAS_ESTABELECIMENTO.map(cat => (
@@ -283,7 +283,7 @@ const Index = () => {
       </section>
 
       {/* Contador de Resultados */}
-      {(selectedCategoria || selectedEstado || selectedCidade) && (
+      {((selectedCategoria && selectedCategoria !== "todas") || selectedEstado || selectedCidade || searchTerm) && (
         <div className="container mx-auto px-4 max-w-7xl pt-6">
           <p className="text-sm sm:text-base text-muted-foreground">
             <span className="font-semibold text-foreground">

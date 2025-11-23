@@ -51,34 +51,29 @@ export default function ComoFunciona() {
       </section>
 
       {/* Passos */}
-      <section className="py-20">
+      <section className="py-20 bg-gradient-to-b from-background to-primary/5">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12">Passo a Passo</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {passos.map((passo, index) => (
               <Card 
                 key={passo.numero}
-                className="hover-scale transition-all duration-300 animate-fade-in border-primary/20 bg-gradient-to-br from-card via-card to-primary/5"
+                className="hover-scale transition-all duration-300 animate-fade-in"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <CardContent className="p-8">
-                  <div className="flex items-start gap-6">
-                    <div className="flex-shrink-0">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-primary/30">
-                        <passo.icon className="h-8 w-8 text-primary" />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-5xl font-bold text-primary/40">
-                          {passo.numero}
-                        </span>
-                        <h3 className="text-2xl font-bold uppercase tracking-wide">{passo.titulo}</h3>
-                      </div>
-                      <p className="text-muted-foreground leading-relaxed text-lg">
-                        {passo.descricao}
-                      </p>
-                    </div>
+                <CardContent className="p-6 text-center">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <passo.icon className="h-8 w-8 text-primary" />
                   </div>
+                  <div className="mb-3">
+                    <span className="text-3xl font-bold text-primary">
+                      {passo.numero}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-3 uppercase">{passo.titulo}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {passo.descricao}
+                  </p>
                 </CardContent>
               </Card>
             ))}

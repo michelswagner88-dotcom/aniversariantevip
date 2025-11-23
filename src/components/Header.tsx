@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { CakeIcon, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import logo from "@/assets/logo.png";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -22,12 +23,13 @@ export const Header = () => {
       <div className="container mx-auto px-4">
         {/* Barra Superior - Logo + Áreas de Acesso */}
         <div className="flex items-center justify-between h-14 border-b border-border/50">
-          {/* Logo e Nome */}
+          {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <CakeIcon className="h-6 w-6 text-primary transition-transform group-hover:scale-110" />
-            <span className="font-display text-lg md:text-xl font-bold text-primary">
-              Aniversariante VIP
-            </span>
+            <img 
+              src={logo} 
+              alt="Aniversariante VIP" 
+              className="h-10 md:h-12 w-auto transition-transform group-hover:scale-105"
+            />
           </Link>
 
           {/* Desktop - Áreas de Acesso + Theme Toggle */}

@@ -18,8 +18,8 @@ export default function FAQ() {
       resposta: "Não necessariamente. Alguns estabelecimentos podem exigir reserva antecipada, enquanto outros funcionam por ordem de chegada. Sempre confira as condições de uso na descrição de cada benefício.",
     },
     {
-      pergunta: "O serviço é totalmente gratuito?",
-      resposta: "Para o usuário aniversariante, sim: o acesso à plataforma e a emissão de cupons são gratuitos. Para os estabelecimentos parceiros, existe uma mensalidade simbólica, com planos trimestrais, semestrais e anuais.",
+      pergunta: "Para o aniversariante é gratuito?",
+      resposta: "Sim, 100% gratuito! Acesse a plataforma e emita seus cupons sem pagar nada. Você só aproveita os benefícios.",
     },
     {
       pergunta: "Como sei se o estabelecimento está ativo?",

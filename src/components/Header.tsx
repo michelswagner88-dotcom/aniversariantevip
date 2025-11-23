@@ -4,7 +4,6 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import logo from "@/assets/logo.png";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -23,13 +22,11 @@ export const Header = () => {
       <div className="container mx-auto px-4">
         {/* Barra Superior - Logo + Áreas de Acesso */}
         <div className="flex items-center justify-between h-14 border-b border-border/50">
-          {/* Logo */}
+          {/* Logo Text */}
           <Link to="/" className="group flex items-center">
-            <img 
-              src={logo} 
-              alt="Aniversariante VIP" 
-              className="h-12 md:h-14 w-auto transition-transform group-hover:scale-105"
-            />
+            <h1 className="font-modern font-extrabold text-2xl md:text-3xl lg:text-4xl tracking-wider uppercase bg-gradient-to-r from-vip-gold via-vip-gold-light to-vip-gold bg-clip-text text-transparent transition-all duration-300 group-hover:scale-105 group-hover:tracking-widest whitespace-nowrap">
+              Aniversariante VIP
+            </h1>
           </Link>
 
           {/* Desktop - Áreas de Acesso + Theme Toggle */}

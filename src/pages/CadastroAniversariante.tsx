@@ -331,10 +331,9 @@ export default function CadastroAniversariante() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="numero">Número *</Label>
+                <Label htmlFor="numero">Número</Label>
                 <Input
                   id="numero"
-                  required
                   value={formData.numero}
                   onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
                   placeholder="Ex: 123"

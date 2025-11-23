@@ -35,13 +35,19 @@ export const Footer = () => {
                 to="/cadastro/aniversariante" 
                 className="text-xs text-muted-foreground hover:text-primary transition-colors"
               >
-                Cadastrar-se
+                Cadastre-se
               </Link>
               <Link 
                 to="/login/aniversariante" 
                 className="text-xs text-muted-foreground hover:text-primary transition-colors"
               >
                 Área do Aniversariante
+              </Link>
+              <Link 
+                to="/faq" 
+                className="text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                FAQ
               </Link>
             </nav>
           </div>
@@ -57,12 +63,6 @@ export const Footer = () => {
                 className="text-xs text-muted-foreground hover:text-primary transition-colors"
               >
                 Seja Parceiro
-              </Link>
-              <Link 
-                to="/planos" 
-                className="text-xs text-muted-foreground hover:text-primary transition-colors"
-              >
-                Planos para Estabelecimentos
               </Link>
               <Link 
                 to="/login/estabelecimento" 

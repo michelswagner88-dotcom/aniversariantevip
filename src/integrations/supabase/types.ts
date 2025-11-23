@@ -158,6 +158,7 @@ export type Database = {
           telefone: string | null
           tem_conta_acesso: boolean | null
           updated_at: string | null
+          whatsapp: string | null
         }
         Insert: {
           categoria?: string[] | null
@@ -180,6 +181,7 @@ export type Database = {
           telefone?: string | null
           tem_conta_acesso?: boolean | null
           updated_at?: string | null
+          whatsapp?: string | null
         }
         Update: {
           categoria?: string[] | null
@@ -202,6 +204,7 @@ export type Database = {
           telefone?: string | null
           tem_conta_acesso?: boolean | null
           updated_at?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }

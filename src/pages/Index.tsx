@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Search, Phone, Clock, ExternalLink, Heart, Sparkles, Instagram, Globe, Share2 } from "lucide-react";
+import { MapPin, Search, Phone, Clock, ExternalLink, Heart, Sparkles, Instagram, Globe, Share2, Navigation } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -376,14 +376,20 @@ const Index = () => {
                       
                       <CardContent className="space-y-3 px-4 sm:px-6 pb-4 sm:pb-6">
                         {estabelecimento.endereco && (
-                          <button
-                            onClick={() => openGoogleMaps(estabelecimento.endereco)}
-                            className="flex items-start gap-2 text-sm text-muted-foreground hover:text-primary transition-colors w-full text-left group/link min-h-[44px] py-2"
-                            aria-label="Abrir no Google Maps"
-                          >
-                            <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 group-hover/link:scale-110 transition-transform" />
-                            <span className="line-clamp-2 group-hover/link:underline">{estabelecimento.endereco}</span>
-                          </button>
+                          <div className="flex items-start gap-2 min-h-[44px] py-2">
+                            <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                            <span className="flex-1 text-sm text-muted-foreground line-clamp-2">
+                              {estabelecimento.endereco}
+                            </span>
+                            <button
+                              onClick={() => openGoogleMaps(estabelecimento.endereco)}
+                              className="p-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors flex-shrink-0"
+                              aria-label="Abrir direções no Google Maps"
+                              title="Abrir direções"
+                            >
+                              <Navigation className="h-4 w-4" />
+                            </button>
+                          </div>
                         )}
 
                         {estabelecimento.horario_funcionamento && (

@@ -103,7 +103,7 @@ export const BenefitsBanner = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="text-base sm:text-lg md:text-xl font-semibold text-foreground text-center"
+                  className="text-base sm:text-lg md:text-xl font-modern font-bold text-foreground text-center uppercase tracking-wide"
                 >
                   {currentMessage.text}
                 </motion.p>

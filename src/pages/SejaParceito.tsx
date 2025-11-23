@@ -143,7 +143,7 @@ export default function SejaParceiro() {
             Cadastre seu estabelecimento e comece a atrair mais clientes agora mesmo
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link to="/cadastro-estabelecimento">
+            <Link to="/cadastro/estabelecimento">
               <Button size="lg" className="text-lg px-8">
                 <Building2 className="mr-2 h-5 w-5" />
                 Cadastrar Estabelecimento

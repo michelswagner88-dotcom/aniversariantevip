@@ -142,7 +142,7 @@ const Index = () => {
           {!currentUser && (
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-fade-in px-4">
               <Button size="lg" asChild className="text-sm sm:text-base w-full sm:w-auto min-h-[48px]">
-                <a href="/cadastro/aniversariante">Cadastrar-se Grátis</a>
+                <a href="/cadastro/aniversariante">Cadastre-se Grátis</a>
               </Button>
               <Button size="lg" variant="outline" asChild className="text-sm sm:text-base w-full sm:w-auto min-h-[48px]">
                 <a href="/login/aniversariante">Já Sou Cadastrado</a>

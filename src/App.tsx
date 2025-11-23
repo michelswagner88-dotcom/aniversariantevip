@@ -24,6 +24,7 @@ import ComoFunciona from "./pages/ComoFunciona";
 import SejaParceito from "./pages/SejaParceito";
 import FAQ from "./pages/FAQ";
 import MeusCupons from "./pages/MeusCupons";
+import MeusFavoritos from "./pages/MeusFavoritos";
 import EmitirCupom from "./pages/EmitirCupom";
 import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import TermosUso from "./pages/TermosUso";
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/seja-parceiro" element={<SejaParceito />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/meus-cupons" element={<MeusCupons />} />
+              <Route path="/meus-favoritos" element={<MeusFavoritos />} />
               <Route path="/emitir-cupom" element={<EmitirCupom />} />
               <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
               <Route path="/termos-uso" element={<TermosUso />} />

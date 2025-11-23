@@ -262,18 +262,25 @@ const Index = () => {
                 </SelectContent>
               </Select>
 
-              <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-                <SelectTrigger className="h-12 sm:h-14 text-base">
-                  <SelectValue placeholder="Selecione a Categoria" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  {CATEGORIAS_ESTABELECIMENTO.map(cat => (
-                    <SelectItem key={cat.value} value={cat.value} className="text-base py-3">
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={!selectedCategoria ? "default" : "outline"}
+                  onClick={() => setSelectedCategoria("")}
+                  className="text-sm"
+                >
+                  Ver Todas Categorias
+                </Button>
+                {CATEGORIAS_ESTABELECIMENTO.map(cat => (
+                  <Button
+                    key={cat.value}
+                    variant={selectedCategoria === cat.value ? "default" : "outline"}
+                    onClick={() => setSelectedCategoria(cat.value)}
+                    className="text-sm"
+                  >
+                    {cat.label}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         </div>

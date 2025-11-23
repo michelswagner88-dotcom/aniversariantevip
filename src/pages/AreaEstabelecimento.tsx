@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Crown, LogOut, Edit2, Save, Ticket, Search, Upload, Gift } from "lucide-react";
+import { Crown, LogOut, Edit2, Save, Ticket, Search, Upload, Gift, TrendingUp, Eye, MousePointerClick, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,11 @@ export default function AreaEstabelecimento() {
   const [uploading, setUploading] = useState(false);
   const [cuponsEmitidos, setCuponsEmitidos] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState({
+    visualizacoes: 0,
+    cliques: 0,
+    cuponsDoMes: 0,
+  });
   const [formData, setFormData] = useState({
     nomeFantasia: "",
     email: "",
@@ -127,6 +132,42 @@ export default function AreaEstabelecimento() {
     }
 
     setCuponsEmitidos(count || 0);
+    
+    // Carregar cupons do mês atual
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    
+    const { count: countMes } = await supabase
+      .from("cupons")
+      .select("*", { count: "exact", head: true })
+      .eq("estabelecimento_id", estabelecimentoId)
+      .gte("created_at", startOfMonth.toISOString());
+    
+    // Carregar analytics
+    await loadAnalytics(estabelecimentoId, countMes || 0);
+  };
+
+  const loadAnalytics = async (estabelecimentoId: string, cuponsDoMes: number) => {
+    // Contar visualizações
+    const { count: visualizacoes } = await supabase
+      .from("estabelecimento_analytics")
+      .select("*", { count: "exact", head: true })
+      .eq("estabelecimento_id", estabelecimentoId)
+      .eq("tipo_evento", "visualizacao");
+    
+    // Contar cliques totais (telefone, whatsapp, instagram, site)
+    const { count: cliques } = await supabase
+      .from("estabelecimento_analytics")
+      .select("*", { count: "exact", head: true })
+      .eq("estabelecimento_id", estabelecimentoId)
+      .in("tipo_evento", ["clique_telefone", "clique_whatsapp", "clique_instagram", "clique_site"]);
+    
+    setAnalytics({
+      visualizacoes: visualizacoes || 0,
+      cliques: cliques || 0,
+      cuponsDoMes,
+    });
   };
 
   const handleLogout = async () => {
@@ -407,18 +448,60 @@ export default function AreaEstabelecimento() {
       </header>
 
       <div className="container mx-auto px-4 py-8 space-y-6">
-        <Card className="max-w-3xl mx-auto">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Gift className="h-5 w-5" />
-              Cupons Emitidos
-            </CardTitle>
-            <CardDescription>Total de cupons emitidos até o momento</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold text-primary">{cuponsEmitidos}</div>
-          </CardContent>
-        </Card>
+        {/* Estatísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-6xl mx-auto">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Gift className="h-4 w-4" />
+                Cupons Totais
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">{cuponsEmitidos}</div>
+              <p className="text-xs text-muted-foreground mt-1">Desde o início</p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Cupons do Mês
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">{analytics.cuponsDoMes}</div>
+              <p className="text-xs text-muted-foreground mt-1">Mês atual</p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                Visualizações
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">{analytics.visualizacoes}</div>
+              <p className="text-xs text-muted-foreground mt-1">Total de views</p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <MousePointerClick className="h-4 w-4" />
+                Cliques
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">{analytics.cliques}</div>
+              <p className="text-xs text-muted-foreground mt-1">Links e contatos</p>
+            </CardContent>
+          </Card>
+        </div>
 
         <Card className="max-w-3xl mx-auto">
           <CardHeader>

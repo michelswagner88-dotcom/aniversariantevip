@@ -11,6 +11,7 @@ import { z } from "zod";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { resizeImage } from "@/lib/imageUtils";
+import { cnpjSchema } from "@/lib/validation";
 
 type HorarioFuncionamento = {
   id: string;
@@ -22,17 +23,13 @@ type HorarioFuncionamento = {
 const estabelecimentoSchema = z.object({
   email: z.string().email("Email inválido").max(255),
   senha: z.string().min(6, "Senha deve ter no mínimo 6 caracteres").max(100),
+  cnpj: cnpjSchema,
   nomeFantasia: z.string().trim().min(3, "Nome deve ter no mínimo 3 caracteres").max(100),
   razaoSocial: z.string().trim().min(3).max(200),
   telefone: z.string().trim().max(20),
   endereco: z.string().trim().max(500),
   descricaoBeneficio: z.string().trim().max(1000),
 });
-
-// Helper to generate fake CNPJ for database
-const generateFakeCNPJ = (): string => {
-  return Math.floor(Math.random() * 100000000000000).toString().padStart(14, '0');
-};
 
 export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -46,6 +43,7 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
   const [formData, setFormData] = useState({
     email: "",
     senha: "",
+    cnpj: "",
     nomeFantasia: "",
     razaoSocial: "",
     telefone: "",
@@ -141,6 +139,19 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
       const validatedData = estabelecimentoSchema.parse(formData);
       setLoading(true);
 
+      // Verificar se CNPJ já existe
+      const { data: existingCNPJ } = await supabase
+        .from("estabelecimentos")
+        .select("cnpj")
+        .eq("cnpj", validatedData.cnpj)
+        .maybeSingle();
+
+      if (existingCNPJ) {
+        toast.error("CNPJ já cadastrado no sistema");
+        setLoading(false);
+        return;
+      }
+
       // Criar usuário
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: validatedData.email,
@@ -184,7 +195,7 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
           id: userId,
           razao_social: validatedData.razaoSocial,
           nome_fantasia: validatedData.nomeFantasia,
-          cnpj: generateFakeCNPJ(), // Auto-generated CNPJ
+          cnpj: validatedData.cnpj,
           telefone: validatedData.telefone,
           endereco: validatedData.endereco,
           cidade: formData.cidade,
@@ -215,6 +226,7 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
       setFormData({
         email: "",
         senha: "",
+        cnpj: "",
         nomeFantasia: "",
         razaoSocial: "",
         telefone: "",
@@ -294,6 +306,26 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
           <div className="space-y-4">
             <h3 className="font-semibold">Dados do Estabelecimento</h3>
             
+            <div className="space-y-2">
+              <Label htmlFor="cnpj">CNPJ</Label>
+              <Input
+                id="cnpj"
+                value={formData.cnpj}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "");
+                  const formatted = value
+                    .replace(/(\d{2})(\d)/, "$1.$2")
+                    .replace(/(\d{3})(\d)/, "$1.$2")
+                    .replace(/(\d{3})(\d)/, "$1/$2")
+                    .replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+                  setFormData({ ...formData, cnpj: formatted });
+                }}
+                required
+                placeholder="00.000.000/0000-00"
+                maxLength={18}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="nomeFantasia">Nome Fantasia</Label>
               <Input

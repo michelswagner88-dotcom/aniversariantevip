@@ -10,7 +10,7 @@ import { Crown, Upload, Plus, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { resizeImage } from "@/lib/imageUtils";
-import { estabelecimentoSchema, generateFakeCNPJ } from "@/lib/validation";
+import { estabelecimentoSchema } from "@/lib/validation";
 import { ESTADOS_CIDADES, ESTADOS } from "@/lib/constants";
 
 type HorarioFuncionamento = {
@@ -31,6 +31,7 @@ export default function CadastroEstabelecimento() {
   ]);
   const [formData, setFormData] = useState({
     nomeFantasia: "",
+    cnpj: "",
     email: "",
     telefone: "",
     senha: "",
@@ -160,6 +161,7 @@ export default function CadastroEstabelecimento() {
     // Validate core fields with Zod
     const validationResult = estabelecimentoSchema.safeParse({
       nomeFantasia: formData.nomeFantasia,
+      cnpj: formData.cnpj,
       email: formData.email,
       telefone: formData.telefone,
       endereco: formData.endereco,
@@ -211,6 +213,23 @@ export default function CadastroEstabelecimento() {
     setUploading(true);
 
     try {
+      // Verificar se CNPJ já existe
+      const { data: existingCNPJ } = await supabase
+        .from("estabelecimentos")
+        .select("cnpj")
+        .eq("cnpj", validatedData.cnpj)
+        .maybeSingle();
+
+      if (existingCNPJ) {
+        toast({
+          variant: "destructive",
+          title: "CNPJ já cadastrado",
+          description: "Este CNPJ já está cadastrado no sistema",
+        });
+        setUploading(false);
+        return;
+      }
+
       // Create user account with validated data
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: validatedData.email,
@@ -265,7 +284,7 @@ export default function CadastroEstabelecimento() {
           id: authData.user.id,
           razao_social: validatedData.nomeFantasia,
           nome_fantasia: validatedData.nomeFantasia,
-          cnpj: generateFakeCNPJ(), // Auto-generated CNPJ
+          cnpj: validatedData.cnpj,
           telefone: validatedData.telefone,
           endereco: validatedData.endereco,
           cidade: formData.cidade,
@@ -371,6 +390,26 @@ export default function CadastroEstabelecimento() {
                     required
                     value={formData.nomeFantasia}
                     onChange={(e) => setFormData({ ...formData, nomeFantasia: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cnpj">CNPJ *</Label>
+                  <Input
+                    id="cnpj"
+                    required
+                    placeholder="00.000.000/0000-00"
+                    maxLength={18}
+                    value={formData.cnpj}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "");
+                      const formatted = value
+                        .replace(/(\d{2})(\d)/, "$1.$2")
+                        .replace(/(\d{3})(\d)/, "$1.$2")
+                        .replace(/(\d{3})(\d)/, "$1/$2")
+                        .replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+                      setFormData({ ...formData, cnpj: formatted });
+                    }}
                   />
                 </div>
                 

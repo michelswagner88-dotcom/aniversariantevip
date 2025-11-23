@@ -97,22 +97,6 @@ export default function CadastroAniversariante() {
         return;
       }
 
-      // Verificar se telefone já existe
-      const { data: existingPhone } = await supabase
-        .from("aniversariantes")
-        .select("telefone")
-        .eq("telefone", formData.telefone.replace(/\D/g, ""))
-        .maybeSingle();
-
-      if (existingPhone) {
-        toast({
-          variant: "destructive",
-          title: "Telefone já cadastrado",
-          description: "Este telefone já está cadastrado no sistema",
-        });
-        return;
-      }
-
       // Criar usuário no Supabase Auth
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,

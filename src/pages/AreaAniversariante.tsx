@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Crown, LogOut, Loader2, Home } from "lucide-react";
+import { Crown, LogOut, Loader2, Home, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -144,11 +144,34 @@ const AreaAniversariante = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-3xl">Meus Dados</CardTitle>
-            <CardDescription>Gerencie suas informações pessoais</CardDescription>
-          </CardHeader>
+        <div className="grid gap-6 max-w-4xl mx-auto">
+          {/* Card de Acesso Rápido aos Cupons */}
+          <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <Ticket className="h-6 w-6 text-primary" />
+                Meus Cupons
+              </CardTitle>
+              <CardDescription>Acesse e gerencie seus cupons de aniversário</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => navigate("/meus-cupons")} 
+                className="w-full"
+                size="lg"
+              >
+                <Ticket className="mr-2 h-5 w-5" />
+                Ver Meus Cupons
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Card de Dados Pessoais */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-3xl">Meus Dados</CardTitle>
+              <CardDescription>Gerencie suas informações pessoais</CardDescription>
+            </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome Completo</Label>
@@ -223,6 +246,7 @@ const AreaAniversariante = () => {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );

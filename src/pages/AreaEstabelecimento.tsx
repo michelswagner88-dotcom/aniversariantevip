@@ -33,6 +33,7 @@ export default function AreaEstabelecimento() {
     nomeFantasia: "",
     email: "",
     telefone: "",
+    whatsapp: "",
     categoria: "",
     endereco: "",
     diasHorarioFuncionamento: "",
@@ -84,6 +85,7 @@ export default function AreaEstabelecimento() {
           nomeFantasia: estabelecimento.nome_fantasia || "",
           cnpj: estabelecimento.cnpj,
           telefone: estabelecimento.telefone || "",
+          whatsapp: estabelecimento.whatsapp || "",
           categoria: Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria || "",
           endereco: estabelecimento.endereco || "",
           diasHorarioFuncionamento: estabelecimento.horario_funcionamento || "",
@@ -100,6 +102,7 @@ export default function AreaEstabelecimento() {
           nomeFantasia: estabelecimento.nome_fantasia || "",
           email: session.user.email || "",
           telefone: estabelecimento.telefone || "",
+          whatsapp: estabelecimento.whatsapp || "",
           categoria: Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria || "",
           endereco: estabelecimento.endereco || "",
           diasHorarioFuncionamento: estabelecimento.horario_funcionamento || "",
@@ -223,11 +226,20 @@ export default function AreaEstabelecimento() {
     if (!userData) return;
 
     // Validações dos campos obrigatórios
-    if (!formData.endereco || !formData.diasHorarioFuncionamento || !formData.telefone) {
+    if (!formData.endereco || !formData.diasHorarioFuncionamento) {
       toast({
         variant: "destructive",
         title: "Campos obrigatórios",
-        description: "Preencha Endereço, Horário de Funcionamento e Telefone antes de salvar",
+        description: "Preencha Endereço e Horário de Funcionamento antes de salvar",
+      });
+      return;
+    }
+
+    if (!formData.telefone && !formData.whatsapp) {
+      toast({
+        variant: "destructive",
+        title: "Contato obrigatório",
+        description: "Preencha pelo menos Telefone ou WhatsApp",
       });
       return;
     }
@@ -262,6 +274,7 @@ export default function AreaEstabelecimento() {
         .update({
           nome_fantasia: formData.nomeFantasia,
           telefone: formData.telefone,
+          whatsapp: formData.whatsapp,
           endereco: formData.endereco,
           horario_funcionamento: formData.diasHorarioFuncionamento,
           descricao_beneficio: formData.beneficiosAniversariante,
@@ -571,6 +584,17 @@ export default function AreaEstabelecimento() {
                   disabled={!isEditing}
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp">WhatsApp</Label>
+              <Input
+                id="whatsapp"
+                value={formData.whatsapp}
+                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                disabled={!isEditing}
+                placeholder="(opcional se telefone preenchido)"
+              />
             </div>
 
             <div className="space-y-2">

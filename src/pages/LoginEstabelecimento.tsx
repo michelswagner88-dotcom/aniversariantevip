@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Crown, Loader2 } from "lucide-react";
@@ -138,9 +139,8 @@ export default function LoginEstabelecimento() {
             
             <div className="space-y-2">
               <Label htmlFor="senha">Senha</Label>
-              <Input
+              <PasswordInput
                 id="senha"
-                type="password"
                 required
                 value={formData.senha}
                 onChange={(e) => setFormData({ ...formData, senha: e.target.value })}

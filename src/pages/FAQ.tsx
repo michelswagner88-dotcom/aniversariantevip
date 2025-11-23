@@ -37,10 +37,6 @@ export default function FAQ() {
       pergunta: "O que acontece se eu perder meu cupom?",
       resposta: "Você pode acessar sua conta a qualquer momento e visualizar novamente todos os cupons emitidos. Recomendamos tirar um print ou salvar em seu celular para fácil acesso.",
     },
-    {
-      pergunta: "Como faço para me tornar parceiro?",
-      resposta: "É simples! Acesse a página 'Seja Parceiro', preencha o cadastro com as informações do seu estabelecimento e escolha o plano que melhor se adequa ao seu negócio.",
-    },
   ];
 
   return (

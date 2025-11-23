@@ -6,33 +6,6 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
 export default function SejaParceiro() {
-  const passos = [
-    {
-      numero: 1,
-      icon: Building2,
-      titulo: "Cadastre sua empresa",
-      descricao: "Preencha os dados completos da empresa e selecione uma ou mais categorias que representem seu segmento (ex.: restaurante, bar, casa noturna, loja, serviços, etc.).",
-    },
-    {
-      numero: 2,
-      icon: FileText,
-      titulo: "Defina seus benefícios para aniversariantes",
-      descricao: "Informe quais vantagens você quer oferecer: cortesias, descontos, combos especiais, brindes, entrada VIP, etc.",
-    },
-    {
-      numero: 3,
-      icon: Settings,
-      titulo: "Configure as regras de utilização",
-      descricao: "Descreva claramente: dia(s) em que o benefício é válido (dia, semana ou mês do aniversário), quantidade mínima de pessoas quando houver, se exige ou não reserva antecipada, se é necessária apresentação de documento com foto, condições adicionais (consumo mínimo, áreas específicas do salão, horários, etc.).",
-    },
-    {
-      numero: 4,
-      icon: Users,
-      titulo: "Comece a receber aniversariantes",
-      descricao: "Depois de aprovado, seu estabelecimento passa a aparecer no Aniversariante VIP e os usuários podem emitir cupons para comemorar com você.",
-    },
-  ];
-
   const vantagens = [
     {
       titulo: "Mais movimento",
@@ -70,43 +43,6 @@ export default function SejaParceiro() {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in">
             Atraia mais clientes e destaque seu negócio na plataforma de benefícios para aniversariantes
           </p>
-        </div>
-      </section>
-
-      {/* Passos */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Como Começar</h2>
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {passos.map((passo, index) => (
-              <Card 
-                key={passo.numero}
-                className="hover-scale transition-all duration-300 animate-fade-in"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <passo.icon className="h-6 w-6 text-primary" />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-3xl font-bold text-primary">
-                          {passo.numero}
-                        </span>
-                        <h3 className="text-xl font-semibold">{passo.titulo}</h3>
-                      </div>
-                      <p className="text-muted-foreground leading-relaxed">
-                        {passo.descricao}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
         </div>
       </section>
 

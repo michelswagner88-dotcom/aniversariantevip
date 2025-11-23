@@ -53,11 +53,12 @@ export const aniversarianteSchema = z.object({
   path: ["confirmarSenha"],
 });
 
-// Estabelecimento registration schema (CNPJ removed from form)
+// Estabelecimento registration schema
 export const estabelecimentoSchema = z.object({
   nomeFantasia: z.string()
     .min(3, "Nome fantasia deve ter pelo menos 3 caracteres")
     .max(100, "Nome fantasia deve ter no máximo 100 caracteres"),
+  cnpj: cnpjSchema,
   email: z.string()
     .email("Email inválido")
     .max(255, "Email deve ter no máximo 255 caracteres"),
@@ -72,9 +73,3 @@ export const estabelecimentoSchema = z.object({
   message: "As senhas não conferem",
   path: ["confirmarSenha"],
 });
-
-// Helper function to generate a fake CNPJ for database requirement
-export const generateFakeCNPJ = (): string => {
-  const randomDigits = () => Math.floor(Math.random() * 100000000000000).toString().padStart(14, '0');
-  return randomDigits();
-};

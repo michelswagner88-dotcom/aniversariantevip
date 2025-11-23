@@ -386,6 +386,13 @@ const Index = () => {
                           </button>
                         )}
 
+                        {estabelecimento.horario_funcionamento && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground min-h-[44px] py-2">
+                            <Clock className="h-4 w-4 flex-shrink-0" />
+                            <span className="line-clamp-2">{estabelecimento.horario_funcionamento}</span>
+                          </div>
+                        )}
+
                         {estabelecimento.telefone && (
                           <a 
                             href={`tel:${estabelecimento.telefone}`} 
@@ -412,13 +419,6 @@ const Index = () => {
                             </svg>
                             <span>{estabelecimento.whatsapp}</span>
                           </a>
-                        )}
-
-                        {estabelecimento.horario_funcionamento && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground min-h-[44px] py-2">
-                            <Clock className="h-4 w-4 flex-shrink-0" />
-                            <span className="line-clamp-2">{estabelecimento.horario_funcionamento}</span>
-                          </div>
                         )}
 
                         {estabelecimento.instagram && (

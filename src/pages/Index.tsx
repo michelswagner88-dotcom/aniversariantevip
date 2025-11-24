@@ -156,50 +156,60 @@ const Index = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      {/* Hero Section - Premium Tech 2025 */}
+      {/* Hero Section - Cosmic Celebration */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-32 pb-20">
-        {/* Aurora Gradient Blobs */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/20 rounded-full blur-[128px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-yellow-500/10 rounded-full blur-[128px] animate-pulse" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/3 right-1/3 w-64 h-64 bg-amber-400/15 rounded-full blur-[96px] animate-pulse" style={{ animationDelay: '4s' }} />
+        {/* Cosmic Glow Effects */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-[128px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-500/20 rounded-full blur-[128px] animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/3 right-1/3 w-64 h-64 bg-pink-500/10 rounded-full blur-[96px] animate-pulse" style={{ animationDelay: '4s' }} />
         
         <div className="container relative mx-auto px-4 text-center z-10">
-          {/* Main Title */}
-          <h1 className="font-display font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-6 tracking-tight leading-[0.95] animate-fade-in">
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500">
-              O Maior Guia de
-            </span>
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500">
-              Benefícios para
-            </span>
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500">
-              Aniversariantes do Brasil
-            </span>
-          </h1>
+          {/* Main Title with Cosmic Glow */}
+          <div className="relative">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[300px] bg-gradient-to-r from-violet-600/20 via-fuchsia-500/20 to-pink-500/20 blur-3xl rounded-full pointer-events-none" />
+            
+            <h1 className="relative font-display font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-6 tracking-tight leading-[0.95] animate-fade-in">
+              <span className="block text-white">
+                O Maior Guia de
+              </span>
+              <span className="block text-white">
+                Benefícios para
+              </span>
+              <span className="block">
+                <span className="text-white">Aniversariantes do </span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500">
+                  Brasil
+                </span>
+              </span>
+            </h1>
+          </div>
           
-          <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 animate-fade-in font-sans" style={{ animationDelay: '0.1s' }}>
+          <p className="text-lg sm:text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto mb-12 animate-fade-in font-sans" style={{ animationDelay: '0.1s' }}>
             Encontre estabelecimentos com benefícios especiais para o seu aniversário
           </p>
 
-          {/* Premium Search Bar */}
+          {/* Cosmic Search Bar */}
           <div className="max-w-3xl mx-auto mb-12 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <div className="relative group">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground transition-colors group-focus-within:text-primary" />
-              <Input
-                placeholder="Buscar estabelecimento..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-16 pl-16 pr-6 text-lg rounded-full bg-white/5 backdrop-blur-xl border-white/10 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/50 transition-all shadow-2xl"
-              />
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-600/20 via-fuchsia-500/20 to-pink-500/20 blur-2xl rounded-full" />
+              <div className="relative group">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-400 transition-colors group-focus-within:text-violet-400" />
+                <Input
+                  placeholder="Buscar estabelecimento..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="h-16 pl-16 pr-6 text-lg rounded-full bg-white/5 backdrop-blur-xl border-violet-500/20 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/50 transition-all shadow-2xl text-white placeholder:text-slate-400"
+                />
+              </div>
             </div>
           </div>
 
           {!currentUser && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{ animationDelay: '0.3s' }}>
-              <Button size="lg" asChild className="text-base h-14 px-8 rounded-full shadow-xl hover:shadow-2xl transition-all">
+              <Button size="lg" asChild className="text-base h-14 px-8 rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white font-semibold shadow-xl shadow-violet-500/25 hover:shadow-2xl hover:shadow-violet-500/30 transition-all">
                 <a href="/cadastro/aniversariante">Cadastre-se Grátis</a>
               </Button>
-              <Button size="lg" variant="outline" asChild className="text-base h-14 px-8 rounded-full bg-white/5 backdrop-blur-xl border-white/10 hover:bg-white/10 transition-all">
+              <Button size="lg" variant="outline" asChild className="text-base h-14 px-8 rounded-full bg-white/5 backdrop-blur-xl border-violet-500/30 text-violet-300 hover:bg-violet-500/10 hover:text-white hover:border-violet-500/50 transition-all">
                 <a href="/login/aniversariante">Já Sou Cadastrado</a>
               </Button>
             </div>
@@ -236,7 +246,7 @@ const Index = () => {
                   setSelectedCidade("");
                 }}
               >
-                <SelectTrigger className="h-14 text-base rounded-2xl bg-white/5 backdrop-blur-xl border-white/10 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/50">
+                <SelectTrigger className="h-14 text-base rounded-2xl bg-white/5 backdrop-blur-xl border-violet-500/20 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/50 text-white">
                   <SelectValue placeholder="Selecione o Estado" />
                 </SelectTrigger>
                 <SelectContent className="bg-card/95 backdrop-blur-xl border-border/50">
@@ -253,7 +263,7 @@ const Index = () => {
                 onValueChange={setSelectedCidade}
                 disabled={!selectedEstado}
               >
-                <SelectTrigger className="h-14 text-base rounded-2xl bg-white/5 backdrop-blur-xl border-white/10 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/50 disabled:opacity-50">
+                <SelectTrigger className="h-14 text-base rounded-2xl bg-white/5 backdrop-blur-xl border-violet-500/20 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/50 disabled:opacity-50 text-white">
                   <SelectValue placeholder={selectedEstado ? "Selecione a Cidade" : "Selecione o Estado primeiro"} />
                 </SelectTrigger>
                 <SelectContent className="bg-card/95 backdrop-blur-xl border-border/50">
@@ -266,7 +276,7 @@ const Index = () => {
               </Select>
 
               <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-                <SelectTrigger className="h-14 text-base rounded-2xl bg-white/5 backdrop-blur-xl border-white/10 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/50">
+                <SelectTrigger className="h-14 text-base rounded-2xl bg-white/5 backdrop-blur-xl border-violet-500/20 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/50 text-white">
                   <SelectValue placeholder="Selecione a Categoria" />
                 </SelectTrigger>
                 <SelectContent className="bg-card/95 backdrop-blur-xl border-border/50">
@@ -335,7 +345,7 @@ const Index = () => {
                   {group.estabelecimentos.map((estabelecimento, index) => (
                     <Card 
                      key={estabelecimento.id} 
-                      className="overflow-hidden backdrop-blur-xl bg-card/50 border-border/50 hover:border-amber-500/50 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-500 sm:hover:-translate-y-2 animate-fade-in group rounded-3xl"
+                      className="overflow-hidden backdrop-blur-xl bg-card/50 border-border/50 hover:border-violet-500/50 hover:shadow-2xl hover:shadow-violet-500/10 transition-all duration-500 sm:hover:-translate-y-2 animate-fade-in group rounded-3xl"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <div className="relative h-44 sm:h-48 overflow-hidden">

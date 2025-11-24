@@ -10,87 +10,85 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 6% 10%;
+    --background: 222 47% 11%;
+    --foreground: 0 0% 100%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 6% 10%;
+    --card: 222 47% 11%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 6% 10%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 38 92% 50%;
-    --primary-foreground: 240 10% 3.9%;
+    --primary: 271 81% 56%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 6% 10%;
+    --secondary: 222 47% 15%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%;
+    --muted: 222 47% 15%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 38 92% 50%;
-    --accent-foreground: 240 10% 3.9%;
+    --accent: 271 81% 56%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 38 92% 50%;
+    --border: 222 47% 20%;
+    --input: 222 47% 20%;
+    --ring: 271 81% 56%;
 
     --radius: 0.75rem;
 
-    /* Premium Tech 2025 Variables */
-    --vip-gold: 38 92% 50%;
-    --vip-gold-light: 45 90% 60%;
-    --vip-gold-dark: 32 80% 40%;
-    --vip-amber-from: 45 100% 71%;
-    --vip-amber-to: 43 96% 56%;
+    /* Cosmic Celebration Variables */
+    --cosmic-violet: 271 81% 56%;
+    --cosmic-fuchsia: 328 86% 70%;
+    --cosmic-pink: 330 81% 60%;
+    --cosmic-glow: 271 81% 56%;
     
     /* Glassmorphism */
     --glass-bg: 0 0% 100%;
-    --glass-border: 240 6% 90%;
+    --glass-border: 271 81% 56%;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    --background: 222 47% 11%;
+    --foreground: 0 0% 100%;
 
-    --card: 240 8% 7%;
-    --card-foreground: 0 0% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 240 8% 7%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 38 92% 50%;
-    --primary-foreground: 240 10% 3.9%;
+    --primary: 271 81% 56%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 222 47% 15%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 222 47% 15%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 38 92% 50%;
-    --accent-foreground: 240 10% 3.9%;
+    --accent: 271 81% 56%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 38 92% 50%;
+    --border: 222 47% 20%;
+    --input: 222 47% 20%;
+    --ring: 271 81% 56%;
 
-    /* Premium Tech 2025 Dark Variables */
-    --vip-gold: 38 92% 50%;
-    --vip-gold-light: 45 90% 60%;
-    --vip-gold-dark: 32 80% 40%;
-    --vip-amber-from: 45 100% 71%;
-    --vip-amber-to: 43 96% 56%;
+    /* Cosmic Celebration Dark Variables */
+    --cosmic-violet: 271 81% 56%;
+    --cosmic-fuchsia: 328 86% 70%;
+    --cosmic-pink: 330 81% 60%;
+    --cosmic-glow: 271 81% 56%;
     
     /* Glassmorphism Dark */
     --glass-bg: 0 0% 100%;
-    --glass-border: 0 0% 100%;
+    --glass-border: 271 81% 56%;
   }
 }
 

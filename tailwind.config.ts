@@ -52,12 +52,11 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        vip: {
-          gold: "hsl(var(--vip-gold))",
-          "gold-light": "hsl(var(--vip-gold-light))",
-          "gold-dark": "hsl(var(--vip-gold-dark))",
-          black: "hsl(var(--vip-black))",
-          dark: "hsl(var(--vip-dark))",
+        cosmic: {
+          violet: "hsl(var(--cosmic-violet))",
+          fuchsia: "hsl(var(--cosmic-fuchsia))",
+          pink: "hsl(var(--cosmic-pink))",
+          glow: "hsl(var(--cosmic-glow))",
         },
       },
       borderRadius: {

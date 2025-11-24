@@ -180,16 +180,10 @@ const Explorar = () => {
                     </div>
 
                     {/* Badge Benefício - DESTAQUE MÁXIMO */}
-                    <div className="inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 shadow-2xl shadow-violet-500/30">
-                      <span className="text-2xl">🎁</span>
-                      <div>
-                        <p className="text-[10px] font-bold text-white/90 uppercase tracking-widest">
-                          Ganhe
-                        </p>
-                        <p className="text-base font-extrabold text-white leading-tight">
-                          {estabelecimento.beneficio}
-                        </p>
-                      </div>
+                    <div className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 shadow-2xl shadow-violet-500/30">
+                      <span className="text-lg font-extrabold text-white">
+                        🎁 Ver Benefício 🔒
+                      </span>
                     </div>
                   </div>
                 </div>

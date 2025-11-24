@@ -11,6 +11,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CATEGORIAS_ESTABELECIMENTO, ESTADOS_CIDADES, ESTADOS } from "@/lib/constants";
 import { useFavoritos } from "@/hooks/useFavoritos";
+import { useNavigate } from "react-router-dom";
 
 interface Estabelecimento {
   id: string;
@@ -31,6 +32,7 @@ interface Estabelecimento {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoria, setSelectedCategoria] = useState("todas");
@@ -267,6 +269,7 @@ const Index = () => {
 
                 <Button 
                   size="lg"
+                  onClick={() => navigate("/explorar")}
                   className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white h-12 px-8 rounded-xl font-semibold shadow-lg shadow-violet-500/25"
                 >
                   Buscar
@@ -332,6 +335,7 @@ const Index = () => {
                 <div className="p-3">
                   <Button 
                     size="lg"
+                    onClick={() => navigate("/explorar")}
                     className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white h-12 rounded-xl font-semibold shadow-lg shadow-violet-500/25 w-full"
                   >
                     Buscar

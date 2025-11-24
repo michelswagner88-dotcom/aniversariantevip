@@ -274,14 +274,14 @@ const Index = () => {
               </div>
 
               {/* Mobile Layout */}
-              <div className="sm:hidden flex flex-col gap-3">
-                <div className="flex items-center gap-3 px-4 bg-transparent rounded-xl h-12">
+              <div className="sm:hidden flex flex-col">
+                <div className="flex items-center gap-3 px-4 h-12 border-b border-white/10">
                   <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedEstado} onValueChange={(value) => {
                     setSelectedEstado(value);
                     setSelectedCidade("");
                   }}>
-                    <SelectTrigger className="border-none !bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0">
+                    <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 [&>span]:!bg-transparent">
                       <SelectValue placeholder="Selecione o estado" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 z-50">
@@ -294,10 +294,10 @@ const Index = () => {
                   </Select>
                 </div>
 
-                <div className="flex items-center gap-3 px-4 bg-transparent rounded-xl h-12">
+                <div className="flex items-center gap-3 px-4 h-12 border-b border-white/10">
                   <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCidade} onValueChange={setSelectedCidade} disabled={!selectedEstado}>
-                    <SelectTrigger className="border-none !bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 disabled:opacity-50">
+                    <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 disabled:opacity-50 [&>span]:!bg-transparent">
                       <SelectValue placeholder="Selecione a cidade" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 z-50">
@@ -310,10 +310,10 @@ const Index = () => {
                   </Select>
                 </div>
 
-                <div className="flex items-center gap-3 px-4 bg-transparent rounded-xl h-12">
+                <div className="flex items-center gap-3 px-4 h-12 border-b border-white/10">
                   <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-                    <SelectTrigger className="border-none !bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0">
+                    <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 [&>span]:!bg-transparent">
                       <SelectValue placeholder="Selecione a categoria" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 z-50">
@@ -329,12 +329,14 @@ const Index = () => {
                   </Select>
                 </div>
 
-                <Button 
-                  size="lg"
-                  className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white h-12 rounded-xl font-semibold shadow-lg shadow-violet-500/25 w-full"
-                >
-                  Buscar
-                </Button>
+                <div className="p-3">
+                  <Button 
+                    size="lg"
+                    className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white h-12 rounded-xl font-semibold shadow-lg shadow-violet-500/25 w-full"
+                  >
+                    Buscar
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

@@ -78,10 +78,10 @@ export const Header = () => {
     <header className="fixed top-6 left-0 right-0 z-50 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Floating Pill Menu - Desktop */}
-        <nav className="hidden lg:flex items-center justify-between px-6 py-4 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl">
+        <nav className="hidden lg:flex items-center justify-between px-6 py-4 rounded-full bg-white/5 backdrop-blur-xl border border-violet-500/20 shadow-2xl shadow-violet-500/5">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <span className="font-display font-extrabold text-2xl tracking-tight bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
+            <span className="font-display font-extrabold text-2xl tracking-tight bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
               ANIVERSARIANTE VIP
             </span>
           </Link>
@@ -92,7 +92,7 @@ export const Header = () => {
               <Link
                 key={link.href}
                 to={link.href}
-                className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
+                className="text-sm font-medium text-slate-300 hover:text-white transition-colors relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-gradient-to-r after:from-violet-600 after:via-fuchsia-500 after:to-pink-500 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
               >
                 {link.label}
               </Link>
@@ -106,7 +106,7 @@ export const Header = () => {
             {userName ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-sm gap-2 hover:bg-white/5">
+                  <Button variant="ghost" size="sm" className="text-sm gap-2 text-slate-300 hover:text-white hover:bg-violet-500/10">
                     <User className="h-4 w-4" />
                     {userName}
                   </Button>
@@ -129,10 +129,10 @@ export const Header = () => {
               </DropdownMenu>
             ) : (
               <>
-                <Button variant="ghost" size="sm" asChild className="text-sm hover:bg-white/5">
+                <Button variant="ghost" size="sm" asChild className="text-sm text-slate-300 hover:text-white hover:bg-violet-500/10">
                   <Link to="/login/aniversariante">Login</Link>
                 </Button>
-                <Button size="sm" asChild className="text-sm">
+                <Button size="sm" asChild className="text-sm bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white">
                   <Link to="/cadastro/aniversariante">Cadastre-se</Link>
                 </Button>
               </>
@@ -141,8 +141,8 @@ export const Header = () => {
         </nav>
 
         {/* Mobile Header */}
-        <div className="lg:hidden flex items-center justify-between px-6 py-4 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl">
-          <Link to="/" className="font-display font-extrabold text-xl tracking-tight bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
+        <div className="lg:hidden flex items-center justify-between px-6 py-4 rounded-full bg-white/5 backdrop-blur-xl border border-violet-500/20 shadow-2xl shadow-violet-500/5">
+          <Link to="/" className="font-display font-extrabold text-xl tracking-tight bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
             ANIVERSARIANTE VIP
           </Link>
           
@@ -159,14 +159,14 @@ export const Header = () => {
 
         {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
-          <div className="lg:hidden mt-2 p-4 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl animate-fade-in">
+          <div className="lg:hidden mt-2 p-4 rounded-3xl bg-white/5 backdrop-blur-xl border border-violet-500/20 shadow-2xl shadow-violet-500/5 animate-fade-in">
             <nav className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   to={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors py-2 px-3 hover:bg-white/5 rounded-lg"
+                  className="text-sm font-medium text-slate-300 hover:text-white transition-colors py-2 px-3 hover:bg-violet-500/10 rounded-lg"
                 >
                   {link.label}
                 </Link>
@@ -182,7 +182,7 @@ export const Header = () => {
                   <Button 
                     variant="ghost" 
                     asChild 
-                    className="w-full justify-start text-sm hover:bg-white/5"
+                    className="w-full justify-start text-sm text-slate-300 hover:text-white hover:bg-violet-500/10"
                   >
                     <Link to={getAreaLink()} onClick={() => setMobileMenuOpen(false)}>
                       <User className="mr-2 h-4 w-4" />
@@ -203,12 +203,12 @@ export const Header = () => {
                 </>
               ) : (
                 <>
-                  <Button variant="ghost" asChild className="w-full justify-start text-sm hover:bg-white/5">
+                  <Button variant="ghost" asChild className="w-full justify-start text-sm text-slate-300 hover:text-white hover:bg-violet-500/10">
                     <Link to="/login/aniversariante" onClick={() => setMobileMenuOpen(false)}>
                       Login
                     </Link>
                   </Button>
-                  <Button asChild className="w-full justify-start text-sm">
+                  <Button asChild className="w-full justify-start text-sm bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white">
                     <Link to="/cadastro/aniversariante" onClick={() => setMobileMenuOpen(false)}>
                       Cadastre-se
                     </Link>

@@ -191,12 +191,12 @@ const Index = () => {
           </h1>
 
           {/* H2 - Subtítulo */}
-          <h2 className="text-lg sm:text-xl md:text-2xl text-slate-400 max-w-3xl mb-12 leading-relaxed animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <h2 className="text-lg sm:text-xl md:text-2xl text-slate-400 max-w-3xl mb-12 sm:mb-16 leading-relaxed animate-fade-in" style={{ animationDelay: '0.2s' }}>
             Aqui seu aniversário vale muito mais. Encontre benefícios exclusivos para aproveitar no dia, na semana ou no mês inteiro.
           </h2>
 
           {/* Barra de Busca Hyper-Glass */}
-          <div className="w-full max-w-4xl animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <div className="w-full max-w-4xl mt-8 sm:mt-0 animate-fade-in" style={{ animationDelay: '0.3s' }}>
             <div 
               className="backdrop-blur-2xl bg-white/5 rounded-2xl p-3 border border-white/10"
               style={{
@@ -204,12 +204,34 @@ const Index = () => {
               }}
             >
               {/* Desktop Layout */}
-              <div className="hidden sm:grid sm:grid-cols-[1fr_auto_1fr_auto] gap-3 items-center">
+              <div className="hidden sm:grid sm:grid-cols-[1fr_auto_1fr_auto_1fr_auto] gap-3 items-center">
+                <div className="flex items-center gap-3 px-4">
+                  <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                  <Select value={selectedEstado} onValueChange={(value) => {
+                    setSelectedEstado(value);
+                    setSelectedCidade("");
+                  }}>
+                    <SelectTrigger className="border-none !bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0">
+                      <SelectValue placeholder="Estado" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-700 z-50">
+                      {ESTADOS.map(estado => (
+                        <SelectItem key={estado.value} value={estado.value} className="text-white">
+                          {estado.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Separador Vertical (Cristal) */}
+                <div className="h-8 w-[1px] bg-white/10" />
+
                 <div className="flex items-center gap-3 px-4">
                   <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCidade} onValueChange={setSelectedCidade} disabled={!selectedEstado}>
-                    <SelectTrigger className="border-none bg-transparent text-white h-12 focus:ring-0">
-                      <SelectValue placeholder="Selecione a cidade" />
+                    <SelectTrigger className="border-none !bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 disabled:opacity-50">
+                      <SelectValue placeholder="Cidade" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 z-50">
                       {selectedEstado && ESTADOS_CIDADES[selectedEstado as keyof typeof ESTADOS_CIDADES]?.map(cidade => (
@@ -227,8 +249,8 @@ const Index = () => {
                 <div className="flex items-center gap-3 px-4">
                   <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-                    <SelectTrigger className="border-none bg-transparent text-white h-12 focus:ring-0">
-                      <SelectValue placeholder="Selecione a categoria" />
+                    <SelectTrigger className="border-none !bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0">
+                      <SelectValue placeholder="Categoria" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 z-50">
                       <SelectItem value="todas" className="text-white font-semibold">
@@ -255,8 +277,27 @@ const Index = () => {
               <div className="sm:hidden flex flex-col gap-3">
                 <div className="flex items-center gap-3 px-4 bg-transparent rounded-xl h-12">
                   <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                  <Select value={selectedEstado} onValueChange={(value) => {
+                    setSelectedEstado(value);
+                    setSelectedCidade("");
+                  }}>
+                    <SelectTrigger className="border-none !bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0">
+                      <SelectValue placeholder="Selecione o estado" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-700 z-50">
+                      {ESTADOS.map(estado => (
+                        <SelectItem key={estado.value} value={estado.value} className="text-white">
+                          {estado.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-3 px-4 bg-transparent rounded-xl h-12">
+                  <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCidade} onValueChange={setSelectedCidade} disabled={!selectedEstado}>
-                    <SelectTrigger className="border-none bg-transparent text-white h-12 focus:ring-0">
+                    <SelectTrigger className="border-none !bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 disabled:opacity-50">
                       <SelectValue placeholder="Selecione a cidade" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 z-50">
@@ -272,7 +313,7 @@ const Index = () => {
                 <div className="flex items-center gap-3 px-4 bg-transparent rounded-xl h-12">
                   <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-                    <SelectTrigger className="border-none bg-transparent text-white h-12 focus:ring-0">
+                    <SelectTrigger className="border-none !bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0">
                       <SelectValue placeholder="Selecione a categoria" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 z-50">

@@ -42,14 +42,12 @@ export const Header = () => {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (session) {
-      // Buscar perfil
       const { data: profile } = await supabase
         .from('profiles')
         .select('nome')
         .eq('id', session.user.id)
         .single();
 
-      // Buscar role
       const { data: roles } = await supabase
         .from('user_roles')
         .select('role')
@@ -77,38 +75,43 @@ export const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="container mx-auto px-4">
-        {/* Barra Superior - Logo + Áreas de Acesso */}
-        <div className="flex items-center justify-between h-14 border-b border-border/50">
-          {/* Logo Marquee */}
-          <Link to="/" className="group flex items-center flex-1 overflow-hidden relative max-w-[calc(100%-180px)] lg:max-w-[calc(100%-420px)]">
-            <div className="flex animate-marquee group-hover:pause whitespace-nowrap">
-              <span className="font-modern font-extrabold text-2xl md:text-3xl lg:text-4xl tracking-wider uppercase bg-gradient-to-r from-vip-gold via-vip-gold-light to-vip-gold bg-clip-text text-transparent px-8">
-                ANIVERSARIANTE VIP
-              </span>
-              <span className="font-modern font-extrabold text-2xl md:text-3xl lg:text-4xl tracking-wider uppercase bg-gradient-to-r from-vip-gold via-vip-gold-light to-vip-gold bg-clip-text text-transparent px-8">
-                ANIVERSARIANTE VIP
-              </span>
-              <span className="font-modern font-extrabold text-2xl md:text-3xl lg:text-4xl tracking-wider uppercase bg-gradient-to-r from-vip-gold via-vip-gold-light to-vip-gold bg-clip-text text-transparent px-8">
-                ANIVERSARIANTE VIP
-              </span>
-            </div>
+    <header className="fixed top-6 left-0 right-0 z-50 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Floating Pill Menu - Desktop */}
+        <nav className="hidden lg:flex items-center justify-between px-6 py-4 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-3 group">
+            <span className="font-display font-extrabold text-2xl tracking-tight bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
+              ANIVERSARIANTE VIP
+            </span>
           </Link>
 
-          {/* Desktop - Áreas de Acesso + Theme Toggle */}
-          <div className="hidden lg:flex items-center gap-2">
+          {/* Nav Links */}
+          <div className="flex items-center gap-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                to={link.href}
+                className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Right Actions */}
+          <div className="flex items-center gap-3">
             <ThemeToggle />
             
             {userName ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="text-xs h-8 gap-2">
-                    <User className="h-3 w-3" />
-                    Bem-vindo, {userName}
+                  <Button variant="ghost" size="sm" className="text-sm gap-2 hover:bg-white/5">
+                    <User className="h-4 w-4" />
+                    {userName}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-xl border-border/50">
                   <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
@@ -126,84 +129,63 @@ export const Header = () => {
               </DropdownMenu>
             ) : (
               <>
-                <Button variant="ghost" size="sm" asChild className="text-xs h-8">
-                  <Link to="/login/aniversariante">Área do Aniversariante</Link>
+                <Button variant="ghost" size="sm" asChild className="text-sm hover:bg-white/5">
+                  <Link to="/login/aniversariante">Login</Link>
                 </Button>
-                <Button variant="ghost" size="sm" asChild className="text-xs h-8">
-                  <Link to="/login/estabelecimento">Área do Estabelecimento</Link>
-                </Button>
-                <Button variant="ghost" size="sm" asChild className="text-xs h-8">
-                  <Link to="/login/colaborador">Área do Colaborador</Link>
+                <Button size="sm" asChild className="text-sm">
+                  <Link to="/cadastro/aniversariante">Cadastre-se</Link>
                 </Button>
               </>
             )}
           </div>
+        </nav>
 
-          {/* Mobile Menu Button + Theme Toggle */}
-          <div className="lg:hidden flex items-center gap-2">
+        {/* Mobile Header */}
+        <div className="lg:hidden flex items-center justify-between px-6 py-4 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl">
+          <Link to="/" className="font-display font-extrabold text-xl tracking-tight bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
+            ANIVERSARIANTE VIP
+          </Link>
+          
+          <div className="flex items-center gap-2">
             <ThemeToggle />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-foreground"
+              className="p-2 text-foreground hover:bg-white/5 rounded-full transition-colors"
             >
-              {mobileMenuOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
 
-        {/* Menu de Navegação - Desktop */}
-        <nav className="hidden lg:flex items-center justify-center gap-6 h-10">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              to={link.href}
-              className="text-xs font-medium text-foreground/80 hover:text-primary transition-colors relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Mobile Menu */}
-        <div
-          className={cn(
-            "lg:hidden overflow-hidden transition-all duration-300",
-            mobileMenuOpen ? "max-h-[500px] pb-4" : "max-h-0"
-          )}
-        >
-          <nav className="flex flex-col gap-2 pt-3">
-            {/* Navegação Principal */}
-            <div className="pb-2 border-b border-border/50">
+        {/* Mobile Menu Dropdown */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden mt-2 p-4 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl animate-fade-in">
+            <nav className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   to={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block text-xs font-medium text-foreground/80 hover:text-primary transition-colors py-1.5"
+                  className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors py-2 px-3 hover:bg-white/5 rounded-lg"
                 >
                   {link.label}
                 </Link>
               ))}
-            </div>
-            
-            {/* Áreas de Acesso / User Info */}
-            <div className="flex flex-col gap-1.5">
+              
+              <div className="h-px bg-border/50 my-2" />
+              
               {userName ? (
                 <>
-                  <div className="px-3 py-2 text-xs font-medium text-muted-foreground border-b">
-                    Bem-vindo, {userName}
+                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                    Olá, {userName}
                   </div>
                   <Button 
                     variant="ghost" 
                     asChild 
-                    className="w-full justify-start h-8 text-xs"
+                    className="w-full justify-start text-sm hover:bg-white/5"
                   >
                     <Link to={getAreaLink()} onClick={() => setMobileMenuOpen(false)}>
-                      <User className="mr-2 h-3 w-3" />
+                      <User className="mr-2 h-4 w-4" />
                       Minha Área
                     </Link>
                   </Button>
@@ -213,34 +195,29 @@ export const Header = () => {
                       handleLogout();
                       setMobileMenuOpen(false);
                     }}
-                    className="w-full justify-start h-8 text-xs text-destructive hover:text-destructive"
+                    className="w-full justify-start text-sm text-destructive hover:text-destructive hover:bg-white/5"
                   >
-                    <LogOut className="mr-2 h-3 w-3" />
+                    <LogOut className="mr-2 h-4 w-4" />
                     Sair
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button variant="ghost" asChild className="w-full justify-start h-8 text-xs">
+                  <Button variant="ghost" asChild className="w-full justify-start text-sm hover:bg-white/5">
                     <Link to="/login/aniversariante" onClick={() => setMobileMenuOpen(false)}>
-                      Área do Aniversariante
+                      Login
                     </Link>
                   </Button>
-                  <Button variant="ghost" asChild className="w-full justify-start h-8 text-xs">
-                    <Link to="/login/estabelecimento" onClick={() => setMobileMenuOpen(false)}>
-                      Área do Estabelecimento
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" asChild className="w-full justify-start h-8 text-xs">
-                    <Link to="/login/colaborador" onClick={() => setMobileMenuOpen(false)}>
-                      Área do Colaborador
+                  <Button asChild className="w-full justify-start text-sm">
+                    <Link to="/cadastro/aniversariante" onClick={() => setMobileMenuOpen(false)}>
+                      Cadastre-se
                     </Link>
                   </Button>
                 </>
               )}
-            </div>
-          </nav>
-        </div>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );

@@ -11,70 +11,86 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 5%;
+    --foreground: 240 6% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 5%;
+    --card-foreground: 240 6% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 5%;
+    --popover-foreground: 240 6% 10%;
 
-    --primary: 43 95% 52%;
-    --primary-foreground: 0 0% 5%;
+    --primary: 38 92% 50%;
+    --primary-foreground: 240 10% 3.9%;
 
-    --secondary: 43 15% 95%;
-    --secondary-foreground: 0 0% 5%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
 
-    --muted: 43 15% 95%;
-    --muted-foreground: 0 0% 40%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
 
-    --accent: 43 95% 52%;
-    --accent-foreground: 0 0% 5%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 240 10% 3.9%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 43 20% 85%;
-    --input: 43 20% 90%;
-    --ring: 43 95% 52%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 38 92% 50%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --vip-gold: 43 95% 52%;
-    --vip-gold-light: 43 90% 65%;
-    --vip-gold-dark: 38 85% 38%;
-    --vip-black: 0 0% 5%;
-    --vip-dark: 0 0% 8%;
+    /* Premium Tech 2025 Variables */
+    --vip-gold: 38 92% 50%;
+    --vip-gold-light: 45 90% 60%;
+    --vip-gold-dark: 32 80% 40%;
+    --vip-amber-from: 45 100% 71%;
+    --vip-amber-to: 43 96% 56%;
+    
+    /* Glassmorphism */
+    --glass-bg: 0 0% 100%;
+    --glass-border: 240 6% 90%;
   }
 
   .dark {
-    --background: 0 0% 5%;
-    --foreground: 43 90% 65%;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 8%;
-    --card-foreground: 43 90% 65%;
+    --card: 240 8% 7%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 8%;
-    --popover-foreground: 43 90% 65%;
+    --popover: 240 8% 7%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 43 95% 52%;
-    --primary-foreground: 0 0% 5%;
+    --primary: 38 92% 50%;
+    --primary-foreground: 240 10% 3.9%;
 
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 43 90% 65%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 43 30% 60%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
 
-    --accent: 43 95% 52%;
-    --accent-foreground: 0 0% 5%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 240 10% 3.9%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 43 30% 25%;
-    --input: 0 0% 15%;
-    --ring: 43 95% 52%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 38 92% 50%;
+
+    /* Premium Tech 2025 Dark Variables */
+    --vip-gold: 38 92% 50%;
+    --vip-gold-light: 45 90% 60%;
+    --vip-gold-dark: 32 80% 40%;
+    --vip-amber-from: 45 100% 71%;
+    --vip-amber-to: 43 96% 56%;
+    
+    /* Glassmorphism Dark */
+    --glass-bg: 0 0% 100%;
+    --glass-border: 0 0% 100%;
   }
 }
 
@@ -88,6 +104,27 @@ All colors MUST be HSL.
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    position: relative;
+  }
+  
+  /* Noise Texture Overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    z-index: 1;
+  }
+  
+  /* Ensure content stays above noise */
+  #root {
+    position: relative;
+    z-index: 2;
   }
   
   /* Touch-friendly interactions */

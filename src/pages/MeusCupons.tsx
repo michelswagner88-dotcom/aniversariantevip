@@ -4,10 +4,10 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Check, Clock, Gift, MapPin, Ticket } from "lucide-react";
-import { format } from "date-fns";
+import { ArrowRight, Gift, Ticket, Clock } from "lucide-react";
+import { format, differenceInHours, differenceInMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,7 @@ interface Cupom {
   data_emissao: string;
   data_validade: string | null;
   data_uso: string | null;
+  estabelecimento_id: string;
   estabelecimento: {
     nome_fantasia: string;
     logo_url: string | null;
@@ -125,8 +126,7 @@ export default function MeusCupons() {
   };
 
   const cuponsAtivos = cupons.filter(c => !c.usado && (!c.data_validade || new Date(c.data_validade) > new Date()));
-  const cuponsUsados = cupons.filter(c => c.usado);
-  const cuponsExpirados = cupons.filter(c => !c.usado && c.data_validade && new Date(c.data_validade) <= new Date());
+  const cuponsHistorico = cupons.filter(c => c.usado || (c.data_validade && new Date(c.data_validade) <= new Date()));
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -143,84 +143,111 @@ export default function MeusCupons() {
     visible: { opacity: 1, y: 0 }
   };
 
-  const CupomCard = ({ cupom }: { cupom: Cupom }) => (
-    <motion.div variants={itemVariants}>
-      <Card className="p-6 hover:shadow-lg transition-all duration-300 border-border/50">
-        <div className="flex gap-4">
-          <div className="flex-shrink-0">
-            {cupom.estabelecimento.logo_url ? (
-              <img
-                src={cupom.estabelecimento.logo_url}
-                alt={cupom.estabelecimento.nome_fantasia}
-                className="w-20 h-20 object-cover rounded-lg"
-              />
-            ) : (
-              <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center">
-                <Gift className="w-10 h-10 text-muted-foreground" />
-              </div>
-            )}
-          </div>
+  const getTimeRemaining = (dataValidade: string) => {
+    const now = new Date();
+    const expiry = new Date(dataValidade);
+    const hoursRemaining = differenceInHours(expiry, now);
+    const minutesRemaining = differenceInMinutes(expiry, now) % 60;
+    
+    if (hoursRemaining < 0) return null;
+    if (hoursRemaining < 24) {
+      return `⏰ Expira em ${hoursRemaining.toString().padStart(2, '0')}:${minutesRemaining.toString().padStart(2, '0')}h`;
+    }
+    return null;
+  };
 
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold mb-2">{cupom.estabelecimento.nome_fantasia}</h3>
+  const CupomCard = ({ cupom }: { cupom: Cupom }) => {
+    const timeWarning = cupom.data_validade && !cupom.usado ? getTimeRemaining(cupom.data_validade) : null;
+    const isExpired = cupom.data_validade && new Date(cupom.data_validade) <= new Date();
+    
+    return (
+      <motion.div variants={itemVariants}>
+        <Card 
+          onClick={() => navigate(`/emitir-cupom?estabelecimento=${cupom.estabelecimento_id}`)}
+          className="bg-slate-900/50 border-white/10 hover:border-violet-500/30 overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-[0_0_30px_-12px_rgba(139,92,246,0.4)]"
+        >
+          <div className="flex items-center gap-4 p-4">
             
-            <div className="flex items-center gap-2 mb-2">
-              <Ticket className="w-4 h-4 text-primary" />
-              <code className="text-sm font-mono bg-primary/10 px-2 py-1 rounded">
-                {cupom.codigo}
-              </code>
-              {cupom.usado && (
-                <Badge variant="secondary" className="ml-auto">
-                  <Check className="w-3 h-3 mr-1" />
-                  Usado
-                </Badge>
-              )}
-              {!cupom.usado && cupom.data_validade && new Date(cupom.data_validade) <= new Date() && (
-                <Badge variant="destructive" className="ml-auto">
-                  <Clock className="w-3 h-3 mr-1" />
-                  Expirado
-                </Badge>
+            {/* Lado Esquerdo - Imagem */}
+            <div className="flex-shrink-0">
+              {cupom.estabelecimento.logo_url ? (
+                <img
+                  src={cupom.estabelecimento.logo_url}
+                  alt={cupom.estabelecimento.nome_fantasia}
+                  className="w-20 h-20 object-cover rounded-xl"
+                />
+              ) : (
+                <div className="w-20 h-20 bg-slate-800 rounded-xl flex items-center justify-center">
+                  <Gift className="w-10 h-10 text-slate-600" />
+                </div>
               )}
             </div>
 
-            {cupom.estabelecimento.descricao_beneficio && (
-              <p className="text-sm text-muted-foreground mb-3">
-                {cupom.estabelecimento.descricao_beneficio}
+            {/* Centro - Informações */}
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-bold text-white truncate mb-1">
+                {cupom.estabelecimento.nome_fantasia}
+              </h3>
+              
+              <p className="text-sm text-slate-300 truncate mb-2">
+                {cupom.estabelecimento.descricao_beneficio || "Benefício exclusivo"}
               </p>
-            )}
+              
+              {/* Status */}
+              {!cupom.usado && !isExpired && (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-xs text-green-400 font-medium">
+                    Pronto para uso
+                  </span>
+                </div>
+              )}
+              
+              {cupom.usado && (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-slate-500 rounded-full" />
+                  <span className="text-xs text-slate-400 font-medium">
+                    Usado em {format(new Date(cupom.data_uso!), "dd/MM/yyyy", { locale: ptBR })}
+                  </span>
+                </div>
+              )}
+              
+              {isExpired && !cupom.usado && (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-red-400 rounded-full" />
+                  <span className="text-xs text-red-400 font-medium">
+                    Expirado
+                  </span>
+                </div>
+              )}
 
-            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                Emitido: {format(new Date(cupom.data_emissao), "dd/MM/yyyy", { locale: ptBR })}
-              </div>
-              
-              {cupom.data_validade && (
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  Validade: {format(new Date(cupom.data_validade), "dd/MM/yyyy", { locale: ptBR })}
-                </div>
-              )}
-              
-              {cupom.usado && cupom.data_uso && (
-                <div className="flex items-center gap-1">
-                  <Check className="w-3 h-3" />
-                  Usado: {format(new Date(cupom.data_uso), "dd/MM/yyyy", { locale: ptBR })}
-                </div>
-              )}
-              
-              {cupom.estabelecimento.cidade && (
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {cupom.estabelecimento.cidade}/{cupom.estabelecimento.estado}
+              {/* Aviso de Urgência */}
+              {timeWarning && (
+                <div className="mt-2 inline-flex items-center gap-1.5 bg-orange-500/20 backdrop-blur-sm border border-orange-500/30 rounded-full px-3 py-1">
+                  <Clock className="w-3 h-3 text-orange-400" />
+                  <span className="text-xs text-orange-300 font-medium">
+                    {timeWarning}
+                  </span>
                 </div>
               )}
             </div>
+
+            {/* Lado Direito - Ação */}
+            <div className="flex-shrink-0">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="rounded-full bg-violet-500/10 hover:bg-violet-500/20 text-violet-400"
+              >
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </div>
+
           </div>
-        </div>
-      </Card>
-    </motion.div>
-  );
+        </Card>
+      </motion.div>
+    );
+  };
 
   if (loading) {
     return (
@@ -231,100 +258,113 @@ export default function MeusCupons() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
+    <div className="min-h-screen bg-slate-950">
+      {/* Background Grid Pattern */}
+      <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-4xl font-bold mb-2">Meus Cupons</h1>
-          <p className="text-muted-foreground mb-8">
-            Gerencie todos os seus cupons de aniversário em um só lugar
-          </p>
+      {/* Glow Orbs */}
+      <div className="fixed top-0 left-1/4 w-96 h-96 bg-violet-600/30 rounded-full blur-[120px] pointer-events-none" />
+      <div className="fixed bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-[120px] pointer-events-none" />
+      
+      <div className="relative">
+        <Header />
+        
+        <main className="container mx-auto px-6 py-12 max-w-4xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Cabeçalho */}
+            <div className="mb-8">
+              <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+                Minha Carteira <Ticket className="w-8 h-8 text-violet-400" />
+              </h1>
+              <p className="text-slate-400">
+                Todos os seus benefícios em um só lugar
+              </p>
+            </div>
 
-          <Tabs defaultValue="ativos" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8">
-              <TabsTrigger value="ativos">
-                Ativos ({cuponsAtivos.length})
-              </TabsTrigger>
-              <TabsTrigger value="usados">
-                Usados ({cuponsUsados.length})
-              </TabsTrigger>
-              <TabsTrigger value="expirados">
-                Expirados ({cuponsExpirados.length})
-              </TabsTrigger>
-            </TabsList>
+            {/* Abas de Navegação */}
+            <Tabs defaultValue="ativos" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-8 bg-slate-900/50 border border-white/10 p-1">
+                <TabsTrigger 
+                  value="ativos"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:via-fuchsia-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_20px_-5px_rgba(139,92,246,0.5)] text-slate-400"
+                >
+                  Ativos ({cuponsAtivos.length})
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="historico"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:via-fuchsia-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_20px_-5px_rgba(139,92,246,0.5)] text-slate-400"
+                >
+                  Histórico ({cuponsHistorico.length})
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="ativos">
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="space-y-4"
-              >
-                {cuponsAtivos.length === 0 ? (
-                  <Card className="p-12 text-center">
-                    <Ticket className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-xl font-semibold mb-2">Nenhum cupom ativo</h3>
-                    <p className="text-muted-foreground">
-                      Você ainda não tem cupons ativos. Navegue pelos estabelecimentos parceiros e emita seus cupons!
-                    </p>
-                  </Card>
-                ) : (
-                  cuponsAtivos.map(cupom => <CupomCard key={cupom.id} cupom={cupom} />)
-                )}
-              </motion.div>
-            </TabsContent>
+              {/* Aba Ativos */}
+              <TabsContent value="ativos">
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-3"
+                >
+                  {cuponsAtivos.length === 0 ? (
+                    <Card className="bg-slate-900/50 border-white/10 p-12 text-center">
+                      <div className="flex flex-col items-center">
+                        <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
+                          <Ticket className="w-10 h-10 text-slate-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">Nenhum cupom ativo</h3>
+                        <p className="text-slate-400 mb-6 max-w-sm">
+                          Você ainda não emitiu nenhum cupom. Explore os estabelecimentos e garanta seus benefícios!
+                        </p>
+                        <Button 
+                          onClick={() => navigate("/explorar")}
+                          className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 text-white"
+                        >
+                          Explorar Benefícios
+                        </Button>
+                      </div>
+                    </Card>
+                  ) : (
+                    cuponsAtivos.map(cupom => <CupomCard key={cupom.id} cupom={cupom} />)
+                  )}
+                </motion.div>
+              </TabsContent>
 
-            <TabsContent value="usados">
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="space-y-4"
-              >
-                {cuponsUsados.length === 0 ? (
-                  <Card className="p-12 text-center">
-                    <Check className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-xl font-semibold mb-2">Nenhum cupom usado</h3>
-                    <p className="text-muted-foreground">
-                      Você ainda não usou nenhum cupom
-                    </p>
-                  </Card>
-                ) : (
-                  cuponsUsados.map(cupom => <CupomCard key={cupom.id} cupom={cupom} />)
-                )}
-              </motion.div>
-            </TabsContent>
+              {/* Aba Histórico */}
+              <TabsContent value="historico">
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-3"
+                >
+                  {cuponsHistorico.length === 0 ? (
+                    <Card className="bg-slate-900/50 border-white/10 p-12 text-center">
+                      <div className="flex flex-col items-center">
+                        <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
+                          <Clock className="w-10 h-10 text-slate-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">Nenhum histórico</h3>
+                        <p className="text-slate-400 max-w-sm">
+                          Você ainda não tem cupons usados ou expirados
+                        </p>
+                      </div>
+                    </Card>
+                  ) : (
+                    cuponsHistorico.map(cupom => <CupomCard key={cupom.id} cupom={cupom} />)
+                  )}
+                </motion.div>
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        </main>
 
-            <TabsContent value="expirados">
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="space-y-4"
-              >
-                {cuponsExpirados.length === 0 ? (
-                  <Card className="p-12 text-center">
-                    <Clock className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-xl font-semibold mb-2">Nenhum cupom expirado</h3>
-                    <p className="text-muted-foreground">
-                      Você não tem cupons expirados
-                    </p>
-                  </Card>
-                ) : (
-                  cuponsExpirados.map(cupom => <CupomCard key={cupom.id} cupom={cupom} />)
-                )}
-              </motion.div>
-            </TabsContent>
-          </Tabs>
-        </motion.div>
-      </main>
-
-      <Footer />
+        <Footer />
+      </div>
     </div>
   );
 }

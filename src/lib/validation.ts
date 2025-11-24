@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Helper function to validate CPF
-const isValidCPF = (cpf: string): boolean => {
+export const isValidCPF = (cpf: string): boolean => {
   const cleaned = cpf.replace(/\D/g, '');
   
   // Check if has 11 digits

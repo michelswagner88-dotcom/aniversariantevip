@@ -31,6 +31,7 @@ import TermosUso from "./pages/TermosUso";
 import ResetPassword from "./pages/ResetPassword";
 import Explorar from "./pages/Explorar";
 import EstabelecimentoDetalhes from "./pages/EstabelecimentoDetalhes";
+import SmartAuth from "./pages/SmartAuth";
 
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
               <Route path="/termos-uso" element={<TermosUso />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/auth" element={<SmartAuth />} />
               <Route path="/cadastro/aniversariante" element={<CadastroAniversariante />} />
               <Route path="/login/aniversariante" element={<LoginAniversariante />} />
               <Route path="/area-aniversariante" element={<AreaAniversariante />} />

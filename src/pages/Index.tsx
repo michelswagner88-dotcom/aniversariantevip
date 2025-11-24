@@ -175,7 +175,7 @@ const Index = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-700 bg-slate-900/50 backdrop-blur-sm mb-8 animate-fade-in">
             <Sparkles className="w-4 h-4 text-violet-400" />
-            <span className="text-sm font-medium text-slate-300">O Maior Guia do Brasil</span>
+            <span className="text-sm font-medium text-slate-300">✨ Cadastro 100% Gratuito</span>
           </div>
 
           {/* H1 - Título Principal (Tipografia de Impacto) */}
@@ -211,7 +211,7 @@ const Index = () => {
                     setSelectedEstado(value);
                     setSelectedCidade("");
                   }}>
-                    <SelectTrigger className="border-none !bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0">
+                    <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 [&>span]:!bg-transparent [&>span]:appearance-none">
                       <SelectValue placeholder="Estado" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 z-50">
@@ -230,7 +230,7 @@ const Index = () => {
                 <div className="flex items-center gap-3 px-4">
                   <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCidade} onValueChange={setSelectedCidade} disabled={!selectedEstado}>
-                    <SelectTrigger className="border-none !bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 disabled:opacity-50">
+                    <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 disabled:opacity-50 [&>span]:!bg-transparent [&>span]:appearance-none">
                       <SelectValue placeholder="Cidade" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 z-50">
@@ -249,7 +249,7 @@ const Index = () => {
                 <div className="flex items-center gap-3 px-4">
                   <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-                    <SelectTrigger className="border-none !bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0">
+                    <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 [&>span]:!bg-transparent [&>span]:appearance-none">
                       <SelectValue placeholder="Categoria" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 z-50">

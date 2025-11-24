@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { BenefitsBanner } from "@/components/BenefitsBanner";
 import { CATEGORIAS_ESTABELECIMENTO, ESTADOS_CIDADES, ESTADOS } from "@/lib/constants";
 import { useFavoritos } from "@/hooks/useFavoritos";
 
@@ -157,34 +156,50 @@ const Index = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      {/* Hero Section Premium */}
-      <section className="relative py-16 sm:py-24 md:py-32 overflow-hidden mb-8">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-background" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.1),transparent_50%)]" />
+      {/* Hero Section - Premium Tech 2025 */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-32 pb-20">
+        {/* Aurora Gradient Blobs */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/20 rounded-full blur-[128px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-yellow-500/10 rounded-full blur-[128px] animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/3 right-1/3 w-64 h-64 bg-amber-400/15 rounded-full blur-[96px] animate-pulse" style={{ animationDelay: '4s' }} />
         
-        <div className="container relative mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-6 animate-fade-in">
-            <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-semibold text-primary uppercase tracking-wide leading-tight">
-              O MAIOR GUIA DE BENEFÍCIOS PARA ANIVERSARIANTES DO BRASIL
+        <div className="container relative mx-auto px-4 text-center z-10">
+          {/* Main Title */}
+          <h1 className="font-display font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-6 tracking-tight leading-[0.95] animate-fade-in">
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500">
+              O Maior Guia de
             </span>
-          </div>
-          
-          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-foreground leading-tight animate-fade-in px-2">
-            Seu Aniversário<br />
-            <span className="text-primary">Merece Celebração</span>
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500">
+              Benefícios para
+            </span>
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500">
+              Aniversariantes do Brasil
+            </span>
           </h1>
           
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-12 animate-fade-in px-4 leading-relaxed">
-            Encontre estabelecimentos com benefícios especiais para o seu aniversário: do mês inteiro ao grande dia de comemoração.
+          <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 animate-fade-in font-sans" style={{ animationDelay: '0.1s' }}>
+            Encontre estabelecimentos com benefícios especiais para o seu aniversário
           </p>
 
+          {/* Premium Search Bar */}
+          <div className="max-w-3xl mx-auto mb-12 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <div className="relative group">
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground transition-colors group-focus-within:text-primary" />
+              <Input
+                placeholder="Buscar estabelecimento..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-16 pl-16 pr-6 text-lg rounded-full bg-white/5 backdrop-blur-xl border-white/10 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/50 transition-all shadow-2xl"
+              />
+            </div>
+          </div>
+
           {!currentUser && (
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-fade-in px-4">
-              <Button size="lg" asChild className="text-sm sm:text-base w-full sm:w-auto min-h-[48px]">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{ animationDelay: '0.3s' }}>
+              <Button size="lg" asChild className="text-base h-14 px-8 rounded-full shadow-xl hover:shadow-2xl transition-all">
                 <a href="/cadastro/aniversariante">Cadastre-se Grátis</a>
               </Button>
-              <Button size="lg" variant="outline" asChild className="text-sm sm:text-base w-full sm:w-auto min-h-[48px]">
+              <Button size="lg" variant="outline" asChild className="text-base h-14 px-8 rounded-full bg-white/5 backdrop-blur-xl border-white/10 hover:bg-white/10 transition-all">
                 <a href="/login/aniversariante">Já Sou Cadastrado</a>
               </Button>
             </div>
@@ -192,40 +207,28 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Benefits Banner */}
-      {!currentUser && <BenefitsBanner />}
-
       {/* Filtros */}
-      <section className="py-6 sm:py-8 bg-card/50 border-y border-border">
+      <section className="py-8 bg-card/30 backdrop-blur-sm border-y border-border/50">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col gap-3 sm:gap-4 max-w-5xl mx-auto">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar estabelecimento..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-12 sm:h-14 text-base"
-                />
-              </div>
-              {(selectedEstado || selectedCidade || (selectedCategoria && selectedCategoria !== "todas") || searchTerm) && (
+          <div className="flex flex-col gap-4 max-w-5xl mx-auto">
+            {(selectedEstado || selectedCidade || (selectedCategoria && selectedCategoria !== "todas")) && (
+              <div className="flex justify-end">
                 <Button
-                  variant="outline"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     setSelectedEstado("");
                     setSelectedCidade("");
                     setSelectedCategoria("todas");
-                    setSearchTerm("");
                   }}
-                  className="h-12 sm:h-14 px-4 whitespace-nowrap"
+                  className="text-sm hover:bg-white/5"
                 >
                   Limpar Filtros
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Select 
                 value={selectedEstado} 
                 onValueChange={(value) => {
@@ -233,10 +236,10 @@ const Index = () => {
                   setSelectedCidade("");
                 }}
               >
-                <SelectTrigger className="h-12 sm:h-14 text-base">
+                <SelectTrigger className="h-14 text-base rounded-2xl bg-white/5 backdrop-blur-xl border-white/10 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/50">
                   <SelectValue placeholder="Selecione o Estado" />
                 </SelectTrigger>
-                <SelectContent className="bg-background z-50">
+                <SelectContent className="bg-card/95 backdrop-blur-xl border-border/50">
                   {ESTADOS.map(estado => (
                     <SelectItem key={estado.value} value={estado.value} className="text-base py-3">
                       {estado.label}
@@ -250,10 +253,10 @@ const Index = () => {
                 onValueChange={setSelectedCidade}
                 disabled={!selectedEstado}
               >
-                <SelectTrigger className="h-12 sm:h-14 text-base">
+                <SelectTrigger className="h-14 text-base rounded-2xl bg-white/5 backdrop-blur-xl border-white/10 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/50 disabled:opacity-50">
                   <SelectValue placeholder={selectedEstado ? "Selecione a Cidade" : "Selecione o Estado primeiro"} />
                 </SelectTrigger>
-                <SelectContent className="bg-background z-50">
+                <SelectContent className="bg-card/95 backdrop-blur-xl border-border/50">
                   {selectedEstado && ESTADOS_CIDADES[selectedEstado as keyof typeof ESTADOS_CIDADES]?.map(cidade => (
                     <SelectItem key={cidade} value={cidade} className="text-base py-3">
                       {cidade}
@@ -263,10 +266,10 @@ const Index = () => {
               </Select>
 
               <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-                <SelectTrigger className="h-12 sm:h-14 text-base">
+                <SelectTrigger className="h-14 text-base rounded-2xl bg-white/5 backdrop-blur-xl border-white/10 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/50">
                   <SelectValue placeholder="Selecione a Categoria" />
                 </SelectTrigger>
-                <SelectContent className="bg-background z-50">
+                <SelectContent className="bg-card/95 backdrop-blur-xl border-border/50">
                   <SelectItem value="todas" className="text-base py-3 font-semibold">
                     Ver Todas Categorias
                   </SelectItem>
@@ -331,8 +334,8 @@ const Index = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {group.estabelecimentos.map((estabelecimento, index) => (
                     <Card 
-                      key={estabelecimento.id} 
-                      className="overflow-hidden hover:shadow-2xl transition-all duration-300 sm:hover:-translate-y-2 animate-fade-in group"
+                     key={estabelecimento.id} 
+                      className="overflow-hidden backdrop-blur-xl bg-card/50 border-border/50 hover:border-amber-500/50 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-500 sm:hover:-translate-y-2 animate-fade-in group rounded-3xl"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <div className="relative h-44 sm:h-48 overflow-hidden">

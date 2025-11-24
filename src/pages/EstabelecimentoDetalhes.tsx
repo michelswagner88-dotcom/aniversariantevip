@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Clock, Phone, Instagram, FileText, Lock, Smartphone, Navigation, CheckCircle, Ticket } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Phone, Instagram, FileText, Lock, CheckCircle, Ticket, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -10,46 +10,80 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock data - substituir por dados reais do Supabase
-const mockEstabelecimento = {
-  id: "1",
-  nome: "Sushi House Premium",
-  categoria: "Sushi Bar",
-  imagem: "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800&q=80",
-  aberto: true,
-  beneficio: {
-    titulo: "Rodízio Grátis",
-    regra: "Válido para aniversariante + 1 pagante",
-  },
-  contato: {
-    whatsapp: "47999999999",
-    instagram: "@sushihouse",
-    cardapio: "https://example.com/cardapio",
-  },
-  endereco: {
-    completo: "Rua das Flores, 123 - Centro, Florianópolis - SC",
-    lat: -27.5954,
-    lng: -48.5480,
-  },
-  horarios: [
-    { dia: "Segunda a Quinta", horario: "18:00 - 23:00" },
-    { dia: "Sexta e Sábado", horario: "18:00 - 00:00" },
-    { dia: "Domingo", horario: "18:00 - 22:00" },
-  ],
-  regras: [
-    "Válido apenas no mês do aniversário",
-    "Necessário apresentar documento com foto",
-    "Não acumulativo com outras promoções",
-    "Sujeito a disponibilidade de mesa",
-    "Bebidas não inclusas",
-  ],
-};
+interface Estabelecimento {
+  id: string;
+  nome_fantasia: string;
+  descricao_beneficio: string;
+  regras_utilizacao: string | null;
+  categoria: string[] | null;
+  endereco: string | null;
+  cidade: string | null;
+  estado: string | null;
+  telefone: string | null;
+  whatsapp: string | null;
+  instagram: string | null;
+  horario_funcionamento: string | null;
+  link_cardapio: string | null;
+  logo_url: string | null;
+}
 
 export default function EstabelecimentoDetalhes() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { toast } = useToast();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [estabelecimento, setEstabelecimento] = useState<Estabelecimento | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Buscar dados do estabelecimento
+  useEffect(() => {
+    const fetchEstabelecimento = async () => {
+      if (!id) {
+        toast({
+          title: "Erro",
+          description: "ID do estabelecimento não encontrado",
+          variant: "destructive",
+        });
+        navigate("/explorar");
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("estabelecimentos")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (error) throw error;
+        
+        if (!data) {
+          toast({
+            title: "Erro",
+            description: "Estabelecimento não encontrado",
+            variant: "destructive",
+          });
+          navigate("/explorar");
+          return;
+        }
+
+        setEstabelecimento(data);
+      } catch (error) {
+        console.error("Erro ao buscar estabelecimento:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os dados do estabelecimento",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEstabelecimento();
+  }, [id, navigate, toast]);
 
   // Check if user is logged in
   useEffect(() => {
@@ -64,30 +98,21 @@ export default function EstabelecimentoDetalhes() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // TODO: Buscar dados reais do estabelecimento usando o id
-
   const handleWhatsApp = () => {
-    window.open(`https://wa.me/55${mockEstabelecimento.contato.whatsapp}`, "_blank");
+    if (!estabelecimento?.whatsapp) return;
+    const numero = estabelecimento.whatsapp.replace(/\D/g, "");
+    window.open(`https://wa.me/55${numero}`, "_blank");
   };
 
   const handleInstagram = () => {
-    window.open(`https://instagram.com/${mockEstabelecimento.contato.instagram.replace("@", "")}`, "_blank");
+    if (!estabelecimento?.instagram) return;
+    const username = estabelecimento.instagram.replace("@", "");
+    window.open(`https://instagram.com/${username}`, "_blank");
   };
 
   const handleCardapio = () => {
-    window.open(mockEstabelecimento.contato.cardapio, "_blank");
-  };
-
-  const handleUber = () => {
-    window.open(`https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[latitude]=${mockEstabelecimento.endereco.lat}&dropoff[longitude]=${mockEstabelecimento.endereco.lng}`, "_blank");
-  };
-
-  const handleWaze = () => {
-    window.open(`https://waze.com/ul?ll=${mockEstabelecimento.endereco.lat},${mockEstabelecimento.endereco.lng}&navigate=yes`, "_blank");
-  };
-
-  const handleMaps = () => {
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${mockEstabelecimento.endereco.lat},${mockEstabelecimento.endereco.lng}`, "_blank");
+    if (!estabelecimento?.link_cardapio) return;
+    window.open(estabelecimento.link_cardapio, "_blank");
   };
 
   const handleEntrarParaVer = () => {
@@ -95,8 +120,24 @@ export default function EstabelecimentoDetalhes() {
   };
 
   const handleEmitirCupom = () => {
-    navigate("/emitir-cupom");
+    if (!id) return;
+    navigate(`/emitir-cupom?estabelecimento=${id}`);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-violet-400" />
+          <p className="text-sm text-slate-400">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!estabelecimento) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -113,8 +154,8 @@ export default function EstabelecimentoDetalhes() {
         <div className="relative h-[50vh] min-h-[400px]">
           {/* Image */}
           <img
-            src={mockEstabelecimento.imagem}
-            alt={mockEstabelecimento.nome}
+            src={estabelecimento.logo_url || "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800&q=80"}
+            alt={estabelecimento.nome_fantasia}
             className="w-full h-full object-cover"
           />
           
@@ -134,19 +175,15 @@ export default function EstabelecimentoDetalhes() {
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 space-y-2">
                 <Badge variant="secondary" className="bg-white/10 backdrop-blur-md border-white/20 text-white">
-                  {mockEstabelecimento.categoria}
+                  {estabelecimento.categoria?.[0] || "Estabelecimento"}
                 </Badge>
                 <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-                  {mockEstabelecimento.nome}
+                  {estabelecimento.nome_fantasia}
                 </h1>
               </div>
-              <div className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 ${
-                mockEstabelecimento.aberto 
-                  ? "bg-green-500/20 text-green-400 border border-green-500/30" 
-                  : "bg-red-500/20 text-red-400 border border-red-500/30"
-              }`}>
+              <div className="px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 bg-green-500/20 text-green-400 border border-green-500/30">
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                {mockEstabelecimento.aberto ? "Aberto Agora" : "Fechado"}
+                Aberto
               </div>
             </div>
           </div>
@@ -155,30 +192,36 @@ export default function EstabelecimentoDetalhes() {
         {/* Quick Actions Bar */}
         <div className="sticky top-0 z-40 backdrop-blur-xl bg-slate-950/80 border-b border-white/5 px-6 py-4">
           <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
-            <Button
-              onClick={handleWhatsApp}
-              className="bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 backdrop-blur-md shrink-0"
-              size="sm"
-            >
-              <Phone className="w-4 h-4 mr-2" />
-              WhatsApp
-            </Button>
-            <Button
-              onClick={handleInstagram}
-              className="bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-orange-500/10 hover:from-purple-500/20 hover:via-pink-500/20 hover:to-orange-500/20 text-white border border-white/10 backdrop-blur-md shrink-0"
-              size="sm"
-            >
-              <Instagram className="w-4 h-4 mr-2" />
-              Instagram
-            </Button>
-            <Button
-              onClick={handleCardapio}
-              className="bg-white/5 hover:bg-white/10 text-white border border-white/10 backdrop-blur-md shrink-0"
-              size="sm"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Cardápio
-            </Button>
+            {estabelecimento.whatsapp && (
+              <Button
+                onClick={handleWhatsApp}
+                className="bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 backdrop-blur-md shrink-0"
+                size="sm"
+              >
+                <Phone className="w-4 h-4 mr-2" />
+                WhatsApp
+              </Button>
+            )}
+            {estabelecimento.instagram && (
+              <Button
+                onClick={handleInstagram}
+                className="bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-orange-500/10 hover:from-purple-500/20 hover:via-pink-500/20 hover:to-orange-500/20 text-white border border-white/10 backdrop-blur-md shrink-0"
+                size="sm"
+              >
+                <Instagram className="w-4 h-4 mr-2" />
+                Instagram
+              </Button>
+            )}
+            {estabelecimento.link_cardapio && (
+              <Button
+                onClick={handleCardapio}
+                className="bg-white/5 hover:bg-white/10 text-white border border-white/10 backdrop-blur-md shrink-0"
+                size="sm"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Cardápio
+              </Button>
+            )}
           </div>
         </div>
 
@@ -198,7 +241,7 @@ export default function EstabelecimentoDetalhes() {
                       {/* UNLOCKED STATE */}
                       <div className="flex items-start justify-between gap-3">
                         <h2 className="text-xl font-bold text-white">
-                          🎉 Ganhe: {mockEstabelecimento.beneficio.titulo}
+                          🎉 Ganhe: {estabelecimento.descricao_beneficio}
                         </h2>
                         <CheckCircle className="w-6 h-6 text-green-400 shrink-0" />
                       </div>
@@ -206,7 +249,7 @@ export default function EstabelecimentoDetalhes() {
                       {/* Clear Content - No Blur */}
                       <div className="space-y-2">
                         <p className="text-slate-300 text-sm">
-                          {mockEstabelecimento.beneficio.regra}
+                          {estabelecimento.regras_utilizacao || "Confira as regras no estabelecimento"}
                         </p>
                       </div>
                       
@@ -255,81 +298,57 @@ export default function EstabelecimentoDetalhes() {
           {/* Essential Information */}
           <Accordion type="single" collapsible className="space-y-3">
             {/* Address */}
-            <AccordionItem value="endereco" className="rounded-xl bg-white/5 backdrop-blur-md border border-white/10 px-4">
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center gap-3 text-white">
-                  <MapPin className="w-5 h-5 text-violet-400" />
-                  <span className="font-semibold">Endereço</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-4 pt-4">
-                <p className="text-slate-300 text-sm">
-                  {mockEstabelecimento.endereco.completo}
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={handleUber}
-                    size="sm"
-                    className="bg-black hover:bg-black/80 text-white flex-1"
-                  >
-                    <Smartphone className="w-4 h-4 mr-2" />
-                    Uber
-                  </Button>
-                  <Button
-                    onClick={handleWaze}
-                    size="sm"
-                    className="bg-[#33ccff] hover:bg-[#33ccff]/80 text-white flex-1"
-                  >
-                    <Navigation className="w-4 h-4 mr-2" />
-                    Waze
-                  </Button>
-                  <Button
-                    onClick={handleMaps}
-                    size="sm"
-                    className="bg-[#4285f4] hover:bg-[#4285f4]/80 text-white flex-1"
-                  >
-                    <MapPin className="w-4 h-4 mr-2" />
-                    Maps
-                  </Button>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+            {estabelecimento.endereco && (
+              <AccordionItem value="endereco" className="rounded-xl bg-white/5 backdrop-blur-md border border-white/10 px-4">
+                <AccordionTrigger className="hover:no-underline">
+                  <div className="flex items-center gap-3 text-white">
+                    <MapPin className="w-5 h-5 text-violet-400" />
+                    <span className="font-semibold">Endereço</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="space-y-4 pt-4">
+                  <p className="text-slate-300 text-sm">
+                    {estabelecimento.endereco}
+                    {estabelecimento.cidade && `, ${estabelecimento.cidade}`}
+                    {estabelecimento.estado && ` - ${estabelecimento.estado}`}
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+            )}
 
             {/* Hours */}
-            <AccordionItem value="horarios" className="rounded-xl bg-white/5 backdrop-blur-md border border-white/10 px-4">
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center gap-3 text-white">
-                  <Clock className="w-5 h-5 text-cyan-400" />
-                  <span className="font-semibold">Horários de Funcionamento</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-3 pt-4">
-                {mockEstabelecimento.horarios.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between text-sm">
-                    <span className="text-slate-400">{item.dia}</span>
-                    <span className="text-white font-medium">{item.horario}</span>
+            {estabelecimento.horario_funcionamento && (
+              <AccordionItem value="horarios" className="rounded-xl bg-white/5 backdrop-blur-md border border-white/10 px-4">
+                <AccordionTrigger className="hover:no-underline">
+                  <div className="flex items-center gap-3 text-white">
+                    <Clock className="w-5 h-5 text-cyan-400" />
+                    <span className="font-semibold">Horários de Funcionamento</span>
                   </div>
-                ))}
-              </AccordionContent>
-            </AccordionItem>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4">
+                  <p className="text-slate-300 text-sm whitespace-pre-line">
+                    {estabelecimento.horario_funcionamento}
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+            )}
 
             {/* Rules */}
-            <AccordionItem value="regras" className="rounded-xl bg-white/5 backdrop-blur-md border border-white/10 px-4">
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center gap-3 text-white">
-                  <FileText className="w-5 h-5 text-pink-400" />
-                  <span className="font-semibold">Regras de Utilização</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-2 pt-4">
-                {mockEstabelecimento.regras.map((regra, index) => (
-                  <div key={index} className="flex items-start gap-3 text-sm">
-                    <div className="w-1.5 h-1.5 rounded-full bg-violet-400 mt-2 shrink-0" />
-                    <span className="text-slate-300">{regra}</span>
+            {estabelecimento.regras_utilizacao && (
+              <AccordionItem value="regras" className="rounded-xl bg-white/5 backdrop-blur-md border border-white/10 px-4">
+                <AccordionTrigger className="hover:no-underline">
+                  <div className="flex items-center gap-3 text-white">
+                    <FileText className="w-5 h-5 text-pink-400" />
+                    <span className="font-semibold">Regras de Utilização</span>
                   </div>
-                ))}
-              </AccordionContent>
-            </AccordionItem>
+                </AccordionTrigger>
+                <AccordionContent className="space-y-2 pt-4">
+                  <p className="text-slate-300 text-sm whitespace-pre-line">
+                    {estabelecimento.regras_utilizacao}
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+            )}
           </Accordion>
         </div>
       </div>

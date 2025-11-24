@@ -32,7 +32,7 @@ export const Footer = () => {
                 Como Funciona
               </Link>
               <Link 
-                to="/" 
+                to="/explorar" 
                 className="text-sm text-slate-400 hover:text-violet-400 transition-all hover:translate-x-1"
               >
                 Explorar

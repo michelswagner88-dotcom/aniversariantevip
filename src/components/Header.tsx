@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 import { Menu, X, User, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -65,15 +66,28 @@ export const Header = () => {
 
           {/* Links Centro - Desktop */}
           <div className="hidden lg:flex items-center justify-center flex-1 gap-8">
-            <Link to="/" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+            <NavLink 
+              to="/" 
+              end
+              className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
+            >
               Início
-            </Link>
-            <Link to="/explorar" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+            </NavLink>
+            <NavLink 
+              to="/explorar" 
+              className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
+            >
               Explorar
-            </Link>
-            <Link to="/como-funciona" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+            </NavLink>
+            <NavLink 
+              to="/como-funciona" 
+              className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
+            >
               Como Funciona
-            </Link>
+            </NavLink>
           </div>
 
           {/* Botões Direita - Desktop */}
@@ -133,27 +147,31 @@ export const Header = () => {
         {mobileMenuOpen && (
           <div className="lg:hidden bg-slate-900/95 backdrop-blur-xl rounded-2xl mt-2 p-4 animate-fade-in">
             <div className="flex flex-col gap-2">
-              <Link
+              <NavLink
                 to="/"
+                end
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
               >
                 Início
-              </Link>
-              <Link
-                to="/"
+              </NavLink>
+              <NavLink
+                to="/explorar"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
               >
                 Explorar
-              </Link>
-              <Link
+              </NavLink>
+              <NavLink
                 to="/como-funciona"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
               >
                 Como Funciona
-              </Link>
+              </NavLink>
               
               <div className="h-px bg-slate-700 my-2" />
               

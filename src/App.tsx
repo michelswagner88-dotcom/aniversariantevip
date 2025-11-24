@@ -30,6 +30,7 @@ import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import TermosUso from "./pages/TermosUso";
 import ResetPassword from "./pages/ResetPassword";
 import Explorar from "./pages/Explorar";
+import EstabelecimentoDetalhes from "./pages/EstabelecimentoDetalhes";
 
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -52,8 +53,9 @@ const App = () => (
           <Suspense fallback={<LoadingScreen />}>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/explorar" element={<Explorar />} />
-              <Route path="/como-funciona" element={<ComoFunciona />} />
+          <Route path="/explorar" element={<Explorar />} />
+          <Route path="/estabelecimento/:id" element={<EstabelecimentoDetalhes />} />
+          <Route path="/como-funciona" element={<ComoFunciona />} />
               <Route path="/seja-parceiro" element={<SejaParceito />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/meus-cupons" element={<MeusCupons />} />

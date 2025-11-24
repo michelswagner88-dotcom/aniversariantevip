@@ -1,274 +1,463 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Crown, LogOut, Loader2, Home, Ticket, Heart } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState, useEffect } from 'react';
+import { Calendar, ChevronRight, Gift, MapPin, User, LogOut, Edit2, X, Mail, Phone, Save, Loader2, Heart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+// --- Componentes UI Reutilizáveis ---
+const GlassCard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+  <div className={`relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl ${className}`}>
+    <div className="relative z-10">{children}</div>
+  </div>
+);
+
+interface MenuOptionProps {
+  icon: React.ElementType;
+  title: string;
+  subtitle?: string;
+  onClick: () => void;
+  isDestructive?: boolean;
+}
+
+const MenuOption = ({ icon: Icon, title, subtitle, onClick, isDestructive = false }: MenuOptionProps) => (
+  <button 
+    onClick={onClick}
+    className="group flex w-full items-center justify-between rounded-xl border border-white/5 bg-white/5 p-4 transition-all hover:bg-white/10 active:scale-95 mb-3"
+  >
+    <div className="flex items-center gap-4">
+      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${isDestructive ? 'bg-red-500/10 text-red-400' : 'bg-slate-800 text-slate-400 group-hover:bg-violet-500/20 group-hover:text-violet-400'} transition-colors`}>
+        <Icon size={20} />
+      </div>
+      <div className="text-left">
+        <h3 className={`font-medium ${isDestructive ? 'text-red-400' : 'text-white'}`}>{title}</h3>
+        {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+      </div>
+    </div>
+    <ChevronRight size={18} className="text-slate-600 group-hover:text-slate-400" />
+  </button>
+);
 
 const AreaAniversariante = () => {
   const navigate = useNavigate();
-  const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    nome: "",
-    email: "",
-    cpf: "",
-    telefone: "",
-    dataNascimento: "",
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  
+  // Dados do usuário
+  const [userData, setUserData] = useState({
+    id: '',
+    name: '',
+    email: '',
+    phone: '',
+    cpf: '',
+    dataNascimento: '',
+    avatarUrl: '',
   });
 
+  // Dados editáveis (apenas telefone e email)
+  const [editData, setEditData] = useState({
+    email: '',
+    phone: '',
+  });
+
+  // Buscar dados do usuário
   useEffect(() => {
-    const checkAuthAndLoadData = async () => {
+    const fetchUserData = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
         if (!session) {
-          navigate("/login/aniversariante");
+          navigate('/auth');
           return;
         }
 
-        // Verificar se é aniversariante
-        const { data: roles } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .eq('role', 'aniversariante')
-          .single();
-
-        if (!roles) {
-          await supabase.auth.signOut();
-          navigate("/login/aniversariante");
-          return;
-        }
-
-        // Carregar dados do perfil e aniversariante
+        // Buscar profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single();
 
-        const { data: aniversariante } = await supabase
+        // Buscar dados de aniversariante
+        const { data: anivData } = await supabase
           .from('aniversariantes')
           .select('*')
           .eq('id', session.user.id)
           .single();
 
-        if (profile && aniversariante) {
-          setFormData({
-            nome: profile.nome || "",
-            email: profile.email || "",
-            cpf: aniversariante.cpf || "",
-            telefone: aniversariante.telefone || "",
-            dataNascimento: aniversariante.data_nascimento || "",
+        if (profile && anivData) {
+          const formattedPhone = anivData.telefone ? formatPhone(anivData.telefone) : '';
+          const formattedCPF = anivData.cpf ? formatCPF(anivData.cpf) : '';
+          
+          setUserData({
+            id: session.user.id,
+            name: profile.nome || 'Usuário',
+            email: profile.email,
+            phone: formattedPhone,
+            cpf: formattedCPF,
+            dataNascimento: anivData.data_nascimento || '',
+            avatarUrl: session.user.user_metadata?.avatar_url || '',
+          });
+
+          setEditData({
+            email: profile.email,
+            phone: formattedPhone,
           });
         }
       } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-        toast.error("Erro ao carregar dados");
+        console.error('Erro ao buscar dados:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar seus dados.",
+          variant: "destructive",
+        });
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    checkAuthAndLoadData();
-  }, [navigate]);
+    fetchUserData();
+  }, [navigate, toast]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Logout realizado com sucesso!");
-    navigate("/");
+  // Formatação
+  const formatPhone = (value: string) => {
+    const cleaned = value.replace(/\D/g, '');
+    if (cleaned.length <= 11) {
+      return cleaned.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3')
+        .replace(/^(\d{2})(\d{4})(\d{0,4}).*/, '($1) $2-$3');
+    }
+    return value;
   };
 
-  const handleSave = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+  const formatCPF = (value: string) => {
+    const cleaned = value.replace(/\D/g, '');
+    return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  };
 
-      // Atualizar perfil
+  // Calcular dias até aniversário
+  const calculateDaysUntilBirthday = () => {
+    if (!userData.dataNascimento) return 0;
+    
+    const today = new Date();
+    const birthDate = new Date(userData.dataNascimento);
+    const nextBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+    
+    if (nextBirthday < today) {
+      nextBirthday.setFullYear(today.getFullYear() + 1);
+    }
+    
+    const diffTime = nextBirthday.getTime() - today.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const daysLeft = calculateDaysUntilBirthday();
+  const progress = Math.max(0, Math.min(100, 100 - (daysLeft * 0.27)));
+
+  // Formatação de data para exibição
+  const formatBirthdayDisplay = () => {
+    if (!userData.dataNascimento) return 'Não informado';
+    const date = new Date(userData.dataNascimento + 'T00:00:00');
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' });
+  };
+
+  // Salvar alterações
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const phoneClean = editData.phone.replace(/\D/g, '');
+
+      // Atualizar email no profile
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ nome: formData.nome })
-        .eq('id', session.user.id);
+        .update({ email: editData.email })
+        .eq('id', userData.id);
 
       if (profileError) throw profileError;
 
-      // Atualizar dados do aniversariante
+      // Atualizar telefone no aniversariantes
       const { error: anivError } = await supabase
         .from('aniversariantes')
-        .update({
-          telefone: formData.telefone,
-        })
-        .eq('id', session.user.id);
+        .update({ telefone: phoneClean })
+        .eq('id', userData.id);
 
       if (anivError) throw anivError;
 
-      setIsEditing(false);
-      toast.success("Dados atualizados com sucesso!");
+      // Atualizar estado local
+      setUserData(prev => ({
+        ...prev,
+        email: editData.email,
+        phone: editData.phone,
+      }));
+
+      toast({
+        title: "Dados atualizados!",
+        description: "Suas informações foram salvas com sucesso.",
+      });
+
+      setShowEditModal(false);
     } catch (error: any) {
-      toast.error("Erro ao atualizar dados");
-      console.error("Erro:", error);
+      console.error('Erro ao salvar:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: error.message || "Não foi possível atualizar seus dados.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  if (loading) {
+  // Logout
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Até logo!",
+      description: "Você saiu da sua conta VIP.",
+    });
+    navigate('/');
+  };
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex min-h-screen items-center justify-center bg-slate-950">
+        <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Crown className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold text-primary">ANIVERSARIANTE VIP</h1>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/")}>
-              <Home className="mr-2 h-4 w-4" />
-              Início
-            </Button>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen w-full bg-slate-950 pb-32 text-white font-inter">
+      {/* Background Grid Sutil */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03]" 
+           style={{ backgroundImage: 'linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
+      </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid gap-6 max-w-4xl mx-auto">
-          {/* Card de Acesso Rápido aos Cupons */}
-          <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <Ticket className="h-6 w-6 text-primary" />
-                Meus Cupons
-              </CardTitle>
-              <CardDescription>Acesse e gerencie seus cupons de aniversário</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={() => navigate("/meus-cupons")} 
-                className="w-full"
-                size="lg"
-              >
-                <Ticket className="mr-2 h-5 w-5" />
-                Ver Meus Cupons
-              </Button>
-            </CardContent>
-          </Card>
+      {/* Header Fixo Mobile */}
+      <div className="sticky top-0 z-40 border-b border-white/5 bg-slate-950/80 px-6 py-4 backdrop-blur-xl">
+        <h1 className="font-plus-jakarta text-lg font-bold text-white">Meu Perfil VIP</h1>
+      </div>
 
-          {/* Card de Favoritos */}
-          <Card className="bg-gradient-to-br from-pink-500/10 via-pink-500/5 to-background border-pink-500/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <Heart className="h-6 w-6 text-pink-500" />
-                Meus Favoritos
-              </CardTitle>
-              <CardDescription>Veja seus estabelecimentos favoritos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={() => navigate("/meus-favoritos")} 
-                className="w-full bg-pink-500 hover:bg-pink-600"
-                size="lg"
-              >
-                <Heart className="mr-2 h-5 w-5" />
-                Ver Meus Favoritos
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Card de Dados Pessoais */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-3xl">Meus Dados</CardTitle>
-              <CardDescription>Gerencie suas informações pessoais</CardDescription>
-            </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="nome">Nome Completo</Label>
-              <Input
-                id="nome"
-                value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                disabled={!isEditing}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cpf">CPF</Label>
-              <Input
-                id="cpf"
-                value={formData.cpf}
-                disabled
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">O CPF não pode ser alterado</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                disabled
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">O email não pode ser alterado</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="telefone">Telefone</Label>
-              <Input
-                id="telefone"
-                value={formData.telefone}
-                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                disabled={!isEditing}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="dataNascimento">Data de Nascimento</Label>
-              <Input
-                id="dataNascimento"
-                type="date"
-                value={formData.dataNascimento}
-                disabled
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">A data de nascimento não pode ser alterada</p>
-            </div>
-
-            <div className="flex gap-2">
-              {!isEditing ? (
-                <Button onClick={() => setIsEditing(true)} className="w-full">
-                  Editar Meus Dados
-                </Button>
+      <div className="px-6 pt-8">
+        
+        {/* 1. Perfil do Usuário */}
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className="relative mb-4">
+            <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-slate-900 shadow-[0_0_30px_-5px_rgba(139,92,246,0.3)]">
+              {userData.avatarUrl ? (
+                <img src={userData.avatarUrl} alt="Perfil" className="h-full w-full object-cover" />
               ) : (
-                <>
-                  <Button onClick={handleSave} className="flex-1">
-                    Salvar
-                  </Button>
-                  <Button variant="outline" onClick={() => setIsEditing(false)} className="flex-1">
-                    Cancelar
-                  </Button>
-                </>
+                <div className="flex h-full w-full items-center justify-center bg-slate-800 text-slate-500">
+                  <User size={40} />
+                </div>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          
+          <h2 className="font-plus-jakarta text-2xl font-bold text-white">{userData.name}</h2>
+          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-violet-400 ring-1 ring-violet-500/20">
+            👑 Membro VIP
+          </div>
+        </div>
+
+        {/* 2. Card de Status do Aniversário */}
+        <GlassCard className="mb-8 border-violet-500/20 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 transition-opacity group-hover:opacity-20">
+            <Gift size={100} className="rotate-12" />
+          </div>
+          
+          <div className="relative z-10">
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-400">Sua Data Especial</p>
+            <div className="flex items-center gap-3 mb-6">
+              <Calendar className="text-violet-400" size={24} />
+              <span className="text-2xl font-bold text-white">{formatBirthdayDisplay()}</span>
+            </div>
+
+            {/* Barra de Progresso */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="font-medium text-white">Falta pouco!</span>
+                <span className="text-violet-300 font-bold">{daysLeft} dias</span>
+              </div>
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
+                <div 
+                  className="h-full rounded-full bg-gradient-to-r from-violet-600 to-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.5)]"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+              <p className="text-xs text-slate-500 pt-1">
+                Já deixe tudo preparado para comemorar em grande estilo.
+              </p>
+            </div>
+          </div>
+        </GlassCard>
+
+        {/* 3. Acelerador (Banner de Ação) */}
+        <div className="mb-8 rounded-2xl bg-gradient-to-r from-violet-900/50 to-fuchsia-900/50 p-1 ring-1 ring-white/10">
+          <div className="rounded-xl bg-slate-950/80 px-5 py-4 backdrop-blur-sm sm:flex sm:items-center sm:justify-between">
+            <div className="mb-4 sm:mb-0">
+              <h3 className="font-bold text-white flex items-center gap-2">
+                <span className="text-xl">🚀</span> Não deixe para última hora!
+              </h3>
+              <p className="text-sm text-slate-400 mt-1">
+                Existem benefícios exclusivos perto de você hoje.
+              </p>
+            </div>
+            <button 
+              onClick={() => navigate('/explorar')}
+              className="w-full sm:w-auto rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-slate-200 transition-colors"
+            >
+              Explorar Ofertas
+            </button>
+          </div>
+        </div>
+
+        {/* 4. Menu de Opções (Minha Conta) */}
+        <div>
+          <h3 className="mb-4 px-1 text-xs font-bold uppercase tracking-wider text-slate-500">Minha Conta</h3>
+          
+          <MenuOption 
+            icon={User} 
+            title="Editar Dados Pessoais" 
+            subtitle="E-mail e telefone" 
+            onClick={() => setShowEditModal(true)} 
+          />
+          
+          <MenuOption 
+            icon={Heart} 
+            title="Meus Favoritos" 
+            subtitle="Estabelecimentos salvos"
+            onClick={() => navigate('/meus-favoritos')} 
+          />
+          
+          <MenuOption 
+            icon={Gift} 
+            title="Meus Cupons" 
+            subtitle="Ver cupons ativos e histórico"
+            onClick={() => navigate('/meus-cupons')} 
+          />
+
+          <div className="mt-6 border-t border-white/5 pt-6">
+            <MenuOption 
+              icon={LogOut} 
+              title="Sair da Conta" 
+              isDestructive={true}
+              onClick={handleLogout} 
+            />
+          </div>
+        </div>
+
+        {/* Versão do App */}
+        <p className="mt-8 text-center text-xs text-slate-600">
+          Versão 1.0.2 • Aniversariante VIP App
+        </p>
+
+      </div>
+
+      {/* Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-slate-950/90 pb-6 pt-2 backdrop-blur-xl">
+        <div className="flex justify-around items-center">
+           <button 
+             onClick={() => navigate('/explorar')}
+             className="flex flex-col items-center gap-1 p-2 text-slate-500 hover:text-white transition-colors"
+           >
+             <MapPin size={22} />
+             <span className="text-[10px] font-medium">Explorar</span>
+           </button>
+           
+           <button 
+             onClick={() => navigate('/meus-cupons')}
+             className="flex flex-col items-center gap-1 p-2 text-slate-500 hover:text-white transition-colors"
+           >
+             <Gift size={22} />
+             <span className="text-[10px] font-medium">Cupons</span>
+           </button>
+
+           <button className="flex flex-col items-center gap-1 p-2 text-violet-400">
+             <User size={22} />
+             <span className="text-[10px] font-medium">Perfil</span>
+           </button>
         </div>
       </div>
+
+      {/* Modal de Edição */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
+            <button 
+              onClick={() => setShowEditModal(false)}
+              className="absolute right-4 top-4 text-slate-500 hover:text-white"
+            >
+              <X size={20} />
+            </button>
+
+            <h2 className="mb-6 font-plus-jakarta text-xl font-bold text-white">Editar Dados</h2>
+
+            {/* Campos Bloqueados */}
+            <div className="mb-6 space-y-4">
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                  CPF (Não editável)
+                </label>
+                <div className="rounded-xl border border-white/10 bg-slate-800/50 px-4 py-3 text-slate-500">
+                  {userData.cpf}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Data de Nascimento (Não editável)
+                </label>
+                <div className="rounded-xl border border-white/10 bg-slate-800/50 px-4 py-3 text-slate-500">
+                  {formatBirthdayDisplay()}
+                </div>
+              </div>
+            </div>
+
+            {/* Campos Editáveis */}
+            <div className="mb-6 space-y-4">
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                  E-mail
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                  <input 
+                    type="email"
+                    value={editData.email}
+                    onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-11 pr-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                  WhatsApp
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                  <input 
+                    type="tel"
+                    value={editData.phone}
+                    onChange={(e) => setEditData({ ...editData, phone: formatPhone(e.target.value) })}
+                    maxLength={15}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-11 pr-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 py-3.5 font-bold text-white transition-all hover:brightness-110 disabled:opacity-50"
+            >
+              {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+              {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

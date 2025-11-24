@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, ChevronRight, Gift, MapPin, User, LogOut, Edit2, X, Mail, Phone, Save, Loader2, Heart } from 'lucide-react';
+import { Calendar, ChevronRight, Gift, MapPin, User, LogOut, Edit2, X, Mail, Phone, Save, Loader2, Heart, Store } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useFavoritos } from '@/hooks/useFavoritos';
 
 // --- Componentes UI Reutilizáveis ---
 const GlassCard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
@@ -43,6 +44,8 @@ const AreaAniversariante = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [favoritosEstabelecimentos, setFavoritosEstabelecimentos] = useState<any[]>([]);
   
   // Dados do usuário
   const [userData, setUserData] = useState({
@@ -61,6 +64,9 @@ const AreaAniversariante = () => {
     phone: '',
   });
 
+  // Hook de favoritos
+  const { favoritos, isFavorito, toggleFavorito } = useFavoritos(userId);
+
   // Buscar dados do usuário
   useEffect(() => {
     const fetchUserData = async () => {
@@ -70,6 +76,8 @@ const AreaAniversariante = () => {
           navigate('/auth');
           return;
         }
+
+        setUserId(session.user.id);
 
         // Buscar profile
         const { data: profile } = await supabase
@@ -118,6 +126,31 @@ const AreaAniversariante = () => {
 
     fetchUserData();
   }, [navigate, toast]);
+
+  // Buscar estabelecimentos favoritos
+  useEffect(() => {
+    const loadFavoritosEstabelecimentos = async () => {
+      if (!userId || favoritos.length === 0) {
+        setFavoritosEstabelecimentos([]);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('estabelecimentos')
+          .select('id, nome_fantasia, logo_url, categoria, cidade, estado')
+          .in('id', favoritos)
+          .limit(3);
+
+        if (error) throw error;
+        setFavoritosEstabelecimentos(data || []);
+      } catch (error) {
+        console.error('Erro ao carregar estabelecimentos favoritos:', error);
+      }
+    };
+
+    loadFavoritosEstabelecimentos();
+  }, [userId, favoritos]);
 
   // Formatação
   const formatPhone = (value: string) => {
@@ -310,6 +343,60 @@ const AreaAniversariante = () => {
             </button>
           </div>
         </div>
+
+        {/* 3.5. Seção de Favoritos */}
+        {favoritosEstabelecimentos.length > 0 && (
+          <div className="mb-8">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="px-1 text-xs font-bold uppercase tracking-wider text-slate-500">Meus Favoritos</h3>
+              <button 
+                onClick={() => navigate('/meus-favoritos')}
+                className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+              >
+                Ver todos
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              {favoritosEstabelecimentos.map((estabelecimento) => (
+                <GlassCard key={estabelecimento.id} className="group cursor-pointer hover:bg-white/10 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="h-14 w-14 rounded-lg overflow-hidden flex-shrink-0 bg-slate-800">
+                      {estabelecimento.logo_url ? (
+                        <img 
+                          src={estabelecimento.logo_url} 
+                          alt={estabelecimento.nome_fantasia || 'Logo'}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center text-slate-600">
+                          <Store size={24} />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-white truncate">{estabelecimento.nome_fantasia}</h4>
+                      <p className="text-xs text-slate-400 truncate">
+                        {estabelecimento.cidade}, {estabelecimento.estado}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorito(estabelecimento.id);
+                      }}
+                      className="flex-shrink-0 p-2 rounded-lg bg-slate-800 hover:bg-red-500/20 transition-colors"
+                    >
+                      <Heart className="h-5 w-5 text-red-400 fill-current" />
+                    </button>
+                  </div>
+                </GlassCard>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 4. Menu de Opções (Minha Conta) */}
         <div>

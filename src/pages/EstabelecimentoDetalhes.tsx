@@ -1,5 +1,6 @@
-import { ArrowLeft, MapPin, Clock, Phone, Instagram, FileText, Lock, Smartphone, Navigation } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Phone, Instagram, FileText, Lock, Smartphone, Navigation, CheckCircle, Ticket } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,6 +9,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { supabase } from "@/integrations/supabase/client";
 
 // Mock data - substituir por dados reais do Supabase
 const mockEstabelecimento = {
@@ -47,6 +49,20 @@ const mockEstabelecimento = {
 export default function EstabelecimentoDetalhes() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Check if user is logged in
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // TODO: Buscar dados reais do estabelecimento usando o id
 
@@ -76,6 +92,10 @@ export default function EstabelecimentoDetalhes() {
 
   const handleEntrarParaVer = () => {
     navigate("/login-aniversariante");
+  };
+
+  const handleEmitirCupom = () => {
+    navigate("/emitir-cupom");
   };
 
   return (
@@ -164,7 +184,7 @@ export default function EstabelecimentoDetalhes() {
 
         {/* Main Content */}
         <div className="px-6 py-8 space-y-6 max-w-2xl mx-auto">
-          {/* Benefit Box (Locked/Teaser) */}
+          {/* Benefit Box - Conditional (Locked/Unlocked) */}
           <div className="relative rounded-2xl bg-gradient-to-br from-violet-600/20 via-fuchsia-500/20 to-pink-500/20 p-[1px] overflow-hidden">
             {/* Animated Border Glow */}
             <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 opacity-50 blur-xl" />
@@ -173,33 +193,60 @@ export default function EstabelecimentoDetalhes() {
               <div className="flex items-start gap-3">
                 <div className="text-3xl">🎁</div>
                 <div className="flex-1 space-y-3">
-                  <h2 className="text-xl font-bold text-white">
-                    Benefício Exclusivo
-                  </h2>
-                  
-                  {/* Blurred Content Simulation */}
-                  <div className="space-y-2 relative">
-                    <div className="blur-md select-none pointer-events-none">
-                      <p className="text-slate-300 text-sm">
-                        Válido para aniversariante e acompanhantes
-                      </p>
-                      <p className="text-slate-300 text-sm mt-1">
-                        Apresente documento com foto na data
-                      </p>
-                    </div>
-                    
-                    {/* Lock Icon Overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="bg-slate-950/80 backdrop-blur-sm rounded-full p-3 border border-white/10">
-                        <Lock className="w-6 h-6 text-violet-400" />
+                  {isLoggedIn ? (
+                    <>
+                      {/* UNLOCKED STATE */}
+                      <div className="flex items-start justify-between gap-3">
+                        <h2 className="text-xl font-bold text-white">
+                          🎉 Ganhe: {mockEstabelecimento.beneficio.titulo}
+                        </h2>
+                        <CheckCircle className="w-6 h-6 text-green-400 shrink-0" />
                       </div>
-                    </div>
-                  </div>
-                  
-                  <div className="pt-2 flex items-center gap-2 text-xs text-slate-400">
-                    <Lock className="w-3 h-3" />
-                    <span>Faça login para ver os detalhes</span>
-                  </div>
+                      
+                      {/* Clear Content - No Blur */}
+                      <div className="space-y-2">
+                        <p className="text-slate-300 text-sm">
+                          {mockEstabelecimento.beneficio.regra}
+                        </p>
+                      </div>
+                      
+                      <div className="pt-2 flex items-center gap-2 text-xs text-green-400">
+                        <CheckCircle className="w-3 h-3" />
+                        <span>Benefício desbloqueado! Emita seu cupom abaixo</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* LOCKED STATE */}
+                      <h2 className="text-xl font-bold text-white">
+                        Benefício Exclusivo
+                      </h2>
+                      
+                      {/* Blurred Content Simulation */}
+                      <div className="space-y-2 relative">
+                        <div className="blur-md select-none pointer-events-none">
+                          <p className="text-slate-300 text-sm">
+                            Válido para aniversariante e acompanhantes
+                          </p>
+                          <p className="text-slate-300 text-sm mt-1">
+                            Apresente documento com foto na data
+                          </p>
+                        </div>
+                        
+                        {/* Lock Icon Overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="bg-slate-950/80 backdrop-blur-sm rounded-full p-3 border border-white/10">
+                            <Lock className="w-6 h-6 text-violet-400" />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="pt-2 flex items-center gap-2 text-xs text-slate-400">
+                        <Lock className="w-3 h-3" />
+                        <span>Faça login para ver os detalhes</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -287,15 +334,25 @@ export default function EstabelecimentoDetalhes() {
         </div>
       </div>
 
-      {/* Sticky Footer - Conversion Button */}
+      {/* Sticky Footer - Conditional Button */}
       <div className="fixed bottom-0 left-0 right-0 z-50 p-4 backdrop-blur-xl bg-slate-950/90 border-t border-white/10">
-        <Button
-          onClick={handleEntrarParaVer}
-          className="w-full h-14 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white font-bold text-lg rounded-xl shadow-lg shadow-violet-500/30"
-        >
-          <Lock className="w-5 h-5 mr-2" />
-          ENTRAR PARA VER 🔒
-        </Button>
+        {isLoggedIn ? (
+          <Button
+            onClick={handleEmitirCupom}
+            className="w-full h-14 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white font-bold text-lg rounded-xl shadow-lg shadow-violet-500/30"
+          >
+            <Ticket className="w-5 h-5 mr-2" />
+            EMITIR CUPOM 🎟️
+          </Button>
+        ) : (
+          <Button
+            onClick={handleEntrarParaVer}
+            className="w-full h-14 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white font-bold text-lg rounded-xl shadow-lg shadow-violet-500/30"
+          >
+            <Lock className="w-5 h-5 mr-2" />
+            ENTRAR PARA VER 🔒
+          </Button>
+        )}
       </div>
     </div>
   );

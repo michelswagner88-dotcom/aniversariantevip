@@ -164,24 +164,41 @@ export default function EstabelecimentoDetalhes() {
 
         {/* Main Content */}
         <div className="px-6 py-8 space-y-6 max-w-2xl mx-auto">
-          {/* Benefit Box (Teaser) */}
+          {/* Benefit Box (Locked/Teaser) */}
           <div className="relative rounded-2xl bg-gradient-to-br from-violet-600/20 via-fuchsia-500/20 to-pink-500/20 p-[1px] overflow-hidden">
             {/* Animated Border Glow */}
             <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 opacity-50 blur-xl" />
             
-            <div className="relative rounded-2xl bg-slate-950/90 backdrop-blur-xl p-6 space-y-3">
+            <div className="relative rounded-2xl bg-slate-950/90 backdrop-blur-xl p-6 space-y-4">
               <div className="flex items-start gap-3">
                 <div className="text-3xl">🎁</div>
-                <div className="flex-1 space-y-2">
+                <div className="flex-1 space-y-3">
                   <h2 className="text-xl font-bold text-white">
-                    Ganhe: {mockEstabelecimento.beneficio.titulo}
+                    Benefício Exclusivo
                   </h2>
-                  <p className="text-slate-300 text-sm">
-                    {mockEstabelecimento.beneficio.regra}
-                  </p>
+                  
+                  {/* Blurred Content Simulation */}
+                  <div className="space-y-2 relative">
+                    <div className="blur-md select-none pointer-events-none">
+                      <p className="text-slate-300 text-sm">
+                        Válido para aniversariante e acompanhantes
+                      </p>
+                      <p className="text-slate-300 text-sm mt-1">
+                        Apresente documento com foto na data
+                      </p>
+                    </div>
+                    
+                    {/* Lock Icon Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-slate-950/80 backdrop-blur-sm rounded-full p-3 border border-white/10">
+                        <Lock className="w-6 h-6 text-violet-400" />
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="pt-2 flex items-center gap-2 text-xs text-slate-400">
                     <Lock className="w-3 h-3" />
-                    <span>Faça login para emitir seu cupom</span>
+                    <span>Faça login para ver os detalhes</span>
                   </div>
                 </div>
               </div>

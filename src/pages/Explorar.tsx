@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, MapPin, Heart, Map, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ const ESTABELECIMENTOS_MOCK = [
 ];
 
 const Explorar = () => {
+  const navigate = useNavigate();
   const [categoriaAtiva, setCategoriaAtiva] = useState("todos");
   const [favoritos, setFavoritos] = useState<number[]>([]);
   const [cidadeAtual, setCidadeAtual] = useState("Florianópolis, SC");
@@ -123,7 +125,10 @@ const Explorar = () => {
           {ESTABELECIMENTOS_MOCK.map((estabelecimento) => (
             <div key={estabelecimento.id} className="group">
               {/* Card Container */}
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_0_50px_rgba(139,92,246,0.4)] transition-all duration-300">
+              <div 
+                onClick={() => navigate(`/estabelecimento/${estabelecimento.id}`)}
+                className="relative rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_0_50px_rgba(139,92,246,0.4)] transition-all duration-300 cursor-pointer"
+              >
                 {/* Imagem com Aspect Ratio 4:5 */}
                 <div className="relative aspect-[4/5] w-full">
                   <img
@@ -146,7 +151,10 @@ const Explorar = () => {
 
                   {/* Botão Favoritar - Topo Direito */}
                   <button
-                    onClick={() => toggleFavorito(estabelecimento.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorito(estabelecimento.id);
+                    }}
                     className="absolute top-5 right-5 w-11 h-11 rounded-full backdrop-blur-xl bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all active:scale-95"
                   >
                     <Heart

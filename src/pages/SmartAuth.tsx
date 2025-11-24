@@ -40,7 +40,7 @@ const SmartAuth = () => {
     dataNascimento: '',
   });
 
-  // Verifica se já está logado
+  // Verifica se já está logado e se precisa completar cadastro
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -52,12 +52,58 @@ const SmartAuth = () => {
           .eq('user_id', session.user.id)
           .single();
         
+        if (!roleData) {
+          // Primeira vez logando (provavelmente via Google), cria profile e role
+          try {
+            await supabase.from('profiles').insert({
+              id: session.user.id,
+              email: session.user.email!,
+              nome: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0],
+            });
+
+            await supabase.from('user_roles').insert({
+              user_id: session.user.id,
+              role: 'aniversariante',
+            });
+
+            // Precisa completar cadastro
+            setUserId(session.user.id);
+            setStep(2);
+            return;
+          } catch (error) {
+            console.error('Erro ao criar profile/role:', error);
+          }
+        }
+        
         if (roleData?.role === 'aniversariante') {
-          navigate('/');
+          // Verifica se já completou o cadastro (tem CPF)
+          const { data: anivData } = await supabase
+            .from('aniversariantes')
+            .select('cpf')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (!anivData?.cpf) {
+            // Precisa completar cadastro, vai para Step 2
+            setUserId(session.user.id);
+            setStep(2);
+          } else {
+            // Cadastro completo, redireciona para home
+            navigate('/');
+          }
         }
       }
     };
     checkSession();
+
+    // Listener para mudanças de auth (retorno do Google OAuth)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        checkSession();
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   // Máscara de Telefone
@@ -103,6 +149,20 @@ const SmartAuth = () => {
       if (roleData?.role !== 'aniversariante') {
         await supabase.auth.signOut();
         throw new Error('Esta conta não é de aniversariante.');
+      }
+
+      // Verifica se já completou o cadastro (tem CPF)
+      const { data: anivData } = await supabase
+        .from('aniversariantes')
+        .select('cpf')
+        .eq('id', data.user.id)
+        .single();
+
+      if (!anivData?.cpf) {
+        // Precisa completar cadastro
+        setUserId(data.user.id);
+        setStep(2);
+        return;
       }
 
       toast({
@@ -187,14 +247,14 @@ const SmartAuth = () => {
     }
   };
 
-  // Lógica: Login com Google (Atalho)
+  // Lógica: Login/Cadastro com Google
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError("");
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const redirectUrl = `${window.location.origin}/auth`;
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
@@ -203,8 +263,7 @@ const SmartAuth = () => {
 
       if (error) throw error;
 
-      // Após redirect, verificar se precisa completar cadastro
-      // Isso será tratado no useEffect inicial
+      // Após redirect, o useEffect verificará se precisa completar cadastro
     } catch (err: any) {
       setError(err.message || "Erro ao fazer login com Google.");
       setIsLoading(false);
@@ -240,13 +299,22 @@ const SmartAuth = () => {
         throw new Error("Este CPF já está cadastrado.");
       }
 
+      // Pega o telefone do formData ou busca do profile
+      let telefone = formData.phone ? formData.phone.replace(/\D/g, '') : '';
+      
+      if (!telefone) {
+        // Tenta buscar do user metadata (Google OAuth)
+        const { data: { user } } = await supabase.auth.getUser();
+        telefone = user?.user_metadata?.phone || '';
+      }
+
       // Insere na tabela aniversariantes
       const { error: insertError } = await supabase
         .from('aniversariantes')
         .insert({
           id: userId!,
           cpf: cpfClean,
-          telefone: formData.phone.replace(/\D/g, ''),
+          telefone: telefone,
           data_nascimento: formData.dataNascimento,
         });
 
@@ -368,7 +436,7 @@ const SmartAuth = () => {
             </div>
           )}
 
-          {/* --- STEP 2: COMPLETION (CPF + Data de Nascimento) --- */}
+          {/* --- STEP 2: COMPLETION (CPF + Data de Nascimento + Telefone) --- */}
           {step === 2 && (
             <div className="animate-in fade-in slide-in-from-right-8 duration-500">
               <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
@@ -380,6 +448,12 @@ const SmartAuth = () => {
               </div>
 
               <form onSubmit={handleCompletion}>
+                {!formData.phone && (
+                  <InputGroup 
+                    icon={Phone} label="WhatsApp (Opcional)" placeholder="(00) 90000-0000" maxLength={15}
+                    value={formData.phone} onChange={handlePhoneChange}
+                  />
+                )}
                 <InputGroup 
                   icon={User} label="CPF" placeholder="000.000.000-00" required maxLength={14}
                   value={formData.cpf} onChange={handleCPFChange}

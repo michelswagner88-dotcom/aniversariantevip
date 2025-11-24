@@ -153,13 +153,23 @@ const Index = () => {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950">
+    <div className="min-h-screen flex flex-col bg-slate-950 pt-20">
       <Header />
 
-      {/* Hero Section - Tech Celebration */}
+      {/* Hero Section - State of the Art */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden py-32 px-4">
-        {/* Cosmic Glow Effect Behind Title */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] bg-gradient-to-r from-violet-600/20 via-fuchsia-500/20 to-pink-500/20 blur-3xl opacity-20 rounded-full pointer-events-none" />
+        {/* Grid Pattern Background (Camada 1) */}
+        <div 
+          className="absolute inset-0 opacity-50"
+          style={{
+            backgroundImage: 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
+            backgroundSize: '24px 24px'
+          }}
+        />
+        
+        {/* Glow Orbs (Camada 2) - Aurora Boreal Effect */}
+        <div className="absolute top-20 left-10 w-[600px] h-[600px] bg-violet-600/30 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/2 right-10 w-[500px] h-[500px] bg-cyan-500/20 blur-[120px] rounded-full pointer-events-none" />
         
         <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
           {/* Badge */}
@@ -168,14 +178,14 @@ const Index = () => {
             <span className="text-sm font-medium text-slate-300">O Maior Guia do Brasil</span>
           </div>
 
-          {/* H1 - Título Principal */}
-          <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl mb-6 tracking-tight leading-[1.1] animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          {/* H1 - Título Principal (Tipografia de Impacto) */}
+          <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl mb-6 tracking-tight leading-[1.1] animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <span className="text-white">
               O Maior Guia de Benefícios
               <br />
               para Aniversariantes do{" "}
             </span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400">
               Brasil
             </span>
           </h1>
@@ -185,9 +195,14 @@ const Index = () => {
             Aqui seu aniversário vale muito mais. Encontre benefícios exclusivos para aproveitar no dia, na semana ou no mês inteiro.
           </h2>
 
-          {/* Barra de Busca */}
+          {/* Barra de Busca Hyper-Glass */}
           <div className="w-full max-w-4xl animate-fade-in" style={{ animationDelay: '0.3s' }}>
-            <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-3 border border-white/10">
+            <div 
+              className="backdrop-blur-2xl bg-white/5 rounded-2xl p-3 border border-white/10"
+              style={{
+                boxShadow: '0 0 50px -12px rgba(139,92,246,0.3)'
+              }}
+            >
               {/* Desktop Layout */}
               <div className="hidden sm:grid sm:grid-cols-[1fr_auto_1fr_auto] gap-3 items-center">
                 <div className="flex items-center gap-3 px-4">
@@ -206,7 +221,8 @@ const Index = () => {
                   </Select>
                 </div>
 
-                <div className="h-12 w-px bg-slate-700" />
+                {/* Separador Vertical (Cristal) */}
+                <div className="h-8 w-[1px] bg-white/10" />
 
                 <div className="flex items-center gap-3 px-4">
                   <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
@@ -237,7 +253,7 @@ const Index = () => {
 
               {/* Mobile Layout */}
               <div className="sm:hidden flex flex-col gap-3">
-                <div className="flex items-center gap-3 px-4 bg-slate-900/50 rounded-xl h-12">
+                <div className="flex items-center gap-3 px-4 bg-transparent rounded-xl h-12">
                   <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCidade} onValueChange={setSelectedCidade} disabled={!selectedEstado}>
                     <SelectTrigger className="border-none bg-transparent text-white h-12 focus:ring-0">
@@ -253,7 +269,7 @@ const Index = () => {
                   </Select>
                 </div>
 
-                <div className="flex items-center gap-3 px-4 bg-slate-900/50 rounded-xl h-12">
+                <div className="flex items-center gap-3 px-4 bg-transparent rounded-xl h-12">
                   <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
                     <SelectTrigger className="border-none bg-transparent text-white h-12 focus:ring-0">
@@ -281,6 +297,11 @@ const Index = () => {
               </div>
             </div>
           </div>
+
+          {/* Social Proof Footer */}
+          <p className="text-slate-500 text-sm mt-8 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            Junte-se a mais de 50.000 aniversariantes que economizam todo mês.
+          </p>
         </div>
       </section>
 

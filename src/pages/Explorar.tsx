@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MapPin, Heart, Map, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Search, MapPin, Heart, Map, SlidersHorizontal, ChevronDown, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { supabase } from "@/integrations/supabase/client";
 
 const CATEGORIAS = [
   { id: "todos", label: "Todos", emoji: "🎯" },
@@ -13,40 +15,47 @@ const CATEGORIAS = [
   { id: "lazer", label: "Lazer", emoji: "🎬" },
 ];
 
-const ESTABELECIMENTOS_MOCK = [
-  {
-    id: 1,
-    nome: "Sushi Palace",
-    categoria: "Restaurante Japonês",
-    localizacao: "Centro • 2km",
-    beneficio: "Rodízio Grátis",
-    imagem: "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800&q=80",
-  },
-  {
-    id: 2,
-    nome: "Barber House Premium",
-    categoria: "Barbearia",
-    localizacao: "Jardins • 1.5km",
-    beneficio: "Corte + Barba Grátis",
-    imagem: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80",
-  },
-  {
-    id: 3,
-    nome: "Fashion Store",
-    categoria: "Loja de Roupas",
-    localizacao: "Shopping Center • 3km",
-    beneficio: "20% OFF na Peça",
-    imagem: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80",
-  },
-];
-
 const Explorar = () => {
   const navigate = useNavigate();
+  const { location, loading: geoLoading } = useGeolocation();
   const [categoriaAtiva, setCategoriaAtiva] = useState("todos");
-  const [favoritos, setFavoritos] = useState<number[]>([]);
-  const [cidadeAtual, setCidadeAtual] = useState("Florianópolis, SC");
+  const [favoritos, setFavoritos] = useState<string[]>([]);
+  const [estabelecimentos, setEstabelecimentos] = useState<any[]>([]);
+  const [loadingEstabelecimentos, setLoadingEstabelecimentos] = useState(true);
+  
+  const cidadeAtual = location 
+    ? `${location.cidade}, ${location.estado}` 
+    : "Carregando localização...";
 
-  const toggleFavorito = (id: number) => {
+  useEffect(() => {
+    loadEstabelecimentos();
+  }, [location]);
+
+  const loadEstabelecimentos = async () => {
+    setLoadingEstabelecimentos(true);
+    
+    let query = supabase
+      .from('estabelecimentos')
+      .select('*')
+      .order('nome_fantasia');
+    
+    // Filtrar por cidade se localização disponível
+    if (location) {
+      query = query
+        .eq('cidade', location.cidade)
+        .eq('estado', location.estado);
+    }
+    
+    const { data, error } = await query;
+    
+    if (!error && data) {
+      setEstabelecimentos(data);
+    }
+    
+    setLoadingEstabelecimentos(false);
+  };
+
+  const toggleFavorito = (id: string) => {
     setFavoritos((prev) =>
       prev.includes(id) ? prev.filter((fav) => fav !== id) : [...prev, id]
     );
@@ -67,7 +76,11 @@ const Explorar = () => {
           <div className="flex items-center gap-3">
             {/* Localização (Esquerda) */}
             <button className="flex items-center gap-2 px-4 py-3 rounded-xl backdrop-blur-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors flex-shrink-0">
-              <MapPin className="w-5 h-5 text-violet-400" />
+              {geoLoading ? (
+                <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
+              ) : (
+                <MapPin className="w-5 h-5 text-violet-400" />
+              )}
               <span className="text-sm font-medium text-white">{cidadeAtual}</span>
               <ChevronDown className="w-4 h-4 text-slate-400" />
             </button>
@@ -120,64 +133,69 @@ const Explorar = () => {
       </div>
 
       {/* Feed de Cards */}
-      <main className="container mx-auto px-6 py-8 pb-32 relative z-10">
-        <div className="space-y-6">
-          {ESTABELECIMENTOS_MOCK.map((estabelecimento) => (
-            <div key={estabelecimento.id} className="group">
-              {/* Card Container */}
-              <div 
-                onClick={() => navigate(`/estabelecimento/${estabelecimento.id}`)}
-                className="relative rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_0_50px_rgba(139,92,246,0.4)] transition-all duration-300 cursor-pointer"
+      <main className="container mx-auto px-6 pb-24 pt-6">
+        {loadingEstabelecimentos ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+          </div>
+        ) : estabelecimentos.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-slate-400 text-lg mb-4">
+              Nenhum estabelecimento encontrado em {cidadeAtual}
+            </p>
+            <p className="text-slate-500 text-sm">
+              Tente buscar em outra cidade ou aguarde novos parceiros
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {estabelecimentos.map((est) => (
+              <div
+                key={est.id}
+                onClick={() => navigate(`/estabelecimento/${est.id}`)}
+                className="relative group cursor-pointer overflow-hidden rounded-2xl bg-slate-900/50 border border-white/5 hover:border-violet-500/30 transition-all duration-300 hover:scale-[1.01]"
               >
-                {/* Imagem com Aspect Ratio 4:5 */}
-                <div className="relative aspect-[4/5] w-full">
+                <div className="relative aspect-[4/5] overflow-hidden">
                   <img
-                    src={estabelecimento.imagem}
-                    alt={estabelecimento.nome}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    src={est.logo_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80"}
+                    alt={est.nome_fantasia}
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   
-                  {/* Gradient Overlay - Mais intenso */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent" />
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
 
-                  {/* Badge Categoria - Topo Esquerdo */}
-                  <div className="absolute top-5 left-5">
-                    <div className="px-3 py-2 rounded-full backdrop-blur-xl bg-white/10 border border-white/20">
-                      <span className="text-xs font-semibold text-white tracking-wide">
-                        {estabelecimento.categoria}
-                      </span>
-                    </div>
+                  {/* Badge Categoria - Canto Superior Esquerdo */}
+                  <div className="absolute top-4 left-4">
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-lg backdrop-blur-xl bg-white/10 border border-white/20 text-xs font-semibold text-white">
+                      {est.categoria?.[0] || "Outros"}
+                    </span>
                   </div>
 
-                  {/* Botão Favoritar - Topo Direito */}
+                  {/* Botão Favorito - Canto Superior Direito */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleFavorito(estabelecimento.id);
+                      toggleFavorito(est.id);
                     }}
-                    className="absolute top-5 right-5 w-11 h-11 rounded-full backdrop-blur-xl bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all active:scale-95"
+                    className="absolute top-4 right-4 p-2.5 rounded-full backdrop-blur-xl bg-slate-900/80 border border-white/20 text-white hover:bg-slate-800/90 transition-all hover:scale-110 active:scale-95"
                   >
                     <Heart
-                      className={`w-5 h-5 transition-all ${
-                        favoritos.includes(estabelecimento.id)
-                          ? "fill-pink-500 text-pink-500 scale-110"
-                          : "text-white"
+                      className={`w-5 h-5 ${
+                        favoritos.includes(est.id) ? "fill-red-500 text-red-500" : ""
                       }`}
                     />
                   </button>
 
-                  {/* Informações - Rodapé Absoluto */}
-                  <div className="absolute bottom-0 left-0 right-0 p-6 space-y-3.5">
-                    {/* Título */}
-                    <h3 className="text-3xl font-bold text-white leading-tight tracking-tight">
-                      {estabelecimento.nome}
+                  {/* Informações na Parte Inferior da Imagem */}
+                  <div className="absolute bottom-0 left-0 right-0 p-6">
+                    <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-violet-300 transition-colors">
+                      {est.nome_fantasia}
                     </h3>
-
-                    {/* Localização */}
-                    <div className="flex items-center gap-2 text-slate-200">
-                      <MapPin className="w-4 h-4" />
-                      <span className="text-sm font-medium">{estabelecimento.localizacao}</span>
-                    </div>
+                    <p className="text-sm text-slate-300 flex items-center gap-1.5 mb-4">
+                      <MapPin className="w-4 h-4 text-slate-400" />
+                      {est.cidade}, {est.estado}
+                    </p>
 
                     {/* Badge Benefício - DESTAQUE MÁXIMO */}
                     <div className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 shadow-2xl shadow-violet-500/30">
@@ -188,9 +206,9 @@ const Explorar = () => {
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </main>
 
       {/* Floating Map Button */}

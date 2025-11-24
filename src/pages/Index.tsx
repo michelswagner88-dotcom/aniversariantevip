@@ -153,67 +153,134 @@ const Index = () => {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-slate-950">
       <Header />
 
-      {/* Hero Section - Cosmic Celebration */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-32 pb-20">
-        {/* Cosmic Glow Effects */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-[128px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-500/20 rounded-full blur-[128px] animate-pulse" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/3 right-1/3 w-64 h-64 bg-pink-500/10 rounded-full blur-[96px] animate-pulse" style={{ animationDelay: '4s' }} />
+      {/* Hero Section - Tech Celebration */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden py-32 px-4">
+        {/* Cosmic Glow Effect Behind Title */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] bg-gradient-to-r from-violet-600/20 via-fuchsia-500/20 to-pink-500/20 blur-3xl opacity-20 rounded-full pointer-events-none" />
         
-        <div className="container relative mx-auto px-4 text-center z-10">
-          {/* Main Title with Cosmic Glow */}
-          <div className="relative">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[300px] bg-gradient-to-r from-violet-600/20 via-fuchsia-500/20 to-pink-500/20 blur-3xl rounded-full pointer-events-none" />
-            
-            <h1 className="relative font-display font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-6 tracking-tight leading-[0.95] animate-fade-in">
-              <span className="block text-white">
-                O Maior Guia de
-              </span>
-              <span className="block text-white">
-                Benefícios para
-              </span>
-              <span className="block">
-                <span className="text-white">Aniversariantes do </span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500">
-                  Brasil
-                </span>
-              </span>
-            </h1>
+        <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-700 bg-slate-900/50 backdrop-blur-sm mb-8 animate-fade-in">
+            <Sparkles className="w-4 h-4 text-violet-400" />
+            <span className="text-sm font-medium text-slate-300">O Maior Guia do Brasil</span>
           </div>
-          
-          <p className="text-lg sm:text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto mb-12 animate-fade-in font-sans" style={{ animationDelay: '0.1s' }}>
-            Encontre estabelecimentos com benefícios especiais para o seu aniversário
-          </p>
 
-          {/* Cosmic Search Bar */}
-          <div className="max-w-3xl mx-auto mb-12 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-violet-600/20 via-fuchsia-500/20 to-pink-500/20 blur-2xl rounded-full" />
-              <div className="relative group">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-400 transition-colors group-focus-within:text-violet-400" />
-                <Input
-                  placeholder="Buscar estabelecimento..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="h-16 pl-16 pr-6 text-lg rounded-full bg-white/5 backdrop-blur-xl border-violet-500/20 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/50 transition-all shadow-2xl text-white placeholder:text-slate-400"
-                />
+          {/* H1 - Título Principal */}
+          <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl mb-6 tracking-tight leading-[1.1] animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <span className="text-white">
+              O Maior Guia de Benefícios
+              <br />
+              para Aniversariantes do{" "}
+            </span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500">
+              Brasil
+            </span>
+          </h1>
+
+          {/* H2 - Subtítulo */}
+          <h2 className="text-lg sm:text-xl md:text-2xl text-slate-400 max-w-3xl mb-12 leading-relaxed animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            Aqui seu aniversário vale muito mais. Encontre benefícios exclusivos para aproveitar no dia, na semana ou no mês inteiro.
+          </h2>
+
+          {/* Barra de Busca */}
+          <div className="w-full max-w-4xl animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-3 border border-white/10">
+              {/* Desktop Layout */}
+              <div className="hidden sm:grid sm:grid-cols-[1fr_auto_1fr_auto] gap-3 items-center">
+                <div className="flex items-center gap-3 px-4">
+                  <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                  <Select value={selectedCidade} onValueChange={setSelectedCidade} disabled={!selectedEstado}>
+                    <SelectTrigger className="border-none bg-transparent text-white h-12 focus:ring-0">
+                      <SelectValue placeholder="Selecione a cidade" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-700">
+                      {selectedEstado && ESTADOS_CIDADES[selectedEstado as keyof typeof ESTADOS_CIDADES]?.map(cidade => (
+                        <SelectItem key={cidade} value={cidade} className="text-white">
+                          {cidade}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="h-12 w-px bg-slate-700" />
+
+                <div className="flex items-center gap-3 px-4">
+                  <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                  <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
+                    <SelectTrigger className="border-none bg-transparent text-white h-12 focus:ring-0">
+                      <SelectValue placeholder="Selecione a categoria" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-700">
+                      <SelectItem value="todas" className="text-white font-semibold">
+                        Todas Categorias
+                      </SelectItem>
+                      {CATEGORIAS_ESTABELECIMENTO.map(cat => (
+                        <SelectItem key={cat.value} value={cat.value} className="text-white">
+                          {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button 
+                  size="lg"
+                  className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white h-12 px-8 rounded-xl font-semibold shadow-lg shadow-violet-500/25"
+                >
+                  Buscar
+                </Button>
+              </div>
+
+              {/* Mobile Layout */}
+              <div className="sm:hidden flex flex-col gap-3">
+                <div className="flex items-center gap-3 px-4 bg-slate-900/50 rounded-xl h-12">
+                  <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                  <Select value={selectedCidade} onValueChange={setSelectedCidade} disabled={!selectedEstado}>
+                    <SelectTrigger className="border-none bg-transparent text-white h-12 focus:ring-0">
+                      <SelectValue placeholder="Selecione a cidade" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-700">
+                      {selectedEstado && ESTADOS_CIDADES[selectedEstado as keyof typeof ESTADOS_CIDADES]?.map(cidade => (
+                        <SelectItem key={cidade} value={cidade} className="text-white">
+                          {cidade}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-3 px-4 bg-slate-900/50 rounded-xl h-12">
+                  <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                  <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
+                    <SelectTrigger className="border-none bg-transparent text-white h-12 focus:ring-0">
+                      <SelectValue placeholder="Selecione a categoria" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-700">
+                      <SelectItem value="todas" className="text-white font-semibold">
+                        Todas Categorias
+                      </SelectItem>
+                      {CATEGORIAS_ESTABELECIMENTO.map(cat => (
+                        <SelectItem key={cat.value} value={cat.value} className="text-white">
+                          {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button 
+                  size="lg"
+                  className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white h-12 rounded-xl font-semibold shadow-lg shadow-violet-500/25 w-full"
+                >
+                  Buscar
+                </Button>
               </div>
             </div>
           </div>
-
-          {!currentUser && (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{ animationDelay: '0.3s' }}>
-              <Button size="lg" asChild className="text-base h-14 px-8 rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white font-semibold shadow-xl shadow-violet-500/25 hover:shadow-2xl hover:shadow-violet-500/30 transition-all">
-                <a href="/cadastro/aniversariante">Cadastre-se Grátis</a>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="text-base h-14 px-8 rounded-full bg-white/5 backdrop-blur-xl border-violet-500/30 text-violet-300 hover:bg-violet-500/10 hover:text-white hover:border-violet-500/50 transition-all">
-                <a href="/login/aniversariante">Já Sou Cadastrado</a>
-              </Button>
-            </div>
-          )}
         </div>
       </section>
 

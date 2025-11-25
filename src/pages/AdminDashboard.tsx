@@ -12,7 +12,9 @@ import {
   Edit2,
   AlertCircle,
   LogOut,
-  Loader2
+  Loader2,
+  Mail,
+  Send
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -107,6 +109,7 @@ export default function AdminDashboard() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
   const [itemType, setItemType] = useState<'user' | 'establishment' | null>(null);
+  const [sendingEmails, setSendingEmails] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -166,6 +169,31 @@ export default function AdminDashboard() {
     await supabase.auth.signOut();
     toast.success('Logout realizado com sucesso');
     navigate('/admin');
+  };
+
+  const handleSimulateBirthdayRobot = async () => {
+    setSendingEmails(true);
+    try {
+      toast.info('🤖 Iniciando Robô de Aniversário...');
+      
+      const { data, error } = await supabase.functions.invoke('send-birthday-reminder', {
+        body: {}
+      });
+
+      if (error) throw error;
+
+      console.log('Resultado do robô:', data);
+      
+      toast.success(
+        `✅ Robô executado! ${data.birthdayToday || 0} aniversariantes HOJE, ${data.birthdayIn7Days || 0} em 7 dias. Total: ${data.success || 0} emails enviados.`,
+        { duration: 6000 }
+      );
+    } catch (error: any) {
+      console.error('Erro ao executar robô:', error);
+      toast.error('❌ Erro ao executar robô de aniversário: ' + error.message);
+    } finally {
+      setSendingEmails(false);
+    }
   };
 
   const handleDeleteClick = (item: any, type: 'user' | 'establishment') => {
@@ -598,7 +626,25 @@ export default function AdminDashboard() {
           <div className="hidden lg:flex text-slate-400 text-sm">
             Última atualização: {new Date().toLocaleString('pt-BR')}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSimulateBirthdayRobot}
+              disabled={sendingEmails}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 rounded-lg text-white text-sm font-semibold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Simular envio diário de e-mails de aniversário"
+            >
+              {sendingEmails ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  Testar Robô 🤖
+                </>
+              )}
+            </button>
             <div className="flex items-center gap-3 pl-4 border-l border-white/10">
               <div className="text-right hidden sm:block">
                 <div className="text-sm font-semibold text-white">{adminName}</div>

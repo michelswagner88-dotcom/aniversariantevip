@@ -11,217 +11,311 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const siteUrl = "https://aniversariantevip.com.br";
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log("Iniciando envio de lembretes de aniversário...");
+    console.log("🤖 Robô de Aniversário iniciado às", new Date().toISOString());
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Buscar aniversariantes cujo aniversário está em 7 dias
     const today = new Date();
-    const targetDate = new Date(today);
-    targetDate.setDate(today.getDate() + 7);
     
-    const targetMonth = targetDate.getMonth() + 1; // getMonth() retorna 0-11
-    const targetDay = targetDate.getDate();
+    // Data 7 dias no futuro
+    const sevenDaysAhead = new Date(today);
+    sevenDaysAhead.setDate(today.getDate() + 7);
     
-    console.log(`Buscando aniversariantes para ${targetDay}/${targetMonth}`);
+    const todayMonth = today.getMonth() + 1;
+    const todayDay = today.getDate();
+    const futureMonth = sevenDaysAhead.getMonth() + 1;
+    const futureDay = sevenDaysAhead.getDate();
+    
+    console.log(`📅 Verificando: Hoje ${todayDay}/${todayMonth} | 7 dias: ${futureDay}/${futureMonth}`);
     
     // Buscar todos os aniversariantes
     const { data: aniversariantes, error: anivError } = await supabase
       .from('aniversariantes')
-      .select('id, data_nascimento, telefone');
+      .select('id, data_nascimento')
+      .is('deleted_at', null);
     
     if (anivError) {
-      console.error("Erro ao buscar aniversariantes:", anivError);
+      console.error("❌ Erro ao buscar aniversariantes:", anivError);
       throw anivError;
     }
     
     if (!aniversariantes || aniversariantes.length === 0) {
-      console.log("Nenhum aniversariante cadastrado");
+      console.log("⚠️ Nenhum aniversariante cadastrado");
       return new Response(JSON.stringify({ message: "Nenhum aniversariante encontrado" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     
-    // Filtrar aniversariantes cujo aniversário é daqui a 7 dias
-    const birthdayMatches = aniversariantes.filter(aniv => {
+    // Separar: aniversariantes de HOJE e de 7 DIAS
+    const birthdayToday = aniversariantes.filter(aniv => {
       const birthDate = new Date(aniv.data_nascimento);
-      const birthMonth = birthDate.getMonth() + 1;
-      const birthDay = birthDate.getDate();
-      return birthMonth === targetMonth && birthDay === targetDay;
+      return birthDate.getMonth() + 1 === todayMonth && birthDate.getDate() === todayDay;
     });
     
-    console.log(`Encontrados ${birthdayMatches.length} aniversariantes com aniversário em 7 dias`);
+    const birthdayIn7Days = aniversariantes.filter(aniv => {
+      const birthDate = new Date(aniv.data_nascimento);
+      return birthDate.getMonth() + 1 === futureMonth && birthDate.getDate() === futureDay;
+    });
     
-    if (birthdayMatches.length === 0) {
-      return new Response(JSON.stringify({ message: "Nenhum aniversário próximo encontrado" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    console.log(`🎂 Hoje: ${birthdayToday.length} | 📆 Em 7 dias: ${birthdayIn7Days.length}`);
     
-    // Buscar perfis dos aniversariantes
-    const userIds = birthdayMatches.map(a => a.id);
-    const { data: profiles, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, email, nome')
-      .in('id', userIds);
+    const results = [];
     
-    if (profileError) {
-      console.error("Erro ao buscar perfis:", profileError);
-      throw profileError;
-    }
-    
-    // Buscar estabelecimentos disponíveis
-    const { data: estabelecimentos, error: estabError } = await supabase
-      .from('estabelecimentos')
-      .select('nome_fantasia, categoria')
-      .limit(5);
-    
-    if (estabError) {
-      console.error("Erro ao buscar estabelecimentos:", estabError);
-    }
-    
-    const estabelecimentosCount = estabelecimentos?.length || 0;
-    
-    // Enviar emails
-    const emailPromises = profiles?.map(async (profile) => {
-      const anivData = birthdayMatches.find(a => a.id === profile.id);
-      const birthDate = new Date(anivData!.data_nascimento);
-      const age = today.getFullYear() - birthDate.getFullYear();
-      const userName = profile.nome || profile.email.split('@')[0];
+    // ===== ENVIAR E-MAILS PARA QUEM FAZ ANIVERSÁRIO HOJE =====
+    if (birthdayToday.length > 0) {
+      const userIds = birthdayToday.map(a => a.id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, nome')
+        .in('id', userIds);
       
-      const emailHtml = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Seu aniversário está chegando! 🎉</title>
-          </head>
-          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
-            <!-- Header festivo -->
-            <div style="background: linear-gradient(135deg, #FF6B9D 0%, #C06C84 50%, #6C5B7B 100%); padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0; position: relative; overflow: hidden;">
-              <div style="font-size: 48px; margin-bottom: 10px;">🎂✨🎉</div>
-              <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">SEU ANIVERSÁRIO ESTÁ CHEGANDO!</h1>
-              <p style="color: rgba(255,255,255,0.95); margin: 10px 0 0 0; font-size: 16px;">Apenas 7 dias para o seu dia especial</p>
-            </div>
-            
-            <!-- Corpo do email -->
-            <div style="background: #ffffff; padding: 40px 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-              <p style="font-size: 18px; color: #555; margin: 0 0 20px 0; text-align: center;">
-                Olá, <strong style="color: #FF6B9D;">${userName}</strong>! 🎈
-              </p>
+      for (const profile of profiles || []) {
+        const userName = profile.nome || profile.email.split('@')[0];
+        
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #020617;">
               
-              <div style="background: linear-gradient(135deg, #fff0f5 0%, #ffe4e8 100%); padding: 25px; margin: 25px 0; border-radius: 12px; text-align: center; border: 2px solid #FFB6C1;">
-                <div style="font-size: 36px; margin-bottom: 10px;">🎂</div>
-                <h2 style="margin: 0 0 10px 0; color: #C06C84; font-size: 24px;">
-                  Faltam apenas 7 dias!
-                </h2>
-                <p style="margin: 0; font-size: 18px; color: #666;">
-                  Prepare-se para aproveitar seus benefícios exclusivos
+              <div style="background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #f472b6 100%); padding: 60px 30px; text-align: center; border-radius: 16px 16px 0 0; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -120px; right: -120px; width: 350px; height: 350px; background: rgba(255,255,255,0.15); border-radius: 50%; filter: blur(80px);"></div>
+                <div style="position: absolute; bottom: -100px; left: -100px; width: 300px; height: 300px; background: rgba(255,255,255,0.15); border-radius: 50%; filter: blur(80px);"></div>
+                
+                <div style="font-size: 80px; margin-bottom: 20px; position: relative; z-index: 1; animation: bounce 1s infinite;">🎉🎂🎁</div>
+                <h1 style="color: white; margin: 0; font-size: 42px; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; position: relative; z-index: 1; text-shadow: 0 6px 20px rgba(0,0,0,0.4); line-height: 1.2;">
+                  HOJE É O SEU DIA!<br>PARABÉNS VIP! 🌟
+                </h1>
+                <p style="color: rgba(255,255,255,0.95); margin: 20px 0 0 0; font-size: 20px; position: relative; z-index: 1; font-weight: 600;">
+                  Chegou a hora de brilhar e aproveitar! ✨
                 </p>
               </div>
               
-              <p style="font-size: 16px; color: #555; margin: 25px 0; line-height: 1.8;">
-                Estamos contando os dias junto com você! No dia <strong>${targetDay}/${targetMonth}</strong>, 
-                você terá acesso a <strong>benefícios exclusivos</strong> em mais de 
-                <strong style="color: #FF6B9D;">${estabelecimentosCount}+ estabelecimentos parceiros</strong>.
-              </p>
-              
-              <!-- Dicas importantes -->
-              <div style="background-color: #fff9e6; border-left: 4px solid #FFD700; padding: 20px; margin: 25px 0; border-radius: 4px;">
-                <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">💡 Prepare-se para o seu dia:</h3>
-                <ul style="margin: 0; padding-left: 20px; color: #555; line-height: 1.8;">
-                  <li>Acesse a plataforma e veja todos os <strong>estabelecimentos disponíveis</strong></li>
-                  <li>Escolha seus favoritos e <strong>salve-os</strong> para facilitar no dia</li>
-                  <li>Verifique os <strong>horários de funcionamento</strong> e regras de utilização</li>
-                  <li>Leve um <strong>documento com foto</strong> para comprovar sua data de nascimento</li>
-                  <li>Aproveite ao máximo - você merece! 🎉</li>
-                </ul>
-              </div>
-              
-              <!-- Categorias disponíveis -->
-              ${estabelecimentos && estabelecimentos.length > 0 ? `
-              <div style="margin: 30px 0;">
-                <h3 style="color: #333; font-size: 18px; margin-bottom: 15px; text-align: center;">
-                  📍 Categorias disponíveis:
-                </h3>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
-                  ${Array.from(new Set(estabelecimentos.flatMap(e => e.categoria || []))).slice(0, 6).map(cat => `
-                    <span style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; display: inline-block;">
-                      ${cat}
-                    </span>
-                  `).join('')}
+              <div style="background: linear-gradient(to bottom, #1e293b, #0f172a); padding: 40px 30px; border-radius: 0 0 16px 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+                
+                <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 30px; margin-bottom: 30px; text-align: center;">
+                  <p style="font-size: 24px; color: #f472b6; margin: 0 0 15px 0; font-weight: 800;">
+                    Parabéns, ${userName}! 🎊
+                  </p>
+                  <p style="font-size: 17px; color: #cbd5e1; margin: 0; line-height: 1.8;">
+                    Oiê! Sou a <strong style="color: #8b5cf6;">Carol</strong> e vim te dar os parabéns! 🥳<br>
+                    Hoje é <strong style="color: #f472b6;">O SEU DIA</strong>! Seus benefícios estão liberados e os estabelecimentos estão te esperando de braços abertos!
+                  </p>
                 </div>
+                
+                <div style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%); border: 2px solid rgba(244, 114, 182, 0.4); padding: 30px; margin: 30px 0; border-radius: 16px; box-shadow: 0 0 60px rgba(236, 72, 153, 0.3); text-align: center;">
+                  <div style="font-size: 56px; margin-bottom: 15px;">🎁</div>
+                  <h3 style="margin: 0 0 20px 0; color: #f472b6; font-size: 24px; font-weight: 800;">Seus Presentes Te Aguardam!</h3>
+                  <ul style="margin: 0; padding-left: 25px; color: #cbd5e1; line-height: 2; text-align: left; list-style: none;">
+                    <li style="margin-bottom: 10px;">✅ Emita seus cupons agora mesmo</li>
+                    <li style="margin-bottom: 10px;">✅ Escolha onde quer ir primeiro</li>
+                    <li style="margin-bottom: 10px;">✅ Leve documento com foto</li>
+                    <li style="margin-bottom: 10px;">✅ Aproveite SEM LIMITES! 🚀</li>
+                  </ul>
+                </div>
+                
+                <div style="background: rgba(34, 197, 94, 0.1); border-left: 4px solid #22c55e; padding: 20px; margin: 30px 0; border-radius: 8px;">
+                  <p style="margin: 0; font-size: 15px; color: #cbd5e1; line-height: 1.8;">
+                    <strong style="color: #22c55e;">💚 Lembre-se:</strong><br>
+                    Você pode emitir quantos cupons quiser, em quantos estabelecimentos diferentes você escolher! Não deixe passar essa chance de aproveitar ao máximo! O aniversariante nunca vai sozinho - leva a galera toda! 🎉
+                  </p>
+                </div>
+                
+                <p style="font-size: 17px; color: #cbd5e1; margin: 35px 0 30px 0; text-align: center; line-height: 1.8; font-weight: 600;">
+                  Não deixe seus presentes esperando! Entre agora e comece a festa! 🥳🎈
+                </p>
+                
+                <div style="text-align: center; margin: 40px 0;">
+                  <a href="${siteUrl}" 
+                     style="background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #f472b6 100%); 
+                            color: white; 
+                            padding: 22px 60px; 
+                            text-decoration: none; 
+                            border-radius: 50px; 
+                            font-weight: 800; 
+                            font-size: 19px;
+                            display: inline-block;
+                            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.6);
+                            text-transform: uppercase;
+                            letter-spacing: 2px;
+                            border: 3px solid rgba(255,255,255,0.3);">
+                    🎟️ RESGATAR MEUS PRESENTES
+                  </a>
+                </div>
+                
+                <p style="font-size: 16px; color: #94a3b8; text-align: center; margin: 40px 0 10px 0; line-height: 1.7; font-weight: 500;">
+                  Aproveite cada momento deste dia incrível! Você merece! 💜✨<br>
+                  <strong style="color: #8b5cf6;">Carol - Assistente Virtual</strong>
+                </p>
+                
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 35px 0;">
+                
+                <p style="font-size: 12px; color: #64748b; text-align: center; margin: 0;">
+                  © ${new Date().getFullYear()} Aniversariante VIP
+                </p>
               </div>
-              ` : ''}
-              
-              <!-- Botão de ação -->
-              <div style="text-align: center; margin: 40px 0;">
-                <a href="${supabaseUrl.replace('.supabase.co', '')}.lovable.app" 
-                   style="background: linear-gradient(135deg, #FF6B9D 0%, #C06C84 100%); 
-                          color: white; 
-                          padding: 18px 40px; 
-                          text-decoration: none; 
-                          border-radius: 50px; 
-                          font-weight: bold; 
-                          font-size: 16px;
-                          display: inline-block;
-                          box-shadow: 0 6px 20px rgba(255,107,157,0.4);
-                          text-transform: uppercase;
-                          letter-spacing: 1px;">
-                  🎁 Ver Meus Benefícios
-                </a>
-              </div>
-              
-              <p style="font-size: 14px; color: #777; text-align: center; margin: 30px 0 10px 0;">
-                Nos vemos em breve para comemorar! 🥳
-              </p>
-              
-              <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
-              
-              <p style="font-size: 12px; color: #999; text-align: center; margin: 0;">
-                © ${new Date().getFullYear()} Aniversariante VIP. Todos os direitos reservados.
-              </p>
-              
-              <p style="font-size: 11px; color: #aaa; text-align: center; margin-top: 10px;">
-                Você está recebendo este email porque seu aniversário está próximo.
-              </p>
-            </div>
-          </body>
-        </html>
-      `;
-      
-      try {
-        const response = await resend.emails.send({
-          from: "Aniversariante VIP <onboarding@resend.dev>",
-          to: [profile.email],
-          subject: "🎉 Seu aniversário está chegando! Prepare-se para seus benefícios",
-          html: emailHtml,
-        });
+            </body>
+          </html>
+        `;
         
-        console.log(`Email enviado para ${profile.email}:`, response);
-        return { success: true, email: profile.email, response };
-      } catch (error: any) {
-        console.error(`Erro ao enviar email para ${profile.email}:`, error);
-        return { success: false, email: profile.email, error: error.message };
+        try {
+          const response = await resend.emails.send({
+            from: "Carol - Aniversariante VIP <onboarding@resend.dev>",
+            to: [profile.email],
+            subject: "HOJE É O SEU DIA! Parabéns VIP 🎉🎁",
+            html: emailHtml,
+          });
+          
+          console.log(`✅ Email HOJE enviado para ${profile.email}`);
+          results.push({ type: 'birthday', success: true, email: profile.email });
+        } catch (error: any) {
+          console.error(`❌ Erro ao enviar para ${profile.email}:`, error);
+          results.push({ type: 'birthday', success: false, email: profile.email, error: error.message });
+        }
       }
-    }) || [];
+    }
     
-    const results = await Promise.all(emailPromises);
+    // ===== ENVIAR E-MAILS PARA QUEM FAZ ANIVERSÁRIO EM 7 DIAS =====
+    if (birthdayIn7Days.length > 0) {
+      const userIds = birthdayIn7Days.map(a => a.id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, nome')
+        .in('id', userIds);
+      
+      for (const profile of profiles || []) {
+        const userName = profile.nome || profile.email.split('@')[0];
+        
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #020617;">
+              
+              <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%); padding: 50px 30px; text-align: center; border-radius: 16px 16px 0 0; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -100px; right: -100px; width: 300px; height: 300px; background: rgba(255,255,255,0.1); border-radius: 50%; filter: blur(60px);"></div>
+                
+                <div style="font-size: 72px; margin-bottom: 15px; position: relative; z-index: 1;">⏰🎂</div>
+                <h1 style="color: white; margin: 0; font-size: 36px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; position: relative; z-index: 1; text-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                  FALTA 1 SEMANA! 📆
+                </h1>
+                <p style="color: rgba(255,255,255,0.95); margin: 15px 0 0 0; font-size: 19px; position: relative; z-index: 1; font-weight: 600;">
+                  Já escolheu onde vai comemorar? 🎉
+                </p>
+              </div>
+              
+              <div style="background: linear-gradient(to bottom, #1e293b, #0f172a); padding: 40px 30px; border-radius: 0 0 16px 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+                
+                <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 25px; margin-bottom: 30px;">
+                  <p style="font-size: 17px; color: #cbd5e1; margin: 0; line-height: 1.8;">
+                    Oiê, <strong style="color: #a855f7;">${userName}</strong>! 👋<br><br>
+                    Sou a <strong style="color: #8b5cf6;">Carol</strong>, aqui do Aniversariante VIP! A contagem regressiva começou! ⏳
+                  </p>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%); border: 2px solid rgba(139, 92, 246, 0.4); padding: 30px; margin: 30px 0; border-radius: 16px; text-align: center; box-shadow: 0 0 40px rgba(99, 102, 241, 0.2);">
+                  <div style="font-size: 64px; margin-bottom: 20px;">🎊</div>
+                  <h2 style="margin: 0 0 15px 0; color: #a855f7; font-size: 28px; font-weight: 800;">
+                    Daqui a 7 dias é seu dia!
+                  </h2>
+                  <p style="margin: 0; font-size: 17px; color: #cbd5e1; line-height: 1.8;">
+                    Que tal já <strong style="color: #a855f7;">garantir sua reserva</strong> e escolher seus presentes? Entre no site agora e veja o que te espera! ✨
+                  </p>
+                </div>
+                
+                <div style="background: rgba(139, 92, 246, 0.1); border-left: 4px solid #8b5cf6; padding: 25px; margin: 30px 0; border-radius: 8px;">
+                  <h3 style="margin: 0 0 20px 0; color: #a855f7; font-size: 20px; font-weight: 700;">💡 Dicas para se preparar:</h3>
+                  <ul style="margin: 0; padding-left: 25px; color: #cbd5e1; line-height: 2;">
+                    <li>Navegue pelos estabelecimentos disponíveis</li>
+                    <li><strong style="color: #a855f7;">Salve seus favoritos</strong> para facilitar no dia</li>
+                    <li>Confira horários e regras de cada benefício</li>
+                    <li>Chame a galera - o aniversariante nunca vai sozinho! 🎉</li>
+                    <li>Separe um documento com foto para apresentar</li>
+                  </ul>
+                </div>
+                
+                <div style="background: rgba(34, 197, 94, 0.1); border-left: 4px solid #22c55e; padding: 20px; margin: 30px 0; border-radius: 8px;">
+                  <p style="margin: 0; font-size: 15px; color: #cbd5e1; line-height: 1.8;">
+                    <strong style="color: #22c55e;">💚 Lembre-se:</strong><br>
+                    Aqui a comemoração dura muito mais! Temos benefícios para usar no dia exato, na semana do aniversário ou até durante o mês inteiro! É o seu passaporte para estender a festa! 🚀
+                  </p>
+                </div>
+                
+                <p style="font-size: 17px; color: #cbd5e1; margin: 35px 0 30px 0; text-align: center; line-height: 1.8;">
+                  Não deixe para a última hora! Já pode começar a planejar sua comemoração perfeita! 🥳
+                </p>
+                
+                <div style="text-align: center; margin: 40px 0;">
+                  <a href="${siteUrl}" 
+                     style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%); 
+                            color: white; 
+                            padding: 20px 55px; 
+                            text-decoration: none; 
+                            border-radius: 50px; 
+                            font-weight: 700; 
+                            font-size: 18px;
+                            display: inline-block;
+                            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.5);
+                            text-transform: uppercase;
+                            letter-spacing: 1.5px;
+                            border: 2px solid rgba(255,255,255,0.2);">
+                    🎯 ESCOLHER MEUS BENEFÍCIOS
+                  </a>
+                </div>
+                
+                <p style="font-size: 14px; color: #94a3b8; text-align: center; margin: 35px 0 10px 0; line-height: 1.6;">
+                  Estou aqui para qualquer dúvida! Deixa comigo! 💜<br>
+                  <strong style="color: #8b5cf6;">Carol - Assistente Virtual</strong>
+                </p>
+                
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 35px 0;">
+                
+                <p style="font-size: 12px; color: #64748b; text-align: center; margin: 0;">
+                  © ${new Date().getFullYear()} Aniversariante VIP
+                </p>
+              </div>
+            </body>
+          </html>
+        `;
+        
+        try {
+          const response = await resend.emails.send({
+            from: "Carol - Aniversariante VIP <onboarding@resend.dev>",
+            to: [profile.email],
+            subject: "Falta 1 semana! Já escolheu onde vai comemorar? 🎂",
+            html: emailHtml,
+          });
+          
+          console.log(`✅ Email 7 DIAS enviado para ${profile.email}`);
+          results.push({ type: 'reminder', success: true, email: profile.email });
+        } catch (error: any) {
+          console.error(`❌ Erro ao enviar para ${profile.email}:`, error);
+          results.push({ type: 'reminder', success: false, email: profile.email, error: error.message });
+        }
+      }
+    }
+    
     const successCount = results.filter(r => r.success).length;
-    
-    console.log(`Processo concluído: ${successCount}/${results.length} emails enviados com sucesso`);
+    console.log(`🎉 Robô concluído: ${successCount}/${results.length} emails enviados`);
     
     return new Response(JSON.stringify({ 
-      message: "Lembretes enviados",
+      message: "Robô de Aniversário executado com sucesso",
+      birthdayToday: birthdayToday.length,
+      birthdayIn7Days: birthdayIn7Days.length,
       total: results.length,
       success: successCount,
       results 
@@ -231,7 +325,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
     
   } catch (error: any) {
-    console.error("Erro ao processar lembretes:", error);
+    console.error("❌ Erro no Robô de Aniversário:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {

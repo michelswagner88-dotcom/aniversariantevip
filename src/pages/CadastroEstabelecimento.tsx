@@ -284,10 +284,10 @@ export default function EstablishmentRegistration() {
       const isSelected = prev.categories.includes(category);
       if (isSelected) {
         return { ...prev, categories: prev.categories.filter(c => c !== category) };
-      } else if (prev.categories.length < 2) {
+      } else if (prev.categories.length < 3) {
         return { ...prev, categories: [...prev.categories, category] };
       }
-      return prev; // Max 2 categories
+      return prev; // Max 3 categories
     });
   };
   
@@ -658,8 +658,8 @@ export default function EstablishmentRegistration() {
               </button>
             ))}
           </div>
-          {establishmentData.categories.length === 2 && (
-             <p className="mt-2 text-xs text-slate-500">Máximo de 2 categorias selecionadas.</p>
+          {establishmentData.categories.length === 3 && (
+             <p className="mt-2 text-xs text-slate-500">Máximo de 3 categorias selecionadas.</p>
           )}
         </label>
 

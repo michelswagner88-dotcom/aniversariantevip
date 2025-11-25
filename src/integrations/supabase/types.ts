@@ -207,6 +207,7 @@ export type Database = {
       }
       estabelecimentos: {
         Row: {
+          ativo: boolean
           bairro: string | null
           categoria: string[] | null
           cep: string | null
@@ -241,6 +242,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          ativo?: boolean
           bairro?: string | null
           categoria?: string[] | null
           cep?: string | null
@@ -275,6 +277,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          ativo?: boolean
           bairro?: string | null
           categoria?: string[] | null
           cep?: string | null

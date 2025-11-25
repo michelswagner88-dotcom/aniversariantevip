@@ -273,30 +273,40 @@ const Explorar = () => {
           </div>
         )}
 
-        {/* Pílulas de Categoria */}
-        <div className="container mx-auto px-6 mt-4 flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
-          <button 
-            onClick={() => setShowFilters(true)} 
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all duration-300 active:scale-95 ${filterOpenNow || filterDay !== 'any' ? 'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:scale-105'}`}
-          >
-            <SlidersHorizontal size={18} className="transition-transform duration-300" />
-          </button>
-          <div className="shrink-0"><CategoryPill icon="🚀" label="Todos" active={activeCategories.length === 0} onClick={() => handleCategoryToggle("Todos")} /></div>
-          <div className="shrink-0"><CategoryPill icon="🏋️" label="Academia" active={activeCategories.includes("Academia")} onClick={() => handleCategoryToggle("Academia")} /></div>
-          <div className="shrink-0"><CategoryPill icon="🍺" label="Bar" active={activeCategories.includes("Bar")} onClick={() => handleCategoryToggle("Bar")} /></div>
-          <div className="shrink-0"><CategoryPill icon="✂️" label="Barbearia" active={activeCategories.includes("Barbearia")} onClick={() => handleCategoryToggle("Barbearia")} /></div>
-          <div className="shrink-0"><CategoryPill icon="☕" label="Cafeteria" active={activeCategories.includes("Cafeteria")} onClick={() => handleCategoryToggle("Cafeteria")} /></div>
-          <div className="shrink-0"><CategoryPill icon="🎉" label="Casa Noturna" active={activeCategories.includes("Casa Noturna")} onClick={() => handleCategoryToggle("Casa Noturna")} /></div>
-          <div className="shrink-0"><CategoryPill icon="🧁" label="Confeitaria" active={activeCategories.includes("Confeitaria")} onClick={() => handleCategoryToggle("Confeitaria")} /></div>
-          <div className="shrink-0"><CategoryPill icon="🎬" label="Entretenimento" active={activeCategories.includes("Entretenimento")} onClick={() => handleCategoryToggle("Entretenimento")} /></div>
-          <div className="shrink-0"><CategoryPill icon="🏨" label="Hospedagem" active={activeCategories.includes("Hospedagem")} onClick={() => handleCategoryToggle("Hospedagem")} /></div>
-          <div className="shrink-0"><CategoryPill icon="🎁" label="Loja de Presentes" active={activeCategories.includes("Loja de Presentes")} onClick={() => handleCategoryToggle("Loja de Presentes")} /></div>
-          <div className="shrink-0"><CategoryPill icon="👗" label="Moda e Acessórios" active={activeCategories.includes("Moda e Acessórios")} onClick={() => handleCategoryToggle("Moda e Acessórios")} /></div>
-          <div className="shrink-0"><CategoryPill icon="🍽️" label="Restaurante" active={activeCategories.includes("Restaurante")} onClick={() => handleCategoryToggle("Restaurante")} /></div>
-          <div className="shrink-0"><CategoryPill icon="💅" label="Salão de Beleza" active={activeCategories.includes("Salão de Beleza")} onClick={() => handleCategoryToggle("Salão de Beleza")} /></div>
-          <div className="shrink-0"><CategoryPill icon="💪" label="Saúde e Suplementos" active={activeCategories.includes("Saúde e Suplementos")} onClick={() => handleCategoryToggle("Saúde e Suplementos")} /></div>
-          <div className="shrink-0"><CategoryPill icon="🏪" label="Outros Comércios" active={activeCategories.includes("Outros Comércios")} onClick={() => handleCategoryToggle("Outros Comércios")} /></div>
-          <div className="shrink-0"><CategoryPill icon="🔧" label="Serviços" active={activeCategories.includes("Serviços")} onClick={() => handleCategoryToggle("Serviços")} /></div>
+        {/* Pílulas de Categoria com Fade Edges */}
+        <div className="relative container mx-auto px-6 mt-4">
+          {/* Fade esquerdo */}
+          <div className="absolute left-0 top-0 bottom-2 w-16 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none z-10"></div>
+          
+          {/* Fade direito */}
+          <div className="absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none z-10"></div>
+          
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory px-16 -mx-16">
+            <div className="shrink-0 pl-16"></div>
+            <button 
+              onClick={() => setShowFilters(true)} 
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all duration-300 active:scale-95 ${filterOpenNow || filterDay !== 'any' ? 'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:scale-105'}`}
+            >
+              <SlidersHorizontal size={18} className="transition-transform duration-300" />
+            </button>
+            <div className="shrink-0"><CategoryPill icon="🚀" label="Todos" active={activeCategories.length === 0} onClick={() => handleCategoryToggle("Todos")} /></div>
+            <div className="shrink-0"><CategoryPill icon="🏋️" label="Academia" active={activeCategories.includes("Academia")} onClick={() => handleCategoryToggle("Academia")} /></div>
+            <div className="shrink-0"><CategoryPill icon="🍺" label="Bar" active={activeCategories.includes("Bar")} onClick={() => handleCategoryToggle("Bar")} /></div>
+            <div className="shrink-0"><CategoryPill icon="✂️" label="Barbearia" active={activeCategories.includes("Barbearia")} onClick={() => handleCategoryToggle("Barbearia")} /></div>
+            <div className="shrink-0"><CategoryPill icon="☕" label="Cafeteria" active={activeCategories.includes("Cafeteria")} onClick={() => handleCategoryToggle("Cafeteria")} /></div>
+            <div className="shrink-0"><CategoryPill icon="🎉" label="Casa Noturna" active={activeCategories.includes("Casa Noturna")} onClick={() => handleCategoryToggle("Casa Noturna")} /></div>
+            <div className="shrink-0"><CategoryPill icon="🧁" label="Confeitaria" active={activeCategories.includes("Confeitaria")} onClick={() => handleCategoryToggle("Confeitaria")} /></div>
+            <div className="shrink-0"><CategoryPill icon="🎬" label="Entretenimento" active={activeCategories.includes("Entretenimento")} onClick={() => handleCategoryToggle("Entretenimento")} /></div>
+            <div className="shrink-0"><CategoryPill icon="🏨" label="Hospedagem" active={activeCategories.includes("Hospedagem")} onClick={() => handleCategoryToggle("Hospedagem")} /></div>
+            <div className="shrink-0"><CategoryPill icon="🎁" label="Loja de Presentes" active={activeCategories.includes("Loja de Presentes")} onClick={() => handleCategoryToggle("Loja de Presentes")} /></div>
+            <div className="shrink-0"><CategoryPill icon="👗" label="Moda e Acessórios" active={activeCategories.includes("Moda e Acessórios")} onClick={() => handleCategoryToggle("Moda e Acessórios")} /></div>
+            <div className="shrink-0"><CategoryPill icon="🍽️" label="Restaurante" active={activeCategories.includes("Restaurante")} onClick={() => handleCategoryToggle("Restaurante")} /></div>
+            <div className="shrink-0"><CategoryPill icon="💅" label="Salão de Beleza" active={activeCategories.includes("Salão de Beleza")} onClick={() => handleCategoryToggle("Salão de Beleza")} /></div>
+            <div className="shrink-0"><CategoryPill icon="💪" label="Saúde e Suplementos" active={activeCategories.includes("Saúde e Suplementos")} onClick={() => handleCategoryToggle("Saúde e Suplementos")} /></div>
+            <div className="shrink-0"><CategoryPill icon="🏪" label="Outros Comércios" active={activeCategories.includes("Outros Comércios")} onClick={() => handleCategoryToggle("Outros Comércios")} /></div>
+            <div className="shrink-0"><CategoryPill icon="🔧" label="Serviços" active={activeCategories.includes("Serviços")} onClick={() => handleCategoryToggle("Serviços")} /></div>
+            <div className="shrink-0 pr-16"></div>
+          </div>
         </div>
       </div>
 

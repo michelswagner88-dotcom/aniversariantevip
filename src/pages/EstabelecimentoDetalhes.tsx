@@ -12,6 +12,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
+import { BackButton } from "@/components/BackButton";
 
 interface Estabelecimento {
   id: string;
@@ -164,12 +165,9 @@ export default function EstabelecimentoDetalhes() {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
           
           {/* Back Button */}
-          <button
-            onClick={() => navigate(-1)}
-            className="absolute top-6 left-6 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/60 transition-colors z-10"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <div className="absolute top-6 left-6 z-10">
+            <BackButton to="/explorar" label="" className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/60 p-0" />
+          </div>
 
           {/* Title & Info */}
           <div className="absolute bottom-0 left-0 right-0 p-6 space-y-3">

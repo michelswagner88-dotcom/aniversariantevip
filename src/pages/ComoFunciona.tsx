@@ -4,6 +4,7 @@ import { Crown, UserPlus, Gift, FileCheck, PartyPopper } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { BackButton } from "@/components/BackButton";
 
 export default function ComoFunciona() {
   const passos = [
@@ -39,6 +40,9 @@ export default function ComoFunciona() {
       <div className="pt-16">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-primary/10 to-background py-20">
+        <div className="container mx-auto px-4">
+          <BackButton to="/" className="mb-6" />
+        </div>
         <div className="container mx-auto px-4 text-center">
           <Crown className="h-16 w-16 text-primary mx-auto mb-6 animate-fade-in drop-shadow-lg" />
           <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 animate-fade-in uppercase tracking-tight">

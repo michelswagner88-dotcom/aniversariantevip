@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { isValidCPF } from '@/lib/validation';
 import ChatAssistant from '@/components/ChatAssistant';
 import { useFormBehaviorMonitor } from '@/hooks/useFormBehaviorMonitor';
+import { BackButton } from '@/components/BackButton';
 
 // --- Componentes UI (Inputs com estilo Glass) ---
 const InputGroup = ({ icon: Icon, label, onFocus, onBlur, ...props }: any) => (
@@ -371,6 +372,11 @@ const SmartAuth = () => {
       <div className="fixed top-0 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-violet-600/20 blur-[120px] pointer-events-none"></div>
 
       <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl backdrop-blur-xl">
+        
+        {/* Botão Voltar */}
+        <div className="absolute top-4 left-4 z-20">
+          <BackButton to="/" />
+        </div>
         
         {/* Barra de Progresso */}
         <div className="h-1 w-full bg-slate-800">

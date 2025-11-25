@@ -46,6 +46,8 @@ const SmartAuth = () => {
     dataNascimento: '',
   });
 
+  const [rememberMe, setRememberMe] = useState(true); // Manter conectado por padrão
+
   // Hook de monitoramento comportamental
   const { trackFieldFocus, trackFieldBlur, trackValidationError, trackServerError } = useFormBehaviorMonitor(
     (trigger) => {
@@ -158,6 +160,15 @@ const SmartAuth = () => {
         email: formData.email,
         password: formData.password,
       });
+
+      if (error) throw error;
+
+      // Se "Manter conectado" estiver desmarcado, configura sessão temporária
+      if (!rememberMe && data.session) {
+        // Move a sessão para sessionStorage (expira ao fechar navegador)
+        sessionStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
+        localStorage.removeItem('supabase.auth.token');
+      }
 
       if (error) throw error;
 
@@ -465,6 +476,29 @@ const SmartAuth = () => {
                   onFocus={() => trackFieldFocus('senha')}
                   onBlur={() => trackFieldBlur('senha', true)}
                 />
+
+                {/* Checkbox Manter Conectado (apenas no login) */}
+                {isLogin && (
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="rememberMe"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="h-4 w-4 rounded border-white/20 bg-white/5 text-violet-600 focus:ring-2 focus:ring-violet-500 focus:ring-offset-0 cursor-pointer"
+                      />
+                      <label htmlFor="rememberMe" className="text-sm text-slate-300 cursor-pointer select-none">
+                        Manter-me conectado
+                      </label>
+                    </div>
+                    {!rememberMe && (
+                      <p className="mt-1.5 ml-6 text-xs text-slate-500">
+                        Sua sessão expirará ao fechar o navegador
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {error && (
                   <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400">

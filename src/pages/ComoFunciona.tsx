@@ -92,7 +92,7 @@ export default function ComoFunciona() {
             Crie sua conta gratuita agora e comece a aproveitar benefícios exclusivos no seu aniversário
           </p>
           <div className="flex flex-wrap gap-6 justify-center">
-            <Link to="/cadastro-aniversariante">
+            <Link to="/auth">
               <Button size="lg" className="text-lg px-10 py-6 uppercase font-semibold">
                 <Crown className="mr-2 h-6 w-6" />
                 Cadastre-Se Grátis

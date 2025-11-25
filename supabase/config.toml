@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.submit-establishment-data]
+verify_jwt = true
+
+[functions.release-held-commissions]
+verify_jwt = false

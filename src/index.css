@@ -103,6 +103,9 @@ All colors MUST be HSL.
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     position: relative;
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    box-sizing: border-box;
   }
   
   /* Noise Texture Overlay */
@@ -123,6 +126,9 @@ All colors MUST be HSL.
   #root {
     position: relative;
     z-index: 2;
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    box-sizing: border-box;
   }
   
   /* Touch-friendly interactions */

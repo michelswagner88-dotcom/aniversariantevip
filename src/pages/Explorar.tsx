@@ -120,6 +120,7 @@ const Explorar = () => {
   const [filterOpenNow, setFilterOpenNow] = useState(false);
   const [filterDay, setFilterDay] = useState("any"); // 'any', 'seg', 'ter', etc.
   const [filterValidity, setFilterValidity] = useState("month");
+  const [filterDistance, setFilterDistance] = useState<number | undefined>(undefined); // em km
 
   // Mostrar input de CEP se houver erro de geolocalização
   useEffect(() => {
@@ -295,7 +296,7 @@ const Explorar = () => {
             <div className="shrink-0 pl-16"></div>
             <button 
               onClick={() => setShowFilters(true)} 
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all duration-300 active:scale-95 ${filterOpenNow || filterDay !== 'any' ? 'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:scale-105'}`}
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all duration-300 active:scale-95 ${filterOpenNow || filterDay !== 'any' || filterDistance ? 'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:scale-105'}`}
             >
               <SlidersHorizontal size={18} className="transition-transform duration-300" />
             </button>
@@ -384,6 +385,7 @@ const Explorar = () => {
               latitude: location.coordinates.latitude,
               longitude: location.coordinates.longitude,
             } : undefined}
+            maxDistance={filterDistance}
             onEstablishmentClick={(id) => navigate('/auth')}
           />
         )}
@@ -431,7 +433,44 @@ const Explorar = () => {
                 </div>
               </div>
 
-              {/* Filtro 3: Validade */}
+              {/* Filtro 3: Distância (novo) */}
+              {location?.coordinates && (
+                <div className="space-y-3">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                    <Navigation size={14} /> Distância Máxima
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    <FilterOption 
+                      label="Todas" 
+                      selected={!filterDistance} 
+                      onClick={() => setFilterDistance(undefined)} 
+                    />
+                    <FilterOption 
+                      label="1 km" 
+                      selected={filterDistance === 1} 
+                      onClick={() => setFilterDistance(1)} 
+                    />
+                    <FilterOption 
+                      label="5 km" 
+                      selected={filterDistance === 5} 
+                      onClick={() => setFilterDistance(5)} 
+                    />
+                    <FilterOption 
+                      label="10 km" 
+                      selected={filterDistance === 10} 
+                      onClick={() => setFilterDistance(10)} 
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500 italic">
+                    {filterDistance 
+                      ? `Mostrando estabelecimentos até ${filterDistance} km de você` 
+                      : 'Mostrando todos os estabelecimentos'
+                    }
+                  </p>
+                </div>
+              )}
+
+              {/* Filtro 4: Validade */}
               <div className="space-y-3">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Validade do Benefício</label>
                 <div className="grid grid-cols-3 gap-2">

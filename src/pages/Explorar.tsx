@@ -103,7 +103,7 @@ const PlaceCard = ({ place }: any) => {
 const Explorar = () => {
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [showFilters, setShowFilters] = useState(false);
-  const [activeCategory, setActiveCategory] = useState("Todos");
+  const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [showCepInput, setShowCepInput] = useState(false);
   const [cepValue, setCepValue] = useState("");
 
@@ -171,11 +171,27 @@ const Explorar = () => {
 
   // --- LÓGICA DE FILTRAGEM ---
   const filteredPlaces = allPlaces.filter(place => {
-    if (activeCategory !== "Todos" && place.category !== activeCategory) return false;
+    // Filtro de categoria: se não há categorias selecionadas, mostra todos
+    if (activeCategories.length > 0 && !activeCategories.includes(place.category)) return false;
     if (filterOpenNow && !place.isOpen) return false;
     if (filterDay !== 'any' && !place.validDays.includes(filterDay)) return false;
     return true;
   });
+
+  // Handler para toggle de categorias
+  const handleCategoryToggle = (category: string) => {
+    if (category === "Todos") {
+      // "Todos" limpa todas as seleções
+      setActiveCategories([]);
+    } else {
+      // Toggle: adiciona se não está, remove se já está
+      setActiveCategories(prev => 
+        prev.includes(category) 
+          ? prev.filter(cat => cat !== category)
+          : [...prev, category]
+      );
+    }
+  };
 
   const daysOfWeek = [
     { id: 'seg', label: 'Seg' }, { id: 'ter', label: 'Ter' }, { id: 'qua', label: 'Qua' },
@@ -260,14 +276,14 @@ const Explorar = () => {
           <button onClick={() => setShowFilters(true)} className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all active:scale-95 ${filterOpenNow || filterDay !== 'any' ? 'bg-violet-600 border-violet-500 text-white' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
             <SlidersHorizontal size={18} />
           </button>
-          <CategoryPill icon="🚀" label="Todos" active={activeCategory === "Todos"} onClick={() => setActiveCategory("Todos")} />
-          <CategoryPill icon="🏋️" label="Academia" active={activeCategory === "Academia"} onClick={() => setActiveCategory("Academia")} />
-          <CategoryPill icon="🍺" label="Bar" active={activeCategory === "Bar"} onClick={() => setActiveCategory("Bar")} />
-          <CategoryPill icon="✂️" label="Barbearia" active={activeCategory === "Barbearia"} onClick={() => setActiveCategory("Barbearia")} />
-          <CategoryPill icon="☕" label="Cafeteria" active={activeCategory === "Cafeteria"} onClick={() => setActiveCategory("Cafeteria")} />
-          <CategoryPill icon="🎉" label="Casa Noturna" active={activeCategory === "Casa Noturna"} onClick={() => setActiveCategory("Casa Noturna")} />
-          <CategoryPill icon="🍽️" label="Restaurante" active={activeCategory === "Restaurante"} onClick={() => setActiveCategory("Restaurante")} />
-          <CategoryPill icon="💅" label="Salão de Beleza" active={activeCategory === "Salão de Beleza"} onClick={() => setActiveCategory("Salão de Beleza")} />
+          <CategoryPill icon="🚀" label="Todos" active={activeCategories.length === 0} onClick={() => handleCategoryToggle("Todos")} />
+          <CategoryPill icon="🏋️" label="Academia" active={activeCategories.includes("Academia")} onClick={() => handleCategoryToggle("Academia")} />
+          <CategoryPill icon="🍺" label="Bar" active={activeCategories.includes("Bar")} onClick={() => handleCategoryToggle("Bar")} />
+          <CategoryPill icon="✂️" label="Barbearia" active={activeCategories.includes("Barbearia")} onClick={() => handleCategoryToggle("Barbearia")} />
+          <CategoryPill icon="☕" label="Cafeteria" active={activeCategories.includes("Cafeteria")} onClick={() => handleCategoryToggle("Cafeteria")} />
+          <CategoryPill icon="🎉" label="Casa Noturna" active={activeCategories.includes("Casa Noturna")} onClick={() => handleCategoryToggle("Casa Noturna")} />
+          <CategoryPill icon="🍽️" label="Restaurante" active={activeCategories.includes("Restaurante")} onClick={() => handleCategoryToggle("Restaurante")} />
+          <CategoryPill icon="💅" label="Salão de Beleza" active={activeCategories.includes("Salão de Beleza")} onClick={() => handleCategoryToggle("Salão de Beleza")} />
         </div>
       </div>
 

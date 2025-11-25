@@ -28,12 +28,18 @@ const handler = async (req: Request): Promise<Response> => {
     const sevenDaysAhead = new Date(today);
     sevenDaysAhead.setDate(today.getDate() + 7);
     
+    // Verificar se amanhã é dia 01 (véspera do mês)
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const isTomorrowFirstDay = tomorrow.getDate() === 1;
+    const nextMonth = tomorrow.getMonth() + 1; // Mês seguinte (amanhã)
+    
     const todayMonth = today.getMonth() + 1;
     const todayDay = today.getDate();
     const futureMonth = sevenDaysAhead.getMonth() + 1;
     const futureDay = sevenDaysAhead.getDate();
     
-    console.log(`📅 Verificando: Hoje ${todayDay}/${todayMonth} | 7 dias: ${futureDay}/${futureMonth}`);
+    console.log(`📅 Verificando: Hoje ${todayDay}/${todayMonth} | 7 dias: ${futureDay}/${futureMonth} | Amanhã dia 01? ${isTomorrowFirstDay} | Mês seguinte: ${nextMonth}`);
     
     // Buscar todos os aniversariantes
     const { data: aniversariantes, error: anivError } = await supabase
@@ -54,7 +60,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
     
-    // Separar: aniversariantes de HOJE e de 7 DIAS
+    // Separar: aniversariantes de HOJE, de 7 DIAS e do MÊS SEGUINTE
     const birthdayToday = aniversariantes.filter(aniv => {
       const birthDate = new Date(aniv.data_nascimento);
       return birthDate.getMonth() + 1 === todayMonth && birthDate.getDate() === todayDay;
@@ -65,7 +71,13 @@ const handler = async (req: Request): Promise<Response> => {
       return birthDate.getMonth() + 1 === futureMonth && birthDate.getDate() === futureDay;
     });
     
-    console.log(`🎂 Hoje: ${birthdayToday.length} | 📆 Em 7 dias: ${birthdayIn7Days.length}`);
+    // Véspera do Mês: se amanhã é dia 01, buscar todos do mês seguinte
+    const birthdayNextMonth = isTomorrowFirstDay ? aniversariantes.filter(aniv => {
+      const birthDate = new Date(aniv.data_nascimento);
+      return birthDate.getMonth() + 1 === nextMonth;
+    }) : [];
+    
+    console.log(`🎂 Hoje: ${birthdayToday.length} | 📆 Em 7 dias: ${birthdayIn7Days.length} | 🗓️ Véspera do Mês: ${birthdayNextMonth.length}`);
     
     const results = [];
     
@@ -345,6 +357,146 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
     
+    // ===== ENVIAR E-MAILS VÉSPERA DO MÊS (Se amanhã é dia 01) =====
+    if (birthdayNextMonth.length > 0) {
+      const userIds = birthdayNextMonth.map(a => a.id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, nome')
+        .in('id', userIds);
+      
+      for (const profile of profiles || []) {
+        const userName = profile.nome || profile.email.split('@')[0];
+        
+        // Criar registro de analytics
+        const { data: analyticsRecord } = await supabase
+          .from('email_analytics')
+          .insert({
+            user_id: profile.id,
+            email_type: 'month_alert',
+            email_address: profile.email,
+            sent_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        const trackingId = analyticsRecord?.id || 'unknown';
+        const trackingPixelUrl = `${supabaseUrl}/functions/v1/track-email-open?id=${trackingId}`;
+        const trackingClickUrl = (url: string) => `${supabaseUrl}/functions/v1/track-email-click?id=${trackingId}&url=${encodeURIComponent(url)}`;
+        
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #020617;">
+              
+              <div style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%); padding: 50px 30px; text-align: center; border-radius: 16px 16px 0 0; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -100px; right: -100px; width: 300px; height: 300px; background: rgba(255,255,255,0.15); border-radius: 50%; filter: blur(60px);"></div>
+                
+                <div style="font-size: 72px; margin-bottom: 15px; position: relative; z-index: 1;">🗓️📅🎊</div>
+                <h1 style="color: white; margin: 0; font-size: 38px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; position: relative; z-index: 1; text-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                  SEU MÊS CHEGOU!
+                </h1>
+                <p style="color: rgba(255,255,255,0.95); margin: 15px 0 0 0; font-size: 20px; position: relative; z-index: 1; font-weight: 600;">
+                  30 dias de festa começam amanhã! 🎉
+                </p>
+              </div>
+              
+              <div style="background: linear-gradient(to bottom, #1e293b, #0f172a); padding: 40px 30px; border-radius: 0 0 16px 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+                
+                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 25px; margin-bottom: 30px;">
+                  <p style="font-size: 17px; color: #cbd5e1; margin: 0; line-height: 1.8;">
+                    Oiê, <strong style="color: #f59e0b;">${userName}</strong>! 👋<br><br>
+                    A melhor época do ano está batendo na porta! 🚪✨
+                  </p>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(239, 68, 68, 0.15) 100%); border: 2px solid rgba(245, 158, 11, 0.4); padding: 30px; margin: 30px 0; border-radius: 16px; text-align: center; box-shadow: 0 0 40px rgba(245, 158, 11, 0.2);">
+                  <div style="font-size: 64px; margin-bottom: 20px;">🎁🎂✨</div>
+                  <h2 style="margin: 0 0 15px 0; color: #f59e0b; font-size: 28px; font-weight: 800;">
+                    Amanhã começa sua temporada VIP!
+                  </h2>
+                  <p style="margin: 0; font-size: 17px; color: #cbd5e1; line-height: 1.8;">
+                    Sabia que muitos lugares no <strong style="color: #ef4444;">Aniversariante VIP</strong> dão presentes não só no seu dia, mas durante o <strong style="color: #f59e0b;">mês inteiro</strong>? 🎊
+                  </p>
+                </div>
+                
+                <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; padding: 25px; margin: 30px 0; border-radius: 8px;">
+                  <h3 style="margin: 0 0 20px 0; color: #f59e0b; font-size: 20px; font-weight: 700;">💡 Aproveite ao máximo:</h3>
+                  <ul style="margin: 0; padding-left: 25px; color: #cbd5e1; line-height: 2;">
+                    <li>Entre agora e <strong style="color: #f59e0b;">favorite seus lugares preferidos</strong></li>
+                    <li>Veja quais benefícios duram o mês todo</li>
+                    <li>Planeje suas comemorações com antecedência</li>
+                    <li>Não deixe para a última hora - aproveite cada dia! 🚀</li>
+                  </ul>
+                </div>
+                
+                <div style="background: rgba(34, 197, 94, 0.1); border-left: 4px solid #22c55e; padding: 20px; margin: 30px 0; border-radius: 8px;">
+                  <p style="margin: 0; font-size: 15px; color: #cbd5e1; line-height: 1.8;">
+                    <strong style="color: #22c55e;">💚 Lembre-se:</strong><br>
+                    Amanhã começa a sua temporada oficial de comemoração! Este é o seu passaporte para 30 dias de benefícios exclusivos. Aproveite cada momento! 🎉
+                  </p>
+                </div>
+                
+                <p style="font-size: 17px; color: #cbd5e1; margin: 35px 0 30px 0; text-align: center; line-height: 1.8;">
+                  Não perca tempo! Sua temporada VIP começa em poucas horas! 🥳🎈
+                </p>
+                
+                <div style="text-align: center; margin: 40px 0;">
+                  <a href="${trackingClickUrl(siteUrl)}"
+                     style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%); 
+                            color: white; 
+                            padding: 20px 55px; 
+                            text-decoration: none; 
+                            border-radius: 50px; 
+                            font-weight: 700; 
+                            font-size: 18px;
+                            display: inline-block;
+                            box-shadow: 0 8px 32px rgba(245, 158, 11, 0.5);
+                            text-transform: uppercase;
+                            letter-spacing: 1.5px;
+                            border: 2px solid rgba(255,255,255,0.2);">
+                    🎁 VER BENEFÍCIOS DO MÊS
+                  </a>
+                </div>
+                
+                <p style="font-size: 14px; color: #94a3b8; text-align: center; margin: 35px 0 10px 0; line-height: 1.6;">
+                  Prepare-se para o melhor mês do ano! 💜✨<br>
+                  <strong style="color: #f59e0b;">Carol - Assistente Virtual</strong>
+                </p>
+                
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 35px 0;">
+                
+                <p style="font-size: 12px; color: #64748b; text-align: center; margin: 0;">
+                  © ${new Date().getFullYear()} Aniversariante VIP
+                </p>
+              </div>
+              <!-- Tracking Pixel -->
+              <img src="${trackingPixelUrl}" width="1" height="1" alt="" style="display:block; border:0; opacity:0; position:absolute;" />
+            </body>
+          </html>
+        `;
+        
+        try {
+          const response = await resend.emails.send({
+            from: "Carol - Aniversariante VIP <onboarding@resend.dev>",
+            to: [profile.email],
+            subject: "Seu mês chegou! 📅 30 dias de festa começam amanhã!",
+            html: emailHtml,
+          });
+          
+          console.log(`✅ Email VÉSPERA DO MÊS enviado para ${profile.email}`);
+          results.push({ type: 'month_alert', success: true, email: profile.email });
+        } catch (error: any) {
+          console.error(`❌ Erro ao enviar para ${profile.email}:`, error);
+          results.push({ type: 'month_alert', success: false, email: profile.email, error: error.message });
+        }
+      }
+    }
+    
     const successCount = results.filter(r => r.success).length;
     console.log(`🎉 Robô concluído: ${successCount}/${results.length} emails enviados`);
     
@@ -352,6 +504,7 @@ const handler = async (req: Request): Promise<Response> => {
       message: "Robô de Aniversário executado com sucesso",
       birthdayToday: birthdayToday.length,
       birthdayIn7Days: birthdayIn7Days.length,
+      birthdayNextMonth: birthdayNextMonth.length,
       total: results.length,
       success: successCount,
       results 

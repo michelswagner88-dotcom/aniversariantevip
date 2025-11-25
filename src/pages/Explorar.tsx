@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MapPin, Search, SlidersHorizontal, Map as MapIcon, List, X, Check, Clock, Gift, Share2, Heart, CalendarDays } from 'lucide-react';
 import { toast } from "sonner";
 
@@ -32,6 +33,8 @@ const FilterOption = ({ label, icon: Icon, selected, onClick, className = "" }: 
 );
 
 const PlaceCard = ({ place }: any) => {
+  const navigate = useNavigate();
+
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
     const shareData = {
@@ -43,8 +46,15 @@ const PlaceCard = ({ place }: any) => {
     else toast.success("Link copiado!");
   };
 
+  const handleCardClick = () => {
+    navigate('/auth');
+  };
+
   return (
-    <div className="group relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-slate-800 shadow-lg border border-white/5 cursor-pointer">
+    <div 
+      onClick={handleCardClick}
+      className="group relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-slate-800 shadow-lg border border-white/5 cursor-pointer hover:border-violet-500/50 transition-all"
+    >
       <img src={place.image} alt={place.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
       

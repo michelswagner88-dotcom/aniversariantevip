@@ -76,14 +76,11 @@ const PlaceCard = ({ place }: any) => {
           <MapPin size={14} className="text-violet-400" /> 
           <span>{place.location}</span>
         </div>
-        <div className="mt-4 flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 p-3 backdrop-blur-md">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-lg">
-            <span className="text-sm">🎁</span>
-          </div>
-          <div className="flex-1 leading-tight">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-violet-200">Você Ganha</p>
-            <p className="font-bold text-white">{place.benefit}</p>
-          </div>
+        {/* Badge Benefício - DESTAQUE MÁXIMO */}
+        <div className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 shadow-2xl shadow-violet-500/30">
+          <span className="text-lg font-extrabold text-white">
+            🎁 Ver Benefício 🔒
+          </span>
         </div>
       </div>
     </div>

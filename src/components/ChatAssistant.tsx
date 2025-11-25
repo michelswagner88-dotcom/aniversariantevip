@@ -21,7 +21,7 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Olá! 👋 Sou o assistente do Aniversariante VIP. Como posso ajudar você hoje?',
+      content: 'Olá! 👋 Sou a Carol, assistente virtual do Aniversariante VIP. Como posso ajudar você hoje?',
       timestamp: new Date(),
     }
   ]);

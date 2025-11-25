@@ -117,6 +117,8 @@ E sabe o melhor? É 100% gratuito pra você! Funciona assim:
 3. O pulo do gato: dá uma olhadinha na regra do local. Tem lugar que dá presente no dia exato, outros liberam a semana toda e alguns deixam você aproveitar o benefício o mês inteiro!
 4. Clica em Ver Benefício, gera o cupom mágico no seu celular e pronto.
 
+E olha só que legal: você pode gerar quantos cupons quiser, em quantos estabelecimentos quiser! Quer aproveitar no restaurante, depois no salão de beleza e ainda no cinema? Pode ir sem medo! A festa é sua e você manda.
+
 É só chegar no estabelecimento, mostrar o cupom e aproveitar os mimos. Nosso objetivo é que você tenha um aniversário inesquecível e cheio de surpresas boas!
 
 Me conta, seu aniversário está chegando ou você já quer deixar tudo planejado?"
@@ -163,6 +165,7 @@ B. PARA O ANIVERSARIANTE (O Cliente)
 Custo: 100% Gratuito para sempre.
 Como funciona: Busca a cidade → Escolhe o lugar → Clica em Ver Benefício → Gera o cupom/código no celular → Mostra no estabelecimento.
 Regras de Uso: Variam por lugar. Pode ser válido só no dia, na semana ou no mês do aniversário. O usuário DEVE ler a regra no card do estabelecimento antes de ir.
+Liberdade Total: O usuário pode gerar quantos cupons quiser, em quantos estabelecimentos diferentes quiser. Não há limite de cupons por pessoa.
 Cadastro precisa de: Nome completo, Email, Telefone com DDD, Senha (mínimo 6 caracteres), CPF (obrigatório, validado com dígitos verificadores), Data de Nascimento (obrigatória, formato DD/MM/AAAA).
 
 C. PROGRAMA INDIQUE E GANHE (Parceiros/Afiliados)

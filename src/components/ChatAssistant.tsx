@@ -104,18 +104,6 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
     }
   };
 
-  const suggestedQuestions = [
-    "Como funciona a plataforma?",
-    "Quais categorias estão disponíveis?",
-    "Como emitir um cupom?",
-    "Quanto custa para estabelecimentos?"
-  ];
-
-  const handleSuggestedQuestion = (question: string) => {
-    setInput(question);
-    inputRef.current?.focus();
-  };
-
   // Método público para enviar mensagens proativas
   const sendProactiveMessage = useCallback((message: string) => {
     const assistantMessage: Message = {
@@ -210,22 +198,6 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
                     <Loader2 size={16} className="animate-spin text-violet-400" />
                     <span className="text-sm text-slate-400">Pensando...</span>
                   </div>
-                </div>
-              )}
-
-              {/* Sugestões de perguntas (apenas no início) */}
-              {messages.length === 1 && !isLoading && (
-                <div className="space-y-2 pt-2">
-                  <p className="text-xs font-medium text-slate-500">Perguntas frequentes:</p>
-                  {suggestedQuestions.map((question, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleSuggestedQuestion(question)}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left text-xs text-slate-300 transition-colors hover:bg-white/10"
-                    >
-                      {question}
-                    </button>
-                  ))}
                 </div>
               )}
             </div>

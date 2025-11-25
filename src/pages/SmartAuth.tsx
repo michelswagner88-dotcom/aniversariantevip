@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Mail, Lock, User, Phone, ArrowRight, AlertCircle, CheckCircle2, Loader2, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { isValidCPF } from '@/lib/validation';
+import ChatAssistant from '@/components/ChatAssistant';
+import { useFormBehaviorMonitor } from '@/hooks/useFormBehaviorMonitor';
 
 // --- Componentes UI (Inputs com estilo Glass) ---
-const InputGroup = ({ icon: Icon, label, ...props }: any) => (
+const InputGroup = ({ icon: Icon, label, onFocus, onBlur, ...props }: any) => (
   <div className="mb-4 space-y-1.5">
     <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">{label}</label>
     <div className="group relative flex items-center">
@@ -15,6 +17,8 @@ const InputGroup = ({ icon: Icon, label, ...props }: any) => (
       </div>
       <input
         {...props}
+        onFocus={onFocus}
+        onBlur={onBlur}
         className="w-full rounded-xl border border-white/10 bg-white/5 py-3.5 pl-11 pr-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10"
       />
     </div>
@@ -29,6 +33,7 @@ const SmartAuth = () => {
   const [error, setError] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [isLogin, setIsLogin] = useState(false); // Toggle entre Login e Cadastro
+  const chatAssistantRef = useRef<((msg: string) => void) | null>(null);
   
   // Estado do Formulário
   const [formData, setFormData] = useState({
@@ -39,6 +44,16 @@ const SmartAuth = () => {
     cpf: '', 
     dataNascimento: '',
   });
+
+  // Hook de monitoramento comportamental
+  const { trackFieldFocus, trackFieldBlur, trackValidationError, trackServerError } = useFormBehaviorMonitor(
+    (trigger) => {
+      if (chatAssistantRef.current) {
+        chatAssistantRef.current(trigger.message);
+      }
+    },
+    true // Sempre habilitado
+  );
 
   // Verifica se já está logado e se precisa completar cadastro
   useEffect(() => {
@@ -123,6 +138,12 @@ const SmartAuth = () => {
     value = value.replace(/(\d{3})(\d)/, '$1.$2');
     value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
     setFormData({ ...formData, cpf: value });
+
+    // Validar CPF quando completo
+    const cleanCPF = value.replace(/\D/g, '');
+    if (cleanCPF.length === 11 && !isValidCPF(cleanCPF)) {
+      trackValidationError('cpf', 'CPF inválido');
+    }
   };
 
   // Lógica: LOGIN via E-mail
@@ -173,6 +194,7 @@ const SmartAuth = () => {
       navigate('/');
     } catch (err: any) {
       setError(err.message || "Erro ao fazer login. Verifique suas credenciais.");
+      trackServerError(500, err.message);
     } finally {
       setIsLoading(false);
     }
@@ -242,6 +264,7 @@ const SmartAuth = () => {
       setStep(2);
     } catch (err: any) {
       setError(err.message || "Erro ao criar conta.");
+      trackServerError(500, err.message);
     } finally {
       setIsLoading(false);
     }
@@ -266,6 +289,7 @@ const SmartAuth = () => {
       // Após redirect, o useEffect verificará se precisa completar cadastro
     } catch (err: any) {
       setError(err.message || "Erro ao fazer login com Google.");
+      trackServerError(500, err.message);
       setIsLoading(false);
     }
   };
@@ -331,6 +355,10 @@ const SmartAuth = () => {
       }, 1000);
     } catch (err: any) {
       setError(err.message || "Erro ao finalizar cadastro.");
+      trackServerError(500, err.message);
+      if (err.message.includes('CPF inválido')) {
+        trackValidationError('cpf', 'CPF com dígitos verificadores inválidos');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -402,22 +430,34 @@ const SmartAuth = () => {
                 {!isLogin && (
                   <InputGroup 
                     icon={User} label="Nome" placeholder="Como quer ser chamado?" required
-                    value={formData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
+                    value={formData.name} 
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
+                    onFocus={() => trackFieldFocus('nome')}
+                    onBlur={() => trackFieldBlur('nome', false)}
                   />
                 )}
                 <InputGroup 
                   icon={Mail} label="E-mail" type="email" placeholder="seu@email.com" required
-                  value={formData.email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, email: e.target.value})}
+                  value={formData.email} 
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, email: e.target.value})}
+                  onFocus={() => trackFieldFocus('email')}
+                  onBlur={() => trackFieldBlur('email', false)}
                 />
                 {!isLogin && (
                   <InputGroup 
                     icon={Phone} label="WhatsApp" placeholder="(00) 90000-0000" required maxLength={15}
-                    value={formData.phone} onChange={handlePhoneChange}
+                    value={formData.phone} 
+                    onChange={handlePhoneChange}
+                    onFocus={() => trackFieldFocus('telefone')}
+                    onBlur={() => trackFieldBlur('telefone', false)}
                   />
                 )}
                 <InputGroup 
                   icon={Lock} label="Senha" type="password" placeholder={isLogin ? "Digite sua senha" : "Crie uma senha forte"} required minLength={6}
-                  value={formData.password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, password: e.target.value})}
+                  value={formData.password} 
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, password: e.target.value})}
+                  onFocus={() => trackFieldFocus('senha')}
+                  onBlur={() => trackFieldBlur('senha', true)}
                 />
 
                 {error && (
@@ -451,17 +491,25 @@ const SmartAuth = () => {
                 {!formData.phone && (
                   <InputGroup 
                     icon={Phone} label="WhatsApp (Opcional)" placeholder="(00) 90000-0000" maxLength={15}
-                    value={formData.phone} onChange={handlePhoneChange}
+                    value={formData.phone} 
+                    onChange={handlePhoneChange}
+                    onFocus={() => trackFieldFocus('telefone')}
+                    onBlur={() => trackFieldBlur('telefone', false)}
                   />
                 )}
                 <InputGroup 
                   icon={User} label="CPF" placeholder="000.000.000-00" required maxLength={14}
-                  value={formData.cpf} onChange={handleCPFChange}
+                  value={formData.cpf} 
+                  onChange={handleCPFChange}
+                  onFocus={() => trackFieldFocus('cpf')}
+                  onBlur={() => trackFieldBlur('cpf', true)}
                 />
                 <InputGroup 
                   icon={Calendar} label="Data de Nascimento" type="date" required
                   value={formData.dataNascimento} 
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, dataNascimento: e.target.value})}
+                  onFocus={() => trackFieldFocus('dataNascimento')}
+                  onBlur={() => trackFieldBlur('dataNascimento', false)}
                 />
                 
                 {error && (
@@ -501,6 +549,9 @@ const SmartAuth = () => {
           )}
         </div>
       </div>
+
+      {/* Chat Assistente com monitoramento ativo */}
+      <ChatAssistant onMount={(sendMessage) => { chatAssistantRef.current = sendMessage; }} />
     </div>
   );
 };

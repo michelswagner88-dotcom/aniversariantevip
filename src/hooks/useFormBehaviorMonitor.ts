@@ -50,7 +50,8 @@ export const useFormBehaviorMonitor = (
       const requiredFields = [
         'cep', 'logradouro', 'numero', 'bairro', 'cidade', 'estado',
         'cnpj', 'nomeFantasia', 'email', 'telefone', 'senha',
-        'beneficiosAniversariante', 'regrasAniversariante'
+        'beneficiosAniversariante', 'regrasAniversariante',
+        'nome', 'cpf', 'dataNascimento' // Campos de aniversariante
       ];
 
       if (requiredFields.includes(fieldName)) {
@@ -71,7 +72,7 @@ export const useFormBehaviorMonitor = (
     // Detectar abandono de campo crítico (Gatilho 3)
     if (isComplexField) {
       abandonTimer.current = setTimeout(() => {
-        const complexFields = ['cnpj', 'cep', 'senha', 'beneficiosAniversariante'];
+        const complexFields = ['cnpj', 'cep', 'senha', 'beneficiosAniversariante', 'cpf'];
         
         if (complexFields.includes(fieldName) && focusedField.current !== fieldName) {
           onTrigger({
@@ -110,7 +111,10 @@ export const useFormBehaviorMonitor = (
           telefone: 'Telefone',
           cnpj: 'CNPJ',
           cep: 'CEP',
-          senha: 'Senha'
+          senha: 'Senha',
+          cpf: 'CPF',
+          nome: 'Nome',
+          dataNascimento: 'Data de Nascimento'
         };
 
         const fieldLabel = fieldLabels[fieldName] || fieldName;
@@ -119,7 +123,9 @@ export const useFormBehaviorMonitor = (
           cnpj: 'Verifique se inseriu todos os dígitos no formato: 00.000.000/0000-00.',
           cep: 'Verifique se o CEP está correto no formato: 00000-000.',
           email: 'Verifique se o e-mail está no formato correto: exemplo@dominio.com.',
-          senha: 'A senha deve ter pelo menos 6 caracteres.'
+          senha: 'A senha deve ter pelo menos 6 caracteres.',
+          cpf: 'Verifique se o CPF está correto no formato: 000.000.000-00 com dígitos verificadores válidos.',
+          dataNascimento: 'Verifique se a data está no formato correto: DD/MM/AAAA.'
         };
 
         const suggestion = suggestions[fieldName] || 'Verifique se o campo está preenchido corretamente.';

@@ -531,6 +531,18 @@ const SmartAuth = () => {
                   </div>
                 )}
 
+                {isLogin && (
+                  <div className="mb-4 text-right">
+                    <button
+                      type="button"
+                      onClick={() => navigate('/forgot-password')}
+                      className="text-sm text-violet-400 hover:text-violet-300 transition-colors underline"
+                    >
+                      Esqueci minha senha
+                    </button>
+                  </div>
+                )}
+
                 {error && (
                   <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400">
                     <AlertCircle size={14} /> {error}

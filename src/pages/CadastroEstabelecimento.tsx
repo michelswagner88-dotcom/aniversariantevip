@@ -1,962 +1,751 @@
-import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { PasswordInput } from "@/components/ui/password-input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Crown, Upload, Plus, Trash2, Loader2, MapPin } from "lucide-react";
-import MapboxMap from "@/components/MapboxMap";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { resizeImage } from "@/lib/imageUtils";
-import { estabelecimentoSchema } from "@/lib/validation";
-import { ESTADOS_CIDADES, ESTADOS } from "@/lib/constants";
-import { useFormBehaviorMonitor, BehaviorTrigger } from "@/hooks/useFormBehaviorMonitor";
-import ChatAssistant from "@/components/ChatAssistant";
+import React, { useState, useEffect } from 'react';
+import { 
+  Mail, 
+  Lock, 
+  ArrowRight, 
+  CheckCircle, 
+  Building2, 
+  MapPin, 
+  Clock, 
+  Image, 
+  Link, 
+  Calendar, 
+  RefreshCw, 
+  Ruler, 
+  ShoppingBag,
+  Info,
+  ChevronRight,
+  ChevronLeft,
+  Phone,
+  MessageSquare,
+  Globe,
+  Instagram
+} from 'lucide-react';
 
-type HorarioFuncionamento = {
-  id: string;
-  dias: string[];
-  abertura: string;
-  fechamento: string;
+// --- DADOS MOCKADOS (Simulação de APIs externas e Backend) ---
+
+const MOCK_CNPJ_DATA = {
+  '12345678000190': {
+    name: 'Padaria Sabor e Arte Ltda',
+    status: 'ATIVA',
+    cep: '01001000',
+  },
 };
 
-export default function CadastroEstabelecimento() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [searchParams] = useSearchParams();
-  const [pageReady, setPageReady] = useState(false);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [referrerId, setReferrerId] = useState<string | null>(null);
-  const [horariosFuncionamento, setHorariosFuncionamento] = useState<HorarioFuncionamento[]>([
-    { id: '1', dias: [], abertura: '', fechamento: '' }
-  ]);
-  const [formData, setFormData] = useState({
-    nomeFantasia: "",
-    cnpj: "",
-    email: "",
-    telefone: "",
-    senha: "",
-    confirmarSenha: "",
-    categorias: [] as string[],
-    cep: "",
-    logradouro: "",
-    numero: "",
-    complemento: "",
-    bairro: "",
-    cidade: "",
-    estado: "",
-    latitude: -23.5505,
-    longitude: -46.6333,
-    beneficiosAniversariante: "",
-    regrasAniversariante: "",
-    validoDia: false,
-    validoSemana: false,
-    validoMes: false,
-    logoUrl: "",
-    telefoneContato: "",
-    emailContato: "",
-    instagram: "",
-  });
-  const [buscandoCep, setBuscandoCep] = useState(false);
-  const chatAssistantRef = useRef<((message: string) => void) | null>(null);
+const MOCK_CEP_DATA = {
+  '01001000': {
+    rua: 'Praça da Sé',
+    bairro: 'Sé',
+    cidade: 'São Paulo',
+    estado: 'SP',
+  },
+};
 
-  // Inicializar monitoramento de comportamento
-  const handleBehaviorTrigger = (trigger: BehaviorTrigger) => {
-    if (chatAssistantRef.current) {
-      chatAssistantRef.current(trigger.message);
-    }
-  };
+const MOCK_CATEGORIES = [
+  'Alimentação', 'Varejo', 'Saúde e Beleza', 'Entretenimento', 
+  'Serviços', 'Educação', 'Automotivo'
+];
 
-  const { trackFieldFocus, trackFieldBlur, trackValidationError, trackServerError } = 
-    useFormBehaviorMonitor(handleBehaviorTrigger, true);
+const mockStandardizeText = (text) => {
+  // Simula a correção gramatical e padronização (ex: capitular, remover excesso de espaços)
+  if (!text) return '';
+  return text.trim().replace(/\s\s+/g, ' ').replace('nao', 'não');
+};
 
-  useEffect(() => {
-    setPageReady(true);
-    
-    // Capturar referral ID da URL
-    const ref = searchParams.get('ref');
-    if (ref) {
-      localStorage.setItem('referral_id', ref);
-      setReferrerId(ref);
-      console.log('Referral ID capturado:', ref);
-    } else {
-      // Tentar recuperar do localStorage
-      const savedRef = localStorage.getItem('referral_id');
-      if (savedRef) {
-        setReferrerId(savedRef);
-      }
-    }
-  }, [searchParams]);
-
-  const buscarCep = async (cep: string) => {
-    const cepLimpo = cep.replace(/\D/g, "");
-    
-    if (cepLimpo.length !== 8) return;
-    
-    setBuscandoCep(true);
-    
-    try {
-      const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
-      const data = await response.json();
-      
-      if (data.erro) {
-      toast({
-        variant: "destructive",
-        title: "CEP não encontrado",
-        description: "Verifique o CEP digitado e tente novamente",
-      });
-      trackValidationError('cep', 'CEP não encontrado');
-      return;
-      }
-      
-      // Geocode address to get coordinates
-      const addressQuery = `${data.logradouro}, ${data.bairro}, ${data.localidade}, ${data.uf}, Brasil`;
-      const geocodeResponse = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(addressQuery)}.json?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`
-      );
-      const geocodeData = await geocodeResponse.json();
-      
-      let lat = -23.5505;
-      let lng = -46.6333;
-      
-      if (geocodeData.features && geocodeData.features.length > 0) {
-        [lng, lat] = geocodeData.features[0].center;
-      }
-      
-      setFormData({
-        ...formData,
-        cep,
-        logradouro: data.logradouro || "",
-        bairro: data.bairro || "",
-        cidade: data.localidade || "",
-        estado: data.uf || "",
-        latitude: lat,
-        longitude: lng,
-      });
-      
-      toast({
-        title: "Endereço encontrado!",
-        description: "Os campos foram preenchidos automaticamente",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao buscar CEP",
-        description: "Não foi possível buscar o endereço. Tente novamente.",
-      });
-    } finally {
-      setBuscandoCep(false);
-    }
-  };
-
-  const diasSemana = [
-    { value: 'segunda', label: 'Segunda' },
-    { value: 'terca', label: 'Terça' },
-    { value: 'quarta', label: 'Quarta' },
-    { value: 'quinta', label: 'Quinta' },
-    { value: 'sexta', label: 'Sexta' },
-    { value: 'sabado', label: 'Sábado' },
-    { value: 'domingo', label: 'Domingo' },
-  ];
-
-  const adicionarHorario = () => {
-    setHorariosFuncionamento([
-      ...horariosFuncionamento,
-      { id: Date.now().toString(), dias: [], abertura: '', fechamento: '' }
-    ]);
-  };
-
-  const removerHorario = (id: string) => {
-    setHorariosFuncionamento(horariosFuncionamento.filter(h => h.id !== id));
-  };
-
-  const atualizarHorario = (id: string, campo: keyof HorarioFuncionamento, valor: any) => {
-    setHorariosFuncionamento(horariosFuncionamento.map(h => 
-      h.id === id ? { ...h, [campo]: valor } : h
-    ));
-  };
-
-  const toggleDia = (horarioId: string, dia: string) => {
-    const horario = horariosFuncionamento.find(h => h.id === horarioId);
-    if (!horario) return;
-
-    const novosDias = horario.dias.includes(dia)
-      ? horario.dias.filter(d => d !== dia)
-      : [...horario.dias, dia];
-
-    atualizarHorario(horarioId, 'dias', novosDias);
-  };
-
-  const formatarHorarios = () => {
-    return horariosFuncionamento
-      .filter(h => h.dias.length > 0 && h.abertura && h.fechamento)
-      .map(h => {
-        const diasFormatados = h.dias
-          .map(d => diasSemana.find(ds => ds.value === d)?.label)
-          .join(', ');
-        return `${diasFormatados}: ${h.abertura} às ${h.fechamento}`;
-      })
-      .join(' | ');
-  };
-
-  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      
-      // Validar tipo de arquivo
-      if (!file.type.startsWith('image/')) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Por favor, selecione um arquivo de imagem válido",
-        });
-        return;
-      }
-      
-      try {
-        toast({
-          title: "Processando imagem...",
-          description: "Ajustando dimensões da imagem",
-        });
-        
-        // Redimensionar imagem antes de salvar
-        const resizedFile = await resizeImage(file, 800, 800, 0.85);
-        setLogoFile(resizedFile);
-        
-        toast({
-          title: "Imagem processada",
-          description: "A imagem foi ajustada com sucesso",
-        });
-      } catch (error) {
-        console.error("Erro ao processar imagem:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Não foi possível processar a imagem",
-        });
-      }
-    }
-  };
-
-  const handleInstagramChange = (value: string) => {
-    // Remove @ se já existir e adiciona de volta
-    const cleanValue = value.replace(/^@/, "");
-    setFormData({ ...formData, instagram: cleanValue });
-  };
-
-
-  const handleEstadoChange = (value: string) => {
-    setFormData({ ...formData, estado: value, cidade: "" });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate core fields with Zod
-    const validationResult = estabelecimentoSchema.safeParse({
-      nomeFantasia: formData.nomeFantasia,
-      cnpj: formData.cnpj,
-      email: formData.email,
-      telefone: formData.telefone,
-      senha: formData.senha,
-      confirmarSenha: formData.confirmarSenha,
-    });
-    
-    if (!validationResult.success) {
-      const errors = validationResult.error.errors;
-      const firstError = errors[0];
-      
-      toast({
-        variant: "destructive",
-        title: "Erro de validação",
-        description: firstError?.message || "Verifique os campos do formulário",
-      });
-      
-      // Rastrear erro de validação
-      if (firstError?.path?.[0]) {
-        trackValidationError(firstError.path[0].toString(), firstError.message);
-      }
-      
-      return;
-    }
-
-    const validatedData = validationResult.data;
-
-    if (formData.categorias.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Selecione pelo menos uma categoria",
-      });
-      return;
-    }
-
-    if (!formData.validoDia && !formData.validoSemana && !formData.validoMes) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Selecione pelo menos um período de validade",
-      });
-      return;
-    }
-
-    const horarioFormatado = formatarHorarios();
-    
-    if (!horarioFormatado) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Configure pelo menos um horário de funcionamento",
-      });
-      return;
-    }
-
-    setUploading(true);
-
-    try {
-      // Verificar se CNPJ já existe
-      const { data: existingCNPJ } = await supabase
-        .from("estabelecimentos")
-        .select("cnpj")
-        .eq("cnpj", validatedData.cnpj)
-        .maybeSingle();
-
-      if (existingCNPJ) {
-        toast({
-          variant: "destructive",
-          title: "CNPJ já cadastrado",
-          description: "Este CNPJ já está cadastrado no sistema",
-        });
-        setUploading(false);
-        return;
-      }
-
-      // Create user account with validated data
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: validatedData.email,
-        password: validatedData.senha,
-        options: {
-          emailRedirectTo: `${window.location.origin}/area-estabelecimento`,
-          data: {
-            nome: validatedData.nomeFantasia,
-          },
-        },
-      });
-
-      if (signUpError) throw signUpError;
-      if (!authData.user) throw new Error("Erro ao criar usuário");
-
-      // Add estabelecimento role
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert({
-          user_id: authData.user.id,
-          role: "estabelecimento",
-        });
-
-      if (roleError) throw roleError;
-
-      let logoUrl = "";
-      
-      // Upload da logo se houver arquivo
-      if (logoFile) {
-        const fileExt = logoFile.name.split('.').pop();
-        const fileName = `${authData.user.id}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('estabelecimento-logos')
-          .upload(fileName, logoFile, {
-            upsert: true
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('estabelecimento-logos')
-          .getPublicUrl(fileName);
-        
-        logoUrl = publicUrl;
-      }
-
-      // Insert establishment data with validated fields
-      const { error: estabError } = await supabase
-        .from("estabelecimentos")
-        .insert({
-          id: authData.user.id,
-          razao_social: validatedData.nomeFantasia,
-          nome_fantasia: validatedData.nomeFantasia,
-          cnpj: validatedData.cnpj,
-          telefone: validatedData.telefone,
-          cep: formData.cep.replace(/\D/g, ""),
-          logradouro: formData.logradouro,
-          numero: formData.numero,
-          complemento: formData.complemento,
-          bairro: formData.bairro,
-          cidade: formData.cidade,
-          estado: formData.estado,
-          latitude: formData.latitude,
-          longitude: formData.longitude,
-          categoria: formData.categorias.length > 0 ? formData.categorias : null,
-          descricao_beneficio: formData.beneficiosAniversariante,
-          logo_url: logoUrl,
-          tem_conta_acesso: true,
-          referred_by_user_id: referrerId || null,
-        });
-
-      if (estabError) throw estabError;
-
-      toast({
-        title: "Sucesso!",
-        description: "Cadastro realizado com sucesso! Verifique seu email para confirmar.",
-      });
-
-      navigate("/login/estabelecimento");
-    } catch (error: any) {
-      console.error("Erro ao cadastrar:", error);
-      
-      // Rastrear erro de servidor
-      if (error.status) {
-        trackServerError(error.status, error.message);
-      }
-      
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: error.message || "Não foi possível cadastrar o estabelecimento. Tente novamente.",
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  if (!pageReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+const formatPhone = (phone) => {
+  const raw = phone.replace(/\D/g, '').substring(0, 11);
+  if (raw.length === 11) { // Celular/WhatsApp
+    return raw.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
   }
+  if (raw.length === 10) { // Fixo
+    return raw.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1) $2-$3');
+  }
+  return raw;
+};
+
+// --- COMPONENTES AUXILIARES ---
+
+const Stepper = ({ currentStep, totalSteps }) => (
+  <div className="flex justify-center gap-2 mb-8">
+    {Array.from({ length: totalSteps }).map((_, index) => (
+      <div
+        key={index}
+        className={`h-2 rounded-full transition-all duration-300 ${
+          index + 1 === currentStep ? 'w-8 bg-gradient-to-r from-violet-600 to-pink-500' : 'w-4 bg-slate-200'
+        }`}
+      />
+    ))}
+  </div>
+);
+
+const BenefitRulesSection = ({ rules, setRules }) => {
+  const [showHelper, setShowHelper] = useState(false);
+  const MAX_CHARS = 200;
+
+  const handleTextChange = (e) => {
+    const text = e.target.value.substring(0, MAX_CHARS);
+    setRules(prev => ({ ...prev, description: text }));
+  };
+
+  const handleStandardize = () => {
+    const standardizedText = mockStandardizeText(rules.description);
+    setRules(prev => ({ ...prev, description: standardizedText }));
+  };
+
+  const setScope = (scope) => {
+    setRules(prev => ({ ...prev, scope }));
+  };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 py-12">
-      <Card className="w-full max-w-3xl">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Crown className="h-12 w-12 text-primary" />
-          </div>
-          <CardTitle className="text-3xl">Cadastro de Estabelecimento</CardTitle>
-          <CardDescription>Cadastre seu negócio e ofereça benefícios para aniversariantes</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-foreground">Dados de Acesso</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    onFocus={() => trackFieldFocus('email')}
-                    onBlur={() => trackFieldBlur('email')}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="telefone">Telefone *</Label>
-                  <Input
-                    id="telefone"
-                    required
-                    value={formData.telefone}
-                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                    onFocus={() => trackFieldFocus('telefone')}
-                    onBlur={() => trackFieldBlur('telefone')}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="senha">Senha *</Label>
-                  <PasswordInput
-                    id="senha"
-                    required
-                    value={formData.senha}
-                    onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
-                    onFocus={() => trackFieldFocus('senha')}
-                    onBlur={() => trackFieldBlur('senha', true)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmarSenha">Confirmar Senha *</Label>
-                  <PasswordInput
-                    id="confirmarSenha"
-                    required
-                    value={formData.confirmarSenha}
-                    onChange={(e) => setFormData({ ...formData, confirmarSenha: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-foreground">Dados do Estabelecimento</h3>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nomeFantasia">Nome Fantasia *</Label>
-                  <Input
-                    id="nomeFantasia"
-                    required
-                    value={formData.nomeFantasia}
-                    onChange={(e) => setFormData({ ...formData, nomeFantasia: e.target.value })}
-                    onFocus={() => trackFieldFocus('nomeFantasia')}
-                    onBlur={() => trackFieldBlur('nomeFantasia')}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="cnpj">CNPJ *</Label>
-                  <Input
-                    id="cnpj"
-                    required
-                    placeholder="00.000.000/0000-00"
-                    maxLength={18}
-                    value={formData.cnpj}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "");
-                      const formatted = value
-                        .replace(/(\d{2})(\d)/, "$1.$2")
-                        .replace(/(\d{3})(\d)/, "$1.$2")
-                        .replace(/(\d{3})(\d)/, "$1/$2")
-                        .replace(/(\d{4})(\d{1,2})$/, "$1-$2");
-                      setFormData({ ...formData, cnpj: formatted });
-                    }}
-                    onFocus={() => trackFieldFocus('cnpj')}
-                    onBlur={() => trackFieldBlur('cnpj', true)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="logo">Logo do Estabelecimento</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="logo"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoChange}
-                      className="flex-1"
-                    />
-                    {logoFile && (
-                      <span className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Upload className="h-4 w-4" />
-                        {logoFile.name}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Formatos aceitos: JPG, PNG, WEBP (max 5MB)</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Categorias (selecione uma ou mais) *</Label>
-                  <div className="grid grid-cols-2 gap-3 p-4 border rounded-md">
-                    {[
-                      { value: "bares", label: "Bares" },
-                      { value: "cafeterias", label: "Cafeterias" },
-                      { value: "casas_noturnas", label: "Casas noturnas" },
-                      { value: "confeitarias", label: "Confeitarias" },
-                      { value: "entretenimento", label: "Entretenimento" },
-                      { value: "farmacias", label: "Farmácias" },
-                      { value: "hoteis_pousadas", label: "Hotéis / pousadas" },
-                      { value: "lojas", label: "Lojas" },
-                      { value: "restaurantes", label: "Restaurantes" },
-                      { value: "servicos", label: "Serviços" },
-                      { value: "sorveterias", label: "Sorveterias" },
-                    ].map((cat) => (
-                      <div key={cat.value} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={cat.value}
-                          checked={formData.categorias.includes(cat.value)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFormData({ ...formData, categorias: [...formData.categorias, cat.value] });
-                            } else {
-                              setFormData({ ...formData, categorias: formData.categorias.filter(c => c !== cat.value) });
-                            }
-                          }}
-                          className="h-4 w-4 rounded border-gray-300 cursor-pointer"
-                        />
-                        <Label htmlFor={cat.value} className="text-sm font-normal cursor-pointer">
-                          {cat.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                  {formData.categorias.length === 0 && (
-                    <p className="text-sm text-muted-foreground">Selecione pelo menos uma categoria</p>
-                  )}
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="text-sm font-semibold flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    Localização
-                  </h4>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="cep">CEP *</Label>
-                    <Input
-                      id="cep"
-                      required
-                      placeholder="00000-000"
-                      maxLength={9}
-                      value={formData.cep}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, "");
-                        const formatted = value.replace(/(\d{5})(\d)/, "$1-$2");
-                        setFormData({ ...formData, cep: formatted });
-                        
-                        if (value.length === 8) {
-                          buscarCep(formatted);
-                        }
-                      }}
-                      disabled={buscandoCep}
-                      onFocus={() => trackFieldFocus('cep')}
-                      onBlur={() => trackFieldBlur('cep', true)}
-                    />
-                    {buscandoCep && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        Buscando endereço...
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="logradouro">Rua/Logradouro *</Label>
-                    <Input
-                      id="logradouro"
-                      required
-                      value={formData.logradouro}
-                      onChange={(e) => setFormData({ ...formData, logradouro: e.target.value })}
-                      placeholder="Ex: Rua das Flores"
-                      onFocus={() => trackFieldFocus('logradouro')}
-                      onBlur={() => trackFieldBlur('logradouro')}
-                    />
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="numero">Número *</Label>
-                      <Input
-                        id="numero"
-                        required
-                        value={formData.numero}
-                        onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
-                        placeholder="Ex: 123"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="complemento">Complemento</Label>
-                      <Input
-                        id="complemento"
-                        value={formData.complemento}
-                        onChange={(e) => setFormData({ ...formData, complemento: e.target.value })}
-                        placeholder="Ex: Sala 101"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="bairro">Bairro *</Label>
-                    <Input
-                      id="bairro"
-                      required
-                      value={formData.bairro}
-                      onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
-                      placeholder="Ex: Centro"
-                    />
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cidade">Cidade *</Label>
-                      <Input
-                        id="cidade"
-                        required
-                        value={formData.cidade}
-                        onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
-                        placeholder="Ex: São Paulo"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="estado">Estado *</Label>
-                      <Select value={formData.estado} onValueChange={handleEstadoChange} required>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o estado" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ESTADOS.map((estado) => (
-                            <SelectItem key={estado.value} value={estado.value}>
-                              {estado.label} ({estado.value})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Localização no Mapa</Label>
-                    <MapboxMap 
-                      latitude={formData.latitude}
-                      longitude={formData.longitude}
-                      onLocationChange={(lat, lng) => {
-                        setFormData({ ...formData, latitude: lat, longitude: lng });
-                      }}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Arraste o marcador para ajustar a localização precisa do estabelecimento
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Horários de Funcionamento *</Label>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      onClick={adicionarHorario}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Adicionar Horário
-                    </Button>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    {horariosFuncionamento.map((horario, index) => (
-                      <Card key={horario.id} className="p-4">
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-sm">Período {index + 1}</h4>
-                            {horariosFuncionamento.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removerHorario(horario.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            )}
-                          </div>
-
-                          <div className="space-y-3">
-                            <Label className="text-sm">Dias da Semana</Label>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                              {diasSemana.map((dia) => (
-                                <div key={dia.value} className="flex items-center space-x-2">
-                                  <input
-                                    type="checkbox"
-                                    id={`${horario.id}-${dia.value}`}
-                                    checked={horario.dias.includes(dia.value)}
-                                    onChange={() => toggleDia(horario.id, dia.value)}
-                                    className="h-4 w-4 rounded border-gray-300"
-                                  />
-                                  <Label 
-                                    htmlFor={`${horario.id}-${dia.value}`}
-                                    className="text-sm font-normal cursor-pointer"
-                                  >
-                                    {dia.label}
-                                  </Label>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor={`abertura-${horario.id}`} className="text-sm">
-                                Horário de Abertura
-                              </Label>
-                              <Input
-                                id={`abertura-${horario.id}`}
-                                type="time"
-                                value={horario.abertura}
-                                onChange={(e) => atualizarHorario(horario.id, 'abertura', e.target.value)}
-                                required
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`fechamento-${horario.id}`} className="text-sm">
-                                Horário de Fechamento
-                              </Label>
-                              <Input
-                                id={`fechamento-${horario.id}`}
-                                type="time"
-                                value={horario.fechamento}
-                                onChange={(e) => atualizarHorario(horario.id, 'fechamento', e.target.value)}
-                                required
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                  
-                  {formatarHorarios() && (
-                    <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                      <strong>Prévia:</strong> {formatarHorarios()}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-foreground">Contatos e Redes Sociais</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="telefoneContato">Telefone de Contato *</Label>
-                  <Input
-                    id="telefoneContato"
-                    required
-                    placeholder="(00) 00000-0000"
-                    value={formData.telefoneContato}
-                    onChange={(e) => setFormData({ ...formData, telefoneContato: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="emailContato">Email de Contato *</Label>
-                  <Input
-                    id="emailContato"
-                    type="email"
-                    required
-                    placeholder="contato@estabelecimento.com"
-                    value={formData.emailContato}
-                    onChange={(e) => setFormData({ ...formData, emailContato: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="instagram">Instagram *</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
-                    <Input
-                      id="instagram"
-                      required
-                      placeholder="seuusuario"
-                      value={formData.instagram}
-                      onChange={(e) => handleInstagramChange(e.target.value)}
-                      className="pl-7"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-foreground">Benefícios</h3>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="beneficiosAniversariante">Benefícios para Aniversariantes *</Label>
-                  <Textarea
-                    id="beneficiosAniversariante"
-                    required
-                    placeholder="Descreva os benefícios que o aniversariante irá ganhar"
-                    value={formData.beneficiosAniversariante}
-                    onChange={(e) => setFormData({ ...formData, beneficiosAniversariante: e.target.value })}
-                    onFocus={() => trackFieldFocus('beneficiosAniversariante')}
-                    onBlur={() => trackFieldBlur('beneficiosAniversariante', true)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="regrasAniversariante">Regras para Aniversariantes *</Label>
-                  <Textarea
-                    id="regrasAniversariante"
-                    required
-                    placeholder="Explique as regras, documentos necessários, número de pessoas, etc."
-                    value={formData.regrasAniversariante}
-                    onChange={(e) => setFormData({ ...formData, regrasAniversariante: e.target.value })}
-                    onFocus={() => trackFieldFocus('regrasAniversariante')}
-                    onBlur={() => trackFieldBlur('regrasAniversariante', true)}
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <Label>Período de Validade do Benefício *</Label>
-                  <p className="text-sm text-muted-foreground mb-2">Selecione quando o benefício pode ser utilizado (pode escolher mais de uma opção)</p>
-                  <div className="space-y-3 border rounded-lg p-4">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="validoDia"
-                        checked={formData.validoDia}
-                        onChange={(e) => setFormData({ ...formData, validoDia: e.target.checked })}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <Label htmlFor="validoDia" className="font-normal cursor-pointer">
-                        Válido no dia do aniversário
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="validoSemana"
-                        checked={formData.validoSemana}
-                        onChange={(e) => setFormData({ ...formData, validoSemana: e.target.checked })}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <Label htmlFor="validoSemana" className="font-normal cursor-pointer">
-                        Válido na semana do aniversário
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="validoMes"
-                        checked={formData.validoMes}
-                        onChange={(e) => setFormData({ ...formData, validoMes: e.target.checked })}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <Label htmlFor="validoMes" className="font-normal cursor-pointer">
-                        Válido no mês do aniversário
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <Button type="submit" className="w-full" disabled={uploading}>
-              {uploading ? "Enviando..." : "Cadastrar Estabelecimento"}
-            </Button>
-            
-            <p className="text-center text-sm text-muted-foreground">
-              Já tem uma conta?{" "}
-              <Link to="/login/estabelecimento" className="text-primary hover:underline">
-                Faça Login
-              </Link>
-            </p>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="border border-violet-200 bg-violet-50 p-4 rounded-xl space-y-3">
+      <h3 className="text-lg font-bold text-violet-800 flex items-center gap-2">
+        <Ruler size={20} /> Regras de Benefício
+      </h3>
       
-      {/* Chatbot Proativo */}
-      <ChatAssistant 
-        onMount={(sendMessage) => {
-          chatAssistantRef.current = sendMessage;
-        }}
-      />
+      <div className="relative">
+        <textarea
+          value={rules.description}
+          onChange={handleTextChange}
+          placeholder="Ex: 10% de desconto em qualquer produto, válido de segunda a sexta."
+          rows="4"
+          className="w-full p-3 border border-violet-300 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none resize-none"
+        />
+        <div className="absolute bottom-2 right-3 text-xs text-slate-500">
+          {rules.description.length} / {MAX_CHARS}
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center text-sm">
+        <button 
+          type="button"
+          onClick={handleStandardize}
+          className="px-3 py-1 bg-violet-200 text-violet-700 rounded-full hover:bg-violet-300 transition-colors flex items-center gap-1 font-semibold"
+        >
+          <CheckCircle size={14} /> Corrigir/Padronizar Texto
+        </button>
+        <button 
+          type="button"
+          onClick={() => setShowHelper(!showHelper)}
+          className="text-slate-500 hover:text-violet-600 flex items-center gap-1"
+        >
+          <Info size={16} /> Ajuda
+        </button>
+      </div>
+
+      {showHelper && (
+        <p className="text-xs text-violet-700 bg-white p-2 rounded-lg border border-violet-200">
+          As regras devem ser claras. Use o botão de padronização para garantir a melhor leitura no App.
+        </p>
+      )}
+
+      {/* Seletor de Escopo */}
+      <div className="pt-2">
+        <label className="block text-sm font-semibold text-violet-800 mb-2">Escopo da Regra</label>
+        <div className="flex gap-2">
+          {['Dia', 'Semana', 'Mês'].map(scope => (
+            <button
+              key={scope}
+              type="button"
+              onClick={() => setScope(scope)}
+              className={`flex-1 py-2 rounded-lg font-semibold transition-colors ${
+                rules.scope === scope 
+                  ? 'bg-gradient-to-r from-violet-600 to-pink-500 text-white shadow-md' 
+                  : 'bg-white text-slate-600 hover:bg-violet-100'
+              }`}
+            >
+              <Calendar size={16} className="inline mr-1" /> {scope}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+// --- COMPONENTE PRINCIPAL ---
+
+export default function EstablishmentRegistration() {
+  const [step, setStep] = useState(1);
+  const [authData, setAuthData] = useState({ email: '', password: '' });
+  const [establishmentData, setEstablishmentData] = useState({
+    cnpj: '',
+    name: '',
+    cep: '',
+    logradouro: '',
+    numero: '',
+    semNumero: false,
+    complemento: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+    isMall: false,
+    categories: [],
+    menuLink: '',
+    siteLink: '', 
+    instagramUser: '', 
+    phoneFixed: '', 
+    phoneWhatsapp: '', 
+    slogan: '', 
+    mainPhotoUrl: 'https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)',
+    hoursText: 'Seg-Sáb: 10h às 22h, Dom: Fechado',
+  });
+  const [rules, setRules] = useState({ description: '', scope: 'Dia' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // --- LÓGICA DE APIs E VALIDAÇÃO (MOCK) ---
+
+  const handleCnpjChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '').substring(0, 14);
+    setEstablishmentData(prev => ({ ...prev, cnpj: value }));
+  };
+
+  const formatCnpj = (cnpj: string) => {
+    if (cnpj.length <= 14) {
+      return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+    }
+    return cnpj;
+  };
+
+  const verifyCnpj = async () => {
+    setLoading(true);
+    setError('');
+    const rawCnpj = establishmentData.cnpj.replace(/\D/g, '');
+
+    if (rawCnpj.length !== 14) {
+      setError('CNPJ deve conter 14 dígitos.');
+      setLoading(false);
+      return;
+    }
+
+    // Simulação de chamada API para verificar CNPJ
+    await new Promise(resolve => setTimeout(resolve, 1000)); 
+
+    const data = MOCK_CNPJ_DATA[rawCnpj];
+    
+    if (data && data.status === 'ATIVA') {
+      setEstablishmentData(prev => ({
+        ...prev,
+        name: data.name,
+        cep: data.cep,
+      }));
+      alert(`CNPJ verificado e confirmado: ${data.name}. Endereço será preenchido pelo CEP.`);
+      if (data.cep) await fetchCep(data.cep);
+    } else {
+      setError('CNPJ não encontrado ou inativo. Por favor, verifique.');
+    }
+    setLoading(false);
+  };
+
+  const fetchCep = async (cepValue) => {
+    const rawCep = cepValue.replace(/\D/g, '').substring(0, 8);
+    setEstablishmentData(prev => ({ ...prev, cep: rawCep }));
+    
+    if (rawCep.length !== 8) return;
+
+    setLoading(true);
+    // Simulação de chamada API CEP
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const data = MOCK_CEP_DATA[rawCep] || {};
+
+    if (data.rua) {
+      setEstablishmentData(prev => ({
+        ...prev,
+        logradouro: data.rua,
+        bairro: data.bairro,
+        cidade: data.cidade,
+        estado: data.estado,
+      }));
+    } else if (rawCep === '01001000') { // Caso de sucesso mockado
+      setEstablishmentData(prev => ({
+        ...prev,
+        logradouro: MOCK_CEP_DATA[rawCep].rua,
+        bairro: MOCK_CEP_DATA[rawCep].bairro,
+        cidade: MOCK_CEP_DATA[rawCep].cidade,
+        estado: MOCK_CEP_DATA[rawCep].estado,
+      }));
+    } else {
+      // Deixa campos vazios para preenchimento manual
+      setEstablishmentData(prev => ({
+        ...prev,
+        logradouro: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+      }));
+    }
+    setLoading(false);
+  };
+
+  const handleCategoryToggle = (category) => {
+    setEstablishmentData(prev => {
+      const isSelected = prev.categories.includes(category);
+      if (isSelected) {
+        return { ...prev, categories: prev.categories.filter(c => c !== category) };
+      } else if (prev.categories.length < 2) {
+        return { ...prev, categories: [...prev.categories, category] };
+      }
+      return prev; // Max 2 categories
+    });
+  };
+  
+  // --- FLUXO DE SUBMISSÃO ---
+
+  const handleAuthSubmit = (e) => {
+    e.preventDefault();
+    if (authData.email && (authData.password || e.currentTarget.name === 'google')) {
+      // Aqui faria a autenticação real com Supabase Auth
+      console.log(`Autenticação de ${authData.email} bem-sucedida!`);
+      setStep(2);
+    } else {
+      setError('Preencha email e senha ou use o Google.');
+    }
+  };
+
+  const handleFinalSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+
+    const rawCnpj = establishmentData.cnpj.replace(/\D/g, '');
+    const isPhoneFilled = establishmentData.phoneFixed || establishmentData.phoneWhatsapp;
+
+    if (rawCnpj.length !== 14 || !establishmentData.logradouro || !establishmentData.cidade || establishmentData.categories.length === 0) {
+      setError('Por favor, preencha todos os campos obrigatórios: CNPJ, Endereço e Categoria.');
+      return;
+    }
+    
+    if (!isPhoneFilled) {
+        setError('Pelo menos um número de contato (Fixo ou WhatsApp) é obrigatório.');
+        return;
+    }
+
+    alert('Cadastro de Estabelecimento finalizado com sucesso! Redirecionando para o pagamento...');
+    console.log({
+      establishment: establishmentData,
+      rules: rules,
+    });
+    // Aqui você enviaria os dados para o Supabase e redirecionaria para o Stripe Checkout
+  };
+
+  // --- RENDERIZAÇÃO POR ETAPA ---
+
+  const renderStep1 = () => (
+    <form onSubmit={handleAuthSubmit} className="space-y-6">
+      <h2 className="text-2xl font-bold text-slate-800 text-center">Cadastre o seu estabelecimento</h2>
+      <p className="text-slate-500 text-center">Crie suas credenciais e complete os dados da sua empresa.</p>
+
+      {/* Login Google */}
+      <button 
+        type="button"
+        name="google"
+        onClick={handleAuthSubmit}
+        className="w-full py-3 bg-white border border-slate-300 text-slate-700 rounded-xl flex items-center justify-center gap-3 font-semibold hover:bg-slate-50 transition-colors"
+      >
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/48px-Google_%22G%22_logo.svg.png" alt="Google Logo" className="w-5 h-5" />
+        Continuar com Google
+      </button>
+
+      <div className="flex items-center">
+        <hr className="flex-1 border-slate-200" />
+        <span className="px-3 text-slate-400 text-sm">OU</span>
+        <hr className="flex-1 border-slate-200" />
+      </div>
+
+      {/* Login Email/Senha */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
+        <div className="relative">
+          <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input 
+            type="email" 
+            value={authData.email}
+            onChange={(e) => setAuthData(prev => ({ ...prev, email: e.target.value }))}
+            className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 focus:border-violet-500 outline-none"
+            required
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Senha</label>
+        <div className="relative">
+          <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input 
+            type="password" 
+            value={authData.password}
+            onChange={(e) => setAuthData(prev => ({ ...prev, password: e.target.value }))}
+            className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 focus:border-violet-500 outline-none"
+            required
+          />
+        </div>
+      </div>
+      
+      {error && <div className="p-3 bg-rose-50 text-rose-600 rounded-lg text-sm">{error}</div>}
+
+      <button 
+        type="submit" 
+        className="w-full bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-300/50"
+      >
+        Próxima Etapa <ArrowRight size={20} />
+      </button>
+    </form>
+  );
+
+  const renderStep2 = () => (
+    <form onSubmit={handleFinalSubmit} className="space-y-8">
+      <div className="flex justify-between items-center border-b pb-4 mb-4">
+        <button 
+            type="button" 
+            onClick={() => setStep(1)}
+            className="text-slate-500 hover:text-violet-600 flex items-center gap-1"
+        >
+            <ChevronLeft size={20} /> Voltar
+        </button>
+        <h2 className="text-2xl font-bold text-slate-800">Dados do Estabelecimento</h2>
+      </div>
+
+      {error && <div className="p-3 bg-rose-50 text-rose-600 rounded-lg text-sm mb-4">{error}</div>}
+
+      {/* 1. CNPJ e Nome */}
+      <div className="p-6 bg-white rounded-xl shadow-md border border-slate-100 space-y-4">
+        <h3 className="text-xl font-semibold text-slate-700 flex items-center gap-2"><Building2 size={20} /> Informações Básicas</h3>
+        
+        {/* CNPJ Input */}
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 mb-1 block">CNPJ (Apenas números) *</span>
+          <div className="flex gap-3">
+            <input 
+              type="text" 
+              value={formatCnpj(establishmentData.cnpj)}
+              onChange={handleCnpjChange}
+              onBlur={verifyCnpj}
+              maxLength={18}
+              className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              placeholder="00.000.000/0000-00"
+              disabled={loading}
+              required
+            />
+            <button 
+              type="button"
+              onClick={verifyCnpj}
+              disabled={loading || establishmentData.cnpj.replace(/\D/g, '').length !== 14}
+              className="px-6 py-3 bg-gradient-to-r from-violet-600 to-pink-500 text-white rounded-xl font-semibold hover:from-violet-700 hover:to-pink-600 disabled:opacity-50 transition-all flex items-center gap-2"
+            >
+              {loading ? 'Verificando...' : 'Verificar'}
+            </button>
+          </div>
+          {establishmentData.name && (
+            <p className="mt-2 text-sm text-emerald-600 font-semibold flex items-center gap-1">
+              <CheckCircle size={16} /> Confirmado: {establishmentData.name}
+            </p>
+          )}
+        </label>
+        
+        {/* Nome e Slogan */}
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 mb-1 block">Nome da Empresa (Receita Federal)</span>
+          <input 
+            type="text" 
+            value={establishmentData.name}
+            readOnly
+            className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-xl outline-none"
+            placeholder="Preenchido automaticamente após CNPJ"
+          />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 mb-1 block">Slogan/Descrição Curta (Máx. 50 Caracteres)</span>
+          <input 
+            type="text" 
+            value={establishmentData.slogan}
+            onChange={(e) => setEstablishmentData(prev => ({ ...prev, slogan: e.target.value.substring(0, 50) }))}
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+            placeholder="Ex: O melhor açaí da cidade!"
+          />
+        </label>
+      </div>
+      
+      {/* 2. CONTATO E REDES SOCIAIS */}
+      <div className="p-6 bg-white rounded-xl shadow-md border border-slate-100 space-y-4">
+        <h3 className="text-xl font-semibold text-slate-700 flex items-center gap-2"><Phone size={20} /> Contato e Redes</h3>
+        <p className="text-sm text-slate-500 flex items-center gap-1">
+            <Info size={16} className="text-violet-500" /> Pelo menos um telefone (Fixo ou WhatsApp) é obrigatório.
+        </p>
+        
+        {/* Telefone Fixo */}
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 mb-1 block">Telefone Fixo (Opcional)</span>
+          <div className="relative">
+            <Phone size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              value={formatPhone(establishmentData.phoneFixed)} 
+              onChange={(e) => setEstablishmentData(prev => ({ ...prev, phoneFixed: e.target.value.replace(/\D/g, '') }))}
+              maxLength={14}
+              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              placeholder="(XX) XXXX-XXXX"
+            />
+          </div>
+        </label>
+
+        {/* Telefone WhatsApp */}
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 mb-1 block">WhatsApp (Opcional)</span>
+          <div className="relative">
+            <MessageSquare size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              value={formatPhone(establishmentData.phoneWhatsapp)} 
+              onChange={(e) => setEstablishmentData(prev => ({ ...prev, phoneWhatsapp: e.target.value.replace(/\D/g, '') }))}
+              maxLength={15}
+              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              placeholder="(XX) 9XXXX-XXXX"
+            />
+          </div>
+        </label>
+
+        <hr className="border-slate-100 my-4" />
+
+        {/* Site/Website */}
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 mb-1 block">Website Principal (Opcional - Exibido na Info)</span>
+          <div className="relative">
+            <Globe size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="url" 
+              value={establishmentData.siteLink} 
+              onChange={(e) => setEstablishmentData(prev => ({ ...prev, siteLink: e.target.value }))}
+              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              placeholder="https://www.suaempresa.com.br"
+            />
+            <p className="mt-1 text-xs text-slate-500">Este link aparecerá na seção 'Informações' do Card.</p>
+          </div>
+        </label>
+
+        {/* Instagram */}
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 mb-1 block">Instagram (Opcional)</span>
+          <div className="relative">
+            <Instagram size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <div className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-600 font-semibold">@</div>
+            <input 
+              type="text" 
+              value={establishmentData.instagramUser} 
+              onChange={(e) => setEstablishmentData(prev => ({ ...prev, instagramUser: e.target.value.replace('@', '') }))}
+              className="w-full pl-16 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              placeholder="seuusuário"
+            />
+          </div>
+        </label>
+      </div>
+      
+      {/* 3. Endereço */}
+      <div className="p-6 bg-white rounded-xl shadow-md border border-slate-100 space-y-4">
+        <h3 className="text-xl font-semibold text-slate-700 flex items-center gap-2"><MapPin size={20} /> Endereço</h3>
+        
+        {/* CEP Input */}
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 mb-1 block">CEP *</span>
+          <input 
+            type="text" 
+            value={establishmentData.cep}
+            onChange={(e) => fetchCep(e.target.value)}
+            maxLength={8}
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+            placeholder="00000000"
+            disabled={loading}
+            required
+          />
+        </label>
+
+        {/* Campos Auto-Preenchidos */}
+        <div className="grid grid-cols-2 gap-4">
+          <label className="col-span-2 md:col-span-1">
+            <span className="text-sm font-medium text-slate-700 mb-1 block">Estado *</span>
+            <input type="text" value={establishmentData.estado} readOnly className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-xl" />
+          </label>
+          <label className="col-span-2 md:col-span-1">
+            <span className="text-sm font-medium text-slate-700 mb-1 block">Cidade *</span>
+            <input type="text" value={establishmentData.cidade} readOnly className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-xl" />
+          </label>
+        </div>
+
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 mb-1 block">Rua/Avenida *</span>
+          <input 
+            type="text" 
+            value={establishmentData.logradouro} 
+            onChange={(e) => setEstablishmentData(prev => ({ ...prev, logradouro: e.target.value }))}
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+            required
+          />
+        </label>
+        
+        {/* Número e Sem Número */}
+        <div className="flex gap-4 items-end">
+          <label className="flex-1">
+            <span className="text-sm font-medium text-slate-700 mb-1 block">Número *</span>
+            <input 
+              type="text" 
+              value={establishmentData.numero} 
+              onChange={(e) => setEstablishmentData(prev => ({ ...prev, numero: e.target.value.replace(/\D/g, '') }))}
+              disabled={establishmentData.semNumero}
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none disabled:bg-slate-100"
+              required={!establishmentData.semNumero}
+            />
+          </label>
+          <button 
+            type="button"
+            onClick={() => setEstablishmentData(prev => ({ ...prev, semNumero: !prev.semNumero, numero: '' }))}
+            className={`py-3 px-4 rounded-xl font-semibold transition-colors ${
+              establishmentData.semNumero 
+                ? 'bg-emerald-600 text-white' 
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            Sem Número
+          </button>
+        </div>
+
+        {/* Complemento e Shopping */}
+        <div className="grid grid-cols-2 gap-4">
+          <label className="col-span-2 md:col-span-1">
+            <span className="text-sm font-medium text-slate-700 mb-1 block">Complemento (Opcional)</span>
+            <input 
+              type="text" 
+              value={establishmentData.complemento} 
+              onChange={(e) => setEstablishmentData(prev => ({ ...prev, complemento: e.target.value }))}
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+            />
+          </label>
+          
+          <div className="col-span-2 md:col-span-1 flex items-end">
+            <button
+              type="button"
+              onClick={() => setEstablishmentData(prev => ({ ...prev, isMall: !prev.isMall }))}
+              className={`w-full py-3 px-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 ${
+                establishmentData.isMall 
+                  ? 'bg-gradient-to-r from-violet-600 to-pink-500 text-white shadow-md' 
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <ShoppingBag size={20} /> Localizado em Shopping?
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Categorias e Links */}
+      <div className="p-6 bg-white rounded-xl shadow-md border border-slate-100 space-y-4">
+        <h3 className="text-xl font-semibold text-slate-700 flex items-center gap-2"><MapPin size={20} /> Categorias e Links</h3>
+        
+        {/* Seleção de Categoria */}
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 mb-1 block">Categoria (Selecione até 2) *</span>
+          <div className="flex flex-wrap gap-2">
+            {MOCK_CATEGORIES.map(category => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => handleCategoryToggle(category)}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                  establishmentData.categories.includes(category) 
+                    ? 'bg-gradient-to-r from-violet-600 to-pink-500 text-white shadow-md' 
+                    : 'bg-slate-100 text-slate-700 hover:bg-violet-100'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+          {establishmentData.categories.length === 2 && (
+             <p className="mt-2 text-xs text-slate-500">Máximo de 2 categorias selecionadas.</p>
+          )}
+        </label>
+
+        {/* Link Cardápio Digital */}
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 mb-1 block">Link do Cardápio Digital (Opcional - Exibido no Card)</span>
+          <div className="relative">
+             <Link size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="url" 
+              value={establishmentData.menuLink} 
+              onChange={(e) => setEstablishmentData(prev => ({ ...prev, menuLink: e.target.value }))}
+              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              placeholder="https://linkdocardapio.com.br"
+            />
+             <p className="mt-1 text-xs text-slate-500">Este link é acessível diretamente pelo cliente no Card principal.</p>
+          </div>
+        </label>
+      </div>
+      
+      {/* 5. Imagem e Horário */}
+      <div className="p-6 bg-white rounded-xl shadow-md border border-slate-100 space-y-4">
+        <h3 className="text-xl font-semibold text-slate-700 flex items-center gap-2"><Image size={20} /> Imagem e Horário</h3>
+        
+        {/* Horário de Funcionamento */}
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 mb-1 block">Horário de Funcionamento (Puxado do Google/Opção de Correção)</span>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 px-4 py-3 border border-slate-200 bg-slate-50 rounded-xl text-slate-600 font-medium flex items-center gap-2">
+               <Clock size={18} /> {establishmentData.hoursText}
+            </div>
+            <button 
+              type="button"
+              onClick={() => alert('Abrir modal para edição manual do horário de funcionamento.')}
+              className="px-4 py-3 bg-slate-100 text-violet-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center gap-2"
+            >
+              <RefreshCw size={18} /> Editar
+            </button>
+          </div>
+        </label>
+
+        {/* Foto Principal */}
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 mb-1 block">Foto Principal (Padrão 16:9 - Melhor Qualidade para o Card)</span>
+          <div className="relative border-4 border-dashed border-violet-200 rounded-xl overflow-hidden h-40 flex items-center justify-center bg-slate-50">
+            <img 
+              src={establishmentData.mainPhotoUrl} 
+              alt="Foto Principal" 
+              className="absolute inset-0 w-full h-full object-cover opacity-80" 
+            />
+            <button
+              type="button"
+              onClick={() => alert('Abrir uploader de imagens com crop para 16:9.')}
+              className="relative z-10 bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 text-white px-4 py-2 rounded-lg font-semibold shadow-lg backdrop-blur-sm flex items-center gap-2"
+            >
+              <Image size={20} /> Trocar Foto
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-slate-500 flex items-center gap-1">
+             <Info size={14} /> Utilize imagens nítidas, paisagens (horizontal) no formato 16:9 para um Card bonito.
+          </p>
+        </label>
+      </div>
+      
+      {/* 6. Regras de Benefício */}
+      <BenefitRulesSection rules={rules} setRules={setRules} />
+      
+      {/* Botão Final */}
+      <button 
+        type="submit" 
+        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xl shadow-lg shadow-emerald-200"
+      >
+        Finalizar Cadastro e Assinar Plano <ChevronRight size={24} />
+      </button>
+    </form>
+  );
+
+
+  // --- LAYOUT ---
+  return (
+    <div className="min-h-screen bg-slate-50 p-4 sm:p-8 font-sans">
+      <div className="max-w-3xl mx-auto bg-white p-6 sm:p-10 rounded-3xl shadow-xl">
+        <Stepper currentStep={step} totalSteps={2} />
+        
+        {step === 1 ? renderStep1() : renderStep2()}
+      </div>
     </div>
   );
 }

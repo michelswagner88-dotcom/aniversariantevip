@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CookieConsent } from "@/components/CookieConsent";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Loader2 } from "lucide-react";
+import ChatAssistant from "@/components/ChatAssistant";
 import Index from "./pages/Index";
 import CadastroAniversariante from "./pages/CadastroAniversariante";
 import LoginAniversariante from "./pages/LoginAniversariante";
@@ -50,6 +51,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <ChatAssistant />
         <BrowserRouter>
           <Suspense fallback={<LoadingScreen />}>
             <Routes>

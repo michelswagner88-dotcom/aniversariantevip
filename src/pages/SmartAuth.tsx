@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mail, Lock, User, Phone, ArrowRight, AlertCircle, CheckCircle2, Loader2, Calendar } from 'lucide-react';
+import { Mail, Lock, User, Phone, ArrowRight, AlertCircle, CheckCircle2, Loader2, Calendar, MapPin, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { isValidCPF } from '@/lib/validation';
+import { useCepLookup } from '@/hooks/useCepLookup';
 import ChatAssistant from '@/components/ChatAssistant';
 import { useFormBehaviorMonitor } from '@/hooks/useFormBehaviorMonitor';
 import { BackButton } from '@/components/BackButton';
@@ -44,7 +45,16 @@ const SmartAuth = () => {
     password: '',
     cpf: '', 
     dataNascimento: '',
+    cep: '',
+    logradouro: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
   });
+
+  const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
 
   const [rememberMe, setRememberMe] = useState(true); // Manter conectado por padrão
 
@@ -153,6 +163,29 @@ const SmartAuth = () => {
     if (cleanCPF.length === 11 && !isValidCPF(cleanCPF)) {
       trackValidationError('cpf', 'CPF inválido');
     }
+  };
+
+  // Buscar CEP
+  const handleCepBlur = async () => {
+    const cleanCep = formData.cep.replace(/\D/g, '');
+    if (cleanCep.length === 8) {
+      const data = await fetchCep(cleanCep);
+      if (data) {
+        setFormData(prev => ({
+          ...prev,
+          logradouro: data.logradouro,
+          bairro: data.bairro,
+          cidade: data.localidade,
+          estado: data.uf,
+        }));
+      }
+    }
+  };
+
+  // Máscara de CEP
+  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCep(e.target.value);
+    setFormData({ ...formData, cep: formatted });
   };
 
   // Lógica: LOGIN via E-mail
@@ -364,6 +397,13 @@ const SmartAuth = () => {
           cpf: cpfClean,
           telefone: telefone,
           data_nascimento: formData.dataNascimento,
+          cep: formData.cep.replace(/\D/g, ''),
+          logradouro: formData.logradouro,
+          numero: formData.numero,
+          complemento: formData.complemento,
+          bairro: formData.bairro,
+          cidade: formData.cidade,
+          estado: formData.estado,
         });
 
       if (insertError) throw insertError;
@@ -421,7 +461,7 @@ const SmartAuth = () => {
             <p className="mt-1 text-sm text-slate-400">
               {step === 1 
                 ? (isLogin ? 'Entre na sua conta VIP.' : 'Crie sua conta gratuita para acessar benefícios.') 
-                : 'Informe seu CPF e data de nascimento para validar sua identidade VIP.'}
+                : 'Complete seu cadastro com CPF, endereço e telefone para validar sua identidade VIP.'}
             </p>
           </div>
 
@@ -609,6 +649,82 @@ const SmartAuth = () => {
                   onFocus={() => trackFieldFocus('dataNascimento')}
                   onBlur={() => trackFieldBlur('dataNascimento', false)}
                 />
+
+                {/* CEP */}
+                <div>
+                  <InputGroup 
+                    icon={MapPin} label="CEP" placeholder="00000-000" required
+                    value={formData.cep} 
+                    onChange={handleCepChange}
+                    onBlur={handleCepBlur}
+                    disabled={cepLoading}
+                    onFocus={() => trackFieldFocus('cep')}
+                  />
+                  {cepLoading && (
+                    <div className="mb-4 flex items-center gap-2 text-xs text-slate-400">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Buscando endereço...
+                    </div>
+                  )}
+                </div>
+
+                {/* Endereço (auto-preenchido quando CEP é válido) */}
+                {formData.logradouro && (
+                  <>
+                    <InputGroup 
+                      icon={Home} label="Logradouro" placeholder="Rua, Avenida..." 
+                      value={formData.logradouro} 
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, logradouro: e.target.value})}
+                      disabled
+                    />
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Número</label>
+                        <input
+                          placeholder="123"
+                          value={formData.numero} 
+                          onChange={(e) => setFormData({...formData, numero: e.target.value})}
+                          className="w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Complemento</label>
+                        <input
+                          placeholder="Apto 101"
+                          value={formData.complemento} 
+                          onChange={(e) => setFormData({...formData, complemento: e.target.value})}
+                          className="w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10"
+                        />
+                      </div>
+                    </div>
+                    <InputGroup 
+                      icon={MapPin} label="Bairro" 
+                      value={formData.bairro} 
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, bairro: e.target.value})}
+                      disabled
+                    />
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Cidade</label>
+                        <input
+                          value={formData.cidade} 
+                          onChange={(e) => setFormData({...formData, cidade: e.target.value})}
+                          disabled
+                          className="w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none opacity-60 cursor-not-allowed"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Estado</label>
+                        <input
+                          value={formData.estado} 
+                          onChange={(e) => setFormData({...formData, estado: e.target.value})}
+                          disabled
+                          className="w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none opacity-60 cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
                 
                 {error && (
                   <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400">

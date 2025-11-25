@@ -1,6 +1,17 @@
 import { z } from "zod";
 
-// Helper function to validate CPF
+// ==================== SANITIZAÇÃO XSS ====================
+export const sanitizeInput = (input: string): string => {
+  return input
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;')
+    .trim();
+};
+
+// ==================== VALIDAÇÃO DE CPF ====================
 export const isValidCPF = (cpf: string): boolean => {
   const cleaned = cpf.replace(/\D/g, '');
   
@@ -31,8 +42,8 @@ export const isValidCPF = (cpf: string): boolean => {
   return true;
 };
 
-// Helper function to validate CNPJ
-const isValidCNPJ = (cnpj: string): boolean => {
+// ==================== VALIDAÇÃO DE CNPJ ====================
+export const isValidCNPJ = (cnpj: string): boolean => {
   const cleaned = cnpj.replace(/\D/g, '');
   
   // Check if has 14 digits
@@ -87,6 +98,27 @@ export const cpfSchema = z.string()
     { message: "CPF inválido" }
   )
   .transform((value) => value.replace(/\D/g, '')); // Store only digits
+
+// ==================== SCHEMAS ADICIONAIS ====================
+
+export const emailSchema = z.string()
+  .trim()
+  .email({ message: 'Email inválido' })
+  .max(255, 'Email muito longo')
+  .toLowerCase();
+
+export const passwordSchema = z.string()
+  .min(8, 'Senha deve ter no mínimo 8 caracteres')
+  .max(72, 'Senha muito longa')
+  .regex(/[A-Z]/, 'Senha deve conter pelo menos uma letra maiúscula')
+  .regex(/[a-z]/, 'Senha deve conter pelo menos uma letra minúscula')
+  .regex(/[0-9]/, 'Senha deve conter pelo menos um número');
+
+export const nameSchema = z.string()
+  .trim()
+  .min(3, 'Nome deve ter no mínimo 3 caracteres')
+  .max(100, 'Nome muito longo')
+  .transform(sanitizeInput);
 
 // CNPJ validation schema - accepts either formatted or raw (14 digits)
 export const cnpjSchema = z.string()

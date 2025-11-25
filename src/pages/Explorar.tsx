@@ -85,10 +85,10 @@ const PlaceCard = ({ place }: any) => {
         <h3 className="font-plus-jakarta text-xl font-bold text-white leading-tight">{place.name}</h3>
         <div className="mt-1.5 flex items-center gap-1.5 text-sm text-slate-300">
           <MapPin size={14} className="text-violet-400" /> 
-          <span>{place.location}</span>
+          <span>{place.neighborhood} • {place.distance}</span>
         </div>
         {/* Badge Benefício - DESTAQUE MÁXIMO */}
-        <div className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 shadow-2xl shadow-violet-500/30">
+        <div className="mt-4 inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 shadow-2xl shadow-violet-500/30">
           <span className="text-lg font-extrabold text-white">
             🎁 Ver Benefício 🔒
           </span>
@@ -118,22 +118,22 @@ const Explorar = () => {
   // Nota: Adicionei o campo 'validDays' para simular os dias que o benefício vale
   const allPlaces = [
     { 
-      id: 1, name: "1929 Trattoria", category: "Gastronomia", location: "Goiânia, GO", benefit: "Sobremesa Exclusiva", isOpen: true, 
+      id: 1, name: "1929 Trattoria", category: "Gastronomia", neighborhood: "Centro", distance: "2km", benefit: "Sobremesa Exclusiva", isOpen: true, 
       validDays: ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'], // Vale todo dia
       image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80" 
     },
     { 
-      id: 2, name: "Boteco Cascaes", category: "Bares", location: "Florianópolis, SC", benefit: "Drink Autoral Grátis", isOpen: false, 
+      id: 2, name: "Boteco Cascaes", category: "Bares", neighborhood: "Lagoa", distance: "5km", benefit: "Drink Autoral Grátis", isOpen: false, 
       validDays: ['sex', 'sab', 'dom'], // Só fim de semana
       image: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80" 
     },
     { 
-      id: 3, name: "Barbearia VIP", category: "Serviços", location: "São Paulo, SP", benefit: "Corte + Cerveja", isOpen: true, 
+      id: 3, name: "Barbearia VIP", category: "Serviços", neighborhood: "Trindade", distance: "1.2km", benefit: "Corte + Cerveja", isOpen: true, 
       validDays: ['ter', 'qua', 'qui'], // Dias de movimento fraco
       image: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80" 
     },
     { 
-      id: 4, name: "Cinemark", category: "Lazer", location: "Rio de Janeiro, RJ", benefit: "Combo Pipoca P", isOpen: true, 
+      id: 4, name: "Cinemark", category: "Lazer", neighborhood: "Beiramar", distance: "3.5km", benefit: "Combo Pipoca P", isOpen: true, 
       validDays: ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'],
       image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80" 
     },

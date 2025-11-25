@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Search, SlidersHorizontal, Map as MapIcon, List, X, Check, Clock, Gift, Share2, Heart, CalendarDays } from 'lucide-react';
+import { MapPin, Search, SlidersHorizontal, Map as MapIcon, List, X, Check, Clock, Gift, Share2, Heart, CalendarDays, Navigation } from 'lucide-react';
 import { toast } from "sonner";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { useCepLookup } from "@/hooks/useCepLookup";
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick }: any) => (
@@ -101,18 +103,47 @@ const PlaceCard = ({ place }: any) => {
 const Explorar = () => {
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [showFilters, setShowFilters] = useState(false);
-  const [location, setLocation] = useState("Carregando...");
   const [activeCategory, setActiveCategory] = useState("Todos");
+  const [showCepInput, setShowCepInput] = useState(false);
+  const [cepValue, setCepValue] = useState("");
+
+  // --- HOOKS ---
+  const { location, loading: geoLoading, error: geoError, setManualLocation } = useGeolocation();
+  const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
 
   // --- ESTADOS DOS FILTROS ---
   const [filterOpenNow, setFilterOpenNow] = useState(false);
   const [filterDay, setFilterDay] = useState("any"); // 'any', 'seg', 'ter', etc.
   const [filterValidity, setFilterValidity] = useState("month");
 
+  // Mostrar input de CEP se houver erro de geolocalização
   useEffect(() => {
-    const timer = setTimeout(() => setLocation("Florianópolis, SC"), 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (geoError && !location) {
+      setShowCepInput(true);
+    }
+  }, [geoError, location]);
+
+  const handleCepSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const data = await fetchCep(cepValue);
+    if (data) {
+      setManualLocation(data.localidade, data.uf);
+      setShowCepInput(false);
+      setCepValue("");
+    }
+  };
+
+  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCep(e.target.value);
+    setCepValue(formatted);
+  };
+
+  const displayLocation = location 
+    ? `${location.cidade}, ${location.estado}` 
+    : geoLoading 
+    ? "Detectando localização..." 
+    : "Localização não disponível";
 
   // --- DADOS MOCKADOS (Simulando Banco de Dados) ---
   const allPlaces = [
@@ -159,6 +190,70 @@ const Explorar = () => {
       {/* Header com Busca por Voz */}
       <div className="sticky top-0 z-40 border-b border-white/5 bg-slate-950/90 py-4 backdrop-blur-xl">
         <VoiceSearchBar />
+
+        {/* Banner de Localização com CEP */}
+        {showCepInput && (
+          <div className="container mx-auto px-6 mt-3 animate-in slide-in-from-top duration-300">
+            <div className="rounded-2xl border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-amber-500/10 p-4">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-orange-500/20 p-2 shrink-0">
+                  <MapPin size={20} className="text-orange-400" />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <h4 className="font-bold text-white text-sm">Não conseguimos detectar sua localização</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">Digite seu CEP para encontrar benefícios perto de você</p>
+                  </div>
+                  
+                  <form onSubmit={handleCepSubmit} className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={cepValue}
+                        onChange={handleCepChange}
+                        placeholder="00000-000"
+                        maxLength={9}
+                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white placeholder:text-slate-500 focus:border-violet-500/50 focus:bg-white/10 focus:outline-none transition-colors"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={cepLoading || cepValue.replace(/\D/g, '').length !== 8}
+                      className="rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-500/20 transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {cepLoading ? "Buscando..." : "Buscar"}
+                    </button>
+                  </form>
+
+                  <button
+                    onClick={() => setShowCepInput(false)}
+                    className="text-xs text-slate-400 hover:text-white transition-colors"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mostrar localização atual + botão CEP alternativo */}
+        {location && !showCepInput && (
+          <div className="container mx-auto px-6 mt-3">
+            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-2.5">
+              <div className="flex items-center gap-2">
+                <Navigation size={14} className="text-violet-400" />
+                <span className="text-sm font-medium text-white">{displayLocation}</span>
+              </div>
+              <button
+                onClick={() => setShowCepInput(true)}
+                className="text-xs font-medium text-violet-400 hover:text-violet-300 transition-colors"
+              >
+                Alterar CEP
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Pílulas de Categoria */}
         <div className="container mx-auto px-6 mt-4 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">

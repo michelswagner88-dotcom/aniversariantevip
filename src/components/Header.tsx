@@ -128,7 +128,7 @@ export const Header = () => {
                   asChild
                   className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white rounded-full px-6"
                 >
-                  <Link to="/login/aniversariante">Entrar</Link>
+                  <Link to="/selecionar-perfil">Entrar</Link>
                 </Button>
               </>
             )}
@@ -215,7 +215,7 @@ export const Header = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className="justify-start bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 text-white"
                   >
-                    <Link to="/login/aniversariante">Entrar</Link>
+                    <Link to="/selecionar-perfil">Entrar</Link>
                   </Button>
                 </>
               )}

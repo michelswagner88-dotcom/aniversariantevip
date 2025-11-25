@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Search, Phone, Clock, ExternalLink, Heart, Sparkles, Instagram, Globe, Share2, Navigation } from "lucide-react";
+import { MapPin, Search, Phone, Clock, ExternalLink, Heart, Sparkles, Instagram, Globe, Share2, Navigation, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -121,6 +121,13 @@ const Index = () => {
     }
   };
 
+  const limparFiltros = () => {
+    setSelectedEstado("");
+    setSelectedCidade("");
+    setSelectedCategoria("todas");
+    setSearchTerm("");
+  };
+
   // Filtros
   const estabelecimentosFiltrados = estabelecimentos.filter((est) => {
     const matchesSearch = !searchTerm || est.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
@@ -206,7 +213,7 @@ const Index = () => {
               }}
             >
               {/* Desktop Layout */}
-              <div className="hidden sm:grid sm:grid-cols-[1fr_auto_1fr_auto_1fr_auto] gap-3 items-center">
+              <div className="hidden sm:grid sm:grid-cols-[1fr_auto_1fr_auto_1fr_auto_auto_auto] gap-3 items-center">
                 <div className="flex items-center gap-3 px-4">
                   <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedEstado} onValueChange={(value) => {
@@ -266,6 +273,18 @@ const Index = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Separador Vertical (Cristal) */}
+                <div className="h-8 w-[1px] bg-white/10" />
+
+                <Button 
+                  size="lg"
+                  variant="ghost"
+                  onClick={limparFiltros}
+                  className="text-slate-400 hover:text-white hover:bg-white/5 h-12 px-4 rounded-xl"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
 
                 <Button 
                   size="lg"
@@ -332,7 +351,17 @@ const Index = () => {
                   </Select>
                 </div>
 
-                <div className="p-3">
+                <div className="p-3 space-y-2">
+                  <Button 
+                    size="lg"
+                    variant="ghost"
+                    onClick={limparFiltros}
+                    className="text-slate-400 hover:text-white hover:bg-white/5 h-12 rounded-xl w-full"
+                  >
+                    <X className="w-5 h-5 mr-2" />
+                    Limpar filtros
+                  </Button>
+                  
                   <Button 
                     size="lg"
                     onClick={() => navigate("/explorar")}

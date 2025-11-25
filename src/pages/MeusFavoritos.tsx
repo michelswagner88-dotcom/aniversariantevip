@@ -115,10 +115,10 @@ const MeusFavoritos = () => {
   };
 
   const getCategoriaLabel = (categoria: string | string[] | null) => {
-    if (!categoria) return "Outros";
+    if (!categoria) return "🏪 Outros";
     const cat = Array.isArray(categoria) ? categoria[0] : categoria;
     const found = CATEGORIAS_ESTABELECIMENTO.find(c => c.value === cat);
-    return found?.label || "Outros";
+    return found ? `${found.icon} ${found.label}` : "🏪 Outros";
   };
 
   const openGoogleMaps = (endereco: string | null) => {

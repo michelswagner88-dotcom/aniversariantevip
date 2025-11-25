@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 
 interface Estabelecimento {
   id: string;
@@ -175,7 +176,11 @@ export default function EstabelecimentoDetalhes() {
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 space-y-2">
                 <Badge variant="secondary" className="bg-white/10 backdrop-blur-md border-white/20 text-white">
-                  {estabelecimento.categoria?.[0] || "Estabelecimento"}
+                  {(() => {
+                    const cat = estabelecimento.categoria?.[0];
+                    const found = CATEGORIAS_ESTABELECIMENTO.find(c => c.value === cat);
+                    return found ? `${found.icon} ${found.label}` : "🏪 Estabelecimento";
+                  })()}
                 </Badge>
                 <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
                   {estabelecimento.nome_fantasia}

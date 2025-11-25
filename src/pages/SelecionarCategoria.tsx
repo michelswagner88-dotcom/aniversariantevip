@@ -35,8 +35,9 @@ const SelecionarCategoria = () => {
                 onClick={() => handleCategoriaClick(categoria.value)}
               >
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    {categoria.label}
+                  <CardTitle className="flex items-center justify-between gap-3">
+                    <span className="text-3xl">{categoria.icon}</span>
+                    <span className="flex-1">{categoria.label}</span>
                     <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                   </CardTitle>
                   <CardDescription>

@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { resizeImage } from "@/lib/imageUtils";
 import { cnpjSchema } from "@/lib/validation";
+import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 
 type HorarioFuncionamento = {
   id: string;
@@ -363,19 +364,7 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
             <div className="space-y-2">
               <Label>Categorias (selecione uma ou mais)</Label>
               <div className="grid grid-cols-2 gap-3 p-4 border rounded-md">
-                {[
-                  { value: "bares", label: "Bares" },
-                  { value: "cafeterias", label: "Cafeterias" },
-                  { value: "casas_noturnas", label: "Casas noturnas" },
-                  { value: "confeitarias", label: "Confeitarias" },
-                  { value: "entretenimento", label: "Entretenimento" },
-                  { value: "farmacias", label: "Farmácias" },
-                  { value: "hoteis_pousadas", label: "Hotéis / pousadas" },
-                  { value: "lojas", label: "Lojas" },
-                  { value: "restaurantes", label: "Restaurantes" },
-                  { value: "servicos", label: "Serviços" },
-                  { value: "sorveterias", label: "Sorveterias" },
-                ].map((cat) => (
+                {CATEGORIAS_ESTABELECIMENTO.map((cat) => (
                   <div key={cat.value} className="flex items-center space-x-2">
                     <input
                       type="checkbox"
@@ -391,7 +380,7 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                       className="h-4 w-4 rounded border-gray-300 cursor-pointer"
                     />
                     <Label htmlFor={cat.value} className="text-sm font-normal cursor-pointer">
-                      {cat.label}
+                      {cat.icon} {cat.label}
                     </Label>
                   </div>
                 ))}

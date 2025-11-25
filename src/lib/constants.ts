@@ -1,21 +1,21 @@
 // Constantes do sistema Aniversariante VIP
 
 export const CATEGORIAS_ESTABELECIMENTO = [
-  { value: "academia", label: "Academia" },
-  { value: "bar", label: "Bar" },
-  { value: "barbearia", label: "Barbearia" },
-  { value: "cafeteria", label: "Cafeteria" },
-  { value: "casa_noturna", label: "Casa Noturna" },
-  { value: "entretenimento", label: "Entretenimento" },
-  { value: "hospedagem", label: "Hospedagem" },
-  { value: "loja_presentes", label: "Loja de Presentes" },
-  { value: "moda_acessorios", label: "Moda e Acessórios" },
-  { value: "confeitaria", label: "Confeitaria" },
-  { value: "restaurante", label: "Restaurante" },
-  { value: "salao_beleza", label: "Salão de Beleza" },
-  { value: "saude_suplementos", label: "Saúde e Suplementos" },
-  { value: "outros_comercios", label: "Outros Comércios" },
-  { value: "servicos", label: "Serviços" },
+  { value: "academia", label: "Academia", icon: "🏋️" },
+  { value: "bar", label: "Bar", icon: "🍺" },
+  { value: "barbearia", label: "Barbearia", icon: "✂️" },
+  { value: "cafeteria", label: "Cafeteria", icon: "☕" },
+  { value: "casa_noturna", label: "Casa Noturna", icon: "🎉" },
+  { value: "confeitaria", label: "Confeitaria", icon: "🧁" },
+  { value: "entretenimento", label: "Entretenimento", icon: "🎬" },
+  { value: "hospedagem", label: "Hospedagem", icon: "🏨" },
+  { value: "loja_presentes", label: "Loja de Presentes", icon: "🎁" },
+  { value: "moda_acessorios", label: "Moda e Acessórios", icon: "👗" },
+  { value: "outros_comercios", label: "Outros Comércios", icon: "🏪" },
+  { value: "restaurante", label: "Restaurante", icon: "🍽️" },
+  { value: "salao_beleza", label: "Salão de Beleza", icon: "💅" },
+  { value: "saude_suplementos", label: "Saúde e Suplementos", icon: "💪" },
+  { value: "servicos", label: "Serviços", icon: "🔧" },
 ] as const;
 
 export const PERIODOS_VALIDADE = [

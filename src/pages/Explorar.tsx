@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MapPin, Search, SlidersHorizontal, Map as MapIcon, List, X, Check, Clock, Gift, Share2, Heart, CalendarDays, Navigation } from 'lucide-react';
 import { toast } from "sonner";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
-import InteractiveMap from "@/components/InteractiveMap";
+import { GoogleMapView } from "@/components/GoogleMapView";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useCepLookup } from "@/hooks/useCepLookup";
 import { BackButton } from "@/components/BackButton";
@@ -106,7 +106,6 @@ const PlaceCard = ({ place }: any) => {
 
 const Explorar = () => {
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [showFilters, setShowFilters] = useState(false);
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [showCepInput, setShowCepInput] = useState(false);
@@ -333,70 +332,60 @@ const Explorar = () => {
           </button>
         </div>
 
-        {viewMode === 'list' ? (
-          <>
-            {filteredPlaces.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 animate-fade-in">
-                <div className="rounded-full bg-white/5 p-6 backdrop-blur-sm ring-1 ring-white/10 mb-4">
-                  <Search size={48} className="text-slate-400" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-2">Nenhum resultado encontrado</h3>
-                <p className="text-sm text-slate-400 max-w-xs text-center">
-                  Tente ajustar seus filtros ou selecione outras categorias
-                </p>
-                <button
-                  onClick={() => {
-                    setActiveCategories([]);
-                    setFilterOpenNow(false);
-                    setFilterDay('any');
-                  }}
-                  className="mt-6 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-medium text-sm hover:brightness-110 transition-all duration-300 active:scale-95"
-                >
-                  Limpar Filtros
-                </button>
-              </div>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {filteredPlaces.map((place, index) => (
-                  <div 
-                    key={place.id}
-                    className="animate-fade-in"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <PlaceCard place={place} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
+        {filteredPlaces.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 animate-fade-in">
+            <div className="rounded-full bg-white/5 p-6 backdrop-blur-sm ring-1 ring-white/10 mb-4">
+              <Search size={48} className="text-slate-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Nenhum resultado encontrado</h3>
+            <p className="text-sm text-slate-400 max-w-xs text-center">
+              Tente ajustar seus filtros ou selecione outras categorias
+            </p>
+            <button
+              onClick={() => {
+                setActiveCategories([]);
+                setFilterOpenNow(false);
+                setFilterDay('any');
+              }}
+              className="mt-6 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-medium text-sm hover:brightness-110 transition-all duration-300 active:scale-95"
+            >
+              Limpar Filtros
+            </button>
+          </div>
         ) : (
-          <InteractiveMap
-            establishments={filteredPlaces.map(place => ({
-              id: place.id,
-              name: place.name,
-              category: place.category,
-              latitude: place.latitude,
-              longitude: place.longitude,
-              image: place.image,
-              benefit: place.benefit,
-              isOpen: place.isOpen,
-            }))}
-            userLocation={location?.coordinates ? {
-              latitude: location.coordinates.latitude,
-              longitude: location.coordinates.longitude,
-            } : undefined}
-            maxDistance={filterDistance}
-            onEstablishmentClick={(id) => navigate('/auth')}
-          />
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredPlaces.map((place, index) => (
+              <div 
+                key={place.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <PlaceCard place={place} />
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Botão Flutuante */}
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 fade-in duration-500">
-        <button onClick={() => setViewMode(prev => prev === 'list' ? 'map' : 'list')} className="flex items-center gap-2 rounded-full bg-slate-900/90 px-6 py-3.5 text-sm font-bold text-white shadow-xl shadow-black/50 ring-1 ring-white/10 backdrop-blur-md transition-transform active:scale-95 hover:bg-slate-800">
-          {viewMode === 'list' ? <><MapIcon size={18} /> Ver no Mapa</> : <><List size={18} /> Ver Lista</>}
-        </button>
-      </div>
+      {/* Google Maps with FAB */}
+      <GoogleMapView
+        establishments={filteredPlaces.map(place => ({
+          id: String(place.id),
+          nome_fantasia: place.name,
+          categoria: [place.category],
+          endereco: `${place.neighborhood}, Florianópolis`,
+          latitude: place.latitude,
+          longitude: place.longitude,
+          logo_url: place.image,
+          descricao_beneficio: place.benefit,
+          cidade: "Florianópolis"
+        }))}
+        userLocation={location?.coordinates ? {
+          lat: location.coordinates.latitude,
+          lng: location.coordinates.longitude,
+        } : undefined}
+        onEstablishmentClick={(id) => navigate(`/estabelecimento/${id}`)}
+      />
 
       {/* Drawer de Filtros */}
       {showFilters && (

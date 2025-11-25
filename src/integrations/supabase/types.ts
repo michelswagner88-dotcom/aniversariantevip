@@ -392,6 +392,7 @@ export type Database = {
           commission_amount: number | null
           created_at: string | null
           establishment_id: string
+          hold_release_date: string | null
           id: string
           referrer_id: string
           status: string | null
@@ -402,6 +403,7 @@ export type Database = {
           commission_amount?: number | null
           created_at?: string | null
           establishment_id: string
+          hold_release_date?: string | null
           id?: string
           referrer_id: string
           status?: string | null
@@ -412,6 +414,7 @@ export type Database = {
           commission_amount?: number | null
           created_at?: string | null
           establishment_id?: string
+          hold_release_date?: string | null
           id?: string
           referrer_id?: string
           status?: string | null

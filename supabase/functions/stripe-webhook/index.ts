@@ -84,12 +84,16 @@ serve(async (req) => {
       // Calcular comissão (30%)
       const commissionAmount = Math.floor(invoice.amount_paid * 0.30);
       
-      logStep("Transferring commission", {
+      logStep("Processing commission with 30-day hold", {
         amount: commissionAmount,
         to: referrer.stripe_account_id
       });
 
-      // Criar transferência para o afiliado
+      // Criar transferência para o afiliado com hold de 30 dias
+      // A Stripe mantém os fundos em "pending" por 30 dias antes de liberar para saque
+      const holdReleaseDate = new Date();
+      holdReleaseDate.setDate(holdReleaseDate.getDate() + 30);
+
       const transfer = await stripe.transfers.create({
         amount: commissionAmount,
         currency: invoice.currency,
@@ -99,20 +103,25 @@ serve(async (req) => {
           referrer_id: establishments.referred_by_user_id,
           establishment_id: establishments.id,
           invoice_id: invoice.id,
+          hold_release_date: holdReleaseDate.toISOString(),
         },
       });
 
-      logStep("Transfer created", { transferId: transfer.id });
+      logStep("Transfer created with hold", { 
+        transferId: transfer.id,
+        holdReleaseDate: holdReleaseDate.toISOString()
+      });
 
-      // Registrar comissão no banco
+      // Registrar comissão no banco com status "held" (em hold de 30 dias)
       await supabaseClient
         .from('referrals')
         .insert({
           referrer_id: establishments.referred_by_user_id,
           establishment_id: establishments.id,
           commission_amount: commissionAmount / 100, // Converter de centavos
-          status: 'paid',
+          status: 'held', // Status indica que está em período de hold
           stripe_transfer_id: transfer.id,
+          hold_release_date: holdReleaseDate.toISOString(),
         });
 
       // Atualizar status do plano

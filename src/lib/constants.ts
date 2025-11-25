@@ -11,10 +11,10 @@ export const CATEGORIAS_ESTABELECIMENTO = [
   { value: "hospedagem", label: "Hospedagem", icon: "🏨" },
   { value: "loja_presentes", label: "Loja de Presentes", icon: "🎁" },
   { value: "moda_acessorios", label: "Moda e Acessórios", icon: "👗" },
-  { value: "outros_comercios", label: "Outros Comércios", icon: "🏪" },
   { value: "restaurante", label: "Restaurante", icon: "🍽️" },
   { value: "salao_beleza", label: "Salão de Beleza", icon: "💅" },
   { value: "saude_suplementos", label: "Saúde e Suplementos", icon: "💪" },
+  { value: "outros_comercios", label: "Outros Comércios", icon: "🏪" },
   { value: "servicos", label: "Serviços", icon: "🔧" },
 ] as const;
 

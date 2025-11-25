@@ -47,6 +47,7 @@ export type Database = {
           cpf: string
           created_at: string | null
           data_nascimento: string
+          deleted_at: string | null
           estado: string | null
           id: string
           logradouro: string | null
@@ -62,6 +63,7 @@ export type Database = {
           cpf: string
           created_at?: string | null
           data_nascimento: string
+          deleted_at?: string | null
           estado?: string | null
           id: string
           logradouro?: string | null
@@ -77,6 +79,7 @@ export type Database = {
           cpf?: string
           created_at?: string | null
           data_nascimento?: string
+          deleted_at?: string | null
           estado?: string | null
           id?: string
           logradouro?: string | null
@@ -136,6 +139,7 @@ export type Database = {
           data_emissao: string
           data_uso: string | null
           data_validade: string | null
+          deleted_at: string | null
           estabelecimento_id: string
           id: string
           usado: boolean
@@ -147,6 +151,7 @@ export type Database = {
           data_emissao?: string
           data_uso?: string | null
           data_validade?: string | null
+          deleted_at?: string | null
           estabelecimento_id: string
           id?: string
           usado?: boolean
@@ -158,6 +163,7 @@ export type Database = {
           data_emissao?: string
           data_uso?: string | null
           data_validade?: string | null
+          deleted_at?: string | null
           estabelecimento_id?: string
           id?: string
           usado?: boolean
@@ -208,6 +214,7 @@ export type Database = {
           cnpj: string
           complemento: string | null
           created_at: string | null
+          deleted_at: string | null
           descricao_beneficio: string | null
           endereco: string | null
           estado: string | null
@@ -238,6 +245,7 @@ export type Database = {
           cnpj: string
           complemento?: string | null
           created_at?: string | null
+          deleted_at?: string | null
           descricao_beneficio?: string | null
           endereco?: string | null
           estado?: string | null
@@ -268,6 +276,7 @@ export type Database = {
           cnpj?: string
           complemento?: string | null
           created_at?: string | null
+          deleted_at?: string | null
           descricao_beneficio?: string | null
           endereco?: string | null
           estado?: string | null
@@ -324,6 +333,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string | null
+          deleted_at: string | null
           email: string
           id: string
           nome: string | null
@@ -331,6 +341,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          deleted_at?: string | null
           email: string
           id: string
           nome?: string | null
@@ -338,6 +349,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          deleted_at?: string | null
           email?: string
           id?: string
           nome?: string | null

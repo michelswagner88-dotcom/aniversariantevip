@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { APIProvider, Map, AdvancedMarker, Pin, useMap } from '@vis.gl/react-google-maps';
-import { MapPin, X } from 'lucide-react';
+import { MapPin, X, Navigation } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 
@@ -99,13 +99,30 @@ const MapContent: React.FC<{
   selectedId: string | null;
   onMarkerClick: (id: string) => void;
   userLocation?: { lat: number; lng: number } | null;
-}> = ({ establishments, selectedId, onMarkerClick, userLocation }) => {
+  onMapReady?: (map: google.maps.Map) => void;
+}> = ({ establishments, selectedId, onMarkerClick, userLocation, onMapReady }) => {
   const map = useMap();
 
+  // Notificar quando o mapa estiver pronto
+  useEffect(() => {
+    if (map && onMapReady) {
+      onMapReady(map);
+    }
+  }, [map, onMapReady]);
+
+  // Centralizar no usuário quando a localização for obtida
+  useEffect(() => {
+    if (!map || !userLocation) return;
+
+    // Centralizar no usuário com zoom apropriado
+    map.setCenter(userLocation);
+    map.setZoom(14);
+  }, [map, userLocation]);
+
+  // Fit bounds para mostrar todos os estabelecimentos
   useEffect(() => {
     if (!map || establishments.length === 0) return;
 
-    // Fit bounds to show all establishments
     const bounds = new google.maps.LatLngBounds();
     
     establishments.forEach(est => {
@@ -119,14 +136,25 @@ const MapContent: React.FC<{
     }
 
     map.fitBounds(bounds, 50);
-  }, [map, establishments, userLocation]);
+  }, [map, establishments]);
 
   return (
     <>
-      {/* User Location Marker */}
+      {/* User Location Marker - Pulsante e Destacado */}
       {userLocation && (
         <AdvancedMarker position={userLocation}>
-          <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg" />
+          <div className="relative">
+            {/* Círculo Pulsante Externo */}
+            <div className="absolute inset-0 w-8 h-8 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2">
+              <div className="w-full h-full bg-blue-500/30 rounded-full animate-ping" />
+            </div>
+            {/* Círculo Externo */}
+            <div className="absolute inset-0 w-6 h-6 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2">
+              <div className="w-full h-full bg-blue-500/20 rounded-full" />
+            </div>
+            {/* Ponto Central */}
+            <div className="relative w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-lg" />
+          </div>
         </AdvancedMarker>
       )}
 
@@ -165,6 +193,7 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
 }) => {
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [selectedEstablishmentId, setSelectedEstablishmentId] = useState<string | null>(null);
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
 
   const selectedEstablishment = establishments.find(e => e.id === selectedEstablishmentId);
 
@@ -182,6 +211,13 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
 
   const handleCloseBottomSheet = () => {
     setSelectedEstablishmentId(null);
+  };
+
+  const handleRecenterToUser = () => {
+    if (userLocation && mapInstance) {
+      mapInstance.setCenter(userLocation);
+      mapInstance.setZoom(15);
+    }
   };
 
   return (
@@ -202,11 +238,24 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
           <Button
             onClick={() => setIsMapOpen(false)}
             variant="ghost"
-            className="absolute top-4 right-4 z-50 bg-slate-900/90 backdrop-blur-md border border-white/10 hover:bg-slate-800/90"
+            className="absolute top-4 left-4 z-50 bg-slate-900/90 backdrop-blur-md border border-white/10 hover:bg-slate-800/90"
             size="icon"
           >
             <X className="w-5 h-5" />
           </Button>
+
+          {/* Recenter Button - Só aparece se houver localização */}
+          {userLocation && (
+            <Button
+              onClick={handleRecenterToUser}
+              variant="ghost"
+              className="absolute top-4 right-4 z-50 bg-slate-900/90 backdrop-blur-md border border-white/10 hover:bg-slate-800/90"
+              size="icon"
+              title="Centralizar na minha localização"
+            >
+              <Navigation className="w-5 h-5 text-blue-400" />
+            </Button>
+          )}
 
           {/* Map */}
           <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
@@ -226,6 +275,7 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
                 selectedId={selectedEstablishmentId}
                 onMarkerClick={handleMarkerClick}
                 userLocation={userLocation}
+                onMapReady={setMapInstance}
               />
             </Map>
           </APIProvider>

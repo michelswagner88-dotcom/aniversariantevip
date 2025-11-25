@@ -28,7 +28,7 @@ export default function ResetPassword() {
       setValidToken(true);
     } else {
       toast.error("Link de recuperação inválido ou expirado");
-      navigate("/");
+      navigate("/auth");
     }
   }, [navigate]);
 
@@ -54,8 +54,8 @@ export default function ResetPassword() {
 
       if (error) throw error;
 
-      toast.success("Senha redefinida com sucesso!");
-      navigate("/login-aniversariante");
+      toast.success("Senha redefinida com sucesso! Faça login com sua nova senha.");
+      navigate("/auth");
     } catch (error: any) {
       console.error("Erro ao redefinir senha:", error);
       toast.error("Erro ao redefinir senha. Tente novamente.");

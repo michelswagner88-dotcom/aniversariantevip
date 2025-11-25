@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperação de Senha - Aniversariante VIP</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #020617; color: #ffffff;">
+  
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #020617; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        
+        <!-- Container Principal -->
+        <table width="600" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden;">
+          
+          <!-- Header com Gradiente -->
+          <tr>
+            <td style="padding: 40px 40px 30px; background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #06b6d4 100%); text-align: center;">
+              <h1 style="margin: 0; font-size: 32px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">
+                ANIVERSARIANTE VIP
+              </h1>
+              <p style="margin: 8px 0 0; font-size: 14px; color: rgba(255, 255, 255, 0.9); font-weight: 500;">
+                Sua celebração merece o melhor
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Conteúdo -->
+          <tr>
+            <td style="padding: 40px;">
+              
+              <!-- Ícone de Segurança -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding-bottom: 24px;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);">
+                      <span style="font-size: 40px;">🔒</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Mensagem Principal -->
+              <h2 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #ffffff; text-align: center;">
+                Olá! Sou a Carol 👋
+              </h2>
+              
+              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: rgba(255, 255, 255, 0.8); text-align: center;">
+                Recebemos uma solicitação para redefinir sua senha do <strong style="color: #ec4899;">Aniversariante VIP</strong>. 
+                Tudo bem, acontece! 😊
+              </p>
+              
+              <p style="margin: 0 0 32px; font-size: 14px; line-height: 1.6; color: rgba(255, 255, 255, 0.6); text-align: center;">
+                Clique no botão abaixo para criar uma nova senha e voltar a aproveitar seus benefícios exclusivos:
+              </p>
+              
+              <!-- Botão CTA -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding: 0 0 32px;">
+                    <a href="{{ .ConfirmationURL }}" style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #06b6d4 100%); color: #ffffff; text-decoration: none; font-weight: 700; font-size: 16px; border-radius: 12px; box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4); transition: all 0.3s;">
+                      REDEFINIR MINHA SENHA
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Informação de Segurança -->
+              <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                <p style="margin: 0 0 12px; font-size: 13px; line-height: 1.5; color: rgba(255, 255, 255, 0.9);">
+                  ⏰ <strong>Este link expira em 1 hora</strong> por segurança.
+                </p>
+                <p style="margin: 0; font-size: 13px; line-height: 1.5; color: rgba(255, 255, 255, 0.7);">
+                  Se você não solicitou essa alteração, pode ignorar este e-mail com segurança. Sua senha permanecerá a mesma.
+                </p>
+              </div>
+              
+              <!-- Link alternativo -->
+              <p style="margin: 0 0 8px; font-size: 12px; color: rgba(255, 255, 255, 0.5); text-align: center;">
+                Ou copie e cole este link no navegador:
+              </p>
+              <p style="margin: 0 0 32px; font-size: 12px; color: #8b5cf6; text-align: center; word-break: break-all;">
+                {{ .ConfirmationURL }}
+              </p>
+              
+              <!-- Assinatura Carol -->
+              <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 24px; text-align: center;">
+                <p style="margin: 0 0 4px; font-size: 14px; color: rgba(255, 255, 255, 0.9); font-weight: 600;">
+                  Carol 💜
+                </p>
+                <p style="margin: 0; font-size: 12px; color: rgba(255, 255, 255, 0.5);">
+                  Assistente Virtual | Aniversariante VIP
+                </p>
+              </div>
+              
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 24px 40px; background-color: rgba(0, 0, 0, 0.3); border-top: 1px solid rgba(255, 255, 255, 0.05);">
+              <p style="margin: 0 0 12px; font-size: 12px; line-height: 1.5; color: rgba(255, 255, 255, 0.5); text-align: center;">
+                Você está recebendo este e-mail porque solicitou redefinição de senha na plataforma 
+                <strong style="color: rgba(255, 255, 255, 0.7);">Aniversariante VIP</strong>.
+              </p>
+              <p style="margin: 0; font-size: 11px; color: rgba(255, 255, 255, 0.4); text-align: center;">
+                © 2025 Aniversariante VIP. Todos os direitos reservados.<br>
+                Aqui seu aniversário vale muito mais! 🎉
+              </p>
+            </td>
+          </tr>
+          
+        </table>
+        
+      </td>
+    </tr>
+  </table>
+  
+</body>
+</html>

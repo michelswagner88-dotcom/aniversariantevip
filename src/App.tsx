@@ -34,6 +34,7 @@ import EmitirCupom from "./pages/EmitirCupom";
 import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import TermosUso from "./pages/TermosUso";
 import ResetPassword from "./pages/ResetPassword";
+import ForgotPassword from "./pages/ForgotPassword";
 import Explorar from "./pages/Explorar";
 import EstabelecimentoDetalhes from "./pages/EstabelecimentoDetalhes";
 import SmartAuth from "./pages/SmartAuth";
@@ -72,7 +73,8 @@ const App = () => (
                 <Route path="/emitir-cupom" element={<EmitirCupom />} />
                 <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
                 <Route path="/termos-uso" element={<TermosUso />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/update-password" element={<ResetPassword />} />
                 <Route path="/auth" element={<SmartAuth />} />
                 <Route path="/selecionar-perfil" element={<SelecionarPerfil />} />
                 <Route path="/cadastro/aniversariante" element={<CadastroAniversariante />} />

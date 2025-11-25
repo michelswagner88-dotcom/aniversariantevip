@@ -35,10 +35,10 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Buscar email do estabelecimento
+    // Buscar estabelecimento e verificar se já tem customer no Stripe
     const { data: establishment } = await supabaseClient
       .from('estabelecimentos')
-      .select('id, razao_social, cnpj')
+      .select('id, razao_social, cnpj, stripe_customer_id')
       .eq('id', establishmentId)
       .single();
 
@@ -46,16 +46,10 @@ serve(async (req) => {
       throw new Error("Establishment not found");
     }
 
-    // Buscar ou criar customer no Stripe
-    const customers = await stripe.customers.list({ 
-      email: `${establishment.cnpj}@estabelecimento.com`,
-      limit: 1 
-    });
+    let customerId = establishment.stripe_customer_id;
 
-    let customerId;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-    } else {
+    // Criar customer no Stripe se não existir
+    if (!customerId) {
       const customer = await stripe.customers.create({
         email: `${establishment.cnpj}@estabelecimento.com`,
         name: establishment.razao_social,
@@ -65,9 +59,17 @@ serve(async (req) => {
         },
       });
       customerId = customer.id;
-    }
 
-    logStep("Customer ready", { customerId });
+      // Salvar stripe_customer_id no banco
+      await supabaseClient
+        .from('estabelecimentos')
+        .update({ stripe_customer_id: customerId })
+        .eq('id', establishmentId);
+
+      logStep("Customer created and saved", { customerId });
+    } else {
+      logStep("Customer already exists", { customerId });
+    }
 
     // Atualizar referrer_id se fornecido
     if (referrerId) {

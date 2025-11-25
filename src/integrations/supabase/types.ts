@@ -234,6 +234,7 @@ export type Database = {
           referred_by_user_id: string | null
           regras_utilizacao: string | null
           site: string | null
+          stripe_customer_id: string | null
           telefone: string | null
           tem_conta_acesso: boolean | null
           updated_at: string | null
@@ -267,6 +268,7 @@ export type Database = {
           referred_by_user_id?: string | null
           regras_utilizacao?: string | null
           site?: string | null
+          stripe_customer_id?: string | null
           telefone?: string | null
           tem_conta_acesso?: boolean | null
           updated_at?: string | null
@@ -300,6 +302,7 @@ export type Database = {
           referred_by_user_id?: string | null
           regras_utilizacao?: string | null
           site?: string | null
+          stripe_customer_id?: string | null
           telefone?: string | null
           tem_conta_acesso?: boolean | null
           updated_at?: string | null

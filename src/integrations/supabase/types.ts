@@ -229,7 +229,9 @@ export type Database = {
           nome_fantasia: string | null
           numero: string | null
           periodo_validade_beneficio: string | null
+          plan_status: string | null
           razao_social: string
+          referred_by_user_id: string | null
           regras_utilizacao: string | null
           site: string | null
           telefone: string | null
@@ -260,7 +262,9 @@ export type Database = {
           nome_fantasia?: string | null
           numero?: string | null
           periodo_validade_beneficio?: string | null
+          plan_status?: string | null
           razao_social: string
+          referred_by_user_id?: string | null
           regras_utilizacao?: string | null
           site?: string | null
           telefone?: string | null
@@ -291,7 +295,9 @@ export type Database = {
           nome_fantasia?: string | null
           numero?: string | null
           periodo_validade_beneficio?: string | null
+          plan_status?: string | null
           razao_social?: string
+          referred_by_user_id?: string | null
           regras_utilizacao?: string | null
           site?: string | null
           telefone?: string | null
@@ -299,7 +305,22 @@ export type Database = {
           updated_at?: string | null
           whatsapp?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "estabelecimentos_referred_by_user_id_fkey"
+            columns: ["referred_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "estabelecimentos_referred_by_user_id_fkey"
+            columns: ["referred_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       favoritos: {
         Row: {
@@ -337,6 +358,8 @@ export type Database = {
           email: string
           id: string
           nome: string | null
+          stripe_account_id: string | null
+          stripe_onboarding_completed: boolean | null
           updated_at: string | null
         }
         Insert: {
@@ -345,6 +368,8 @@ export type Database = {
           email: string
           id: string
           nome?: string | null
+          stripe_account_id?: string | null
+          stripe_onboarding_completed?: boolean | null
           updated_at?: string | null
         }
         Update: {
@@ -353,9 +378,66 @@ export type Database = {
           email?: string
           id?: string
           nome?: string | null
+          stripe_account_id?: string | null
+          stripe_onboarding_completed?: boolean | null
           updated_at?: string | null
         }
         Relationships: []
+      }
+      referrals: {
+        Row: {
+          commission_amount: number | null
+          created_at: string | null
+          establishment_id: string
+          id: string
+          referrer_id: string
+          status: string | null
+          stripe_transfer_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          commission_amount?: number | null
+          created_at?: string | null
+          establishment_id: string
+          id?: string
+          referrer_id: string
+          status?: string | null
+          stripe_transfer_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          commission_amount?: number | null
+          created_at?: string | null
+          establishment_id?: string
+          id?: string
+          referrer_id?: string
+          status?: string | null
+          stripe_transfer_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -380,7 +462,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      affiliate_stats: {
+        Row: {
+          active_establishments: number | null
+          email: string | null
+          pending_commission: number | null
+          stripe_account_id: string | null
+          total_earned: number | null
+          total_establishments: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       emit_coupon: {

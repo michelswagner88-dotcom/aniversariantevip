@@ -176,6 +176,63 @@ export type Database = {
         }
         Relationships: []
       }
+      email_analytics: {
+        Row: {
+          click_count: number | null
+          clicked_at: string | null
+          created_at: string | null
+          email_address: string
+          email_type: string
+          id: string
+          ip_address: string | null
+          opened_at: string | null
+          sent_at: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          click_count?: number | null
+          clicked_at?: string | null
+          created_at?: string | null
+          email_address: string
+          email_type: string
+          id?: string
+          ip_address?: string | null
+          opened_at?: string | null
+          sent_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          click_count?: number | null
+          clicked_at?: string | null
+          created_at?: string | null
+          email_address?: string
+          email_type?: string
+          id?: string
+          ip_address?: string | null
+          opened_at?: string | null
+          sent_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_analytics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_stats"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "email_analytics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estabelecimento_analytics: {
         Row: {
           data_evento: string

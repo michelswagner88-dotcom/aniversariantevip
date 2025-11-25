@@ -110,6 +110,7 @@ export default function AdminDashboard() {
   const [currentItem, setCurrentItem] = useState<any>(null);
   const [itemType, setItemType] = useState<'user' | 'establishment' | null>(null);
   const [sendingEmails, setSendingEmails] = useState(false);
+  const [emailAnalytics, setEmailAnalytics] = useState<any[]>([]);
 
   useEffect(() => {
     checkAdminAccess();
@@ -148,15 +149,17 @@ export default function AdminDashboard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [usersRes, establishmentsRes, cuponsRes] = await Promise.all([
+      const [usersRes, establishmentsRes, cuponsRes, emailAnalyticsRes] = await Promise.all([
         supabase.from('aniversariantes').select('*').is('deleted_at', null),
         supabase.from('estabelecimentos').select('*').is('deleted_at', null),
-        supabase.from('cupons').select('*').is('deleted_at', null)
+        supabase.from('cupons').select('*').is('deleted_at', null),
+        supabase.from('email_analytics').select('*').order('sent_at', { ascending: false })
       ]);
 
       if (usersRes.data) setUsers(usersRes.data);
       if (establishmentsRes.data) setEstablishments(establishmentsRes.data);
       if (cuponsRes.data) setCupons(cuponsRes.data);
+      if (emailAnalyticsRes.data) setEmailAnalytics(emailAnalyticsRes.data);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados');
@@ -549,6 +552,176 @@ export default function AdminDashboard() {
     </div>
   );
 
+  const renderEmailAnalytics = () => {
+    // Cálculos de métricas
+    const totalSent = emailAnalytics.length;
+    const totalOpened = emailAnalytics.filter(e => e.opened_at).length;
+    const totalClicked = emailAnalytics.filter(e => e.clicked_at).length;
+    const openRate = totalSent > 0 ? ((totalOpened / totalSent) * 100).toFixed(1) : '0';
+    const clickRate = totalSent > 0 ? ((totalClicked / totalSent) * 100).toFixed(1) : '0';
+    const clickToOpenRate = totalOpened > 0 ? ((totalClicked / totalOpened) * 100).toFixed(1) : '0';
+
+    // Analytics por tipo de email
+    const welcome = emailAnalytics.filter(e => e.email_type === 'welcome');
+    const reminder = emailAnalytics.filter(e => e.email_type === 'birthday_reminder');
+    const birthday = emailAnalytics.filter(e => e.email_type === 'birthday_today');
+
+    const getMetrics = (emails: any[]) => {
+      const sent = emails.length;
+      const opened = emails.filter(e => e.opened_at).length;
+      const clicked = emails.filter(e => e.clicked_at).length;
+      return {
+        sent,
+        opened,
+        clicked,
+        openRate: sent > 0 ? ((opened / sent) * 100).toFixed(1) : '0',
+        clickRate: sent > 0 ? ((clicked / sent) * 100).toFixed(1) : '0',
+      };
+    };
+
+    const welcomeMetrics = getMetrics(welcome);
+    const reminderMetrics = getMetrics(reminder);
+    const birthdayMetrics = getMetrics(birthday);
+
+    return (
+      <div className="space-y-6">
+        {/* Cards de Métricas Gerais */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 backdrop-blur-xl rounded-xl border border-white/10 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <Send className="w-8 h-8 text-violet-400" />
+              <span className="text-2xl font-bold text-white">{totalSent}</span>
+            </div>
+            <h3 className="text-sm text-slate-400">E-mails Enviados</h3>
+          </div>
+
+          <div className="bg-gradient-to-br from-emerald-600/20 to-teal-600/20 backdrop-blur-xl rounded-xl border border-white/10 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <Mail className="w-8 h-8 text-emerald-400" />
+              <span className="text-2xl font-bold text-white">{openRate}%</span>
+            </div>
+            <h3 className="text-sm text-slate-400">Taxa de Abertura</h3>
+            <p className="text-xs text-slate-500 mt-1">{totalOpened} abertos</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-600/20 to-cyan-600/20 backdrop-blur-xl rounded-xl border border-white/10 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <TrendingUp className="w-8 h-8 text-blue-400" />
+              <span className="text-2xl font-bold text-white">{clickRate}%</span>
+            </div>
+            <h3 className="text-sm text-slate-400">Taxa de Clique</h3>
+            <p className="text-xs text-slate-500 mt-1">{totalClicked} cliques</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-amber-600/20 to-orange-600/20 backdrop-blur-xl rounded-xl border border-white/10 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <DollarSign className="w-8 h-8 text-amber-400" />
+              <span className="text-2xl font-bold text-white">{clickToOpenRate}%</span>
+            </div>
+            <h3 className="text-sm text-slate-400">Conversão Abertura→Clique</h3>
+            <p className="text-xs text-slate-500 mt-1">De quem abriu</p>
+          </div>
+        </div>
+
+        {/* Performance por Tipo de E-mail */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {[
+            { name: 'Boas-vindas', metrics: welcomeMetrics, icon: '👋', color: 'violet' },
+            { name: 'Lembrete (7 dias)', metrics: reminderMetrics, icon: '📆', color: 'blue' },
+            { name: 'Parabéns (hoje)', metrics: birthdayMetrics, icon: '🎂', color: 'fuchsia' },
+          ].map((type) => (
+            <div key={type.name} className="bg-slate-900/80 backdrop-blur-xl rounded-xl border border-white/10 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">{type.icon}</span>
+                <div>
+                  <h3 className="text-lg font-bold text-white">{type.name}</h3>
+                  <p className="text-sm text-slate-400">{type.metrics.sent} enviados</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-400">Taxa Abertura</span>
+                  <span className={`text-lg font-bold text-${type.color}-400`}>{type.metrics.openRate}%</span>
+                </div>
+                <div className="w-full bg-slate-800 rounded-full h-2">
+                  <div 
+                    className={`bg-gradient-to-r from-${type.color}-600 to-${type.color}-400 h-2 rounded-full`} 
+                    style={{ width: `${type.metrics.openRate}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center text-xs text-slate-500">
+                  <span>Cliques: {type.metrics.clickRate}%</span>
+                  <span>{type.metrics.clicked} de {type.metrics.sent}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Tabela de E-mails Recentes */}
+        <div className="bg-slate-900/80 backdrop-blur-xl rounded-xl border border-white/10 overflow-hidden">
+          <div className="p-6 border-b border-white/10">
+            <h3 className="text-lg font-bold text-white">E-mails Recentes</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-800/50 text-slate-300 text-sm font-semibold uppercase tracking-wider">
+                  <th className="p-4 border-b border-white/10">Tipo</th>
+                  <th className="p-4 border-b border-white/10">E-mail</th>
+                  <th className="p-4 border-b border-white/10">Enviado</th>
+                  <th className="p-4 border-b border-white/10">Status</th>
+                  <th className="p-4 border-b border-white/10 text-center">Cliques</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10">
+                {emailAnalytics.slice(0, 20).map(email => (
+                  <tr key={email.id} className="hover:bg-white/5 transition-colors">
+                    <td className="p-4">
+                      <span className="text-xs px-2 py-1 rounded-full bg-violet-500/20 text-violet-300">
+                        {email.email_type === 'welcome' && '👋 Boas-vindas'}
+                        {email.email_type === 'birthday_reminder' && '📆 Lembrete'}
+                        {email.email_type === 'birthday_today' && '🎂 Parabéns'}
+                      </span>
+                    </td>
+                    <td className="p-4 text-slate-300">{email.email_address}</td>
+                    <td className="p-4 text-slate-400 text-sm">
+                      {new Date(email.sent_at).toLocaleString('pt-BR')}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        {email.opened_at ? (
+                          <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center gap-1">
+                            <Mail size={12} /> Aberto
+                          </span>
+                        ) : (
+                          <span className="text-xs px-2 py-1 rounded-full bg-slate-500/20 text-slate-400">
+                            Enviado
+                          </span>
+                        )}
+                        {email.clicked_at && (
+                          <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-300">
+                            Clicou
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-4 text-center text-slate-300 font-semibold">
+                      {email.click_count || 0}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {emailAnalytics.length === 0 && (
+              <div className="p-8 text-center text-slate-500">Nenhum e-mail enviado ainda.</div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -602,6 +775,13 @@ export default function AdminDashboard() {
              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'establishments' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg' : 'hover:bg-white/5 text-slate-300'}`}
           >
             <Building2 size={20} /> Estabelecimentos
+          </button>
+          <div className="pt-4 pb-2 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Analytics</div>
+          <button 
+             onClick={() => { setActiveTab('email-analytics'); setMobileMenuOpen(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'email-analytics' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg' : 'hover:bg-white/5 text-slate-300'}`}
+          >
+            <Mail size={20} /> E-mails
           </button>
         </nav>
 
@@ -665,6 +845,7 @@ export default function AdminDashboard() {
                 {activeTab === 'overview' && 'Visão Geral'}
                 {activeTab === 'users' && 'Usuários Cadastrados'}
                 {activeTab === 'establishments' && 'Parceiros & Empresas'}
+                {activeTab === 'email-analytics' && 'Analytics de E-mails'}
               </h1>
               <p className="text-slate-400">Bem-vindo ao painel de controle do sistema.</p>
             </div>
@@ -672,6 +853,7 @@ export default function AdminDashboard() {
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'users' && renderUsersTable()}
             {activeTab === 'establishments' && renderEstablishmentsTable()}
+            {activeTab === 'email-analytics' && renderEmailAnalytics()}
           </div>
         </div>
       </main>

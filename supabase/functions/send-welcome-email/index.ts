@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -24,6 +25,34 @@ const handler = async (req: Request): Promise<Response> => {
 
     const userName = nome || email.split('@')[0];
     const siteUrl = "https://aniversariantevip.com.br";
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    
+    // Buscar user_id pelo email
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .single();
+    
+    // Criar registro de analytics
+    const { data: analyticsRecord, error: analyticsError } = await supabase
+      .from('email_analytics')
+      .insert({
+        user_id: profileData?.id,
+        email_type: 'welcome',
+        email_address: email,
+        sent_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+    
+    if (analyticsError) {
+      console.error('Erro ao criar analytics:', analyticsError);
+    }
+    
+    const trackingId = analyticsRecord?.id || 'unknown';
+    const trackingPixelUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/track-email-open?id=${trackingId}`;
+    const trackingClickUrl = (url: string) => `${Deno.env.get("SUPABASE_URL")}/functions/v1/track-email-click?id=${trackingId}&url=${encodeURIComponent(url)}`;
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -87,7 +116,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <!-- Botão de ação -->
             <div style="text-align: center; margin: 40px 0;">
-              <a href="${siteUrl}" 
+              <a href="${trackingClickUrl(siteUrl)}" 
                  style="background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #f472b6 100%); 
                         color: white; 
                         padding: 18px 50px; 
@@ -120,6 +149,8 @@ const handler = async (req: Request): Promise<Response> => {
               Este é um email automático, por favor não responda.
             </p>
           </div>
+          <!-- Tracking Pixel -->
+          <img src="${trackingPixelUrl}" width="1" height="1" alt="" style="display:block; border:0; opacity:0; position:absolute;" />
         </body>
       </html>
     `;

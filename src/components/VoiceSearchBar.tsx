@@ -1,21 +1,60 @@
 import React, { useEffect, useState } from 'react';
-import { Search, MapPin, Mic, Loader2 } from 'lucide-react';
+import { Search, MapPin, Mic, Loader2, LocateFixed, X } from 'lucide-react';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useNavigate } from 'react-router-dom';
+import { useGeolocation } from '../hooks/useGeolocation';
+import { useCepLookup } from '../hooks/useCepLookup';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const VoiceSearchBar = () => {
   const navigate = useNavigate();
   const { isListening, transcript, startListening, hasSupport } = useSpeechRecognition();
+  const { location, loading: geoLoading, requestLocation } = useGeolocation();
+  const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
+  
   const [searchQuery, setSearchQuery] = useState("");
+  const [locationText, setLocationText] = useState("");
+  const [showCepDialog, setShowCepDialog] = useState(false);
+  const [cepInput, setCepInput] = useState("");
+
+  // Atualiza o texto de localização quando detectada
+  useEffect(() => {
+    if (location) {
+      setLocationText(`${location.cidade}, ${location.estado}`);
+    }
+  }, [location]);
 
   // Atualiza o input quando a voz detecta texto
   useEffect(() => {
     if (transcript) {
       setSearchQuery(transcript);
-      // Opcional: Navegar automaticamente após falar
-      // navigate(`/explorar?q=${transcript}`); 
     }
   }, [transcript]);
+
+  const handleDetectLocation = async () => {
+    try {
+      await requestLocation();
+    } catch (error) {
+      // Se falhar, abre o diálogo de CEP
+      setShowCepDialog(true);
+    }
+  };
+
+  const handleCepSubmit = async () => {
+    const data = await fetchCep(cepInput);
+    if (data) {
+      setLocationText(`${data.localidade}, ${data.uf}`);
+      setShowCepDialog(false);
+      setCepInput("");
+    }
+  };
+
+  const clearLocation = () => {
+    setLocationText("");
+    localStorage.removeItem('user_location');
+  };
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -42,9 +81,28 @@ const VoiceSearchBar = () => {
           <MapPin className="text-violet-400" size={20} />
           <input 
             type="text" 
+            value={locationText}
+            onChange={(e) => setLocationText(e.target.value)}
             placeholder="Onde?" 
             className="w-full bg-transparent text-white placeholder-slate-400 outline-none"
           />
+          {locationText && (
+            <button onClick={clearLocation} className="text-slate-400 hover:text-white">
+              <X size={16} />
+            </button>
+          )}
+          <button 
+            onClick={handleDetectLocation}
+            disabled={geoLoading}
+            className="group flex h-10 w-10 items-center justify-center rounded-full transition-all hover:bg-white/10"
+            title="Detectar minha localização"
+          >
+            {geoLoading ? (
+              <Loader2 size={20} className="animate-spin text-violet-400" />
+            ) : (
+              <LocateFixed size={20} className="text-slate-400 group-hover:text-violet-400" />
+            )}
+          </button>
         </div>
 
         {/* Divisor Desktop */}
@@ -104,6 +162,44 @@ const VoiceSearchBar = () => {
           </span>
         </div>
       )}
+
+      {/* Diálogo de CEP */}
+      <Dialog open={showCepDialog} onOpenChange={setShowCepDialog}>
+        <DialogContent className="bg-slate-900 border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle>Informe seu CEP</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Não conseguimos detectar sua localização automaticamente. Por favor, digite seu CEP para continuar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 mt-4">
+            <Input
+              type="text"
+              value={cepInput}
+              onChange={(e) => setCepInput(formatCep(e.target.value))}
+              placeholder="00000-000"
+              maxLength={9}
+              className="bg-white/5 border-white/10 text-white placeholder:text-slate-500"
+            />
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowCepDialog(false)} 
+                variant="outline"
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleCepSubmit}
+                disabled={cepLoading}
+                className="flex-1 bg-gradient-to-r from-violet-600 to-pink-600"
+              >
+                {cepLoading ? <Loader2 className="animate-spin" size={20} /> : "Confirmar"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

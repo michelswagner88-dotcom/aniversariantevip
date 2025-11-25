@@ -50,6 +50,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 
 const COLORS = ['#94a3b8', '#8b5cf6', '#ec4899'];
 
@@ -248,6 +249,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleToggleEstablishmentStatus = async (establishmentId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('estabelecimentos')
+        .update({ 
+          ativo: !currentStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', establishmentId);
+      
+      if (error) throw error;
+      
+      setEstablishments(establishments.map(e => 
+        e.id === establishmentId ? { ...e, ativo: !currentStatus } : e
+      ));
+      
+      toast.success(!currentStatus ? 'Estabelecimento ativado' : 'Estabelecimento desativado');
+    } catch (error) {
+      console.error('Erro ao alterar status:', error);
+      toast.error('Erro ao alterar status do estabelecimento');
+    }
+  };
+
   const filteredUsers = useMemo(() => {
     return users.filter(user => 
       user.cpf?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -440,6 +464,7 @@ export default function AdminDashboard() {
               <th className="p-4 border-b border-white/10">Estabelecimento</th>
               <th className="p-4 border-b border-white/10">CNPJ</th>
               <th className="p-4 border-b border-white/10">Cidade</th>
+              <th className="p-4 border-b border-white/10">Status</th>
               <th className="p-4 border-b border-white/10 text-right">Ações</th>
             </tr>
           </thead>
@@ -458,6 +483,17 @@ export default function AdminDashboard() {
                 </td>
                 <td className="p-4 text-slate-300">{est.cnpj}</td>
                 <td className="p-4 text-slate-300">{est.cidade || 'N/A'}</td>
+                <td className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Switch 
+                      checked={est.ativo !== false}
+                      onCheckedChange={() => handleToggleEstablishmentStatus(est.id, est.ativo !== false)}
+                    />
+                    <span className="text-sm text-slate-400">
+                      {est.ativo !== false ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
+                </td>
                 <td className="p-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button 

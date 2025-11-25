@@ -80,6 +80,22 @@ const handler = async (req: Request): Promise<Response> => {
       for (const profile of profiles || []) {
         const userName = profile.nome || profile.email.split('@')[0];
         
+        // Criar registro de analytics
+        const { data: analyticsRecord } = await supabase
+          .from('email_analytics')
+          .insert({
+            user_id: profile.id,
+            email_type: 'birthday_today',
+            email_address: profile.email,
+            sent_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        const trackingId = analyticsRecord?.id || 'unknown';
+        const trackingPixelUrl = `${supabaseUrl}/functions/v1/track-email-open?id=${trackingId}`;
+        const trackingClickUrl = (url: string) => `${supabaseUrl}/functions/v1/track-email-click?id=${trackingId}&url=${encodeURIComponent(url)}`;
+        
         const emailHtml = `
           <!DOCTYPE html>
           <html>
@@ -137,7 +153,7 @@ const handler = async (req: Request): Promise<Response> => {
                 </p>
                 
                 <div style="text-align: center; margin: 40px 0;">
-                  <a href="${siteUrl}" 
+                  <a href="${trackingClickUrl(siteUrl)}"
                      style="background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #f472b6 100%); 
                             color: white; 
                             padding: 22px 60px; 
@@ -165,6 +181,8 @@ const handler = async (req: Request): Promise<Response> => {
                   © ${new Date().getFullYear()} Aniversariante VIP
                 </p>
               </div>
+              <!-- Tracking Pixel -->
+              <img src="${trackingPixelUrl}" width="1" height="1" alt="" style="display:block; border:0; opacity:0; position:absolute;" />
             </body>
           </html>
         `;
@@ -196,6 +214,22 @@ const handler = async (req: Request): Promise<Response> => {
       
       for (const profile of profiles || []) {
         const userName = profile.nome || profile.email.split('@')[0];
+        
+        // Criar registro de analytics
+        const { data: analyticsRecord } = await supabase
+          .from('email_analytics')
+          .insert({
+            user_id: profile.id,
+            email_type: 'birthday_reminder',
+            email_address: profile.email,
+            sent_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        const trackingId = analyticsRecord?.id || 'unknown';
+        const trackingPixelUrl = `${supabaseUrl}/functions/v1/track-email-open?id=${trackingId}`;
+        const trackingClickUrl = (url: string) => `${supabaseUrl}/functions/v1/track-email-click?id=${trackingId}&url=${encodeURIComponent(url)}`;
         
         const emailHtml = `
           <!DOCTYPE html>
@@ -260,7 +294,7 @@ const handler = async (req: Request): Promise<Response> => {
                 </p>
                 
                 <div style="text-align: center; margin: 40px 0;">
-                  <a href="${siteUrl}" 
+                  <a href="${trackingClickUrl(siteUrl)}"
                      style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%); 
                             color: white; 
                             padding: 20px 55px; 
@@ -288,6 +322,8 @@ const handler = async (req: Request): Promise<Response> => {
                   © ${new Date().getFullYear()} Aniversariante VIP
                 </p>
               </div>
+              <!-- Tracking Pixel -->
+              <img src="${trackingPixelUrl}" width="1" height="1" alt="" style="display:block; border:0; opacity:0; position:absolute;" />
             </body>
           </html>
         `;

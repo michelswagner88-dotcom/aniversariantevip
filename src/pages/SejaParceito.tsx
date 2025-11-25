@@ -4,6 +4,7 @@ import { Building2, FileText, Settings, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { BackButton } from "@/components/BackButton";
 
 export default function SejaParceiro() {
   const vantagens = [
@@ -35,6 +36,9 @@ export default function SejaParceiro() {
       <div className="pt-16">
       {/* Hero */}
       <section className="relative bg-gradient-to-b from-primary/10 to-background py-20">
+        <div className="container mx-auto px-4">
+          <BackButton to="/" className="mb-6" />
+        </div>
         <div className="container mx-auto px-4 text-center">
           <Building2 className="h-16 w-16 text-primary mx-auto mb-6 animate-fade-in" />
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 animate-fade-in">

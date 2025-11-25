@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useFavoritos } from '@/hooks/useFavoritos';
+import { BackButton } from '@/components/BackButton';
 
 // --- Componentes UI Reutilizáveis ---
 const GlassCard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
@@ -267,7 +268,10 @@ const AreaAniversariante = () => {
 
       {/* Header Fixo Mobile */}
       <div className="sticky top-0 z-40 border-b border-white/5 bg-slate-950/80 px-6 py-4 backdrop-blur-xl">
-        <h1 className="font-plus-jakarta text-lg font-bold text-white">Meu Perfil VIP</h1>
+        <div className="flex items-center gap-3">
+          <BackButton to="/" />
+          <h1 className="font-plus-jakarta text-lg font-bold text-white">Meu Perfil VIP</h1>
+        </div>
       </div>
 
       <div className="px-6 pt-8">

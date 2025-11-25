@@ -11,6 +11,7 @@ import { format, differenceInHours, differenceInMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { BackButton } from "@/components/BackButton";
 
 interface Cupom {
   id: string;
@@ -270,6 +271,10 @@ export default function MeusCupons() {
         <Header />
         
         <main className="container mx-auto px-6 py-12 max-w-4xl">
+          <div className="mb-6">
+            <BackButton />
+          </div>
+          
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

@@ -21,6 +21,7 @@ import {
   Globe,
   Instagram
 } from 'lucide-react';
+import { BackButton } from '@/components/BackButton';
 
 // --- DADOS MOCKADOS (Simulação de APIs externas e Backend) ---
 
@@ -742,6 +743,9 @@ export default function EstablishmentRegistration() {
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-8 font-sans">
       <div className="max-w-3xl mx-auto bg-white p-6 sm:p-10 rounded-3xl shadow-xl">
+        <div className="mb-6">
+          <BackButton to="/seja-parceiro" />
+        </div>
         <Stepper currentStep={step} totalSteps={2} />
         
         {step === 1 ? renderStep1() : renderStep2()}

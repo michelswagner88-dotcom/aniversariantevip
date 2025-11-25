@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useCepLookup } from "@/hooks/useCepLookup";
+import { BackButton } from "@/components/BackButton";
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick }: any) => (
@@ -207,6 +208,9 @@ const Explorar = () => {
 
       {/* Header com Busca por Voz */}
       <div className="sticky top-0 z-40 border-b border-white/5 bg-slate-950/90 py-4 backdrop-blur-xl">
+        <div className="container mx-auto px-6 mb-3">
+          <BackButton to="/" />
+        </div>
         <VoiceSearchBar />
 
         {/* Banner de Localização com CEP */}

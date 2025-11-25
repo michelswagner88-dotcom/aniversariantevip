@@ -10,7 +10,20 @@ interface Location {
   };
 }
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+// Buscar token do Mapbox das variáveis de ambiente
+const getMapboxToken = () => {
+  // Tenta primeiro de import.meta.env
+  let token = import.meta.env.VITE_MAPBOX_TOKEN;
+  
+  // Se não encontrar, tenta de process.env (fallback)
+  if (!token && typeof process !== 'undefined') {
+    token = process.env.VITE_MAPBOX_TOKEN;
+  }
+  
+  return token;
+};
+
+const MAPBOX_TOKEN = getMapboxToken();
 
 export const useGeolocation = () => {
   const [location, setLocation] = useState<Location | null>(null);
@@ -20,9 +33,17 @@ export const useGeolocation = () => {
 
   const reverseGeocode = async (latitude: number, longitude: number) => {
     try {
+      if (!MAPBOX_TOKEN) {
+        throw new Error('Token do Mapbox não configurado');
+      }
+
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${MAPBOX_TOKEN}&language=pt&types=place,region`
       );
+
+      if (!response.ok) {
+        throw new Error(`Erro na API do Mapbox: ${response.status}`);
+      }
       
       const data = await response.json();
       
@@ -130,9 +151,9 @@ export const useGeolocation = () => {
           });
         },
         {
-          enableHighAccuracy: false,
-          timeout: 10000,
-          maximumAge: 300000 // Cache de 5 minutos
+          enableHighAccuracy: true, // Precisão alta para melhor resultado
+          timeout: 15000, // Aumentar timeout
+          maximumAge: 0 // Sempre pegar localização nova
         }
       );
     } catch (err) {

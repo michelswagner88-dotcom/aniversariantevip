@@ -84,9 +84,14 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    const token = import.meta.env.VITE_MAPBOX_TOKEN;
+    // Buscar token do Mapbox de forma robusta
+    let token = import.meta.env.VITE_MAPBOX_TOKEN;
+    if (!token && typeof process !== 'undefined') {
+      token = process.env.VITE_MAPBOX_TOKEN;
+    }
+
     if (!token) {
-      console.error('Mapbox token não configurado');
+      console.error('Mapbox token não configurado. Configure VITE_MAPBOX_TOKEN nos secrets.');
       return;
     }
 

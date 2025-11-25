@@ -8,6 +8,7 @@ import { useCepLookup } from '@/hooks/useCepLookup';
 import ChatAssistant from '@/components/ChatAssistant';
 import { useFormBehaviorMonitor } from '@/hooks/useFormBehaviorMonitor';
 import { BackButton } from '@/components/BackButton';
+import { getFriendlyErrorMessage } from '@/lib/errorTranslator';
 
 // --- Componentes UI (Inputs com estilo Glass) ---
 const InputGroup = ({ icon: Icon, label, onFocus, onBlur, ...props }: any) => (
@@ -282,8 +283,9 @@ const SmartAuth = () => {
 
       navigate('/');
     } catch (err: any) {
-      setError(err.message || "Erro ao fazer login. Verifique suas credenciais.");
-      trackServerError(500, err.message);
+      const friendlyMessage = getFriendlyErrorMessage(err);
+      setError(friendlyMessage);
+      trackServerError(500, friendlyMessage);
     } finally {
       setIsLoading(false);
     }
@@ -358,9 +360,10 @@ const SmartAuth = () => {
       // Sucesso: Vai para Fase 2
       setStep(2);
     } catch (err: any) {
-      setError(err.message || "Erro ao criar conta.");
-      trackServerError(500, err.message);
-      if (err.message.includes('11 dígitos')) {
+      const friendlyMessage = getFriendlyErrorMessage(err);
+      setError(friendlyMessage);
+      trackServerError(500, friendlyMessage);
+      if (err.message?.includes('11 dígitos')) {
         trackValidationError('telefone', 'Formato de telefone inválido');
       }
     } finally {
@@ -386,8 +389,9 @@ const SmartAuth = () => {
 
       // Após redirect, o useEffect verificará se precisa completar cadastro
     } catch (err: any) {
-      setError(err.message || "Erro ao fazer login com Google.");
-      trackServerError(500, err.message);
+      const friendlyMessage = getFriendlyErrorMessage(err);
+      setError(friendlyMessage);
+      trackServerError(500, friendlyMessage);
       setIsLoading(false);
     }
   };
@@ -458,12 +462,13 @@ const SmartAuth = () => {
         navigate('/');
       }, 1000);
     } catch (err: any) {
-      setError(err.message || "Erro ao finalizar cadastro.");
-      trackServerError(500, err.message);
-      if (err.message.includes('CPF inválido')) {
+      const friendlyMessage = getFriendlyErrorMessage(err);
+      setError(friendlyMessage);
+      trackServerError(500, friendlyMessage);
+      if (err.message?.includes('CPF inválido')) {
         trackValidationError('cpf', 'CPF com dígitos verificadores inválidos');
       }
-      if (err.message.includes('11 dígitos')) {
+      if (err.message?.includes('11 dígitos')) {
         trackValidationError('telefone', 'Formato de telefone inválido');
       }
     } finally {

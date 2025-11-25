@@ -131,6 +131,12 @@ const SmartAuth = () => {
     value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
     value = value.replace(/(\d)(\d{4})$/, '$1-$2');
     setFormData({ ...formData, phone: value });
+
+    // Validar telefone quando completo
+    const cleanPhone = value.replace(/\D/g, '');
+    if (cleanPhone.length > 0 && cleanPhone.length !== 11) {
+      trackValidationError('telefone', 'WhatsApp deve ter 11 dígitos (DDD + 9)');
+    }
   };
 
   // Máscara de CPF
@@ -224,6 +230,12 @@ const SmartAuth = () => {
         throw new Error("Preencha todos os campos obrigatórios.");
       }
 
+      // Validação de telefone (11 dígitos: DDD + 9 dígitos)
+      const phoneClean = formData.phone.replace(/\D/g, '');
+      if (phoneClean.length !== 11) {
+        throw new Error("WhatsApp deve ter 11 dígitos (DDD + número com 9). Ex: (11) 99999-9999");
+      }
+
       if (formData.password.length < 6) {
         throw new Error("Senha deve ter pelo menos 6 caracteres.");
       }
@@ -277,6 +289,9 @@ const SmartAuth = () => {
     } catch (err: any) {
       setError(err.message || "Erro ao criar conta.");
       trackServerError(500, err.message);
+      if (err.message.includes('11 dígitos')) {
+        trackValidationError('telefone', 'Formato de telefone inválido');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -313,10 +328,10 @@ const SmartAuth = () => {
     setError("");
 
     try {
-      // Validação de telefone OBRIGATÓRIO
+      // Validação de telefone OBRIGATÓRIO (11 dígitos: DDD + 9 dígitos)
       const telefone = formData.phone ? formData.phone.replace(/\D/g, '') : '';
-      if (!telefone || telefone.length < 10) {
-        throw new Error("WhatsApp é obrigatório. Por favor, informe um número válido.");
+      if (!telefone || telefone.length !== 11) {
+        throw new Error("WhatsApp deve ter 11 dígitos (DDD + número com 9). Ex: (11) 99999-9999");
       }
 
       // Validação de CPF
@@ -367,6 +382,9 @@ const SmartAuth = () => {
       trackServerError(500, err.message);
       if (err.message.includes('CPF inválido')) {
         trackValidationError('cpf', 'CPF com dígitos verificadores inválidos');
+      }
+      if (err.message.includes('11 dígitos')) {
+        trackValidationError('telefone', 'Formato de telefone inválido');
       }
     } finally {
       setIsLoading(false);
@@ -459,7 +477,7 @@ const SmartAuth = () => {
                 />
                 {!isLogin && (
                   <InputGroup 
-                    icon={Phone} label="WhatsApp" placeholder="(00) 90000-0000" required maxLength={15}
+                    icon={Phone} label="WhatsApp" placeholder="(11) 99999-9999" required maxLength={15}
                     value={formData.phone} 
                     onChange={handlePhoneChange}
                     onFocus={() => trackFieldFocus('telefone')}
@@ -527,7 +545,7 @@ const SmartAuth = () => {
               <form onSubmit={handleCompletion}>
                 {!formData.phone && (
                   <InputGroup 
-                    icon={Phone} label="WhatsApp (Obrigatório)" placeholder="(00) 90000-0000" required maxLength={15}
+                    icon={Phone} label="WhatsApp (Obrigatório)" placeholder="(11) 99999-9999" required maxLength={15}
                     value={formData.phone} 
                     onChange={handlePhoneChange}
                     onFocus={() => trackFieldFocus('telefone')}

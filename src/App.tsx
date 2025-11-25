@@ -20,6 +20,8 @@ import AreaEstabelecimento from "./pages/AreaEstabelecimento";
 import LoginColaborador from "./pages/LoginColaborador";
 import AreaColaborador from "./pages/AreaColaborador";
 import SetupAdmin from "./pages/SetupAdmin";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import ComoFunciona from "./pages/ComoFunciona";
 import SejaParceito from "./pages/SejaParceito";
@@ -77,6 +79,8 @@ const App = () => (
               <Route path="/login/colaborador" element={<LoginColaborador />} />
               <Route path="/area-colaborador" element={<AreaColaborador />} />
               <Route path="/setup-admin" element={<SetupAdmin />} />
+              <Route path="/admin" element={<AdminLogin />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/selecionar-categoria" element={<SelecionarCategoria />} />
               <Route path="/planos-pagamento" element={<PlanosPagamento />} />
               <Route path="/planos" element={<PlanosPagamento />} />

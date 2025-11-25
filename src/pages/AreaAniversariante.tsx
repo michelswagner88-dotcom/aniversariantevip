@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, ChevronRight, Gift, MapPin, User, LogOut, Edit2, X, Mail, Phone, Save, Loader2, Heart, Store } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Calendar, ChevronRight, Gift, MapPin, User, LogOut, Edit2, X, Mail, Phone, Save, Loader2, Heart, Store, Camera, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useFavoritos } from '@/hooks/useFavoritos';
 import { BackButton } from '@/components/BackButton';
+import { resizeImage } from '@/lib/imageUtils';
 
 // --- Componentes UI Reutilizáveis ---
 const GlassCard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
@@ -47,6 +48,8 @@ const AreaAniversariante = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [favoritosEstabelecimentos, setFavoritosEstabelecimentos] = useState<any[]>([]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Dados do usuário
   const [userData, setUserData] = useState({
@@ -241,6 +244,60 @@ const AreaAniversariante = () => {
     }
   };
 
+  // Upload de foto
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      // Redimensionar imagem
+      const resizedFile = await resizeImage(file, 400, 400);
+
+      // Upload para Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('estabelecimento-logos')
+        .upload(filePath, resizedFile, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Obter URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('estabelecimento-logos')
+        .getPublicUrl(filePath);
+
+      // Atualizar metadata do usuário
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { avatar_url: publicUrl }
+      });
+
+      if (updateError) throw updateError;
+
+      setUserData(prev => ({ ...prev, avatarUrl: publicUrl }));
+
+      toast({
+        title: "Foto atualizada!",
+        description: "Sua foto de perfil foi atualizada com sucesso.",
+      });
+    } catch (error: any) {
+      console.error('Erro ao fazer upload:', error);
+      toast({
+        title: "Erro no upload",
+        description: error.message || "Não foi possível atualizar a foto.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
   // Logout
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -288,6 +345,26 @@ const AreaAniversariante = () => {
                 </div>
               )}
             </div>
+            
+            {/* Botão de Upload de Foto */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingPhoto}
+              className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-violet-500 text-white shadow-lg hover:bg-violet-600 transition-colors disabled:opacity-50"
+            >
+              {isUploadingPhoto ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Camera size={16} />
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoUpload}
+              className="hidden"
+            />
           </div>
           
           <h2 className="font-plus-jakarta text-2xl font-bold text-white">{userData.name}</h2>

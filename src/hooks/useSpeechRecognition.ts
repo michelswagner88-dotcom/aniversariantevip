@@ -47,12 +47,30 @@ export const useSpeechRecognition = () => {
   const startListening = useCallback(() => {
     if (recognition) {
       try {
-        recognition.start();
-        setTranscript(""); // Limpa busca anterior
-        setError(null);
+        // Primeiro para qualquer reconhecimento em andamento
+        try {
+          recognition.stop();
+        } catch (e) {
+          // Ignora erro se não estava rodando
+        }
+        
+        // Aguarda um pouco e reinicia
+        setTimeout(() => {
+          try {
+            recognition.start();
+            setTranscript(""); // Limpa busca anterior
+            setError(null);
+          } catch (startError) {
+            console.error("Erro ao iniciar reconhecimento:", startError);
+            setError("Erro ao ativar o microfone. Verifique as permissões.");
+          }
+        }, 100);
       } catch (e) {
-        console.log("Reconhecimento já iniciado");
+        console.error("Erro no reconhecimento de voz:", e);
+        setError("Erro ao ativar o microfone.");
       }
+    } else {
+      setError("Reconhecimento de voz não disponível neste navegador.");
     }
   }, [recognition]);
 

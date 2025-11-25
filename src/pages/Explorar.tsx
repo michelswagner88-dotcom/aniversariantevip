@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MapPin, Search, SlidersHorizontal, Map as MapIcon, List, X, Check, Clock, Gift, Share2, Heart, CalendarDays, Navigation } from 'lucide-react';
 import { toast } from "sonner";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
+import InteractiveMap from "@/components/InteractiveMap";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useCepLookup } from "@/hooks/useCepLookup";
 import { BackButton } from "@/components/BackButton";
@@ -104,6 +105,7 @@ const PlaceCard = ({ place }: any) => {
 };
 
 const Explorar = () => {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [showFilters, setShowFilters] = useState(false);
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
@@ -153,21 +155,25 @@ const Explorar = () => {
     { 
       id: 1, name: "1929 Trattoria", category: "Gastronomia", neighborhood: "Centro", distance: "2km", benefit: "Sobremesa Exclusiva", isOpen: true, 
       validDays: ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'],
+      latitude: -27.5969, longitude: -48.5482,
       image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80" 
     },
     { 
       id: 2, name: "Boteco Cascaes", category: "Bares", neighborhood: "Lagoa", distance: "5km", benefit: "Drink Autoral Grátis", isOpen: false, 
       validDays: ['sex', 'sab', 'dom'],
+      latitude: -27.5778, longitude: -48.5156,
       image: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80" 
     },
     { 
       id: 3, name: "Barbearia VIP", category: "Serviços", neighborhood: "Trindade", distance: "1.2km", benefit: "Corte + Cerveja", isOpen: true, 
       validDays: ['ter', 'qua', 'qui'],
+      latitude: -27.6005, longitude: -48.5207,
       image: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80" 
     },
     { 
       id: 4, name: "Cinemark", category: "Lazer", neighborhood: "Beiramar", distance: "3.5km", benefit: "Combo Pipoca P", isOpen: true, 
       validDays: ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'],
+      latitude: -27.5949, longitude: -48.5524,
       image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80" 
     },
   ];
@@ -363,12 +369,23 @@ const Explorar = () => {
             )}
           </>
         ) : (
-          <div className="relative flex h-[65vh] w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-slate-900 text-center animate-in zoom-in-95 duration-300">
-            <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(circle, #6366f1 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-            <div className="z-10 mb-4 rounded-full bg-white/5 p-6 backdrop-blur-sm ring-1 ring-white/10"><MapIcon size={48} className="text-violet-400" /></div>
-            <h3 className="z-10 text-xl font-bold text-white">Mapa Interativo</h3>
-            <p className="z-10 mt-2 max-w-xs text-sm text-slate-400">Clique em 'Ver Lista' para voltar.</p>
-          </div>
+          <InteractiveMap
+            establishments={filteredPlaces.map(place => ({
+              id: place.id,
+              name: place.name,
+              category: place.category,
+              latitude: place.latitude,
+              longitude: place.longitude,
+              image: place.image,
+              benefit: place.benefit,
+              isOpen: place.isOpen,
+            }))}
+            userLocation={location?.coordinates ? {
+              latitude: location.coordinates.latitude,
+              longitude: location.coordinates.longitude,
+            } : undefined}
+            onEstablishmentClick={(id) => navigate('/auth')}
+          />
         )}
       </div>
 

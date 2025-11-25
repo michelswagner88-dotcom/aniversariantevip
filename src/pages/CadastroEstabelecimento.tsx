@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -25,9 +25,11 @@ type HorarioFuncionamento = {
 export default function CadastroEstabelecimento() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [pageReady, setPageReady] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [referrerId, setReferrerId] = useState<string | null>(null);
   const [horariosFuncionamento, setHorariosFuncionamento] = useState<HorarioFuncionamento[]>([
     { id: '1', dias: [], abertura: '', fechamento: '' }
   ]);
@@ -62,7 +64,21 @@ export default function CadastroEstabelecimento() {
 
   useEffect(() => {
     setPageReady(true);
-  }, []);
+    
+    // Capturar referral ID da URL
+    const ref = searchParams.get('ref');
+    if (ref) {
+      localStorage.setItem('referral_id', ref);
+      setReferrerId(ref);
+      console.log('Referral ID capturado:', ref);
+    } else {
+      // Tentar recuperar do localStorage
+      const savedRef = localStorage.getItem('referral_id');
+      if (savedRef) {
+        setReferrerId(savedRef);
+      }
+    }
+  }, [searchParams]);
 
   const buscarCep = async (cep: string) => {
     const cepLimpo = cep.replace(/\D/g, "");
@@ -367,6 +383,7 @@ export default function CadastroEstabelecimento() {
           descricao_beneficio: formData.beneficiosAniversariante,
           logo_url: logoUrl,
           tem_conta_acesso: true,
+          referred_by_user_id: referrerId || null,
         });
 
       if (estabError) throw estabError;

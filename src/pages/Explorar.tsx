@@ -10,13 +10,15 @@ import { useCepLookup } from "@/hooks/useCepLookup";
 const CategoryPill = ({ icon, label, active, onClick }: any) => (
   <button 
     onClick={onClick}
-    className={`flex items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition-all active:scale-95 ${
+    className={`flex items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition-all duration-300 active:scale-95 ${
       active 
-        ? 'border-violet-500 bg-violet-600 text-white shadow-lg shadow-violet-500/20' 
-        : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+        ? 'border-violet-500 bg-violet-600 text-white shadow-lg shadow-violet-500/20 scale-105' 
+        : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:scale-102'
     }`}
   >
-    <span>{icon}</span>
+    <span className={`transition-transform duration-300 ${active ? 'scale-110' : 'scale-100'}`}>
+      {icon}
+    </span>
     {label}
   </button>
 );
@@ -56,7 +58,7 @@ const PlaceCard = ({ place }: any) => {
   return (
     <div 
       onClick={handleCardClick}
-      className="group relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-slate-800 shadow-lg border border-white/5 cursor-pointer hover:border-violet-500/50 transition-all"
+      className="group relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-slate-800 shadow-lg border border-white/5 cursor-pointer hover:border-violet-500/50 transition-all animate-fade-in"
     >
       <img src={place.image} alt={place.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
@@ -273,8 +275,11 @@ const Explorar = () => {
 
         {/* Pílulas de Categoria */}
         <div className="container mx-auto px-6 mt-4 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-          <button onClick={() => setShowFilters(true)} className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all active:scale-95 ${filterOpenNow || filterDay !== 'any' ? 'bg-violet-600 border-violet-500 text-white' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
-            <SlidersHorizontal size={18} />
+          <button 
+            onClick={() => setShowFilters(true)} 
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all duration-300 active:scale-95 ${filterOpenNow || filterDay !== 'any' ? 'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:scale-105'}`}
+          >
+            <SlidersHorizontal size={18} className="transition-transform duration-300" />
           </button>
           <CategoryPill icon="🚀" label="Todos" active={activeCategories.length === 0} onClick={() => handleCategoryToggle("Todos")} />
           <CategoryPill icon="🏋️" label="Academia" active={activeCategories.includes("Academia")} onClick={() => handleCategoryToggle("Academia")} />
@@ -289,18 +294,52 @@ const Explorar = () => {
 
       {/* Lista de Cards */}
       <div className="px-4 pt-6">
-        <div className="mb-4 flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{filteredPlaces.length} Resultados</span>
-          <button onClick={() => setFilterOpenNow(!filterOpenNow)} className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all ${filterOpenNow ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/50' : 'text-slate-400 hover:text-white'}`}>
-            <div className={`h-1.5 w-1.5 rounded-full ${filterOpenNow ? 'bg-emerald-400' : 'bg-slate-500'}`}></div>
+        <div className="mb-4 flex items-center justify-between animate-fade-in">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 transition-all duration-300">
+            {filteredPlaces.length} Resultados
+          </span>
+          <button onClick={() => setFilterOpenNow(!filterOpenNow)} className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all duration-300 ${filterOpenNow ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/50 scale-105' : 'text-slate-400 hover:text-white hover:scale-105'}`}>
+            <div className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${filterOpenNow ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}></div>
             Aberto Agora
           </button>
         </div>
 
         {viewMode === 'list' ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 animate-in fade-in duration-500">
-            {filteredPlaces.map(place => (<PlaceCard key={place.id} place={place} />))}
-          </div>
+          <>
+            {filteredPlaces.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 animate-fade-in">
+                <div className="rounded-full bg-white/5 p-6 backdrop-blur-sm ring-1 ring-white/10 mb-4">
+                  <Search size={48} className="text-slate-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Nenhum resultado encontrado</h3>
+                <p className="text-sm text-slate-400 max-w-xs text-center">
+                  Tente ajustar seus filtros ou selecione outras categorias
+                </p>
+                <button
+                  onClick={() => {
+                    setActiveCategories([]);
+                    setFilterOpenNow(false);
+                    setFilterDay('any');
+                  }}
+                  className="mt-6 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-medium text-sm hover:brightness-110 transition-all duration-300 active:scale-95"
+                >
+                  Limpar Filtros
+                </button>
+              </div>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {filteredPlaces.map((place, index) => (
+                  <div 
+                    key={place.id}
+                    className="animate-fade-in"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <PlaceCard place={place} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         ) : (
           <div className="relative flex h-[65vh] w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-slate-900 text-center animate-in zoom-in-95 duration-300">
             <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(circle, #6366f1 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { APIProvider, Map, AdvancedMarker, Pin, useMap } from '@vis.gl/react-google-maps';
-import { MapPin, X, Navigation } from 'lucide-react';
+import { MapPin, X, Navigation, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
+import { toast } from 'sonner';
 
 interface Establishment {
   id: string;
@@ -45,15 +46,15 @@ const BottomSheet: React.FC<{
     <>
       {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black/40 z-40 animate-fade-in"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 animate-fade-in"
         onClick={onClose}
       />
       
       {/* Bottom Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 animate-slide-in-bottom">
-        <Card className="rounded-t-3xl border-t border-white/10 bg-slate-900/95 backdrop-blur-xl p-6 shadow-2xl">
+      <div className="fixed bottom-0 left-0 right-0 z-50 animate-slide-in-bottom touch-pan-y">
+        <Card className="rounded-t-3xl border-t border-white/10 bg-slate-900/95 backdrop-blur-xl p-6 shadow-2xl max-h-[80vh] overflow-y-auto">
           {/* Drag Handle */}
-          <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-4" />
+          <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-4 cursor-grab active:cursor-grabbing" />
           
           <div className="flex gap-4">
             {/* Image */}
@@ -82,9 +83,9 @@ const BottomSheet: React.FC<{
               </div>
               <Button 
                 onClick={onViewDetails}
-                className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90"
+                className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg shadow-violet-500/20"
               >
-                Ver Benefício
+                Ver Benefício 🎁
               </Button>
             </div>
           </div>
@@ -168,16 +169,24 @@ const MapContent: React.FC<{
             position={{ lat: establishment.latitude, lng: establishment.longitude }}
             onClick={() => onMarkerClick(establishment.id)}
           >
-            <div className="relative cursor-pointer group">
+            <div className="relative cursor-pointer group transform transition-transform duration-200 hover:scale-110 active:scale-95">
               {/* Touch-friendly padding */}
-              <div className="absolute inset-0 -m-3" />
+              <div className="absolute inset-0 -m-4" />
               
               <Pin
                 background={getCategoryColor(establishment.categoria)}
                 borderColor="#ffffff"
                 glyphColor="#ffffff"
-                scale={selectedId === establishment.id ? 1.3 : 1.1}
+                scale={selectedId === establishment.id ? 1.4 : 1.1}
               />
+              
+              {/* Glow effect on hover */}
+              <div className="absolute inset-0 -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div 
+                  className="w-full h-full rounded-full blur-xl" 
+                  style={{ backgroundColor: getCategoryColor(establishment.categoria) + '40' }}
+                />
+              </div>
             </div>
           </AdvancedMarker>
         );
@@ -194,10 +203,21 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [selectedEstablishmentId, setSelectedEstablishmentId] = useState<string | null>(null);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   const selectedEstablishment = establishments.find(e => e.id === selectedEstablishmentId);
 
   const defaultCenter = userLocation || { lat: -27.5954, lng: -48.5480 }; // Florianópolis
+
+  // Verificar se a API key está configurada
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  
+  useEffect(() => {
+    if (!apiKey) {
+      console.error('VITE_GOOGLE_MAPS_API_KEY não está configurada');
+      toast.error('Erro ao carregar o mapa. Entre em contato com o suporte.');
+    }
+  }, [apiKey]);
 
   const handleMarkerClick = (id: string) => {
     setSelectedEstablishmentId(id);
@@ -220,25 +240,38 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
     }
   };
 
+  const handleOpenMap = () => {
+    if (!apiKey) {
+      toast.error('Google Maps não está configurado corretamente');
+      return;
+    }
+    setIsMapOpen(true);
+    
+    // Marcar como carregado e remover loading após delay
+    setTimeout(() => {
+      setMapLoaded(true);
+    }, 800);
+  };
+
   return (
     <>
       {/* FAB - Floating Action Button */}
       <Button
-        onClick={() => setIsMapOpen(true)}
-        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 shadow-2xl px-6 py-6 rounded-full bg-slate-900/90 backdrop-blur-md border border-white/10 hover:bg-slate-800/90 flex items-center gap-2"
+        onClick={handleOpenMap}
+        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 shadow-2xl px-6 py-6 rounded-full bg-slate-900/90 backdrop-blur-md border border-white/10 hover:bg-slate-800/90 hover:scale-105 active:scale-95 flex items-center gap-2 transition-all duration-200"
       >
-        <MapPin className="w-5 h-5" />
-        <span className="font-semibold">Mapa</span>
+        <MapPin className="w-5 h-5 text-violet-400" />
+        <span className="font-semibold">Ver Mapa</span>
       </Button>
 
-      {/* Full Screen Map */}
-      {isMapOpen && (
+      {/* Full Screen Map - Lazy Loading */}
+      {isMapOpen && apiKey && (
         <div className="fixed inset-0 z-50 bg-slate-950 animate-fade-in">
           {/* Close Button */}
           <Button
             onClick={() => setIsMapOpen(false)}
             variant="ghost"
-            className="absolute top-4 left-4 z-50 bg-slate-900/90 backdrop-blur-md border border-white/10 hover:bg-slate-800/90"
+            className="absolute top-4 left-4 z-50 bg-slate-900/90 backdrop-blur-md border border-white/10 hover:bg-slate-800/90 hover:scale-110 active:scale-95 transition-all duration-200"
             size="icon"
           >
             <X className="w-5 h-5" />
@@ -249,7 +282,7 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
             <Button
               onClick={handleRecenterToUser}
               variant="ghost"
-              className="absolute top-4 right-4 z-50 bg-slate-900/90 backdrop-blur-md border border-white/10 hover:bg-slate-800/90"
+              className="absolute top-4 right-4 z-50 bg-slate-900/90 backdrop-blur-md border border-white/10 hover:bg-slate-800/90 hover:scale-110 active:scale-95 transition-all duration-200"
               size="icon"
               title="Centralizar na minha localização"
             >
@@ -257,28 +290,41 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
             </Button>
           )}
 
+          {/* Loading State */}
+          {!mapLoaded && (
+            <div className="absolute inset-0 z-40 flex items-center justify-center bg-slate-950">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-violet-400" />
+                <p className="text-sm text-slate-400">Carregando mapa...</p>
+              </div>
+            </div>
+          )}
+
           {/* Map */}
-          <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
-            <Map
-              defaultCenter={defaultCenter}
-              defaultZoom={13}
-              mapId="aniversariante-vip-map"
-              gestureHandling="greedy"
-              disableDefaultUI={false}
-              zoomControl={true}
-              fullscreenControl={false}
-              streetViewControl={false}
-              className="w-full h-full"
-            >
-              <MapContent
-                establishments={establishments}
-                selectedId={selectedEstablishmentId}
-                onMarkerClick={handleMarkerClick}
-                userLocation={userLocation}
-                onMapReady={setMapInstance}
-              />
-            </Map>
-          </APIProvider>
+          <Suspense fallback={null}>
+            <APIProvider apiKey={apiKey}>
+              <Map
+                defaultCenter={defaultCenter}
+                defaultZoom={13}
+                mapId="aniversariante-vip-map"
+                gestureHandling="greedy"
+                disableDefaultUI={false}
+                zoomControl={true}
+                fullscreenControl={false}
+                streetViewControl={false}
+                mapTypeControl={false}
+                className="w-full h-full"
+              >
+                <MapContent
+                  establishments={establishments}
+                  selectedId={selectedEstablishmentId}
+                  onMarkerClick={handleMarkerClick}
+                  userLocation={userLocation}
+                  onMapReady={setMapInstance}
+                />
+              </Map>
+            </APIProvider>
+          </Suspense>
 
           {/* Bottom Sheet */}
           {selectedEstablishment && (

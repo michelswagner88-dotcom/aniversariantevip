@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,11 @@ interface Message {
   timestamp: Date;
 }
 
-const ChatAssistant = () => {
+interface ChatAssistantProps {
+  onMount?: (sendMessage: (message: string) => void) => void;
+}
+
+const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -111,6 +115,25 @@ const ChatAssistant = () => {
     setInput(question);
     inputRef.current?.focus();
   };
+
+  // Método público para enviar mensagens proativas
+  const sendProactiveMessage = useCallback((message: string) => {
+    const assistantMessage: Message = {
+      role: 'assistant',
+      content: message,
+      timestamp: new Date(),
+    };
+    
+    setMessages(prev => [...prev, assistantMessage]);
+    setIsOpen(true); // Abrir o chat automaticamente
+  }, []);
+
+  // Expor método para o componente pai
+  useEffect(() => {
+    if (onMount) {
+      onMount(sendProactiveMessage);
+    }
+  }, [onMount, sendProactiveMessage]);
 
   return (
     <>

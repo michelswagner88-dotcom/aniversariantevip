@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { resizeImage } from "@/lib/imageUtils";
 import { estabelecimentoSchema } from "@/lib/validation";
 import { ESTADOS_CIDADES, ESTADOS } from "@/lib/constants";
+import { useFormBehaviorMonitor, BehaviorTrigger } from "@/hooks/useFormBehaviorMonitor";
+import ChatAssistant from "@/components/ChatAssistant";
 
 type HorarioFuncionamento = {
   id: string;
@@ -61,6 +63,17 @@ export default function CadastroEstabelecimento() {
     instagram: "",
   });
   const [buscandoCep, setBuscandoCep] = useState(false);
+  const chatAssistantRef = useRef<((message: string) => void) | null>(null);
+
+  // Inicializar monitoramento de comportamento
+  const handleBehaviorTrigger = (trigger: BehaviorTrigger) => {
+    if (chatAssistantRef.current) {
+      chatAssistantRef.current(trigger.message);
+    }
+  };
+
+  const { trackFieldFocus, trackFieldBlur, trackValidationError, trackServerError } = 
+    useFormBehaviorMonitor(handleBehaviorTrigger, true);
 
   useEffect(() => {
     setPageReady(true);
@@ -92,12 +105,13 @@ export default function CadastroEstabelecimento() {
       const data = await response.json();
       
       if (data.erro) {
-        toast({
-          variant: "destructive",
-          title: "CEP não encontrado",
-          description: "Verifique o CEP digitado e tente novamente",
-        });
-        return;
+      toast({
+        variant: "destructive",
+        title: "CEP não encontrado",
+        description: "Verifique o CEP digitado e tente novamente",
+      });
+      trackValidationError('cep', 'CEP não encontrado');
+      return;
       }
       
       // Geocode address to get coordinates
@@ -255,11 +269,19 @@ export default function CadastroEstabelecimento() {
     
     if (!validationResult.success) {
       const errors = validationResult.error.errors;
+      const firstError = errors[0];
+      
       toast({
         variant: "destructive",
         title: "Erro de validação",
-        description: errors[0]?.message || "Verifique os campos do formulário",
+        description: firstError?.message || "Verifique os campos do formulário",
       });
+      
+      // Rastrear erro de validação
+      if (firstError?.path?.[0]) {
+        trackValidationError(firstError.path[0].toString(), firstError.message);
+      }
+      
       return;
     }
 
@@ -396,6 +418,12 @@ export default function CadastroEstabelecimento() {
       navigate("/login/estabelecimento");
     } catch (error: any) {
       console.error("Erro ao cadastrar:", error);
+      
+      // Rastrear erro de servidor
+      if (error.status) {
+        trackServerError(error.status, error.message);
+      }
+      
       toast({
         variant: "destructive",
         title: "Erro",
@@ -437,6 +465,8 @@ export default function CadastroEstabelecimento() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onFocus={() => trackFieldFocus('email')}
+                    onBlur={() => trackFieldBlur('email')}
                   />
                 </div>
                 <div className="space-y-2">
@@ -446,6 +476,8 @@ export default function CadastroEstabelecimento() {
                     required
                     value={formData.telefone}
                     onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                    onFocus={() => trackFieldFocus('telefone')}
+                    onBlur={() => trackFieldBlur('telefone')}
                   />
                 </div>
                 <div className="space-y-2">
@@ -455,6 +487,8 @@ export default function CadastroEstabelecimento() {
                     required
                     value={formData.senha}
                     onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
+                    onFocus={() => trackFieldFocus('senha')}
+                    onBlur={() => trackFieldBlur('senha', true)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -479,6 +513,8 @@ export default function CadastroEstabelecimento() {
                     required
                     value={formData.nomeFantasia}
                     onChange={(e) => setFormData({ ...formData, nomeFantasia: e.target.value })}
+                    onFocus={() => trackFieldFocus('nomeFantasia')}
+                    onBlur={() => trackFieldBlur('nomeFantasia')}
                   />
                 </div>
 
@@ -499,6 +535,8 @@ export default function CadastroEstabelecimento() {
                         .replace(/(\d{4})(\d{1,2})$/, "$1-$2");
                       setFormData({ ...formData, cnpj: formatted });
                     }}
+                    onFocus={() => trackFieldFocus('cnpj')}
+                    onBlur={() => trackFieldBlur('cnpj', true)}
                   />
                 </div>
                 
@@ -587,6 +625,8 @@ export default function CadastroEstabelecimento() {
                         }
                       }}
                       disabled={buscandoCep}
+                      onFocus={() => trackFieldFocus('cep')}
+                      onBlur={() => trackFieldBlur('cep', true)}
                     />
                     {buscandoCep && (
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -604,6 +644,8 @@ export default function CadastroEstabelecimento() {
                       value={formData.logradouro}
                       onChange={(e) => setFormData({ ...formData, logradouro: e.target.value })}
                       placeholder="Ex: Rua das Flores"
+                      onFocus={() => trackFieldFocus('logradouro')}
+                      onBlur={() => trackFieldBlur('logradouro')}
                     />
                   </div>
 
@@ -832,6 +874,8 @@ export default function CadastroEstabelecimento() {
                     placeholder="Descreva os benefícios que o aniversariante irá ganhar"
                     value={formData.beneficiosAniversariante}
                     onChange={(e) => setFormData({ ...formData, beneficiosAniversariante: e.target.value })}
+                    onFocus={() => trackFieldFocus('beneficiosAniversariante')}
+                    onBlur={() => trackFieldBlur('beneficiosAniversariante', true)}
                   />
                 </div>
 
@@ -843,6 +887,8 @@ export default function CadastroEstabelecimento() {
                     placeholder="Explique as regras, documentos necessários, número de pessoas, etc."
                     value={formData.regrasAniversariante}
                     onChange={(e) => setFormData({ ...formData, regrasAniversariante: e.target.value })}
+                    onFocus={() => trackFieldFocus('regrasAniversariante')}
+                    onBlur={() => trackFieldBlur('regrasAniversariante', true)}
                   />
                 </div>
 
@@ -904,6 +950,13 @@ export default function CadastroEstabelecimento() {
           </form>
         </CardContent>
       </Card>
+      
+      {/* Chatbot Proativo */}
+      <ChatAssistant 
+        onMount={(sendMessage) => {
+          chatAssistantRef.current = sendMessage;
+        }}
+      />
     </div>
   );
 }

@@ -168,6 +168,34 @@ Regras de Uso: Variam por lugar. Pode ser válido só no dia, na semana ou no m�
 Liberdade Total: O usuário pode gerar quantos cupons quiser, em quantos estabelecimentos diferentes quiser. Não há limite de cupons por pessoa.
 Cadastro precisa de: Nome completo, Email, Telefone com DDD, Senha (mínimo 6 caracteres), CPF (obrigatório, validado com dígitos verificadores), Data de Nascimento (obrigatória, formato DD/MM/AAAA).
 
+FAQ - PERGUNTAS FREQUENTES SOBRE CUPONS:
+
+P: Quantos cupons eu posso gerar?
+R: Quantos você quiser! Não existe limite. Você pode gerar cupons em todos os estabelecimentos que te interessam. A ideia é que você aproveite ao máximo o seu mês de aniversário!
+
+P: Posso usar mais de um cupom no mesmo dia?
+R: Com certeza! Você pode usar quantos cupons quiser no mesmo dia, desde que sejam em estabelecimentos diferentes. Por exemplo: almoço grátis no restaurante às 13h, corte de cabelo no salão às 16h e sobremesa especial na confeitaria às 19h. Tudo no mesmo dia!
+
+P: Posso gerar cupom para o mesmo estabelecimento mais de uma vez?
+R: Aqui existe uma regra de segurança: você pode gerar apenas 1 cupom por estabelecimento por semana. Isso evita abusos e garante que mais pessoas possam aproveitar. Mas calma, você tem centenas de outros lugares para explorar!
+
+P: Preciso usar todos os cupons no dia do meu aniversário?
+R: Não! Cada estabelecimento define suas regras. Alguns aceitam só no dia exato, outros na semana toda e tem aqueles que liberam o mês inteiro! Sempre confira a regra no card do estabelecimento antes de gerar o cupom.
+
+P: Posso gerar o cupom com antecedência?
+R: Sim! Você pode gerar o cupom antes da data e guardar na sua carteira digital. Só fique de olho na validade que aparece no cupom.
+
+EXEMPLOS PRÁTICOS DE USO MÚLTIPLO:
+
+Exemplo 1 - Dia de Beleza Completo:
+"Imagina só: você acorda e vai no salão de beleza (ganha escova grátis), depois passa na manicure (ganha esmaltação de presente), e finaliza na clínica de estética (ganha limpeza de pele). Tudo no mesmo dia, tudo de graça! É o seu dia de princesa ou príncipe!"
+
+Exemplo 2 - Night Out com a Galera:
+"Que tal começar com happy hour no bar (ganha porção de entrada), depois jantar no restaurante (ganha sobremesa grátis) e fechar a noite na balada (entra sem pagar cover)? Três cupons, uma noite épica!"
+
+Exemplo 3 - Semana de Comemoração:
+"Segunda: pizza grátis. Quarta: cinema com pipoca por conta da casa. Sexta: rodízio japonês de presente. Sábado: entrada VIP na casa noturna. Você espalha a festa pela semana toda!"
+
 C. PROGRAMA INDIQUE E GANHE (Parceiros/Afiliados)
 O que é: Qualquer pessoa pode virar parceiro.
 A Oferta: Indique um estabelecimento. Se ele assinar um plano pago, você ganha 30% de comissão sobre a mensalidade dele, todo mês (recorrente).

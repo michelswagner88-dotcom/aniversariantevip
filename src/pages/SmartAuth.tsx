@@ -313,6 +313,12 @@ const SmartAuth = () => {
     setError("");
 
     try {
+      // Validação de telefone OBRIGATÓRIO
+      const telefone = formData.phone ? formData.phone.replace(/\D/g, '') : '';
+      if (!telefone || telefone.length < 10) {
+        throw new Error("WhatsApp é obrigatório. Por favor, informe um número válido.");
+      }
+
       // Validação de CPF
       const cpfClean = formData.cpf.replace(/\D/g, '');
       if (!isValidCPF(formData.cpf)) {
@@ -333,15 +339,6 @@ const SmartAuth = () => {
 
       if (existingCPF) {
         throw new Error("Este CPF já está cadastrado.");
-      }
-
-      // Pega o telefone do formData ou busca do profile
-      let telefone = formData.phone ? formData.phone.replace(/\D/g, '') : '';
-      
-      if (!telefone) {
-        // Tenta buscar do user metadata (Google OAuth)
-        const { data: { user } } = await supabase.auth.getUser();
-        telefone = user?.user_metadata?.phone || '';
       }
 
       // Insere na tabela aniversariantes
@@ -530,7 +527,7 @@ const SmartAuth = () => {
               <form onSubmit={handleCompletion}>
                 {!formData.phone && (
                   <InputGroup 
-                    icon={Phone} label="WhatsApp (Opcional)" placeholder="(00) 90000-0000" maxLength={15}
+                    icon={Phone} label="WhatsApp (Obrigatório)" placeholder="(00) 90000-0000" required maxLength={15}
                     value={formData.phone} 
                     onChange={handlePhoneChange}
                     onFocus={() => trackFieldFocus('telefone')}

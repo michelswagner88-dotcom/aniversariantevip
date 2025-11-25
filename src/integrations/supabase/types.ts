@@ -86,6 +86,48 @@ export type Database = {
         }
         Relationships: []
       }
+      cupom_rate_limit: {
+        Row: {
+          aniversariante_id: string
+          contador_semanal: number
+          estabelecimento_id: string
+          id: string
+          semana_referencia: string
+          ultima_emissao: string
+        }
+        Insert: {
+          aniversariante_id: string
+          contador_semanal?: number
+          estabelecimento_id: string
+          id?: string
+          semana_referencia?: string
+          ultima_emissao?: string
+        }
+        Update: {
+          aniversariante_id?: string
+          contador_semanal?: number
+          estabelecimento_id?: string
+          id?: string
+          semana_referencia?: string
+          ultima_emissao?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cupom_rate_limit_aniversariante_id_fkey"
+            columns: ["aniversariante_id"]
+            isOneToOne: false
+            referencedRelation: "aniversariantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cupom_rate_limit_estabelecimento_id_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cupons: {
         Row: {
           aniversariante_id: string
@@ -330,6 +372,16 @@ export type Database = {
     }
     Functions: {
       emit_coupon: {
+        Args: { p_aniversariante_id: string; p_estabelecimento_id: string }
+        Returns: {
+          codigo: string
+          cupom_id: string
+          data_emissao: string
+          data_validade: string
+          error_message: string
+        }[]
+      }
+      emit_coupon_secure: {
         Args: { p_aniversariante_id: string; p_estabelecimento_id: string }
         Returns: {
           codigo: string

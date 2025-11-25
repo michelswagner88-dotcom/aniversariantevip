@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Search, SlidersHorizontal, Map as MapIcon, List, X, Check, Clock, Gift, Share2, Heart, CalendarDays } from 'lucide-react';
 import { toast } from "sonner";
+import VoiceSearchBar from "@/components/VoiceSearchBar";
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick }: any) => (
@@ -159,21 +160,12 @@ const Explorar = () => {
       {/* Grid Background */}
       <div className="fixed inset-0 pointer-events-none opacity-30" style={{ backgroundImage: 'linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
 
-      {/* Header */}
-      <div className="sticky top-0 z-40 border-b border-white/5 bg-slate-950/90 px-4 py-3 backdrop-blur-xl">
-        <div className="flex gap-3">
-          <button className="flex flex-1 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-200 transition-all hover:bg-white/10 active:scale-95">
-            <MapPin size={18} className="text-violet-400" />
-            <span className="truncate">{location}</span>
-          </button>
-          <button className="flex flex-[1.5] items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-400 transition-all hover:bg-white/10 active:scale-95">
-            <Search size={18} />
-            <span>Buscar...</span>
-          </button>
-        </div>
+      {/* Header com Busca por Voz */}
+      <div className="sticky top-0 z-40 border-b border-white/5 bg-slate-950/90 py-4 backdrop-blur-xl">
+        <VoiceSearchBar />
 
         {/* Pílulas de Categoria */}
-        <div className="mt-4 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="container mx-auto px-6 mt-4 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           <button onClick={() => setShowFilters(true)} className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all active:scale-95 ${filterOpenNow || filterDay !== 'any' ? 'bg-violet-600 border-violet-500 text-white' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
             <SlidersHorizontal size={18} />
           </button>

@@ -559,31 +559,30 @@ const SmartAuth = () => {
               </div>
 
               <form onSubmit={handleCompletion}>
-                {!formData.phone && (
-                  <div>
-                    <InputGroup 
-                      icon={Phone} label="WhatsApp (Obrigatório)" placeholder="(11) 99999-9999" required maxLength={15}
-                      value={formData.phone} 
-                      onChange={handlePhoneChange}
-                      onFocus={() => trackFieldFocus('telefone')}
-                      onBlur={() => trackFieldBlur('telefone', false)}
-                    />
-                    <div className="mt-1 flex items-center justify-end gap-1.5 text-xs">
-                      <span className={`font-medium ${
-                        formData.phone.replace(/\D/g, '').length === 11 
-                          ? 'text-emerald-400' 
-                          : formData.phone.replace(/\D/g, '').length > 0 
-                            ? 'text-amber-400' 
-                            : 'text-slate-500'
-                      }`}>
-                        {formData.phone.replace(/\D/g, '').length}/11 dígitos
-                      </span>
-                      {formData.phone.replace(/\D/g, '').length === 11 && (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                      )}
-                    </div>
+                {/* Campo WhatsApp - sempre obrigatório para todos */}
+                <div>
+                  <InputGroup 
+                    icon={Phone} label="WhatsApp (Obrigatório)" placeholder="(11) 99999-9999" required maxLength={15}
+                    value={formData.phone} 
+                    onChange={handlePhoneChange}
+                    onFocus={() => trackFieldFocus('telefone')}
+                    onBlur={() => trackFieldBlur('telefone', false)}
+                  />
+                  <div className="mt-1 flex items-center justify-end gap-1.5 text-xs">
+                    <span className={`font-medium ${
+                      formData.phone.replace(/\D/g, '').length === 11 
+                        ? 'text-emerald-400' 
+                        : formData.phone.replace(/\D/g, '').length > 0 
+                          ? 'text-amber-400' 
+                          : 'text-slate-500'
+                    }`}>
+                      {formData.phone.replace(/\D/g, '').length}/11 dígitos
+                    </span>
+                    {formData.phone.replace(/\D/g, '').length === 11 && (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                    )}
                   </div>
-                )}
+                </div>
                 <InputGroup 
                   icon={User} label="CPF" placeholder="000.000.000-00" required maxLength={14}
                   value={formData.cpf} 

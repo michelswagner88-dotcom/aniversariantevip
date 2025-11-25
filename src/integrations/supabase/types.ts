@@ -50,7 +50,9 @@ export type Database = {
           deleted_at: string | null
           estado: string | null
           id: string
+          latitude: number | null
           logradouro: string | null
+          longitude: number | null
           numero: string | null
           telefone: string | null
           updated_at: string | null
@@ -66,7 +68,9 @@ export type Database = {
           deleted_at?: string | null
           estado?: string | null
           id: string
+          latitude?: number | null
           logradouro?: string | null
+          longitude?: number | null
           numero?: string | null
           telefone?: string | null
           updated_at?: string | null
@@ -82,7 +86,9 @@ export type Database = {
           deleted_at?: string | null
           estado?: string | null
           id?: string
+          latitude?: number | null
           logradouro?: string | null
+          longitude?: number | null
           numero?: string | null
           telefone?: string | null
           updated_at?: string | null

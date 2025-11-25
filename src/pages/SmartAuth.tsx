@@ -52,6 +52,8 @@ const SmartAuth = () => {
     bairro: '',
     cidade: '',
     estado: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
 
   const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
@@ -165,18 +167,54 @@ const SmartAuth = () => {
     }
   };
 
+  // Função para buscar coordenadas de cidade/estado via Mapbox
+  const geocodeCityState = async (cidade: string, estado: string) => {
+    if (!cidade || !estado) return null;
+    
+    try {
+      const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN;
+      if (!mapboxToken) return null;
+
+      const query = `${cidade}, ${estado}, Brasil`;
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxToken}&types=place&limit=1`
+      );
+      
+      if (!response.ok) return null;
+      
+      const data = await response.json();
+      if (data.features && data.features.length > 0) {
+        const [longitude, latitude] = data.features[0].center;
+        return { latitude, longitude };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Erro ao buscar coordenadas:', error);
+      return null;
+    }
+  };
+
   // Buscar CEP
   const handleCepBlur = async () => {
     const cleanCep = formData.cep.replace(/\D/g, '');
     if (cleanCep.length === 8) {
       const data = await fetchCep(cleanCep);
       if (data) {
+        const cidade = data.localidade || '';
+        const estado = data.uf || '';
+        
+        // Buscar coordenadas da cidade
+        const coords = await geocodeCityState(cidade, estado);
+        
         setFormData(prev => ({
           ...prev,
           logradouro: data.logradouro,
           bairro: data.bairro,
-          cidade: data.localidade,
-          estado: data.uf,
+          cidade,
+          estado,
+          latitude: coords?.latitude || null,
+          longitude: coords?.longitude || null,
         }));
       }
     }
@@ -404,6 +442,8 @@ const SmartAuth = () => {
           bairro: formData.bairro,
           cidade: formData.cidade,
           estado: formData.estado,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
         });
 
       if (insertError) throw insertError;
@@ -678,7 +718,18 @@ const SmartAuth = () => {
                     <input
                       placeholder="Ex: São Paulo"
                       value={formData.cidade} 
-                      onChange={(e) => setFormData({...formData, cidade: e.target.value})}
+                      onChange={async (e) => {
+                        const cidade = e.target.value;
+                        setFormData({...formData, cidade});
+                        
+                        // Buscar coordenadas quando cidade e estado estiverem preenchidos
+                        if (cidade && formData.estado) {
+                          const coords = await geocodeCityState(cidade, formData.estado);
+                          if (coords) {
+                            setFormData(prev => ({ ...prev, latitude: coords.latitude, longitude: coords.longitude }));
+                          }
+                        }
+                      }}
                       disabled={!!formData.logradouro}
                       className={`w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10 ${formData.logradouro ? 'opacity-60 cursor-not-allowed' : ''}`}
                     />
@@ -689,7 +740,18 @@ const SmartAuth = () => {
                       placeholder="Ex: SP"
                       maxLength={2}
                       value={formData.estado} 
-                      onChange={(e) => setFormData({...formData, estado: e.target.value.toUpperCase()})}
+                      onChange={async (e) => {
+                        const estado = e.target.value.toUpperCase();
+                        setFormData({...formData, estado});
+                        
+                        // Buscar coordenadas quando cidade e estado estiverem preenchidos
+                        if (formData.cidade && estado) {
+                          const coords = await geocodeCityState(formData.cidade, estado);
+                          if (coords) {
+                            setFormData(prev => ({ ...prev, latitude: coords.latitude, longitude: coords.longitude }));
+                          }
+                        }
+                      }}
                       disabled={!!formData.logradouro}
                       className={`w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10 ${formData.logradouro ? 'opacity-60 cursor-not-allowed' : ''}`}
                     />

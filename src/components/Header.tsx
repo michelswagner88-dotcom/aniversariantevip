@@ -121,7 +121,7 @@ export const Header = () => {
                   asChild
                   className="text-white hover:bg-white/10"
                 >
-                  <Link to="/seja-parceiro">Sou Parceiro</Link>
+                  <Link to="/seja-parceiro">Seja Parceiro</Link>
                 </Button>
                 <Button
                   size="sm"
@@ -208,7 +208,7 @@ export const Header = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className="justify-start text-white hover:bg-white/10"
                   >
-                    <Link to="/seja-parceiro">Sou Parceiro</Link>
+                    <Link to="/seja-parceiro">Seja Parceiro</Link>
                   </Button>
                   <Button
                     asChild

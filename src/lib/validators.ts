@@ -161,7 +161,62 @@ export interface BrasilAPICNPJResponse {
 }
 
 /**
- * Consulta CNPJ na BrasilAPI
+ * Interface para dados em cache
+ */
+interface CachedCNPJData {
+  data: BrasilAPICNPJResponse;
+  timestamp: number;
+}
+
+/**
+ * Tempo de validade do cache (7 dias em milissegundos)
+ */
+const CACHE_EXPIRY_TIME = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Salva dados de CNPJ no cache local
+ */
+const saveCNPJToCache = (cnpj: string, data: BrasilAPICNPJResponse): void => {
+  try {
+    const cacheKey = `cnpj_cache_${cnpj}`;
+    const cachedData: CachedCNPJData = {
+      data,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(cacheKey, JSON.stringify(cachedData));
+  } catch (error) {
+    console.warn('Erro ao salvar CNPJ no cache:', error);
+  }
+};
+
+/**
+ * Recupera dados de CNPJ do cache local
+ * @returns Dados do cache ou null se não existir ou estiver expirado
+ */
+const getCNPJFromCache = (cnpj: string): BrasilAPICNPJResponse | null => {
+  try {
+    const cacheKey = `cnpj_cache_${cnpj}`;
+    const cached = localStorage.getItem(cacheKey);
+    
+    if (!cached) return null;
+    
+    const cachedData: CachedCNPJData = JSON.parse(cached);
+    const isExpired = Date.now() - cachedData.timestamp > CACHE_EXPIRY_TIME;
+    
+    if (isExpired) {
+      localStorage.removeItem(cacheKey);
+      return null;
+    }
+    
+    return cachedData.data;
+  } catch (error) {
+    console.warn('Erro ao recuperar CNPJ do cache:', error);
+    return null;
+  }
+};
+
+/**
+ * Consulta CNPJ na BrasilAPI com cache local
  * @param cnpj - CNPJ limpo (apenas números)
  * @returns Dados da empresa ou null se não encontrado
  */
@@ -172,6 +227,14 @@ export const fetchCNPJData = async (cnpj: string): Promise<BrasilAPICNPJResponse
     throw new Error('CNPJ inválido. Verifique os dígitos verificadores.');
   }
   
+  // Verifica cache primeiro
+  const cachedData = getCNPJFromCache(cleanCNPJ);
+  if (cachedData) {
+    console.log('CNPJ encontrado no cache local');
+    return cachedData;
+  }
+  
+  // Se não estiver no cache, busca na API
   try {
     const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
     
@@ -188,6 +251,9 @@ export const fetchCNPJData = async (cnpj: string): Promise<BrasilAPICNPJResponse
     if (data.situacao_cadastral !== 'ATIVA') {
       throw new Error(`Empresa com situação cadastral: ${data.situacao_cadastral}. Apenas empresas ativas podem se cadastrar.`);
     }
+    
+    // Salva no cache
+    saveCNPJToCache(cleanCNPJ, data);
     
     return data;
   } catch (error: any) {

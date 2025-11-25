@@ -33,6 +33,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 import { 
   Dialog,
   DialogContent,
@@ -447,7 +448,13 @@ export default function AdminDashboard() {
               <tr key={est.id} className="hover:bg-white/5 transition-colors">
                 <td className="p-4">
                   <div className="font-semibold text-white">{est.nome_fantasia || est.razao_social}</div>
-                  <div className="text-sm text-slate-400">{est.categoria?.[0] || 'Sem categoria'}</div>
+                  <div className="text-sm text-slate-400">
+                    {(() => {
+                      const cat = est.categoria?.[0];
+                      const found = CATEGORIAS_ESTABELECIMENTO.find(c => c.value === cat);
+                      return found ? `${found.icon} ${found.label}` : '🏪 Sem categoria';
+                    })()}
+                  </div>
                 </td>
                 <td className="p-4 text-slate-300">{est.cnpj}</td>
                 <td className="p-4 text-slate-300">{est.cidade || 'N/A'}</td>

@@ -261,9 +261,13 @@ const Explorar = () => {
             <SlidersHorizontal size={18} />
           </button>
           <CategoryPill icon="🚀" label="Todos" active={activeCategory === "Todos"} onClick={() => setActiveCategory("Todos")} />
-          <CategoryPill icon="🍔" label="Gastronomia" active={activeCategory === "Gastronomia"} onClick={() => setActiveCategory("Gastronomia")} />
-          <CategoryPill icon="🥂" label="Bares" active={activeCategory === "Bares"} onClick={() => setActiveCategory("Bares")} />
-          <CategoryPill icon="💅" label="Serviços" active={activeCategory === "Serviços"} onClick={() => setActiveCategory("Serviços")} />
+          <CategoryPill icon="🏋️" label="Academia" active={activeCategory === "Academia"} onClick={() => setActiveCategory("Academia")} />
+          <CategoryPill icon="🍺" label="Bar" active={activeCategory === "Bar"} onClick={() => setActiveCategory("Bar")} />
+          <CategoryPill icon="✂️" label="Barbearia" active={activeCategory === "Barbearia"} onClick={() => setActiveCategory("Barbearia")} />
+          <CategoryPill icon="☕" label="Cafeteria" active={activeCategory === "Cafeteria"} onClick={() => setActiveCategory("Cafeteria")} />
+          <CategoryPill icon="🎉" label="Casa Noturna" active={activeCategory === "Casa Noturna"} onClick={() => setActiveCategory("Casa Noturna")} />
+          <CategoryPill icon="🍽️" label="Restaurante" active={activeCategory === "Restaurante"} onClick={() => setActiveCategory("Restaurante")} />
+          <CategoryPill icon="💅" label="Salão de Beleza" active={activeCategory === "Salão de Beleza"} onClick={() => setActiveCategory("Salão de Beleza")} />
         </div>
       </div>
 

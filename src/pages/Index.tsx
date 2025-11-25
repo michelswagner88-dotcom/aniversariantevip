@@ -71,10 +71,10 @@ const Index = () => {
   };
 
   const getCategoriaLabel = (categoria: string | string[] | null) => {
-    if (!categoria) return "Outros";
+    if (!categoria) return "🏪 Outros";
     const cat = Array.isArray(categoria) ? categoria[0] : categoria;
     const found = CATEGORIAS_ESTABELECIMENTO.find(c => c.value === cat);
-    return found?.label || "Outros";
+    return found ? `${found.icon} ${found.label}` : "🏪 Outros";
   };
 
   const openGoogleMaps = (endereco: string | null) => {
@@ -256,11 +256,11 @@ const Index = () => {
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 z-50">
                       <SelectItem value="todas" className="text-white font-semibold">
-                        Todas Categorias
+                        🚀 Todas Categorias
                       </SelectItem>
                       {CATEGORIAS_ESTABELECIMENTO.map(cat => (
                         <SelectItem key={cat.value} value={cat.value} className="text-white">
-                          {cat.label}
+                          {cat.icon} {cat.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -321,11 +321,11 @@ const Index = () => {
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 z-50">
                       <SelectItem value="todas" className="text-white font-semibold">
-                        Todas Categorias
+                        🚀 Todas Categorias
                       </SelectItem>
                       {CATEGORIAS_ESTABELECIMENTO.map(cat => (
                         <SelectItem key={cat.value} value={cat.value} className="text-white">
-                          {cat.label}
+                          {cat.icon} {cat.label}
                         </SelectItem>
                       ))}
                     </SelectContent>

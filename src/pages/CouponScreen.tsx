@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
-import { X, Share2, Clock, CheckCircle2 } from 'lucide-react';
+import { X, Share2, Clock, CheckCircle2, Calendar, Bell, BellRing } from 'lucide-react';
 import Confetti from 'react-confetti';
 import html2canvas from 'html2canvas';
 import { toast } from "sonner";
+import { useNotifications } from '../hooks/useNotifications';
 
 const CouponScreen = () => {
   const [showConfetti, setShowConfetti] = useState(true);
@@ -10,13 +11,18 @@ const CouponScreen = () => {
   const [activeTab, setActiveTab] = useState<'coupon' | 'invite'>('coupon');
   const [isSharing, setIsSharing] = useState(false);
   const inviteRef = useRef<HTMLDivElement>(null);
+  
+  // Hook de Notificações
+  const { permission, requestPermission } = useNotifications();
 
   const data = {
     id: "VIP-9823-XC",
     placeName: "Sushi Palace",
     benefit: "Rodízio Grátis",
+    rules: "Aniversariante + 1 pagante",
     userName: "Carlos Silva",
     date: "24/11/2025",
+    fullDate: new Date('2025-11-24T20:00:00'),
     address: "Rua das Flores, 123 - Centro",
     bgImage: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80"
   };
@@ -26,6 +32,17 @@ const CouponScreen = () => {
     const confettiTimer = setTimeout(() => setShowConfetti(false), 6000);
     return () => { clearInterval(timer); clearTimeout(confettiTimer); };
   }, []);
+
+  // Adicionar ao Calendário
+  const handleAddToCalendar = () => {
+    const start = data.fullDate.toISOString().replace(/-|:|\.\d\d\d/g, "");
+    const end = new Date(data.fullDate.getTime() + 2 * 60 * 60 * 1000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+    
+    const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Niver no ${data.placeName}`)}&dates=${start}/${end}&details=${encodeURIComponent(`Benefício: ${data.benefit}. Regras: ${data.rules}`)}&location=${encodeURIComponent(data.address)}`;
+    
+    window.open(googleUrl, '_blank');
+    toast.success("Redirecionando para o Google Agenda...");
+  };
 
   const handleShareInvite = async () => {
     if (!inviteRef.current) return;
@@ -91,7 +108,9 @@ const CouponScreen = () => {
       </div>
 
       {activeTab === 'coupon' && (
-        <div className="w-full max-w-sm animate-in fade-in zoom-in duration-300">
+        <div className="w-full max-w-sm animate-in fade-in zoom-in duration-300 space-y-4">
+          
+          {/* Card do Cupom */}
           <div className="relative overflow-hidden rounded-3xl bg-slate-900 shadow-2xl border border-amber-500/30">
             <div className="absolute -inset-1 bg-gradient-to-r from-amber-300/20 via-yellow-500/20 to-amber-300/20 blur-xl"></div>
             
@@ -113,7 +132,9 @@ const CouponScreen = () => {
 
                 <div className="mt-6 flex items-center justify-center gap-2 text-slate-400 bg-slate-950/50 py-2 rounded-lg">
                   <Clock size={16} className="animate-pulse text-violet-400" />
-                  <span className="font-mono text-xl font-medium text-white">{currentTime.toLocaleTimeString()}</span>
+                  <span className="font-mono text-xl font-medium text-white">
+                    {currentTime.toLocaleTimeString()}
+                  </span>
                 </div>
 
                 <div className="mt-6 border-t-2 border-dashed border-slate-800 pt-6">
@@ -123,7 +144,41 @@ const CouponScreen = () => {
               </div>
             </div>
           </div>
-          <p className="mt-6 text-center text-xs text-slate-500 px-8">
+
+          {/* Botões de Ação */}
+          <div className="grid grid-cols-2 gap-3">
+            <button 
+              onClick={handleAddToCalendar}
+              className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-white hover:bg-white/10 transition-colors active:scale-95"
+            >
+              <Calendar size={18} className="text-violet-400" />
+              Salvar Data
+            </button>
+
+            <button 
+              onClick={requestPermission}
+              disabled={permission === 'granted'}
+              className={`flex items-center justify-center gap-2 rounded-xl border py-3 text-sm font-medium transition-all active:scale-95 ${
+                permission === 'granted' 
+                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 cursor-default' 
+                  : 'border-white/10 bg-white/5 text-white hover:bg-white/10'
+              }`}
+            >
+              {permission === 'granted' ? (
+                <>
+                  <BellRing size={18} className="animate-pulse" />
+                  Ativado
+                </>
+              ) : (
+                <>
+                  <Bell size={18} className="text-pink-400" />
+                  Me Lembre
+                </>
+              )}
+            </button>
+          </div>
+
+          <p className="text-center text-xs text-slate-500 px-4">
             Mostre esta tela ao chegar. O relógio em movimento comprova a validade.
           </p>
         </div>

@@ -650,10 +650,10 @@ const SmartAuth = () => {
                   onBlur={() => trackFieldBlur('dataNascimento', false)}
                 />
 
-                {/* CEP */}
+                {/* CEP (Opcional) */}
                 <div>
                   <InputGroup 
-                    icon={MapPin} label="CEP" placeholder="00000-000" required
+                    icon={MapPin} label="CEP (Opcional)" placeholder="00000-000"
                     value={formData.cep} 
                     onChange={handleCepChange}
                     onBlur={handleCepBlur}
@@ -666,15 +666,49 @@ const SmartAuth = () => {
                       Buscando endereço...
                     </div>
                   )}
+                  <p className="mt-1 mb-4 text-xs text-slate-500">
+                    Digite seu CEP para preencher automaticamente ou preencha manualmente abaixo
+                  </p>
                 </div>
 
-                {/* Endereço (auto-preenchido quando CEP é válido) */}
+                {/* Cidade e Estado - Sempre visíveis para preenchimento manual */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Cidade (Opcional)</label>
+                    <input
+                      placeholder="Ex: São Paulo"
+                      value={formData.cidade} 
+                      onChange={(e) => setFormData({...formData, cidade: e.target.value})}
+                      disabled={!!formData.logradouro}
+                      className={`w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10 ${formData.logradouro ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Estado (Opcional)</label>
+                    <input
+                      placeholder="Ex: SP"
+                      maxLength={2}
+                      value={formData.estado} 
+                      onChange={(e) => setFormData({...formData, estado: e.target.value.toUpperCase()})}
+                      disabled={!!formData.logradouro}
+                      className={`w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10 ${formData.logradouro ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    />
+                  </div>
+                </div>
+
+                {/* Campos de endereço detalhado (aparecem quando CEP é preenchido) */}
                 {formData.logradouro && (
                   <>
                     <InputGroup 
                       icon={Home} label="Logradouro" placeholder="Rua, Avenida..." 
                       value={formData.logradouro} 
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, logradouro: e.target.value})}
+                      disabled
+                    />
+                    <InputGroup 
+                      icon={MapPin} label="Bairro" 
+                      value={formData.bairro} 
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, bairro: e.target.value})}
                       disabled
                     />
                     <div className="grid grid-cols-2 gap-3 mb-4">
@@ -694,32 +728,6 @@ const SmartAuth = () => {
                           value={formData.complemento} 
                           onChange={(e) => setFormData({...formData, complemento: e.target.value})}
                           className="w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10"
-                        />
-                      </div>
-                    </div>
-                    <InputGroup 
-                      icon={MapPin} label="Bairro" 
-                      value={formData.bairro} 
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, bairro: e.target.value})}
-                      disabled
-                    />
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Cidade</label>
-                        <input
-                          value={formData.cidade} 
-                          onChange={(e) => setFormData({...formData, cidade: e.target.value})}
-                          disabled
-                          className="w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none opacity-60 cursor-not-allowed"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Estado</label>
-                        <input
-                          value={formData.estado} 
-                          onChange={(e) => setFormData({...formData, estado: e.target.value})}
-                          disabled
-                          className="w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none opacity-60 cursor-not-allowed"
                         />
                       </div>
                     </div>

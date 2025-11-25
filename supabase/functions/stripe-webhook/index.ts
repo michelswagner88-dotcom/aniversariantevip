@@ -51,11 +51,11 @@ serve(async (req) => {
         customerId: invoice.customer 
       });
 
-      // Buscar estabelecimento pelo customer_id do Stripe
+      // Buscar estabelecimento pelo stripe_customer_id
       const { data: establishments } = await supabaseClient
         .from('estabelecimentos')
         .select('id, referred_by_user_id')
-        .eq('id', invoice.customer as string) // Assumindo que customer_id = establishment_id
+        .eq('stripe_customer_id', invoice.customer as string)
         .single();
 
       if (!establishments?.referred_by_user_id) {

@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PasswordInput } from "@/components/ui/password-input";
+import { getFriendlyErrorMessage } from "@/lib/errorTranslator";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -58,7 +59,7 @@ export default function ResetPassword() {
       navigate("/auth");
     } catch (error: any) {
       console.error("Erro ao redefinir senha:", error);
-      toast.error("Erro ao redefinir senha. Tente novamente.");
+      toast.error(getFriendlyErrorMessage(error));
     } finally {
       setLoading(false);
     }

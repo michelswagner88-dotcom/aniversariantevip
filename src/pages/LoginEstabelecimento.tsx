@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Crown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getFriendlyErrorMessage } from "@/lib/errorTranslator";
 
 export default function LoginEstabelecimento() {
   const navigate = useNavigate();
@@ -69,7 +70,7 @@ export default function LoginEstabelecimento() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: error.message || "E-mail ou senha incorretos",
+        description: getFriendlyErrorMessage(error),
       });
     } finally {
       setLoading(false);
@@ -101,7 +102,7 @@ export default function LoginEstabelecimento() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível enviar o email. Tente novamente.",
+        description: getFriendlyErrorMessage(error),
       });
     }
   };

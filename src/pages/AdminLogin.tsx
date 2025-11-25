@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { getFriendlyErrorMessage } from '@/lib/errorTranslator';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -76,7 +77,7 @@ export default function AdminLogin() {
       }
     } catch (error: any) {
       console.error('Erro no login:', error);
-      toast.error(error.message || 'Erro ao fazer login. Verifique suas credenciais.');
+      toast.error(getFriendlyErrorMessage(error));
     } finally {
       setIsLoading(false);
     }

@@ -9,6 +9,7 @@ import { Loader2, Mail, ArrowLeft } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Link } from "react-router-dom";
+import { getFriendlyErrorMessage } from "@/lib/errorTranslator";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -36,7 +37,7 @@ export default function ForgotPassword() {
       toast.success("E-mail enviado! Verifique sua caixa de entrada.");
     } catch (error: any) {
       console.error("Erro ao solicitar recuperação:", error);
-      toast.error("Erro ao enviar e-mail. Tente novamente.");
+      toast.error(getFriendlyErrorMessage(error));
     } finally {
       setLoading(false);
     }

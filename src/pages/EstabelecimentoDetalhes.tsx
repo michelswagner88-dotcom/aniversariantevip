@@ -116,7 +116,7 @@ export default function EstabelecimentoDetalhes() {
   };
 
   const handleEntrarParaVer = () => {
-    navigate("/login-aniversariante");
+    navigate("/auth");
   };
 
   const handleEmitirCupom = () => {

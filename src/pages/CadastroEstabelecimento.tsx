@@ -72,7 +72,7 @@ const Stepper = ({ currentStep, totalSteps }) => (
       <div
         key={index}
         className={`h-2 rounded-full transition-all duration-300 ${
-          index + 1 === currentStep ? 'w-8 bg-gradient-to-r from-violet-600 to-pink-500' : 'w-4 bg-slate-200'
+          index + 1 === currentStep ? 'w-8 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500' : 'w-4 bg-white/20'
         }`}
       />
     ))}
@@ -334,59 +334,59 @@ export default function EstablishmentRegistration() {
 
   const renderStep1 = () => (
     <form onSubmit={handleAuthSubmit} className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-800 text-center">Cadastre o seu estabelecimento</h2>
-      <p className="text-slate-500 text-center">Crie suas credenciais e complete os dados da sua empresa.</p>
+      <h2 className="text-2xl font-bold text-white text-center">Cadastre o seu estabelecimento</h2>
+      <p className="text-slate-400 text-center">Crie suas credenciais e complete os dados da sua empresa.</p>
 
       {/* Login Google */}
       <button 
         type="button"
         name="google"
         onClick={handleAuthSubmit}
-        className="w-full py-3 bg-white border border-slate-300 text-slate-700 rounded-xl flex items-center justify-center gap-3 font-semibold hover:bg-slate-50 transition-colors"
+        className="w-full py-3 bg-white/5 border border-white/10 text-white rounded-xl flex items-center justify-center gap-3 font-semibold hover:bg-white/10 transition-colors"
       >
         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/48px-Google_%22G%22_logo.svg.png" alt="Google Logo" className="w-5 h-5" />
         Continuar com Google
       </button>
 
       <div className="flex items-center">
-        <hr className="flex-1 border-slate-200" />
-        <span className="px-3 text-slate-400 text-sm">OU</span>
-        <hr className="flex-1 border-slate-200" />
+        <hr className="flex-1 border-white/10" />
+        <span className="px-3 text-slate-500 text-sm">OU</span>
+        <hr className="flex-1 border-white/10" />
       </div>
 
       {/* Login Email/Senha */}
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
+        <label className="block text-sm font-medium text-slate-400 mb-1">E-mail</label>
         <div className="relative">
-          <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input 
             type="email" 
             value={authData.email}
             onChange={(e) => setAuthData(prev => ({ ...prev, email: e.target.value }))}
-            className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 focus:border-violet-500 outline-none"
+            className="w-full pl-10 pr-4 py-3 border border-white/10 bg-white/5 text-white placeholder-slate-600 rounded-xl focus:ring-violet-500/50 focus:border-violet-500/50 outline-none transition-all"
             required
           />
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Senha</label>
+        <label className="block text-sm font-medium text-slate-400 mb-1">Senha</label>
         <div className="relative">
-          <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input 
             type="password" 
             value={authData.password}
             onChange={(e) => setAuthData(prev => ({ ...prev, password: e.target.value }))}
-            className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 focus:border-violet-500 outline-none"
+            className="w-full pl-10 pr-4 py-3 border border-white/10 bg-white/5 text-white placeholder-slate-600 rounded-xl focus:ring-violet-500/50 focus:border-violet-500/50 outline-none transition-all"
             required
           />
         </div>
       </div>
       
-      {error && <div className="p-3 bg-rose-50 text-rose-600 rounded-lg text-sm">{error}</div>}
+      {error && <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-lg text-sm">{error}</div>}
 
       <button 
         type="submit" 
-        className="w-full bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-300/50"
+        className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-500/25"
       >
         Próxima Etapa <ArrowRight size={20} />
       </button>
@@ -741,8 +741,8 @@ export default function EstablishmentRegistration() {
 
   // --- LAYOUT ---
   return (
-    <div className="min-h-screen bg-slate-50 p-4 sm:p-8 font-sans">
-      <div className="max-w-3xl mx-auto bg-white p-6 sm:p-10 rounded-3xl shadow-xl">
+    <div className="min-h-screen bg-slate-950 p-4 sm:p-8 font-sans">
+      <div className="max-w-3xl mx-auto bg-white/5 backdrop-blur-xl border border-white/10 p-6 sm:p-10 rounded-3xl shadow-xl">
         <div className="mb-6">
           <BackButton to="/seja-parceiro" />
         </div>

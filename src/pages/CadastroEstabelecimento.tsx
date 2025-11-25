@@ -22,29 +22,17 @@ import {
   Instagram
 } from 'lucide-react';
 import { BackButton } from '@/components/BackButton';
+import { validateCNPJ, formatCNPJ, fetchCNPJData } from '@/lib/validators';
+import { useCepLookup } from '@/hooks/useCepLookup';
+import { getFriendlyErrorMessage } from '@/lib/errorTranslator';
+import { toast } from 'sonner';
 
-// --- DADOS MOCKADOS (Simulação de APIs externas e Backend) ---
-
-const MOCK_CNPJ_DATA = {
-  '12345678000190': {
-    name: 'Padaria Sabor e Arte Ltda',
-    status: 'ATIVA',
-    cep: '01001000',
-  },
-};
-
-const MOCK_CEP_DATA = {
-  '01001000': {
-    rua: 'Praça da Sé',
-    bairro: 'Sé',
-    cidade: 'São Paulo',
-    estado: 'SP',
-  },
-};
-
-const MOCK_CATEGORIES = [
-  'Alimentação', 'Varejo', 'Saúde e Beleza', 'Entretenimento', 
-  'Serviços', 'Educação', 'Automotivo'
+// Categorias disponíveis
+const AVAILABLE_CATEGORIES = [
+  'Academia', 'Bar', 'Barbearia', 'Cafeteria', 'Casa Noturna', 
+  'Entretenimento', 'Hospedagem', 'Loja de Presentes', 'Moda e Acessórios', 
+  'Confeitaria', 'Restaurante', 'Salão de Beleza', 'Saúde e Suplementos', 
+  'Outros Comércios', 'Serviços'
 ];
 
 const mockStandardizeText = (text) => {
@@ -193,20 +181,17 @@ export default function EstablishmentRegistration() {
   });
   const [rules, setRules] = useState({ description: '', scope: 'Dia' });
   const [loading, setLoading] = useState(false);
+  const [cnpjVerified, setCnpjVerified] = useState(false);
   const [error, setError] = useState('');
+  
+  const { fetchCep: lookupCep } = useCepLookup();
 
-  // --- LÓGICA DE APIs E VALIDAÇÃO (MOCK) ---
+  // --- LÓGICA DE APIs E VALIDAÇÃO ---
 
   const handleCnpjChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '').substring(0, 14);
-    setEstablishmentData(prev => ({ ...prev, cnpj: value }));
-  };
-
-  const formatCnpj = (cnpj: string) => {
-    if (cnpj.length <= 14) {
-      return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
-    }
-    return cnpj;
+    const formatted = formatCNPJ(e.target.value);
+    setEstablishmentData(prev => ({ ...prev, cnpj: formatted }));
+    setCnpjVerified(false); // Reset verificação ao alterar
   };
 
   const verifyCnpj = async () => {
@@ -220,23 +205,42 @@ export default function EstablishmentRegistration() {
       return;
     }
 
-    // Simulação de chamada API para verificar CNPJ
-    await new Promise(resolve => setTimeout(resolve, 1000)); 
-
-    const data = MOCK_CNPJ_DATA[rawCnpj];
-    
-    if (data && data.status === 'ATIVA') {
-      setEstablishmentData(prev => ({
-        ...prev,
-        name: data.name,
-        cep: data.cep,
-      }));
-      alert(`CNPJ verificado e confirmado: ${data.name}. Endereço será preenchido pelo CEP.`);
-      if (data.cep) await fetchCep(data.cep);
-    } else {
-      setError('CNPJ não encontrado ou inativo. Por favor, verifique.');
+    // Validar dígitos verificadores primeiro
+    if (!validateCNPJ(rawCnpj)) {
+      setError('CNPJ inválido. Verifique os dígitos verificadores.');
+      toast.error('CNPJ inválido. Verifique os dígitos verificadores.');
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    try {
+      // Buscar dados na BrasilAPI
+      const data = await fetchCNPJData(rawCnpj);
+      
+      if (data) {
+        setEstablishmentData(prev => ({
+          ...prev,
+          name: data.nome_fantasia || data.razao_social,
+          cep: data.cep.replace(/\D/g, ''),
+          logradouro: data.logradouro,
+          numero: data.numero,
+          complemento: data.complemento,
+          bairro: data.bairro,
+          cidade: data.municipio,
+          estado: data.uf,
+        }));
+        
+        setCnpjVerified(true);
+        toast.success(`✅ CNPJ verificado: ${data.nome_fantasia || data.razao_social}`);
+      }
+    } catch (error: any) {
+      const friendlyError = getFriendlyErrorMessage(error);
+      setError(friendlyError);
+      toast.error(friendlyError);
+      setCnpjVerified(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchCep = async (cepValue) => {
@@ -246,38 +250,24 @@ export default function EstablishmentRegistration() {
     if (rawCep.length !== 8) return;
 
     setLoading(true);
-    // Simulação de chamada API CEP
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    const data = MOCK_CEP_DATA[rawCep] || {};
-
-    if (data.rua) {
-      setEstablishmentData(prev => ({
-        ...prev,
-        logradouro: data.rua,
-        bairro: data.bairro,
-        cidade: data.cidade,
-        estado: data.estado,
-      }));
-    } else if (rawCep === '01001000') { // Caso de sucesso mockado
-      setEstablishmentData(prev => ({
-        ...prev,
-        logradouro: MOCK_CEP_DATA[rawCep].rua,
-        bairro: MOCK_CEP_DATA[rawCep].bairro,
-        cidade: MOCK_CEP_DATA[rawCep].cidade,
-        estado: MOCK_CEP_DATA[rawCep].estado,
-      }));
-    } else {
-      // Deixa campos vazios para preenchimento manual
-      setEstablishmentData(prev => ({
-        ...prev,
-        logradouro: '',
-        bairro: '',
-        cidade: '',
-        estado: '',
-      }));
+    
+    try {
+      const data = await lookupCep(rawCep);
+      
+      if (data) {
+        setEstablishmentData(prev => ({
+          ...prev,
+          logradouro: data.logradouro || '',
+          bairro: data.bairro || '',
+          cidade: data.localidade || '',
+          estado: data.uf || '',
+        }));
+      }
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleCategoryToggle = (category) => {
@@ -312,6 +302,13 @@ export default function EstablishmentRegistration() {
     const rawCnpj = establishmentData.cnpj.replace(/\D/g, '');
     const isPhoneFilled = establishmentData.phoneFixed || establishmentData.phoneWhatsapp;
 
+    // Validar CNPJ verificado
+    if (!cnpjVerified) {
+      setError('CNPJ deve ser verificado antes de continuar. Clique em "Verificar".');
+      toast.error('CNPJ deve ser verificado antes de continuar.');
+      return;
+    }
+
     if (rawCnpj.length !== 14 || !establishmentData.logradouro || !establishmentData.cidade || establishmentData.categories.length === 0) {
       setError('Por favor, preencha todos os campos obrigatórios: CNPJ, Endereço e Categoria.');
       return;
@@ -322,7 +319,7 @@ export default function EstablishmentRegistration() {
         return;
     }
 
-    alert('Cadastro de Estabelecimento finalizado com sucesso! Redirecionando para o pagamento...');
+    toast.success('Cadastro de Estabelecimento finalizado com sucesso! Redirecionando para o pagamento...');
     console.log({
       establishment: establishmentData,
       rules: rules,
@@ -416,29 +413,34 @@ export default function EstablishmentRegistration() {
         <label className="block">
           <span className="text-sm font-medium text-slate-700 mb-1 block">CNPJ (Apenas números) *</span>
           <div className="flex gap-3">
-            <input 
-              type="text" 
-              value={formatCnpj(establishmentData.cnpj)}
-              onChange={handleCnpjChange}
-              onBlur={verifyCnpj}
-              maxLength={18}
-              className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
-              placeholder="00.000.000/0000-00"
-              disabled={loading}
-              required
-            />
+            <div className="flex-1 relative">
+              <input 
+                type="text" 
+                value={establishmentData.cnpj}
+                onChange={handleCnpjChange}
+                onBlur={verifyCnpj}
+                maxLength={18}
+                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+                placeholder="00.000.000/0000-00"
+                disabled={loading}
+                required
+              />
+              {cnpjVerified && (
+                <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" size={20} />
+              )}
+            </div>
             <button 
               type="button"
               onClick={verifyCnpj}
               disabled={loading || establishmentData.cnpj.replace(/\D/g, '').length !== 14}
-              className="px-6 py-3 bg-gradient-to-r from-violet-600 to-pink-500 text-white rounded-xl font-semibold hover:from-violet-700 hover:to-pink-600 disabled:opacity-50 transition-all flex items-center gap-2"
+              className="px-6 py-3 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 text-white rounded-xl font-semibold hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 disabled:opacity-50 transition-all flex items-center gap-2"
             >
               {loading ? 'Verificando...' : 'Verificar'}
             </button>
           </div>
-          {establishmentData.name && (
+          {cnpjVerified && establishmentData.name && (
             <p className="mt-2 text-sm text-emerald-600 font-semibold flex items-center gap-1">
-              <CheckCircle size={16} /> Confirmado: {establishmentData.name}
+              <CheckCircle size={16} /> Empresa Verificada: {establishmentData.name}
             </p>
           )}
         </label>
@@ -642,16 +644,16 @@ export default function EstablishmentRegistration() {
         
         {/* Seleção de Categoria */}
         <label className="block">
-          <span className="text-sm font-medium text-slate-700 mb-1 block">Categoria (Selecione até 2) *</span>
+          <span className="text-sm font-medium text-slate-700 mb-1 block">Categoria (Selecione até 3) *</span>
           <div className="flex flex-wrap gap-2">
-            {MOCK_CATEGORIES.map(category => (
+            {AVAILABLE_CATEGORIES.map(category => (
               <button
                 key={category}
                 type="button"
                 onClick={() => handleCategoryToggle(category)}
                 className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
                   establishmentData.categories.includes(category) 
-                    ? 'bg-gradient-to-r from-violet-600 to-pink-500 text-white shadow-md' 
+                    ? 'bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 text-white shadow-md' 
                     : 'bg-slate-100 text-slate-700 hover:bg-violet-100'
                 }`}
               >

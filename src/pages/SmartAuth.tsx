@@ -3,12 +3,12 @@ import { Mail, Lock, User, Phone, ArrowRight, AlertCircle, CheckCircle2, Loader2
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { isValidCPF } from '@/lib/validation';
 import { useCepLookup } from '@/hooks/useCepLookup';
 import ChatAssistant from '@/components/ChatAssistant';
 import { useFormBehaviorMonitor } from '@/hooks/useFormBehaviorMonitor';
 import { BackButton } from '@/components/BackButton';
 import { getFriendlyErrorMessage } from '@/lib/errorTranslator';
+import { validateCPF, formatCPF } from '@/lib/validators';
 
 // --- Componentes UI (Inputs com estilo Glass) ---
 const InputGroup = ({ icon: Icon, label, onFocus, onBlur, ...props }: any) => (
@@ -152,19 +152,19 @@ const SmartAuth = () => {
     }
   };
 
-  // Máscara de CPF
+  // Máscara de CPF com validação robusta
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 11) value = value.slice(0, 11);
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-    setFormData({ ...formData, cpf: value });
+    const formatted = formatCPF(e.target.value);
+    setFormData({ ...formData, cpf: formatted });
+  };
 
-    // Validar CPF quando completo
-    const cleanCPF = value.replace(/\D/g, '');
-    if (cleanCPF.length === 11 && !isValidCPF(cleanCPF)) {
-      trackValidationError('cpf', 'CPF inválido');
+  const handleCPFBlur = () => {
+    const cleanCPF = formData.cpf.replace(/\D/g, '');
+    if (cleanCPF.length === 11 && !validateCPF(cleanCPF)) {
+      trackValidationError('cpf', 'CPF inválido. Verifique os dígitos verificadores.');
+      setError('CPF inválido. Verifique os dígitos verificadores.');
+    } else if (cleanCPF.length === 11) {
+      setError(''); // Limpa erro se CPF válido
     }
   };
 
@@ -411,7 +411,7 @@ const SmartAuth = () => {
 
       // Validação de CPF
       const cpfClean = formData.cpf.replace(/\D/g, '');
-      if (!isValidCPF(formData.cpf)) {
+      if (!validateCPF(formData.cpf)) {
         throw new Error("CPF inválido. Verifique os dígitos verificadores.");
       }
 
@@ -685,7 +685,7 @@ const SmartAuth = () => {
                   value={formData.cpf} 
                   onChange={handleCPFChange}
                   onFocus={() => trackFieldFocus('cpf')}
-                  onBlur={() => trackFieldBlur('cpf', true)}
+                  onBlur={handleCPFBlur}
                 />
                 <InputGroup 
                   icon={Calendar} label="Data de Nascimento" type="date" required

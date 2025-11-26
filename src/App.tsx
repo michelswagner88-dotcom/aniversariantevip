@@ -24,6 +24,7 @@ import AreaColaborador from "./pages/AreaColaborador";
 import SetupAdmin from "./pages/SetupAdmin";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminImport from "./pages/AdminImport";
 import Afiliado from "./pages/Afiliado";
 import NotFound from "./pages/NotFound";
 import ComoFunciona from "./pages/ComoFunciona";
@@ -92,6 +93,7 @@ const App = () => (
                 <Route path="/setup-admin" element={<SetupAdmin />} />
                 <Route path="/admin" element={<AdminLogin />} />
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/admin/import" element={<AdminImport />} />
                 <Route path="/afiliado" element={<Afiliado />} />
                 <Route path="/selecionar-categoria" element={<SelecionarCategoria />} />
                 <Route path="/planos-pagamento" element={<PlanosPagamento />} />

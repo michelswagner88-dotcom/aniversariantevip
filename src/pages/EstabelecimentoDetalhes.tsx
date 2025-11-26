@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 import { BackButton } from "@/components/BackButton";
+import { NavigationButtons } from "@/components/NavigationButtons";
 
 interface Estabelecimento {
   id: string;
@@ -29,6 +30,8 @@ interface Estabelecimento {
   horario_funcionamento: string | null;
   link_cardapio: string | null;
   logo_url: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export default function EstabelecimentoDetalhes() {
@@ -310,11 +313,22 @@ export default function EstabelecimentoDetalhes() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="space-y-4 pt-4">
-                  <p className="text-slate-300 text-sm">
+                  <p className="text-slate-300 text-sm mb-4">
                     {estabelecimento.endereco}
                     {estabelecimento.cidade && `, ${estabelecimento.cidade}`}
                     {estabelecimento.estado && ` - ${estabelecimento.estado}`}
                   </p>
+                  
+                  {/* Botões de Navegação - Só aparecem se tiver coordenadas */}
+                  {estabelecimento.latitude && estabelecimento.longitude && (
+                    <NavigationButtons
+                      establishmentId={estabelecimento.id}
+                      establishmentName={estabelecimento.nome_fantasia}
+                      address={`${estabelecimento.endereco}, ${estabelecimento.cidade} - ${estabelecimento.estado}`}
+                      latitude={estabelecimento.latitude}
+                      longitude={estabelecimento.longitude}
+                    />
+                  )}
                 </AccordionContent>
               </AccordionItem>
             )}

@@ -55,6 +55,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { ExpansionInsights } from '@/components/admin/ExpansionInsights';
 import { GrowthMetricsChart } from '@/components/admin/GrowthMetricsChart';
+import { NavigationMetricsPanel } from '@/components/admin/NavigationMetricsPanel';
 
 const COLORS = ['#94a3b8', '#8b5cf6', '#ec4899'];
 
@@ -794,6 +795,12 @@ export default function AdminDashboard() {
           >
             <Mail size={20} /> E-mails
           </button>
+          <button 
+             onClick={() => { setActiveTab('navigation-metrics'); setMobileMenuOpen(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'navigation-metrics' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg' : 'hover:bg-white/5 text-slate-300'}`}
+          >
+            <TrendingUp size={20} /> Navegação B2B
+          </button>
         </nav>
 
         <div className="p-4 border-t border-white/10">
@@ -857,14 +864,21 @@ export default function AdminDashboard() {
                 {activeTab === 'users' && 'Usuários Cadastrados'}
                 {activeTab === 'establishments' && 'Parceiros & Empresas'}
                 {activeTab === 'email-analytics' && 'Analytics de E-mails'}
+                {activeTab === 'navigation-metrics' && 'Métricas de Navegação B2B'}
               </h1>
-              <p className="text-slate-400">Bem-vindo ao painel de controle do sistema.</p>
+              <p className="text-slate-400">
+                {activeTab === 'navigation-metrics' 
+                  ? 'Dados de tráfego gerado para negociações com parceiros de transporte'
+                  : 'Bem-vindo ao painel de controle do sistema.'
+                }
+              </p>
             </div>
 
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'users' && renderUsersTable()}
             {activeTab === 'establishments' && renderEstablishmentsTable()}
             {activeTab === 'email-analytics' && renderEmailAnalytics()}
+            {activeTab === 'navigation-metrics' && <NavigationMetricsPanel />}
           </div>
         </div>
       </main>

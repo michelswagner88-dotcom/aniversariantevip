@@ -420,6 +420,56 @@ export type Database = {
           },
         ]
       }
+      flash_promos: {
+        Row: {
+          cidade: string
+          claims_count: number | null
+          created_at: string
+          description: string
+          estabelecimento_id: string
+          estado: string
+          expires_at: string
+          id: string
+          status: string
+          title: string
+          views_count: number | null
+        }
+        Insert: {
+          cidade: string
+          claims_count?: number | null
+          created_at?: string
+          description: string
+          estabelecimento_id: string
+          estado: string
+          expires_at: string
+          id?: string
+          status?: string
+          title: string
+          views_count?: number | null
+        }
+        Update: {
+          cidade?: string
+          claims_count?: number | null
+          created_at?: string
+          description?: string
+          estabelecimento_id?: string
+          estado?: string
+          expires_at?: string
+          id?: string
+          status?: string
+          title?: string
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flash_promos_estabelecimento_id_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null

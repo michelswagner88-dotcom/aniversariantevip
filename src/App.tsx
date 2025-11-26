@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { Loader2 } from "lucide-react";
 import ChatAssistant from "@/components/ChatAssistant";
 import { PageTransition } from "@/components/PageTransition";
+import BottomNav from "@/components/BottomNav";
 import Index from "./pages/Index";
 import CadastroAniversariante from "./pages/CadastroAniversariante";
 import LoginAniversariante from "./pages/LoginAniversariante";
@@ -39,6 +40,7 @@ import Explorar from "./pages/Explorar";
 import EstabelecimentoDetalhes from "./pages/EstabelecimentoDetalhes";
 import SmartAuth from "./pages/SmartAuth";
 import SelecionarPerfil from "./pages/SelecionarPerfil";
+import FlashDeals from "./pages/FlashDeals";
 
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -61,9 +63,11 @@ const App = () => (
         <BrowserRouter>
           <PageTransition>
             <Suspense fallback={<LoadingScreen />}>
+              <BottomNav />
               <Routes>
                 <Route path="/" element={<Index />} />
             <Route path="/explorar" element={<Explorar />} />
+            <Route path="/flash-deals" element={<FlashDeals />} />
             <Route path="/estabelecimento/:id" element={<EstabelecimentoDetalhes />} />
             <Route path="/como-funciona" element={<ComoFunciona />} />
                 <Route path="/seja-parceiro" element={<SejaParceito />} />

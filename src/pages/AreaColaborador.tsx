@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { LogOut, Users, Building2, Ticket, TrendingUp, Shield } from "lucide-react";
+import { LogOut, Users, Building2, Ticket, TrendingUp, Shield, Upload } from "lucide-react";
 import { Session } from "@supabase/supabase-js";
 import { GerenciarColaboradores } from "@/components/colaborador/GerenciarColaboradores";
 import { GerenciarAniversariantes } from "@/components/colaborador/GerenciarAniversariantes";
 import { GerenciarEstabelecimentos } from "@/components/colaborador/GerenciarEstabelecimentos";
+import { ImportarEstabelecimentos } from "@/components/colaborador/ImportarEstabelecimentos";
 
 const AreaColaborador = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -173,6 +174,10 @@ const AreaColaborador = () => {
               <Building2 className="mr-2 h-4 w-4" />
               Estabelecimentos
             </TabsTrigger>
+            <TabsTrigger value="importar">
+              <Upload className="mr-2 h-4 w-4" />
+              Importar em Massa
+            </TabsTrigger>
             <TabsTrigger value="colaboradores">
               <Shield className="mr-2 h-4 w-4" />
               Colaboradores
@@ -199,6 +204,10 @@ const AreaColaborador = () => {
 
           <TabsContent value="estabelecimentos">
             <GerenciarEstabelecimentos onUpdate={carregarMetricas} />
+          </TabsContent>
+
+          <TabsContent value="importar">
+            <ImportarEstabelecimentos />
           </TabsContent>
 
           <TabsContent value="colaboradores">

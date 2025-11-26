@@ -168,7 +168,7 @@ const Index = () => {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 pt-20">
+    <div className="min-h-screen flex flex-col bg-slate-950 pt-20 pb-20 sm:pb-0">
       <Header />
 
       {/* Hero Section - State of the Art */}

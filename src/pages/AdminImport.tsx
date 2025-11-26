@@ -37,7 +37,11 @@ export default function AdminImport() {
   };
 
   const cleanCNPJ = (cnpj: string): string => {
-    return cnpj?.replace(/[.\-\/]/g, "") || "";
+    return cnpj?.replace(/\D/g, "") || "";
+  };
+
+  const cleanPhone = (phone: string): string => {
+    return phone?.replace(/\D/g, "") || "";
   };
 
   const cleanInstagram = (instagram: string): string => {
@@ -56,9 +60,13 @@ export default function AdminImport() {
     const first = categoria.split("/")[0].trim();
     const categoryMap: Record<string, string> = {
       "Restaurante": "Restaurante",
+      "Restaurantes": "Restaurante",
       "Bar": "Bar",
+      "Bares": "Bar",
       "Casa Noturna": "Casa Noturna",
+      "Balada": "Casa Noturna",
       "Cafeteria": "Cafeteria",
+      "Café": "Cafeteria",
       "Loja": "Loja de Presentes",
       "Salão": "Salão de Beleza",
       "Barbearia": "Barbearia",
@@ -100,6 +108,143 @@ export default function AdminImport() {
     }
   };
 
+  const getPlaceDetails = async (name: string, address: string): Promise<{ photoUrl: string | null; rating: number | null; ratingsTotal: number | null }> => {
+    try {
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      const query = `${name}, ${address}`;
+      
+      // Search for place
+      const searchResponse = await fetch(
+        `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(query)}&inputtype=textquery&fields=place_id&key=${apiKey}`
+      );
+      const searchData = await searchResponse.json();
+
+      if (searchData.status === "OK" && searchData.candidates?.[0]?.place_id) {
+        const placeId = searchData.candidates[0].place_id;
+        
+        // Get place details
+        const detailsResponse = await fetch(
+          `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos,rating,user_ratings_total&key=${apiKey}`
+        );
+        const detailsData = await detailsResponse.json();
+
+        if (detailsData.status === "OK" && detailsData.result) {
+          const result = detailsData.result;
+          let photoUrl = null;
+
+          if (result.photos && result.photos.length > 0) {
+            const photoReference = result.photos[0].photo_reference;
+            photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${photoReference}&key=${apiKey}`;
+          }
+
+          return {
+            photoUrl,
+            rating: result.rating || null,
+            ratingsTotal: result.user_ratings_total || null,
+          };
+        }
+      }
+      return { photoUrl: null, rating: null, ratingsTotal: null };
+    } catch (error) {
+      console.error("Places API error:", error);
+      return { photoUrl: null, rating: null, ratingsTotal: null };
+    }
+  };
+
+  const processBatch = async (items: any[], startIndex: number) => {
+    const batchSize = 3;
+    const batch = items.slice(startIndex, startIndex + batchSize);
+    
+    const results = await Promise.all(
+      batch.map(async (row, batchIdx) => {
+        const rowNumber = startIndex + batchIdx + 2;
+        
+        try {
+          // Validações básicas
+          if (!row.EMPRESA || !row.CNPJ || !row.ENDEREÇO) {
+            return {
+              success: false,
+              rowNumber,
+              empresa: row.EMPRESA || "N/A",
+              error: "Dados obrigatórios faltando (EMPRESA, CNPJ ou ENDEREÇO)",
+            };
+          }
+
+          const cnpj = cleanCNPJ(row.CNPJ);
+          if (cnpj.length !== 14) {
+            return {
+              success: false,
+              rowNumber,
+              empresa: row.EMPRESA,
+              error: `CNPJ inválido: ${row.CNPJ}`,
+            };
+          }
+
+          // Geocoding
+          const coordinates = await geocodeAddress(row.ENDEREÇO);
+          if (!coordinates) {
+            return {
+              success: false,
+              rowNumber,
+              empresa: row.EMPRESA,
+              error: `Endereço não encontrado: ${row.ENDEREÇO}`,
+            };
+          }
+
+          // Google Places (foto e avaliação)
+          const placeDetails = await getPlaceDetails(row.EMPRESA, row.ENDEREÇO);
+
+          // Preparar dados para inserção
+          const estabelecimentoData = {
+            razao_social: row.EMPRESA,
+            nome_fantasia: row.EMPRESA,
+            cnpj: cnpj,
+            categoria: [mapCategory(row.CATEGORIA)],
+            telefone: cleanPhone(row.CONTATO) || null,
+            whatsapp: cleanPhone(row.CONTATO) || null,
+            endereco: row.ENDEREÇO,
+            latitude: coordinates.lat,
+            longitude: coordinates.lng,
+            instagram: cleanInstagram(row.INSTAGRAM) || null,
+            site: row.SITE || null,
+            descricao_beneficio: row["BENEFICIO E REGRAS"] || null,
+            periodo_validade_beneficio: mapValidity(row["DIA/SEMANA/MÊS"]),
+            logo_url: placeDetails.photoUrl || null,
+            ativo: true,
+            plan_status: "active",
+            cidade: "Florianópolis",
+            estado: "SC",
+          };
+
+          // Inserir no Supabase
+          const { error: insertError } = await supabase
+            .from("estabelecimentos")
+            .insert(estabelecimentoData);
+
+          if (insertError) {
+            return {
+              success: false,
+              rowNumber,
+              empresa: row.EMPRESA,
+              error: `Erro ao salvar: ${insertError.message}`,
+            };
+          }
+
+          return { success: true, rowNumber, empresa: row.EMPRESA };
+        } catch (error: any) {
+          return {
+            success: false,
+            rowNumber,
+            empresa: row.EMPRESA || "N/A",
+            error: error.message || "Erro desconhecido",
+          };
+        }
+      })
+    );
+
+    return results;
+  };
+
   const processFile = async () => {
     if (!file) {
       toast.error("Selecione um arquivo primeiro");
@@ -118,88 +263,26 @@ export default function AdminImport() {
       const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
 
       const total = jsonData.length;
+      const batchSize = 3;
 
-      for (let i = 0; i < jsonData.length; i++) {
-        const row = jsonData[i];
-        const rowNumber = i + 2; // +2 porque começa na linha 2 do Excel (linha 1 é cabeçalho)
-
-        try {
-          // Validações básicas
-          if (!row.EMPRESA || !row.CNPJ || !row.ENDEREÇO) {
-            errors.push({
-              row: rowNumber,
-              empresa: row.EMPRESA || "N/A",
-              error: "Dados obrigatórios faltando (EMPRESA, CNPJ ou ENDEREÇO)",
-            });
-            continue;
-          }
-
-          const cnpj = cleanCNPJ(row.CNPJ);
-          if (cnpj.length !== 14) {
-            errors.push({
-              row: rowNumber,
-              empresa: row.EMPRESA,
-              error: `CNPJ inválido: ${row.CNPJ}`,
-            });
-            continue;
-          }
-
-          // Geocoding
-          const coordinates = await geocodeAddress(row.ENDEREÇO);
-          if (!coordinates) {
-            errors.push({
-              row: rowNumber,
-              empresa: row.EMPRESA,
-              error: `Endereço não encontrado: ${row.ENDEREÇO}`,
-            });
-            continue;
-          }
-
-          // Preparar dados para inserção
-          const estabelecimentoData = {
-            razao_social: row.EMPRESA,
-            nome_fantasia: row.EMPRESA,
-            cnpj: cnpj,
-            categoria: [mapCategory(row.CATEGORIA)],
-            telefone: row.CONTATO || null,
-            whatsapp: row.CONTATO || null,
-            endereco: row.ENDEREÇO,
-            latitude: coordinates.lat,
-            longitude: coordinates.lng,
-            instagram: cleanInstagram(row.INSTAGRAM) || null,
-            site: row.SITE || null,
-            descricao_beneficio: row["BENEFICIO E REGRAS"] || null,
-            periodo_validade_beneficio: mapValidity(row["DIA/SEMANA/MÊS"]),
-            ativo: true,
-            plan_status: "active",
-            cidade: "Florianópolis",
-            estado: "SC",
-          };
-
-          // Inserir no Supabase
-          const { error: insertError } = await supabase
-            .from("estabelecimentos")
-            .insert(estabelecimentoData);
-
-          if (insertError) {
-            errors.push({
-              row: rowNumber,
-              empresa: row.EMPRESA,
-              error: `Erro ao salvar: ${insertError.message}`,
-            });
-          } else {
+      // Processar em batches de 3 em 3
+      for (let i = 0; i < jsonData.length; i += batchSize) {
+        const batchResults = await processBatch(jsonData, i);
+        
+        batchResults.forEach(result => {
+          if (result.success) {
             successCount++;
+          } else {
+            errors.push({
+              row: result.rowNumber,
+              empresa: result.empresa,
+              error: result.error,
+            });
           }
-        } catch (error: any) {
-          errors.push({
-            row: rowNumber,
-            empresa: row.EMPRESA || "N/A",
-            error: error.message || "Erro desconhecido",
-          });
-        }
+        });
 
         // Atualizar progresso
-        setProgress(((i + 1) / total) * 100);
+        setProgress(((Math.min(i + batchSize, total)) / total) * 100);
       }
 
       setResult({ success: successCount, errors });

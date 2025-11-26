@@ -628,6 +628,10 @@ export type Database = {
         }[]
       }
       generate_unique_coupon_code: { Args: never; Returns: string }
+      get_birthday_forecast: {
+        Args: { p_cidade: string; p_estado: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -46,6 +46,17 @@ serve(async (req) => {
 
     if (signUpError) {
       console.error('Erro ao criar usuário:', signUpError);
+      
+      // Se o email já existe, retornar erro específico
+      if (signUpError.message?.includes('already been registered')) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Este email já foi usado. Se você criou o admin antes, use outro email ou entre em contato com o suporte.' 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       throw signUpError;
     }
 

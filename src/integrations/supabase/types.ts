@@ -511,6 +511,51 @@ export type Database = {
           },
         ]
       }
+      search_analytics: {
+        Row: {
+          id: string
+          metadata: Json | null
+          nearest_available_city: string | null
+          nearest_distance_km: number | null
+          results_found: number
+          search_term: string
+          searched_at: string
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+          user_lat: number | null
+          user_lng: number | null
+        }
+        Insert: {
+          id?: string
+          metadata?: Json | null
+          nearest_available_city?: string | null
+          nearest_distance_km?: number | null
+          results_found?: number
+          search_term: string
+          searched_at?: string
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          user_lat?: number | null
+          user_lng?: number | null
+        }
+        Update: {
+          id?: string
+          metadata?: Json | null
+          nearest_available_city?: string | null
+          nearest_distance_km?: number | null
+          results_found?: number
+          search_term?: string
+          searched_at?: string
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          user_lat?: number | null
+          user_lng?: number | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -543,6 +588,20 @@ export type Database = {
           total_earned: number | null
           total_establishments: number | null
           user_id: string | null
+        }
+        Relationships: []
+      }
+      expansion_insights: {
+        Row: {
+          avg_distance_to_nearest: number | null
+          avg_latitude: number | null
+          avg_longitude: number | null
+          last_searched_at: string | null
+          most_common_nearest_city: string | null
+          search_term: string | null
+          total_searches: number | null
+          unique_users: number | null
+          zero_results_count: number | null
         }
         Relationships: []
       }

@@ -14,7 +14,8 @@ import {
   LogOut,
   Loader2,
   Mail,
-  Send
+  Send,
+  Upload
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -787,6 +788,12 @@ export default function AdminDashboard() {
              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'establishments' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg' : 'hover:bg-white/5 text-slate-300'}`}
           >
             <Building2 size={20} /> Estabelecimentos
+          </button>
+          <button 
+             onClick={() => navigate('/admin/import')}
+             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all hover:bg-white/5 text-slate-300"
+          >
+            <Upload size={20} /> Importar CSV
           </button>
           <div className="pt-4 pb-2 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Analytics</div>
           <button 

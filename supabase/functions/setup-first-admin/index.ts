@@ -53,6 +53,26 @@ serve(async (req) => {
       throw new Error('Usuário não foi criado');
     }
 
+    console.log('Usuário criado:', userData.user.id);
+    console.log('Criando profile...');
+
+    // Criar profile manualmente (sem trigger)
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: userData.user.id,
+        email,
+        nome
+      });
+
+    if (profileError) {
+      console.error('Erro ao criar profile:', profileError);
+      // Não falhar se profile já existe
+      if (profileError.code !== '23505') {
+        throw profileError;
+      }
+    }
+
     console.log('Criando role de admin para:', userData.user.id);
 
     // Criar role de admin usando service role (bypass RLS)

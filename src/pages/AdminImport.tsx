@@ -85,6 +85,46 @@ export default function AdminImport() {
     return "dia_aniversario";
   };
 
+  const fetchAddressByCep = async (cep: string): Promise<{ street: string; neighborhood: string; city: string; state: string; lat?: number; lng?: number } | null> => {
+    try {
+      const cleanedCep = cep.replace(/\D/g, "");
+      
+      // Tentar BrasilAPI primeiro
+      try {
+        const response = await fetch(`https://brasilapi.com.br/api/cep/v2/${cleanedCep}`);
+        if (response.ok) {
+          const data = await response.json();
+          return {
+            street: data.street,
+            neighborhood: data.neighborhood,
+            city: data.city,
+            state: data.state,
+          };
+        }
+      } catch (brasilApiError) {
+        console.log("BrasilAPI falhou, tentando ViaCEP...");
+      }
+
+      // Fallback para ViaCEP
+      const response = await fetch(`https://viacep.com.br/ws/${cleanedCep}/json/`);
+      const data = await response.json();
+      
+      if (data.erro) {
+        return null;
+      }
+
+      return {
+        street: data.logradouro,
+        neighborhood: data.bairro,
+        city: data.localidade,
+        state: data.uf,
+      };
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+      return null;
+    }
+  };
+
   const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
     try {
       const fullAddress = address.includes("Florianópolis") ? address : `${address}, Florianópolis - SC`;
@@ -160,13 +200,13 @@ export default function AdminImport() {
         const rowNumber = startIndex + batchIdx + 2;
         
         try {
-          // Validações básicas
-          if (!row.EMPRESA || !row.CNPJ || !row.ENDEREÇO) {
+          // Validações básicas - NOVA LÓGICA COM CEP + NÚMERO
+          if (!row.EMPRESA || !row.CNPJ || !row.CEP || !row.NUMERO) {
             return {
               success: false,
               rowNumber,
               empresa: row.EMPRESA || "N/A",
-              error: "Dados obrigatórios faltando (EMPRESA, CNPJ ou ENDEREÇO)",
+              error: "Dados obrigatórios faltando (EMPRESA, CNPJ, CEP ou NUMERO)",
             };
           }
 
@@ -180,19 +220,34 @@ export default function AdminImport() {
             };
           }
 
-          // Geocoding
-          const coordinates = await geocodeAddress(row.ENDEREÇO);
+          // NOVO FLUXO: Buscar endereço pelo CEP
+          const addressData = await fetchAddressByCep(row.CEP);
+          if (!addressData) {
+            return {
+              success: false,
+              rowNumber,
+              empresa: row.EMPRESA,
+              error: `Erro: CEP Inválido - ${row.CEP}`,
+            };
+          }
+
+          // Montar endereço completo
+          const complemento = row.COMPLEMENTO ? `, ${row.COMPLEMENTO}` : "";
+          const finalAddress = `${addressData.street}, ${row.NUMERO}${complemento} - ${addressData.neighborhood}, ${addressData.city} - ${addressData.state}`;
+
+          // Geocoding do endereço completo
+          const coordinates = await geocodeAddress(finalAddress);
           if (!coordinates) {
             return {
               success: false,
               rowNumber,
               empresa: row.EMPRESA,
-              error: `Endereço não encontrado: ${row.ENDEREÇO}`,
+              error: `Aviso: Localização aproximada (Rua) - Número ${row.NUMERO} não encontrado`,
             };
           }
 
           // Google Places (foto e avaliação)
-          const placeDetails = await getPlaceDetails(row.EMPRESA, row.ENDEREÇO);
+          const placeDetails = await getPlaceDetails(row.EMPRESA, finalAddress);
 
           // Preparar dados para inserção
           const estabelecimentoData = {
@@ -202,7 +257,12 @@ export default function AdminImport() {
             categoria: [mapCategory(row.CATEGORIA)],
             telefone: cleanPhone(row.CONTATO) || null,
             whatsapp: cleanPhone(row.CONTATO) || null,
-            endereco: row.ENDEREÇO,
+            endereco: finalAddress, // Endereço montado a partir de CEP + NÚMERO
+            cep: row.CEP.replace(/\D/g, ""),
+            logradouro: addressData.street,
+            numero: row.NUMERO,
+            complemento: row.COMPLEMENTO || null,
+            bairro: addressData.neighborhood,
             latitude: coordinates.lat,
             longitude: coordinates.lng,
             instagram: cleanInstagram(row.INSTAGRAM) || null,
@@ -212,8 +272,8 @@ export default function AdminImport() {
             logo_url: placeDetails.photoUrl || null,
             ativo: true,
             plan_status: "active",
-            cidade: "Florianópolis",
-            estado: "SC",
+            cidade: addressData.city,
+            estado: addressData.state,
           };
 
           // Inserir no Supabase

@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { resizeImage } from "@/lib/imageUtils";
+import { RadarOportunidades } from "@/components/estabelecimento/RadarOportunidades";
 
 export default function AreaEstabelecimento() {
   const navigate = useNavigate();
@@ -88,6 +89,8 @@ export default function AreaEstabelecimento() {
           whatsapp: estabelecimento.whatsapp || "",
           categoria: Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria || "",
           endereco: estabelecimento.endereco || "",
+          cidade: estabelecimento.cidade || "",
+          estado: estabelecimento.estado || "",
           diasHorarioFuncionamento: estabelecimento.horario_funcionamento || "",
           beneficiosAniversariante: estabelecimento.descricao_beneficio || "",
           regrasAniversariante: estabelecimento.regras_utilizacao || "",
@@ -461,6 +464,16 @@ export default function AreaEstabelecimento() {
       </header>
 
       <div className="container mx-auto px-4 py-8 space-y-6">
+        {/* Radar de Oportunidades - Widget Premium */}
+        {userData?.endereco && (
+          <div className="max-w-6xl mx-auto">
+            <RadarOportunidades 
+              cidade={userData.cidade || ""} 
+              estado={userData.estado || ""} 
+            />
+          </div>
+        )}
+
         {/* Estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-6xl mx-auto">
           <Card className="hover:shadow-lg transition-shadow">

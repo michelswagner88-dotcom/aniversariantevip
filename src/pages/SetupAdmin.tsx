@@ -44,6 +44,29 @@ const SetupAdmin = () => {
     }
   };
 
+  const handleCleanup = async () => {
+    if (!confirm("ATENÇÃO: Isso vai remover TODOS os usuários do sistema. Deseja continuar?")) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('cleanup-orphan-users');
+      
+      if (error) {
+        throw error;
+      }
+
+      toast.success("Todos os usuários foram removidos. Você pode criar o primeiro admin agora.");
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Erro ao limpar usuários:", error);
+      toast.error("Erro ao limpar usuários: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCadastro = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -159,6 +182,16 @@ const SetupAdmin = () => {
               ) : (
                 "Criar Administrador"
               )}
+            </Button>
+            
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full mt-2" 
+              onClick={handleCleanup}
+              disabled={loading}
+            >
+              Limpar Todos os Usuários (Reset)
             </Button>
           </form>
         </CardContent>

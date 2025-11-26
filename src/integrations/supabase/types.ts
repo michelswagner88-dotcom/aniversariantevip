@@ -470,6 +470,38 @@ export type Database = {
           },
         ]
       }
+      navigation_logs: {
+        Row: {
+          app_name: string
+          created_at: string
+          establishment_id: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          app_name: string
+          created_at?: string
+          establishment_id: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          app_name?: string
+          created_at?: string
+          establishment_id?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "navigation_logs_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null

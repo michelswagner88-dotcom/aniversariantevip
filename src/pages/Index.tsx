@@ -9,9 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { CATEGORIAS_ESTABELECIMENTO, ESTADOS_CIDADES, ESTADOS } from "@/lib/constants";
+import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import { useNavigate } from "react-router-dom";
+import { CityCombobox } from "@/components/CityCombobox";
 
 interface Estabelecimento {
   id: string;
@@ -36,8 +37,8 @@ const Index = () => {
   const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoria, setSelectedCategoria] = useState("todas");
-  const [selectedEstado, setSelectedEstado] = useState("");
   const [selectedCidade, setSelectedCidade] = useState("");
+  const [selectedEstado, setSelectedEstado] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
   const { favoritos, toggleFavorito, isFavorito, loading: favoritosLoading } = useFavoritos(currentUser?.id || null);
@@ -122,10 +123,15 @@ const Index = () => {
   };
 
   const limparFiltros = () => {
-    setSelectedEstado("");
     setSelectedCidade("");
+    setSelectedEstado("");
     setSelectedCategoria("todas");
     setSearchTerm("");
+  };
+
+  const handleCitySelect = (cidade: string, estado: string) => {
+    setSelectedCidade(cidade);
+    setSelectedEstado(estado);
   };
 
   // Filtros
@@ -213,48 +219,22 @@ const Index = () => {
               }}
             >
               {/* Desktop Layout */}
-              <div className="hidden sm:grid sm:grid-cols-[1fr_auto_1fr_auto_1fr_auto_auto_auto] gap-3 items-center">
-                <div className="flex items-center gap-3 px-4">
+              <div className="hidden sm:flex items-center gap-0">
+                {/* Cidade - Smart Combobox */}
+                <div className="flex items-center gap-3 px-4 flex-1 min-w-[300px]">
                   <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                  <Select value={selectedEstado} onValueChange={(value) => {
-                    setSelectedEstado(value);
-                    setSelectedCidade("");
-                  }}>
-                    <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 [&>span]:!bg-transparent [&>span]:appearance-none">
-                      <SelectValue placeholder="Estado" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-slate-700 z-50">
-                      {ESTADOS.map(estado => (
-                        <SelectItem key={estado.value} value={estado.value} className="text-white">
-                          {estado.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <CityCombobox
+                    value={selectedCidade && selectedEstado ? `${selectedCidade}, ${selectedEstado}` : ""}
+                    onSelect={handleCitySelect}
+                    placeholder="Onde?"
+                    className="border-none bg-transparent shadow-none h-auto p-0 hover:bg-transparent"
+                  />
                 </div>
 
                 {/* Separador Vertical (Cristal) */}
                 <div className="h-8 w-[1px] bg-white/10" />
 
-                <div className="flex items-center gap-3 px-4">
-                  <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                  <Select value={selectedCidade} onValueChange={setSelectedCidade} disabled={!selectedEstado}>
-                    <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 disabled:opacity-50 [&>span]:!bg-transparent [&>span]:appearance-none">
-                      <SelectValue placeholder="Cidade" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-slate-700 z-50">
-                      {selectedEstado && ESTADOS_CIDADES[selectedEstado as keyof typeof ESTADOS_CIDADES]?.map(cidade => (
-                        <SelectItem key={cidade} value={cidade} className="text-white">
-                          {cidade}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Separador Vertical (Cristal) */}
-                <div className="h-8 w-[1px] bg-white/10" />
-
+                {/* Categoria */}
                 <div className="flex items-center gap-3 px-4">
                   <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
@@ -277,6 +257,7 @@ const Index = () => {
                 {/* Separador Vertical (Cristal) */}
                 <div className="h-8 w-[1px] bg-white/10" />
 
+                {/* Limpar e Buscar */}
                 <Button 
                   size="lg"
                   variant="ghost"
@@ -297,41 +278,18 @@ const Index = () => {
 
               {/* Mobile Layout */}
               <div className="sm:hidden flex flex-col">
+                {/* Cidade */}
                 <div className="flex items-center gap-3 px-4 h-12 border-b border-white/10">
                   <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                  <Select value={selectedEstado} onValueChange={(value) => {
-                    setSelectedEstado(value);
-                    setSelectedCidade("");
-                  }}>
-                    <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 [&>span]:!bg-transparent">
-                      <SelectValue placeholder="Selecione o estado" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-slate-700 z-50">
-                      {ESTADOS.map(estado => (
-                        <SelectItem key={estado.value} value={estado.value} className="text-white">
-                          {estado.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <CityCombobox
+                    value={selectedCidade && selectedEstado ? `${selectedCidade}, ${selectedEstado}` : ""}
+                    onSelect={handleCitySelect}
+                    placeholder="Onde?"
+                    className="border-none bg-transparent shadow-none h-auto p-0 hover:bg-transparent flex-1"
+                  />
                 </div>
 
-                <div className="flex items-center gap-3 px-4 h-12 border-b border-white/10">
-                  <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                  <Select value={selectedCidade} onValueChange={setSelectedCidade} disabled={!selectedEstado}>
-                    <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 disabled:opacity-50 [&>span]:!bg-transparent">
-                      <SelectValue placeholder="Selecione a cidade" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-slate-700 z-50">
-                      {selectedEstado && ESTADOS_CIDADES[selectedEstado as keyof typeof ESTADOS_CIDADES]?.map(cidade => (
-                        <SelectItem key={cidade} value={cidade} className="text-white">
-                          {cidade}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
+                {/* Categoria */}
                 <div className="flex items-center gap-3 px-4 h-12 border-b border-white/10">
                   <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
@@ -351,6 +309,7 @@ const Index = () => {
                   </Select>
                 </div>
 
+                {/* Ações */}
                 <div className="p-3 space-y-2">
                   <Button 
                     size="lg"

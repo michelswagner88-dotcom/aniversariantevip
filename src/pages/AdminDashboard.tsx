@@ -53,6 +53,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
+import { ExpansionInsights } from '@/components/admin/ExpansionInsights';
+import { GrowthMetricsChart } from '@/components/admin/GrowthMetricsChart';
 
 const COLORS = ['#94a3b8', '#8b5cf6', '#ec4899'];
 
@@ -334,6 +336,15 @@ export default function AdminDashboard() {
 
   const renderOverview = () => (
     <div className="space-y-6">
+      {/* Métricas de Crescimento */}
+      <GrowthMetricsChart />
+      
+      {/* Insights de Expansão */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold text-white mb-4">Insights de Expansão</h2>
+        <ExpansionInsights />
+      </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Usuários Totais" value={users.length} change={12.5} icon={Users} color="bg-gradient-to-r from-blue-500 to-blue-600" />
         <StatCard title="Estabelecimentos" value={establishments.length} change={8.2} icon={Building2} color="bg-gradient-to-r from-violet-500 to-violet-600" />

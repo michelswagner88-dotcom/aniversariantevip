@@ -10,6 +10,13 @@ export interface ActiveCity {
   distancia?: number | null;
 }
 
+interface ActiveCitiesResponse {
+  cities: ActiveCity[];
+  searchedCity?: string;
+  isNearbyResults?: boolean;
+  message?: string;
+}
+
 interface UseActiveCitiesOptions {
   userLat?: number;
   userLng?: number;
@@ -17,23 +24,31 @@ interface UseActiveCitiesOptions {
   enabled?: boolean;
 }
 
+interface ActiveCitiesResponse {
+  cities: ActiveCity[];
+  searchedCity?: string;
+  isNearbyResults?: boolean;
+  message?: string;
+}
+
 export const useActiveCities = (options: UseActiveCitiesOptions = {}) => {
   const { userLat, userLng, searchTerm, enabled = true } = options;
 
-  return useQuery({
+  return useQuery<ActiveCitiesResponse>({
     queryKey: ['active-cities', userLat, userLng, searchTerm],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('get-active-cities', {
         body: { 
           userLat, 
           userLng, 
-          searchTerm 
+          searchTerm,
+          includeNearby: true
         }
       });
 
       if (error) throw error;
       
-      return (data?.cities || []) as ActiveCity[];
+      return data as ActiveCitiesResponse;
     },
     enabled,
     staleTime: 5 * 60 * 1000, // 5 minutos (cidades não mudam com frequência)

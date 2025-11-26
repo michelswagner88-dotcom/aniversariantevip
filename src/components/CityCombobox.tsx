@@ -38,11 +38,16 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
   
   const { location, requestLocation } = useGeolocation();
   
-  const { data: cities = [], isLoading } = useActiveCities({
+  const { data: response, isLoading } = useActiveCities({
     userLat: location?.coordinates?.latitude,
     userLng: location?.coordinates?.longitude,
     searchTerm,
   });
+
+  const cities = response?.cities || [];
+  const isNearbyResults = response?.isNearbyResults || false;
+  const searchedCity = response?.searchedCity || '';
+  const suggestionMessage = response?.message || '';
 
   const handleUseMyLocation = async () => {
     setIsRequestingLocation(true);
@@ -120,9 +125,13 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
                   </CommandItem>
                 </CommandGroup>
 
-                {/* Cidades em Alta (se não estiver pesquisando) */}
+                {/* Cidades em Alta ou Cidades Vizinhas */}
                 {!searchTerm && topCities.length > 0 && (
-                  <CommandGroup heading="🔥 Cidades em Alta">
+                  <CommandGroup heading={
+                    isNearbyResults 
+                      ? `🗺️ Cidades próximas a ${searchedCity}` 
+                      : "🔥 Cidades em Alta"
+                  }>
                     {topCities.map((city) => (
                       <CommandItem
                         key={`${city.cidade}-${city.estado}`}
@@ -193,12 +202,21 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
                 )}
 
                 <CommandEmpty className="text-center py-6">
-                  <p className="text-slate-400 mb-2">
-                    Ainda não chegamos em <span className="font-bold text-white">{searchTerm}</span>
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Mas temos opções incríveis perto de você!
-                  </p>
+                  {isNearbyResults && suggestionMessage ? (
+                    <>
+                      <p className="text-slate-400 mb-2">{suggestionMessage}</p>
+                      <p className="text-violet-400 font-semibold text-sm">🗺️ Cidades próximas disponíveis acima</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-slate-400 mb-2">
+                        Ainda não chegamos em <span className="font-bold text-white">{searchTerm}</span>
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Mas temos opções incríveis perto de você!
+                      </p>
+                    </>
+                  )}
                 </CommandEmpty>
               </>
             )}

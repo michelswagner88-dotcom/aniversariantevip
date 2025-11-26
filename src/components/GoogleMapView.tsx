@@ -1,9 +1,10 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense, useRef } from 'react';
 import { APIProvider, Map, AdvancedMarker, Pin, useMap } from '@vis.gl/react-google-maps';
 import { MapPin, X, Navigation, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { toast } from 'sonner';
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
 
 interface Establishment {
   id: string;
@@ -103,6 +104,8 @@ const MapContent: React.FC<{
   onMapReady?: (map: google.maps.Map) => void;
 }> = ({ establishments, selectedId, onMarkerClick, userLocation, onMapReady }) => {
   const map = useMap();
+  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const clustererRef = useRef<MarkerClusterer | null>(null);
 
   // Notificar quando o mapa estiver pronto
   useEffect(() => {
@@ -139,6 +142,51 @@ const MapContent: React.FC<{
     map.fitBounds(bounds, 50);
   }, [map, establishments]);
 
+  // Setup clustering
+  useEffect(() => {
+    if (!map) return;
+
+    // Limpar clusterer anterior
+    if (clustererRef.current) {
+      clustererRef.current.clearMarkers();
+    }
+
+    // Criar novo clusterer com estilos customizados
+    clustererRef.current = new MarkerClusterer({
+      map,
+      markers: markersRef.current,
+      renderer: {
+        render: ({ count, position }) => {
+          const color = count > 10 ? '#ec4899' : count > 5 ? '#a855f7' : '#8b5cf6';
+          return new google.maps.Marker({
+            position,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              fillColor: color,
+              fillOpacity: 0.9,
+              strokeWeight: 3,
+              strokeColor: '#ffffff',
+              scale: Math.min(15 + count * 1.5, 35),
+            },
+            label: {
+              text: String(count),
+              color: '#ffffff',
+              fontSize: '14px',
+              fontWeight: 'bold',
+            },
+            zIndex: Number(google.maps.Marker.MAX_ZINDEX) + count,
+          });
+        },
+      },
+    });
+
+    return () => {
+      if (clustererRef.current) {
+        clustererRef.current.clearMarkers();
+      }
+    };
+  }, [map, establishments]);
+
   return (
     <>
       {/* User Location Marker - Pulsante e Destacado */}
@@ -168,6 +216,11 @@ const MapContent: React.FC<{
             key={establishment.id}
             position={{ lat: establishment.latitude, lng: establishment.longitude }}
             onClick={() => onMarkerClick(establishment.id)}
+            ref={(marker) => {
+              if (marker && !markersRef.current.includes(marker)) {
+                markersRef.current.push(marker);
+              }
+            }}
           >
             <div className="relative cursor-pointer group transform transition-transform duration-200 hover:scale-110 active:scale-95">
               {/* Touch-friendly padding */}

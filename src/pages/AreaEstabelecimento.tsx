@@ -100,6 +100,7 @@ export default function AreaEstabelecimento() {
           emailContato: "",
           instagram: estabelecimento.instagram || "",
           site: estabelecimento.site || "",
+          planStatus: estabelecimento.plan_status || "pending",
         });
         setFormData({
           nomeFantasia: estabelecimento.nome_fantasia || "",
@@ -469,7 +470,9 @@ export default function AreaEstabelecimento() {
           <div className="max-w-6xl mx-auto">
             <RadarOportunidades 
               cidade={userData.cidade || ""} 
-              estado={userData.estado || ""} 
+              estado={userData.estado || ""}
+              userPlan={userData.planStatus || null}
+              estabelecimentoId={userData.id || ""}
             />
           </div>
         )}

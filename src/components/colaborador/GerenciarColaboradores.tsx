@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { UserPlus, Trash2, Loader2 } from "lucide-react";
+import { UserPlus, Trash2, Loader2, Edit2 } from "lucide-react";
 import { z } from "zod";
 
 const colaboradorSchema = z.object({
@@ -19,9 +21,12 @@ export const GerenciarColaboradores = () => {
   const [colaboradores, setColaboradores] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [nome, setNome] = useState("");
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'colaborador'>('colaborador');
+  const [editingUser, setEditingUser] = useState<any>(null);
 
   useEffect(() => {
     carregarColaboradores();
@@ -40,7 +45,7 @@ export const GerenciarColaboradores = () => {
             nome
           )
         `)
-        .eq('role', 'admin');
+        .in('role', ['admin', 'colaborador']);
 
       if (error) throw error;
       setColaboradores(roles || []);
@@ -78,7 +83,7 @@ export const GerenciarColaboradores = () => {
           .from('user_roles')
           .insert({
             user_id: data.user.id,
-            role: 'admin'
+            role: selectedRole
           });
 
         if (roleError) throw roleError;
@@ -88,6 +93,7 @@ export const GerenciarColaboradores = () => {
         setEmail("");
         setSenha("");
         setNome("");
+        setSelectedRole('colaborador');
         carregarColaboradores();
       }
     } catch (error: any) {
@@ -103,18 +109,18 @@ export const GerenciarColaboradores = () => {
     }
   };
 
-  const handleRemoverColaborador = async (userId: string) => {
+  const handleRemoverColaborador = async (userId: string, role: string) => {
     if (!confirm("Tem certeza que deseja remover este colaborador?")) return;
 
     try {
       setLoading(true);
       
-      // Remover role
+      // Remover role específica
       const { error } = await supabase
         .from('user_roles')
         .delete()
         .eq('user_id', userId)
-        .eq('role', 'admin');
+        .eq('role', role as any);
 
       if (error) throw error;
 
@@ -122,6 +128,37 @@ export const GerenciarColaboradores = () => {
       carregarColaboradores();
     } catch (error: any) {
       toast.error("Erro ao remover colaborador");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditRole = (user: any) => {
+    setEditingUser(user);
+    setSelectedRole(user.role);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateRole = async () => {
+    if (!editingUser) return;
+
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ role: selectedRole as any })
+        .eq('user_id', editingUser.user_id)
+        .eq('role', editingUser.role as any);
+
+      if (error) throw error;
+
+      toast.success("Permissões atualizadas com sucesso!");
+      setEditDialogOpen(false);
+      setEditingUser(null);
+      carregarColaboradores();
+    } catch (error: any) {
+      toast.error("Erro ao atualizar permissões");
     } finally {
       setLoading(false);
     }
@@ -186,6 +223,24 @@ export const GerenciarColaboradores = () => {
                   placeholder="••••••••"
                 />
               </div>
+              <div className="space-y-2">
+                <label htmlFor="role" className="text-sm font-medium">
+                  Tipo de Permissão
+                </label>
+                <Select value={selectedRole} onValueChange={(value: any) => setSelectedRole(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a permissão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="colaborador">Colaborador</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Colaborador: Pode gerenciar estabelecimentos e aniversariantes.<br/>
+                  Administrador: Acesso total ao sistema.
+                </p>
+              </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
@@ -197,6 +252,45 @@ export const GerenciarColaboradores = () => {
                 )}
               </Button>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Permissões</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium mb-1">Usuário</p>
+                <p className="text-sm text-muted-foreground">{editingUser?.profiles?.nome}</p>
+                <p className="text-xs text-muted-foreground">{editingUser?.profiles?.email}</p>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="edit-role" className="text-sm font-medium">
+                  Tipo de Permissão
+                </label>
+                <Select value={selectedRole} onValueChange={(value: any) => setSelectedRole(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a permissão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="colaborador">Colaborador</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleUpdateRole} className="w-full" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  "Salvar Alterações"
+                )}
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </CardHeader>
@@ -211,6 +305,7 @@ export const GerenciarColaboradores = () => {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Permissão</TableHead>
                 <TableHead>Data de Cadastro</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -221,23 +316,38 @@ export const GerenciarColaboradores = () => {
                   <TableCell>{colab.profiles?.nome || "N/A"}</TableCell>
                   <TableCell>{colab.profiles?.email || "N/A"}</TableCell>
                   <TableCell>
+                    <Badge variant={colab.role === 'admin' ? 'default' : 'secondary'}>
+                      {colab.role === 'admin' ? 'Administrador' : 'Colaborador'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
                     {new Date(colab.created_at).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoverColaborador(colab.user_id)}
-                      disabled={loading}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditRole(colab)}
+                        disabled={loading}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoverColaborador(colab.user_id, colab.role)}
+                        disabled={loading}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
               {colaboradores.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
                     Nenhum colaborador cadastrado
                   </TableCell>
                 </TableRow>

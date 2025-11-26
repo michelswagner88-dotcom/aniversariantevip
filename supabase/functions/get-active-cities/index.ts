@@ -187,15 +187,28 @@ Deno.serve(async (req) => {
     });
 
     let cities = Array.from(cityMap.values());
+    const resultsFound = cities.length;
+    let nearestCity: string | null = null;
+    let nearestDistance: number | null = null;
 
     // Se usuário forneceu localização, calcular distâncias e ordenar
     if (userLat && userLng) {
-      cities = cities.map(city => ({
-        ...city,
-        distancia: city.latitude && city.longitude
+      cities = cities.map(city => {
+        const distancia = city.latitude && city.longitude
           ? calculateDistance(userLat, userLng, city.latitude, city.longitude)
-          : null,
-      })).sort((a: any, b: any) => {
+          : null;
+        
+        // Rastrear cidade mais próxima
+        if (distancia !== null && (nearestDistance === null || distancia < nearestDistance)) {
+          nearestDistance = distancia;
+          nearestCity = `${city.cidade}, ${city.estado}`;
+        }
+        
+        return {
+          ...city,
+          distancia,
+        };
+      }).sort((a: any, b: any) => {
         // Primeiro, ordenar por distância (se disponível)
         if (a.distancia !== null && b.distancia !== null) {
           return a.distancia - b.distancia;
@@ -209,6 +222,30 @@ Deno.serve(async (req) => {
     } else {
       // Sem geolocalização: ordenar por popularidade (mais estabelecimentos)
       cities = cities.sort((a, b) => b.total_estabelecimentos - a.total_estabelecimentos);
+    }
+
+    // Registrar analytics de busca
+    if (searchTerm && searchTerm.trim()) {
+      try {
+        await supabaseClient
+          .from('search_analytics')
+          .insert({
+            search_term: searchTerm.trim(),
+            user_lat: userLat || null,
+            user_lng: userLng || null,
+            results_found: resultsFound,
+            nearest_available_city: nearestCity,
+            nearest_distance_km: nearestDistance,
+            metadata: {
+              has_geolocation: !!(userLat && userLng),
+              total_cities_available: cities.length,
+            }
+          });
+        console.log(`Analytics recorded for search: ${searchTerm}`);
+      } catch (analyticsError) {
+        // Não falhar a requisição se analytics falhar
+        console.error('Error recording search analytics:', analyticsError);
+      }
     }
 
     // Limitar a 50 cidades para performance

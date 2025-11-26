@@ -64,9 +64,14 @@ const SetupAdmin = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro no signUp:", error);
+        throw error;
+      }
 
       if (data.user) {
+        console.log("Usuário criado:", data.user.id);
+        
         // Atribuir role de admin
         const { error: roleError } = await supabase
           .from('user_roles')
@@ -75,18 +80,23 @@ const SetupAdmin = () => {
             role: 'admin'
           });
 
-        if (roleError) throw roleError;
+        if (roleError) {
+          console.error("Erro ao criar role:", roleError);
+          throw new Error(`Erro ao atribuir permissões: ${roleError.message}`);
+        }
 
         toast.success("Primeiro administrador cadastrado com sucesso!");
-        navigate("/login/colaborador");
+        navigate("/admin");
       }
     } catch (error: any) {
+      console.error("Erro completo:", error);
       if (error instanceof z.ZodError) {
         error.errors.forEach((err) => {
           toast.error(err.message);
         });
       } else {
-        toast.error(error.message || "Erro ao cadastrar administrador");
+        const errorMessage = error.message || "Erro ao cadastrar administrador";
+        toast.error(errorMessage);
       }
     } finally {
       setLoading(false);

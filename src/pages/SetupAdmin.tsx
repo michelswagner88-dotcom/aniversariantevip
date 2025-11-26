@@ -45,23 +45,37 @@ const SetupAdmin = () => {
   };
 
   const handleCleanup = async () => {
-    if (!confirm("ATENÇÃO: Isso vai remover TODOS os usuários do sistema. Deseja continuar?")) {
+    if (!confirm("ATENÇÃO: Isso vai remover TODOS os usuários e dados do sistema. Deseja continuar?")) {
       return;
     }
 
     setLoading(true);
+    toast.loading("Limpando sistema...");
+    
     try {
-      const { error } = await supabase.functions.invoke('cleanup-orphan-users');
+      const { data, error } = await supabase.functions.invoke('cleanup-orphan-users');
       
       if (error) {
-        throw error;
+        console.error("Erro da edge function:", error);
+        throw new Error(error.message || "Erro ao limpar usuários");
       }
 
-      toast.success("Todos os usuários foram removidos. Você pode criar o primeiro admin agora.");
-      window.location.reload();
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      console.log("Resultado da limpeza:", data);
+      toast.dismiss();
+      toast.success(`Sistema limpo! ${data?.message || 'Você pode criar o primeiro admin agora.'}`);
+      
+      // Aguardar 2 segundos antes de recarregar
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (error: any) {
+      toast.dismiss();
       console.error("Erro ao limpar usuários:", error);
-      toast.error("Erro ao limpar usuários: " + error.message);
+      toast.error("Erro ao limpar: " + (error.message || "Erro desconhecido"));
     } finally {
       setLoading(false);
     }

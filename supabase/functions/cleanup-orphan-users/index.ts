@@ -22,26 +22,41 @@ serve(async (req) => {
       }
     });
 
-    console.log('Buscando todos os usuários...');
+    console.log('Limpando tabelas públicas primeiro...');
     
-    // Buscar todos os usuários
+    // Limpar tabelas públicas (ordem importa por causa das foreign keys)
+    await supabase.from('cupons').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('favoritos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('user_roles').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('aniversariantes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('estabelecimentos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('profiles').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    console.log('Tabelas públicas limpas. Buscando usuários do Auth...');
+    
+    // Buscar todos os usuários do Auth
     const { data: users, error: listError } = await supabase.auth.admin.listUsers();
     
     if (listError) {
+      console.error('Erro ao listar usuários:', listError);
       throw listError;
     }
 
-    console.log(`Encontrados ${users.users.length} usuários para remover`);
+    console.log(`Encontrados ${users.users.length} usuários para remover do Auth`);
 
-    // Remover cada usuário
+    // Remover cada usuário do Auth
     let deletedCount = 0;
     for (const user of users.users) {
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
-      if (!deleteError) {
-        deletedCount++;
-        console.log(`Usuário ${user.email} removido com sucesso`);
-      } else {
-        console.error(`Erro ao remover ${user.email}:`, deleteError);
+      try {
+        const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
+        if (!deleteError) {
+          deletedCount++;
+          console.log(`✓ Usuário ${user.email} removido do Auth`);
+        } else {
+          console.error(`✗ Erro ao remover ${user.email}:`, deleteError.message);
+        }
+      } catch (err) {
+        console.error(`✗ Exceção ao remover ${user.email}:`, err);
       }
     }
 

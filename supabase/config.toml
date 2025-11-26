@@ -30,3 +30,9 @@ verify_jwt = true
 [functions.release-held-commissions]
 verify_jwt = false
 
+[functions.setup-first-admin]
+verify_jwt = false
+
+[functions.cleanup-orphan-users]
+verify_jwt = false
+

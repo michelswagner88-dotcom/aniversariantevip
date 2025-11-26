@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 type NotificationPermission = 'default' | 'granted' | 'denied';
 
@@ -10,8 +11,23 @@ export const useNotifications = () => {
     // Verifica permissão atual ao montar
     if ('Notification' in window) {
       setPermission(Notification.permission as NotificationPermission);
+      
+      // Registrar Service Worker para notificações push
+      if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+        registerServiceWorker();
+      }
     }
   }, []);
+
+  const registerServiceWorker = async () => {
+    try {
+      // Service Worker será criado pelo PWA plugin
+      const registration = await navigator.serviceWorker.ready;
+      console.log('Service Worker registrado:', registration);
+    } catch (error) {
+      console.error('Erro ao registrar Service Worker:', error);
+    }
+  };
 
   const requestPermission = async () => {
     if (!('Notification' in window)) {
@@ -56,10 +72,50 @@ export const useNotifications = () => {
     }
   };
 
+  const subscribeToRegionUpdates = async (userId: string) => {
+    if (permission !== 'granted') {
+      toast.error('Você precisa permitir notificações primeiro');
+      return false;
+    }
+
+    try {
+      // Buscar dados do usuário
+      const { data: user } = await supabase
+        .from('aniversariantes')
+        .select('cidade, estado')
+        .eq('id', userId)
+        .single();
+
+      if (!user?.cidade || !user?.estado) {
+        toast.error('Precisamos da sua cidade para enviar notificações relevantes');
+        return false;
+      }
+
+      // Registrar interesse em notificações no analytics
+      await supabase.from('analytics').insert({
+        event_type: 'notification_subscription',
+        user_id: userId,
+        metadata: {
+          cidade: user.cidade,
+          estado: user.estado,
+          subscribed_at: new Date().toISOString(),
+        },
+      });
+
+      toast.success('✅ Você será notificado sobre novos estabelecimentos na sua região!');
+      return true;
+    } catch (error) {
+      console.error('Erro ao inscrever para notificações:', error);
+      toast.error('Erro ao ativar notificações');
+      return false;
+    }
+  };
+
   return {
     permission,
     requestPermission,
     sendNotification,
+    subscribeToRegionUpdates,
     isSupported: 'Notification' in window,
   };
 };

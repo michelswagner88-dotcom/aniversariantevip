@@ -15,7 +15,8 @@ import {
   Loader2,
   Mail,
   Send,
-  Upload
+  Upload,
+  UserCog
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -57,6 +58,7 @@ import { Switch } from "@/components/ui/switch";
 import { ExpansionInsights } from '@/components/admin/ExpansionInsights';
 import { GrowthMetricsChart } from '@/components/admin/GrowthMetricsChart';
 import { NavigationMetricsPanel } from '@/components/admin/NavigationMetricsPanel';
+import { GerenciarColaboradores } from '@/components/colaborador/GerenciarColaboradores';
 
 const COLORS = ['#94a3b8', '#8b5cf6', '#ec4899'];
 
@@ -790,6 +792,12 @@ export default function AdminDashboard() {
             <Building2 size={20} /> Estabelecimentos
           </button>
           <button 
+             onClick={() => { setActiveTab('colaboradores'); setMobileMenuOpen(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'colaboradores' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg' : 'hover:bg-white/5 text-slate-300'}`}
+          >
+            <UserCog size={20} /> Colaboradores
+          </button>
+          <button 
              onClick={() => navigate('/admin/import')}
              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all hover:bg-white/5 text-slate-300"
           >
@@ -884,6 +892,7 @@ export default function AdminDashboard() {
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'users' && renderUsersTable()}
             {activeTab === 'establishments' && renderEstablishmentsTable()}
+            {activeTab === 'colaboradores' && <GerenciarColaboradores />}
             {activeTab === 'email-analytics' && renderEmailAnalytics()}
             {activeTab === 'navigation-metrics' && <NavigationMetricsPanel />}
           </div>

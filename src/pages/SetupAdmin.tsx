@@ -51,43 +51,27 @@ const SetupAdmin = () => {
       const validatedData = cadastroSchema.parse({ email, senha, nome });
       setLoading(true);
 
-      const redirectUrl = `${window.location.origin}/area-colaborador`;
-
-      const { data, error } = await supabase.auth.signUp({
-        email: validatedData.email,
-        password: validatedData.senha,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            nome: validatedData.nome,
-          }
+      // Usar Edge Function para criar admin com permissões elevadas
+      const { data, error } = await supabase.functions.invoke('setup-first-admin', {
+        body: {
+          email: validatedData.email,
+          password: validatedData.senha,
+          nome: validatedData.nome
         }
       });
 
       if (error) {
-        console.error("Erro no signUp:", error);
-        throw error;
+        console.error("Erro na Edge Function:", error);
+        throw new Error(error.message || "Erro ao criar administrador");
       }
 
-      if (data.user) {
-        console.log("Usuário criado:", data.user.id);
-        
-        // Atribuir role de admin
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: data.user.id,
-            role: 'admin'
-          });
-
-        if (roleError) {
-          console.error("Erro ao criar role:", roleError);
-          throw new Error(`Erro ao atribuir permissões: ${roleError.message}`);
-        }
-
-        toast.success("Primeiro administrador cadastrado com sucesso!");
-        navigate("/admin");
+      if (data?.error) {
+        throw new Error(data.error);
       }
+
+      toast.success("Primeiro administrador cadastrado com sucesso!");
+      navigate("/admin");
+      
     } catch (error: any) {
       console.error("Erro completo:", error);
       if (error instanceof z.ZodError) {

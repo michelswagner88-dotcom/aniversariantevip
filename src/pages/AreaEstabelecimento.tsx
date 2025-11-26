@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { supabase } from "@/integrations/supabase/client";
 import { resizeImage } from "@/lib/imageUtils";
 import { RadarOportunidades } from "@/components/estabelecimento/RadarOportunidades";
+import { EstabelecimentoAnalytics } from "@/components/estabelecimento/EstabelecimentoAnalytics";
 
 export default function AreaEstabelecimento() {
   const navigate = useNavigate();
@@ -465,9 +466,14 @@ export default function AreaEstabelecimento() {
       </header>
 
       <div className="container mx-auto px-4 py-8 space-y-6">
+        {/* Analytics Avançado */}
+        <div className="max-w-6xl mx-auto">
+          <EstabelecimentoAnalytics estabelecimentoId={userData?.id || ''} />
+        </div>
+
         {/* Radar de Oportunidades - Widget Premium */}
         {userData?.endereco && (
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-6xl mx-auto mt-6">
             <RadarOportunidades 
               cidade={userData.cidade || ""} 
               estado={userData.estado || ""}

@@ -7,6 +7,8 @@ import { GoogleMapView } from "@/components/GoogleMapView";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useCepLookup } from "@/hooks/useCepLookup";
 import { BackButton } from "@/components/BackButton";
+import { EmptyState } from "@/components/EmptyState";
+import { useEstabelecimentos } from "@/hooks/useEstabelecimentos";
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick }: any) => (
@@ -93,7 +95,6 @@ const PlaceCard = ({ place }: any) => {
           <MapPin size={14} className="text-violet-400" /> 
           <span>{place.neighborhood} • {place.distance}</span>
         </div>
-        {/* Badge Benefício - DESTAQUE MÁXIMO */}
         <div className="mt-4 inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 shadow-2xl shadow-violet-500/30">
           <span className="text-lg font-extrabold text-white">
             🎁 Ver Benefício 🔒
@@ -114,14 +115,19 @@ const Explorar = () => {
   // --- HOOKS ---
   const { location, loading: geoLoading, error: geoError, setManualLocation } = useGeolocation();
   const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
+  
+  // Buscar estabelecimentos reais do banco de dados
+  const { data: estabelecimentos = [], isLoading: loadingEstabelecimentos } = useEstabelecimentos({
+    cidade: location?.cidade,
+    estado: location?.estado,
+  });
 
   // --- ESTADOS DOS FILTROS ---
   const [filterOpenNow, setFilterOpenNow] = useState(false);
-  const [filterDay, setFilterDay] = useState("any"); // 'any', 'seg', 'ter', etc.
+  const [filterDay, setFilterDay] = useState("any");
   const [filterValidity, setFilterValidity] = useState("month");
-  const [filterDistance, setFilterDistance] = useState<number | undefined>(undefined); // em km
+  const [filterDistance, setFilterDistance] = useState<number | undefined>(undefined);
 
-  // Mostrar input de CEP se houver erro de geolocalização
   useEffect(() => {
     if (geoError && !location) {
       setShowCepInput(true);
@@ -130,7 +136,6 @@ const Explorar = () => {
 
   const handleCepSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     const data = await fetchCep(cepValue);
     if (data) {
       setManualLocation(data.localidade, data.uf);
@@ -150,50 +155,32 @@ const Explorar = () => {
     ? "Detectando localização..." 
     : "Localização não disponível";
 
-  // --- DADOS MOCKADOS (Simulando Banco de Dados) ---
-  const allPlaces = [
-    { 
-      id: 1, name: "1929 Trattoria", category: "Gastronomia", neighborhood: "Centro", distance: "2km", benefit: "Sobremesa Exclusiva", isOpen: true, 
-      validDays: ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'],
-      latitude: -27.5969, longitude: -48.5482,
-      image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80" 
-    },
-    { 
-      id: 2, name: "Boteco Cascaes", category: "Bares", neighborhood: "Lagoa", distance: "5km", benefit: "Drink Autoral Grátis", isOpen: false, 
-      validDays: ['sex', 'sab', 'dom'],
-      latitude: -27.5778, longitude: -48.5156,
-      image: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80" 
-    },
-    { 
-      id: 3, name: "Barbearia VIP", category: "Serviços", neighborhood: "Trindade", distance: "1.2km", benefit: "Corte + Cerveja", isOpen: true, 
-      validDays: ['ter', 'qua', 'qui'],
-      latitude: -27.6005, longitude: -48.5207,
-      image: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80" 
-    },
-    { 
-      id: 4, name: "Cinemark", category: "Lazer", neighborhood: "Beiramar", distance: "3.5km", benefit: "Combo Pipoca P", isOpen: true, 
-      validDays: ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'],
-      latitude: -27.5949, longitude: -48.5524,
-      image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80" 
-    },
-  ];
+  // Transformar dados reais do banco em formato do card
+  const allPlaces = estabelecimentos.map(est => ({
+    id: est.id,
+    name: est.nome_fantasia || est.razao_social,
+    category: est.categoria?.[0] || "Outros",
+    neighborhood: est.bairro || est.cidade || "",
+    distance: "N/A",
+    benefit: est.descricao_beneficio || "Ver benefício exclusivo",
+    isOpen: true,
+    validDays: ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'],
+    latitude: est.latitude ? Number(est.latitude) : null,
+    longitude: est.longitude ? Number(est.longitude) : null,
+    image: est.logo_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
+  }));
 
-  // --- LÓGICA DE FILTRAGEM ---
   const filteredPlaces = allPlaces.filter(place => {
-    // Filtro de categoria: se não há categorias selecionadas, mostra todos
     if (activeCategories.length > 0 && !activeCategories.includes(place.category)) return false;
     if (filterOpenNow && !place.isOpen) return false;
     if (filterDay !== 'any' && !place.validDays.includes(filterDay)) return false;
     return true;
   });
 
-  // Handler para toggle de categorias
   const handleCategoryToggle = (category: string) => {
     if (category === "Todos") {
-      // "Todos" limpa todas as seleções
       setActiveCategories([]);
     } else {
-      // Toggle: adiciona se não está, remove se já está
       setActiveCategories(prev => 
         prev.includes(category) 
           ? prev.filter(cat => cat !== category)
@@ -209,17 +196,14 @@ const Explorar = () => {
 
   return (
     <div className="min-h-screen w-full bg-slate-950 pb-24 font-inter text-white">
-      {/* Grid Background */}
       <div className="fixed inset-0 pointer-events-none opacity-30" style={{ backgroundImage: 'linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
 
-      {/* Header com Busca por Voz */}
       <div className="sticky top-0 z-40 border-b border-white/5 bg-slate-950/90 py-4 backdrop-blur-xl">
         <div className="container mx-auto px-6 mb-3">
           <BackButton to="/" />
         </div>
         <VoiceSearchBar />
 
-        {/* Banner de Localização com CEP */}
         {showCepInput && (
           <div className="container mx-auto px-6 mt-3 animate-in slide-in-from-top duration-300">
             <div className="rounded-2xl border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-amber-500/10 p-4">
@@ -265,7 +249,6 @@ const Explorar = () => {
           </div>
         )}
 
-        {/* Mostrar localização atual + botão CEP alternativo */}
         {location && !showCepInput && (
           <div className="container mx-auto px-6 mt-3">
             <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-2.5">
@@ -283,12 +266,8 @@ const Explorar = () => {
           </div>
         )}
 
-        {/* Pílulas de Categoria com Fade Edges */}
         <div className="relative container mx-auto px-6 mt-4">
-          {/* Fade esquerdo */}
           <div className="absolute left-0 top-0 bottom-2 w-16 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none z-10"></div>
-          
-          {/* Fade direito */}
           <div className="absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none z-10"></div>
           
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory px-16 -mx-16">
@@ -320,74 +299,56 @@ const Explorar = () => {
         </div>
       </div>
 
-      {/* Lista de Cards */}
       <div className="px-4 pt-6">
-        <div className="mb-4 flex items-center justify-between animate-fade-in">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 transition-all duration-300">
-            {filteredPlaces.length} Resultados
-          </span>
-          <button onClick={() => setFilterOpenNow(!filterOpenNow)} className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all duration-300 ${filterOpenNow ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/50 scale-105' : 'text-slate-400 hover:text-white hover:scale-105'}`}>
-            <div className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${filterOpenNow ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}></div>
-            Aberto Agora
-          </button>
-        </div>
+        {loadingEstabelecimentos && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-12 h-12 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin mb-4" />
+            <p className="text-slate-400 text-sm">Carregando estabelecimentos...</p>
+          </div>
+        )}
 
-        {filteredPlaces.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 animate-fade-in">
-            <div className="rounded-full bg-white/5 p-6 backdrop-blur-sm ring-1 ring-white/10 mb-4">
-              <Search size={48} className="text-slate-400" />
+        {!loadingEstabelecimentos && estabelecimentos.length === 0 && (
+          <EmptyState />
+        )}
+
+        {!loadingEstabelecimentos && estabelecimentos.length > 0 && (
+          <>
+            <div className="mb-4 flex items-center justify-between animate-fade-in">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 transition-all duration-300">
+                {filteredPlaces.length} Resultados
+              </span>
+              <button onClick={() => setFilterOpenNow(!filterOpenNow)} className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all duration-300 ${filterOpenNow ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/50 scale-105' : 'text-slate-400 hover:text-white hover:scale-105'}`}>
+                <div className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${filterOpenNow ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}></div>
+                Aberto Agora
+              </button>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Nenhum resultado encontrado</h3>
-            <p className="text-sm text-slate-400 max-w-xs text-center">
-              Tente ajustar seus filtros ou selecione outras categorias
-            </p>
-            <button
-              onClick={() => {
-                setActiveCategories([]);
-                setFilterOpenNow(false);
-                setFilterDay('any');
-              }}
-              className="mt-6 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-medium text-sm hover:brightness-110 transition-all duration-300 active:scale-95"
-            >
-              Limpar Filtros
-            </button>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredPlaces.map((place, index) => (
-              <div 
-                key={place.id}
-                className="animate-fade-in"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <PlaceCard place={place} />
+
+            {filteredPlaces.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-slate-400">
+                Nenhum resultado encontrado com os filtros selecionados
               </div>
-            ))}
-          </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {filteredPlaces.map((place) => (
+                  <PlaceCard key={place.id} place={place} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Google Maps with FAB */}
-      <GoogleMapView
-        establishments={filteredPlaces.map(place => ({
-          id: String(place.id),
-          nome_fantasia: place.name,
-          categoria: [place.category],
-          endereco: `${place.neighborhood}, Florianópolis`,
-          latitude: place.latitude,
-          longitude: place.longitude,
-          logo_url: place.image,
-          descricao_beneficio: place.benefit,
-          cidade: "Florianópolis"
-        }))}
-        userLocation={location?.coordinates ? {
-          lat: location.coordinates.latitude,
-          lng: location.coordinates.longitude,
-        } : undefined}
-        onEstablishmentClick={(id) => navigate(`/estabelecimento/${id}`)}
-      />
+      {estabelecimentos.length > 0 && (
+        <GoogleMapView
+          establishments={estabelecimentos}
+          userLocation={location?.coordinates ? {
+            lat: location.coordinates.latitude,
+            lng: location.coordinates.longitude,
+          } : undefined}
+          onEstablishmentClick={(id) => navigate(`/estabelecimento/${id}`)}
+        />
+      )}
 
-      {/* Drawer de Filtros */}
       {showFilters && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-md rounded-t-3xl border-t border-white/10 bg-slate-950 p-6 animate-in slide-in-from-bottom duration-300 shadow-2xl max-h-[85vh] flex flex-col">
@@ -398,13 +359,11 @@ const Explorar = () => {
             </div>
             
             <div className="space-y-8 overflow-y-auto pb-24 scrollbar-hide flex-1">
-              {/* Filtro 1: Aberto Agora */}
               <div className="space-y-3">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Disponibilidade</label>
                 <FilterOption label="🟢 Mostrar apenas Abertos Agora" icon={Clock} selected={filterOpenNow} onClick={() => setFilterOpenNow(!filterOpenNow)} className="w-full justify-start px-4 py-4" />
               </div>
 
-              {/* Filtro 2: Dia da Semana */}
               <div className="space-y-3">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
                   <CalendarDays size={14} /> Planejar Dia da Festa
@@ -422,44 +381,23 @@ const Explorar = () => {
                 </div>
               </div>
 
-              {/* Filtro 3: Distância (novo) */}
               {location?.coordinates && (
                 <div className="space-y-3">
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
                     <Navigation size={14} /> Distância Máxima
                   </label>
                   <div className="grid grid-cols-4 gap-2">
-                    <FilterOption 
-                      label="Todas" 
-                      selected={!filterDistance} 
-                      onClick={() => setFilterDistance(undefined)} 
-                    />
-                    <FilterOption 
-                      label="1 km" 
-                      selected={filterDistance === 1} 
-                      onClick={() => setFilterDistance(1)} 
-                    />
-                    <FilterOption 
-                      label="5 km" 
-                      selected={filterDistance === 5} 
-                      onClick={() => setFilterDistance(5)} 
-                    />
-                    <FilterOption 
-                      label="10 km" 
-                      selected={filterDistance === 10} 
-                      onClick={() => setFilterDistance(10)} 
-                    />
+                    <FilterOption label="Todas" selected={!filterDistance} onClick={() => setFilterDistance(undefined)} />
+                    <FilterOption label="1 km" selected={filterDistance === 1} onClick={() => setFilterDistance(1)} />
+                    <FilterOption label="5 km" selected={filterDistance === 5} onClick={() => setFilterDistance(5)} />
+                    <FilterOption label="10 km" selected={filterDistance === 10} onClick={() => setFilterDistance(10)} />
                   </div>
                   <p className="text-xs text-slate-500 italic">
-                    {filterDistance 
-                      ? `Mostrando estabelecimentos até ${filterDistance} km de você` 
-                      : 'Mostrando todos os estabelecimentos'
-                    }
+                    {filterDistance ? `Mostrando estabelecimentos até ${filterDistance} km de você` : 'Mostrando todos os estabelecimentos'}
                   </p>
                 </div>
               )}
 
-              {/* Filtro 4: Validade */}
               <div className="space-y-3">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Validade do Benefício</label>
                 <div className="grid grid-cols-3 gap-2">

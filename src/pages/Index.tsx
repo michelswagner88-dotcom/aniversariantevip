@@ -226,7 +226,7 @@ const Index = () => {
                   <CityCombobox
                     value={selectedCidade && selectedEstado ? `${selectedCidade}, ${selectedEstado}` : ""}
                     onSelect={handleCitySelect}
-                    placeholder="Onde?"
+                    placeholder="Digite a cidade"
                     className="border-none bg-transparent shadow-none h-auto p-0 hover:bg-transparent"
                   />
                 </div>
@@ -284,7 +284,7 @@ const Index = () => {
                   <CityCombobox
                     value={selectedCidade && selectedEstado ? `${selectedCidade}, ${selectedEstado}` : ""}
                     onSelect={handleCitySelect}
-                    placeholder="Onde?"
+                    placeholder="Digite a cidade"
                     className="border-none bg-transparent shadow-none h-auto p-0 hover:bg-transparent flex-1"
                   />
                 </div>

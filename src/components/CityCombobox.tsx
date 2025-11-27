@@ -32,7 +32,7 @@ interface CityComboboxProps {
 export const CityCombobox: React.FC<CityComboboxProps> = ({
   value,
   onSelect,
-  placeholder = "Selecione uma cidade...",
+  placeholder = "Digite a cidade",
   className = "",
 }) => {
   const [open, setOpen] = useState(false);
@@ -116,7 +116,7 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
       >
         <Command className="bg-slate-900">
           <CommandInput
-            placeholder="Digite o nome da cidade..."
+            placeholder="Digite a cidade..."
             value={searchTerm}
             onValueChange={setSearchTerm}
             className="text-white border-white/10"

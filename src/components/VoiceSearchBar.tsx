@@ -89,7 +89,7 @@ const VoiceSearchBar = () => {
             type="text" 
             value={locationText}
             onChange={(e) => setLocationText(e.target.value)}
-            placeholder="Onde?" 
+            placeholder="Digite a cidade" 
             className="w-full bg-transparent text-white placeholder-slate-400 outline-none"
           />
           {locationText && (

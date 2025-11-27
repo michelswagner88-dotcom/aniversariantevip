@@ -6,6 +6,115 @@ import { Heart, MessageCircle, Share2, Sparkles } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import { usePostInteractions } from '@/hooks/usePostInteractions';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+const PostCard = ({ post, navigate }: { post: any; navigate: any }) => {
+  const { likesCount, hasLiked, toggleLike, commentsCount, addComment, isTogglingLike } = usePostInteractions(post.id);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState('');
+
+  const handleLike = () => {
+    toggleLike({ postId: post.id, unlike: hasLiked });
+  };
+
+  const handleAddComment = () => {
+    if (!commentText.trim()) return;
+    addComment({ postId: post.id, text: commentText });
+    setCommentText('');
+  };
+
+  return (
+    <Card className="border-white/10 bg-slate-900/50 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 p-4">
+        <img
+          src={post.estabelecimentos.logo_url || 'https://via.placeholder.com/40'}
+          alt={post.estabelecimentos.nome_fantasia}
+          className="w-10 h-10 rounded-full object-cover border border-white/10"
+        />
+        <div className="flex-1">
+          <button
+            onClick={() => navigate(`/estabelecimento/${post.establishment_id}`)}
+            className="font-semibold hover:text-violet-400 transition-colors"
+          >
+            {post.estabelecimentos.nome_fantasia}
+          </button>
+          <p className="text-xs text-slate-500">
+            {post.estabelecimentos.cidade} • {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}
+          </p>
+        </div>
+      </div>
+
+      {/* Image */}
+      <img
+        src={post.image_url}
+        alt="Post"
+        className="w-full aspect-square object-cover"
+      />
+
+      {/* Actions */}
+      <div className="p-4 space-y-3">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleLike}
+            disabled={isTogglingLike}
+            className={`flex items-center gap-2 transition-colors ${
+              hasLiked ? 'text-pink-500' : 'text-slate-400 hover:text-pink-500'
+            }`}
+          >
+            <Heart size={22} fill={hasLiked ? 'currentColor' : 'none'} />
+            {likesCount > 0 && <span className="text-sm">{likesCount}</span>}
+          </button>
+          <button
+            onClick={() => setShowComments(!showComments)}
+            className="flex items-center gap-2 text-slate-400 hover:text-violet-400 transition-colors"
+          >
+            <MessageCircle size={22} />
+            {commentsCount > 0 && <span className="text-sm">{commentsCount}</span>}
+          </button>
+          <button className="flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-colors ml-auto">
+            <Share2 size={20} />
+          </button>
+        </div>
+
+        {/* Caption */}
+        {post.caption && (
+          <p className="text-sm">
+            <span className="font-semibold">{post.estabelecimentos.nome_fantasia}</span>{' '}
+            {post.caption}
+          </p>
+        )}
+
+        {/* Comments Section */}
+        {showComments && (
+          <div className="space-y-3 pt-3 border-t border-white/10">
+            <div className="flex gap-2">
+              <Input
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Adicione um comentário..."
+                className="flex-1 bg-white/5 border-white/10 text-white text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleAddComment();
+                }}
+              />
+              <Button
+                onClick={handleAddComment}
+                size="sm"
+                className="bg-violet-500 hover:bg-violet-600"
+              >
+                Enviar
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+};
 
 export default function Feed() {
   const navigate = useNavigate();
@@ -95,57 +204,7 @@ export default function Feed() {
           // Feed Posts
           <div className="space-y-6">
             {feedPosts.map((post: any) => (
-              <Card key={post.id} className="border-white/10 bg-slate-900/50 overflow-hidden">
-                {/* Header do Post */}
-                <div className="flex items-center gap-3 p-4">
-                  <img
-                    src={post.estabelecimentos.logo_url || 'https://via.placeholder.com/40'}
-                    alt={post.estabelecimentos.nome_fantasia}
-                    className="w-10 h-10 rounded-full object-cover border border-white/10"
-                  />
-                  <div className="flex-1">
-                    <button
-                      onClick={() => navigate(`/estabelecimento/${post.establishment_id}`)}
-                      className="font-semibold hover:text-violet-400 transition-colors"
-                    >
-                      {post.estabelecimentos.nome_fantasia}
-                    </button>
-                    <p className="text-xs text-slate-500">
-                      {post.estabelecimentos.cidade} • {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Imagem do Post */}
-                <img
-                  src={post.image_url}
-                  alt="Post"
-                  className="w-full aspect-square object-cover"
-                />
-
-                {/* Ações */}
-                <div className="p-4 space-y-3">
-                  <div className="flex items-center gap-4">
-                    <button className="flex items-center gap-2 text-slate-400 hover:text-pink-500 transition-colors">
-                      <Heart size={22} />
-                    </button>
-                    <button className="flex items-center gap-2 text-slate-400 hover:text-violet-400 transition-colors">
-                      <MessageCircle size={22} />
-                    </button>
-                    <button className="flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-colors ml-auto">
-                      <Share2 size={20} />
-                    </button>
-                  </div>
-
-                  {/* Legenda */}
-                  {post.caption && (
-                    <p className="text-sm">
-                      <span className="font-semibold">{post.estabelecimentos.nome_fantasia}</span>{' '}
-                      {post.caption}
-                    </p>
-                  )}
-                </div>
-              </Card>
+              <PostCard key={post.id} post={post} navigate={navigate} />
             ))}
           </div>
         )}

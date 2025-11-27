@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      agenda_events: {
+        Row: {
+          created_at: string
+          description: string | null
+          establishment_id: string
+          event_date: string
+          event_time: string | null
+          id: string
+          post_id: string
+          reservation_link: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          establishment_id: string
+          event_date: string
+          event_time?: string | null
+          id?: string
+          post_id: string
+          reservation_link?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          establishment_id?: string
+          event_date?: string
+          event_time?: string | null
+          id?: string
+          post_id?: string
+          reservation_link?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_events_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_events_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analytics: {
         Row: {
           created_at: string | null
@@ -531,6 +582,41 @@ export type Database = {
           },
         ]
       }
+      post_interactions: {
+        Row: {
+          comment_text: string | null
+          created_at: string
+          id: string
+          post_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          comment_text?: string | null
+          created_at?: string
+          id?: string
+          post_id: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          comment_text?: string | null
+          created_at?: string
+          id?: string
+          post_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_interactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           caption: string | null
@@ -538,6 +624,7 @@ export type Database = {
           establishment_id: string
           id: string
           image_url: string
+          type: Database["public"]["Enums"]["post_type"]
           updated_at: string | null
         }
         Insert: {
@@ -546,6 +633,7 @@ export type Database = {
           establishment_id: string
           id?: string
           image_url: string
+          type?: Database["public"]["Enums"]["post_type"]
           updated_at?: string | null
         }
         Update: {
@@ -554,6 +642,7 @@ export type Database = {
           establishment_id?: string
           id?: string
           image_url?: string
+          type?: Database["public"]["Enums"]["post_type"]
           updated_at?: string | null
         }
         Relationships: [
@@ -829,6 +918,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "colaborador" | "aniversariante" | "estabelecimento"
+      post_type: "photo" | "promo" | "agenda"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -957,6 +1047,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "colaborador", "aniversariante", "estabelecimento"],
+      post_type: ["photo", "promo", "agenda"],
     },
   },
 } as const

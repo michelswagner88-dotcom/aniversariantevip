@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Clock, Phone, Instagram, FileText, Lock, CheckCircle, Ticket, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Phone, Instagram, FileText, Lock, CheckCircle, Ticket, Loader2, UserPlus, UserCheck, Calendar, Grid3x3 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,16 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 import { BackButton } from "@/components/BackButton";
 import { NavigationButtons } from "@/components/NavigationButtons";
+import { useFollowers } from "@/hooks/useFollowers";
+import { useStories } from "@/hooks/useStories";
+import { usePosts } from "@/hooks/usePosts";
+import { StoryViewer } from "@/components/StoryViewer";
 
 interface Estabelecimento {
   id: string;
@@ -41,6 +46,14 @@ export default function EstabelecimentoDetalhes() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [estabelecimento, setEstabelecimento] = useState<Estabelecimento | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showStoryViewer, setShowStoryViewer] = useState(false);
+
+  // Hooks sociais
+  const { isFollowing, followersCount, follow, unfollow, isFollowLoading } = useFollowers(id);
+  const { stories } = useStories(id);
+  const { posts } = usePosts(id);
+
+  const hasActiveStories = stories.length > 0;
 
   // Buscar dados do estabelecimento
   useEffect(() => {
@@ -172,24 +185,79 @@ export default function EstabelecimentoDetalhes() {
             <BackButton to="/explorar" label="" className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/60 p-0" />
           </div>
 
-          {/* Title & Info */}
-          <div className="absolute bottom-0 left-0 right-0 p-6 space-y-3">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 space-y-2">
-                <Badge variant="secondary" className="bg-white/10 backdrop-blur-md border-white/20 text-white">
-                  {(() => {
-                    const cat = estabelecimento.categoria?.[0];
-                    const found = CATEGORIAS_ESTABELECIMENTO.find(c => c.value === cat);
-                    return found ? `${found.icon} ${found.label}` : "🏪 Estabelecimento";
-                  })()}
-                </Badge>
-                <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-                  {estabelecimento.nome_fantasia}
-                </h1>
-              </div>
-              <div className="px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 bg-green-500/20 text-green-400 border border-green-500/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                Aberto
+          {/* Avatar & Title Section */}
+          <div className="absolute bottom-0 left-0 right-0 p-6 space-y-4">
+            <div className="flex items-end gap-4">
+              {/* Avatar com Anel de Story */}
+              <button
+                onClick={() => hasActiveStories && setShowStoryViewer(true)}
+                className={`relative shrink-0 ${hasActiveStories ? 'cursor-pointer' : 'cursor-default'}`}
+                disabled={!hasActiveStories}
+              >
+                <div className={`w-24 h-24 rounded-full p-[3px] ${
+                  hasActiveStories 
+                    ? 'bg-gradient-to-tr from-violet-600 via-fuchsia-500 to-pink-500' 
+                    : 'bg-white/20'
+                }`}>
+                  <img
+                    src={estabelecimento.logo_url || 'https://via.placeholder.com/96'}
+                    alt={estabelecimento.nome_fantasia}
+                    className="w-full h-full rounded-full object-cover border-4 border-slate-950"
+                  />
+                </div>
+              </button>
+
+              {/* Title & Follow Button */}
+              <div className="flex-1 space-y-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 space-y-2">
+                    <Badge variant="secondary" className="bg-white/10 backdrop-blur-md border-white/20 text-white">
+                      {(() => {
+                        const cat = estabelecimento.categoria?.[0];
+                        const found = CATEGORIAS_ESTABELECIMENTO.find(c => c.value === cat);
+                        return found ? `${found.icon} ${found.label}` : "🏪 Estabelecimento";
+                      })()}
+                    </Badge>
+                    <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+                      {estabelecimento.nome_fantasia}
+                    </h1>
+                  </div>
+                  <div className="px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 bg-green-500/20 text-green-400 border border-green-500/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                    Aberto
+                  </div>
+                </div>
+
+                {/* Followers & Follow Button */}
+                {isLoggedIn && (
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm text-white">
+                      <span className="font-bold">{followersCount}</span> {followersCount === 1 ? 'seguidor' : 'seguidores'}
+                    </div>
+                    <Button
+                      onClick={() => isFollowing ? unfollow(id!) : follow(id!)}
+                      disabled={isFollowLoading}
+                      size="sm"
+                      className={
+                        isFollowing
+                          ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+                          : 'bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 text-white'
+                      }
+                    >
+                      {isFollowing ? (
+                        <>
+                          <UserCheck size={14} className="mr-1" />
+                          Seguindo
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus size={14} className="mr-1" />
+                          Seguir
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -231,8 +299,26 @@ export default function EstabelecimentoDetalhes() {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="px-6 py-8 space-y-6 max-w-2xl mx-auto">
+        {/* Main Content with Tabs */}
+        <div className="px-6 py-8 max-w-2xl mx-auto">
+          <Tabs defaultValue="sobre" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 bg-slate-900/50 mb-6">
+              <TabsTrigger value="sobre" className="flex items-center gap-2">
+                <FileText size={16} />
+                Sobre
+              </TabsTrigger>
+              <TabsTrigger value="feed" className="flex items-center gap-2">
+                <Grid3x3 size={16} />
+                Feed VIP
+              </TabsTrigger>
+              <TabsTrigger value="agenda" className="flex items-center gap-2">
+                <Calendar size={16} />
+                Agenda
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Aba Sobre */}
+            <TabsContent value="sobre" className="space-y-6">
           {/* Benefit Box - Conditional (Locked/Unlocked) */}
           <div className="relative rounded-2xl bg-gradient-to-br from-violet-600/20 via-fuchsia-500/20 to-pink-500/20 p-[1px] overflow-hidden">
             {/* Animated Border Glow */}
@@ -367,8 +453,50 @@ export default function EstabelecimentoDetalhes() {
               </AccordionItem>
             )}
           </Accordion>
+            </TabsContent>
+
+            {/* Aba Feed VIP */}
+            <TabsContent value="feed" className="space-y-4">
+              {posts.length === 0 ? (
+                <div className="text-center py-12">
+                  <Grid3x3 className="w-16 h-16 mx-auto text-slate-600 mb-4" />
+                  <p className="text-slate-400">Nenhum post ainda</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-1">
+                  {posts.map((post: any) => (
+                    <div key={post.id} className="aspect-square">
+                      <img
+                        src={post.image_url}
+                        alt="Post"
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Aba Agenda */}
+            <TabsContent value="agenda" className="space-y-4">
+              <div className="text-center py-12">
+                <Calendar className="w-16 h-16 mx-auto text-slate-600 mb-4" />
+                <p className="text-slate-400">Nenhum evento agendado</p>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
+
+      {/* Story Viewer */}
+      {showStoryViewer && hasActiveStories && (
+        <StoryViewer
+          stories={stories}
+          establishmentName={estabelecimento.nome_fantasia}
+          establishmentLogo={estabelecimento.logo_url || undefined}
+          onClose={() => setShowStoryViewer(false)}
+        />
+      )}
 
       {/* Sticky Footer - Conditional Button */}
       <div className="fixed bottom-0 left-0 right-0 z-50 p-4 backdrop-blur-xl bg-slate-950/90 border-t border-white/10">

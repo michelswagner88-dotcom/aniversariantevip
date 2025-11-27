@@ -21,9 +21,8 @@ export default function AreaEstabelecimento() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Estados de autorização
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  // Estado de autorização
+  const [authState, setAuthState] = useState<'checking' | 'authorized' | 'unauthorized'>('checking');
 
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState<any>(null);
@@ -56,101 +55,114 @@ export default function AreaEstabelecimento() {
     site: "",
   });
 
+  // Verificação de autenticação (PRIMEIRA coisa que executa)
   useEffect(() => {
-    checkUser();
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          navigate("/login/estabelecimento", { replace: true });
+          return;
+        }
+
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id);
+
+        const isEstabelecimento = roles?.some(r => r.role === "estabelecimento");
+        
+        if (!isEstabelecimento) {
+          navigate("/", { replace: true });
+          return;
+        }
+
+        // Autorização confirmada
+        setAuthState('authorized');
+        setUserId(session.user.id);
+      } catch (error) {
+        console.error("Erro na verificação de auth:", error);
+        navigate("/login/estabelecimento", { replace: true });
+      }
+    };
+    
+    checkAuth();
   }, [navigate]);
 
-  const checkUser = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        navigate("/login/estabelecimento", { replace: true });
-        return;
-      }
+  // Carregar dados do estabelecimento (SOMENTE após autorização)
+  useEffect(() => {
+    if (authState !== 'authorized' || !userId) return;
 
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id);
+    const loadEstabelecimentoData = async () => {
+      try {
+        const { data: estabelecimento, error } = await supabase
+          .from("estabelecimentos")
+          .select("*")
+          .eq("id", userId)
+          .single();
 
-      const isEstabelecimento = roles?.some(r => r.role === "estabelecimento");
-      
-      if (!isEstabelecimento) {
+        if (error) throw error;
+
+        if (estabelecimento) {
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          setUserData({
+            id: estabelecimento.id,
+            email: session?.user.email || "",
+            razaoSocial: estabelecimento.razao_social,
+            nomeFantasia: estabelecimento.nome_fantasia || "",
+            cnpj: estabelecimento.cnpj,
+            telefone: estabelecimento.telefone || "",
+            whatsapp: estabelecimento.whatsapp || "",
+            categoria: Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria || "",
+            endereco: estabelecimento.endereco || "",
+            cidade: estabelecimento.cidade || "",
+            estado: estabelecimento.estado || "",
+            diasHorarioFuncionamento: estabelecimento.horario_funcionamento || "",
+            beneficiosAniversariante: estabelecimento.descricao_beneficio || "",
+            regrasAniversariante: estabelecimento.regras_utilizacao || "",
+            periodoValidade: estabelecimento.periodo_validade_beneficio || "dia",
+            logoUrl: estabelecimento.logo_url || "",
+            telefoneContato: "",
+            emailContato: "",
+            instagram: estabelecimento.instagram || "",
+            site: estabelecimento.site || "",
+            planStatus: estabelecimento.plan_status || "pending",
+          });
+          
+          setFormData({
+            nomeFantasia: estabelecimento.nome_fantasia || "",
+            email: session?.user.email || "",
+            telefone: estabelecimento.telefone || "",
+            whatsapp: estabelecimento.whatsapp || "",
+            categoria: Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria || "",
+            endereco: estabelecimento.endereco || "",
+            diasHorarioFuncionamento: estabelecimento.horario_funcionamento || "",
+            beneficiosAniversariante: estabelecimento.descricao_beneficio || "",
+            regrasAniversariante: estabelecimento.regras_utilizacao || "",
+            periodoValidade: estabelecimento.periodo_validade_beneficio || "dia",
+            logoUrl: estabelecimento.logo_url || "",
+            telefoneContato: "",
+            emailContato: "",
+            instagram: estabelecimento.instagram || "",
+            site: estabelecimento.site || "",
+          });
+          
+          await loadCuponsEmitidos(userId);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados do estabelecimento:", error);
         toast({
           variant: "destructive",
-          title: "Acesso restrito",
-          description: "Esta área é exclusiva para estabelecimentos parceiros",
+          title: "Erro ao carregar dados",
+          description: "Não foi possível carregar suas informações. Tente novamente.",
         });
-        navigate("/", { replace: true });
-        return;
       }
+    };
 
-      const { data: estabelecimento } = await supabase
-        .from("estabelecimentos")
-        .select("*")
-        .eq("id", session.user.id)
-        .single();
-
-      if (estabelecimento) {
-        setUserId(session.user.id);
-        setUserData({
-          id: estabelecimento.id,
-          email: session.user.email || "",
-          razaoSocial: estabelecimento.razao_social,
-          nomeFantasia: estabelecimento.nome_fantasia || "",
-          cnpj: estabelecimento.cnpj,
-          telefone: estabelecimento.telefone || "",
-          whatsapp: estabelecimento.whatsapp || "",
-          categoria: Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria || "",
-          endereco: estabelecimento.endereco || "",
-          cidade: estabelecimento.cidade || "",
-          estado: estabelecimento.estado || "",
-          diasHorarioFuncionamento: estabelecimento.horario_funcionamento || "",
-          beneficiosAniversariante: estabelecimento.descricao_beneficio || "",
-          regrasAniversariante: estabelecimento.regras_utilizacao || "",
-          periodoValidade: estabelecimento.periodo_validade_beneficio || "dia",
-          logoUrl: estabelecimento.logo_url || "",
-          telefoneContato: "",
-          emailContato: "",
-          instagram: estabelecimento.instagram || "",
-          site: estabelecimento.site || "",
-          planStatus: estabelecimento.plan_status || "pending",
-        });
-        setFormData({
-          nomeFantasia: estabelecimento.nome_fantasia || "",
-          email: session.user.email || "",
-          telefone: estabelecimento.telefone || "",
-          whatsapp: estabelecimento.whatsapp || "",
-          categoria: Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria || "",
-          endereco: estabelecimento.endereco || "",
-          diasHorarioFuncionamento: estabelecimento.horario_funcionamento || "",
-          beneficiosAniversariante: estabelecimento.descricao_beneficio || "",
-          regrasAniversariante: estabelecimento.regras_utilizacao || "",
-          periodoValidade: estabelecimento.periodo_validade_beneficio || "dia",
-          logoUrl: estabelecimento.logo_url || "",
-          telefoneContato: "",
-          emailContato: "",
-          instagram: estabelecimento.instagram || "",
-          site: estabelecimento.site || "",
-        });
-        await loadCuponsEmitidos(session.user.id);
-        
-        // Autorização completa
-        setIsAuthorized(true);
-      }
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar dados",
-        description: "Não foi possível carregar suas informações. Tente fazer login novamente.",
-      });
-      navigate("/login/estabelecimento", { replace: true });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    loadEstabelecimentoData();
+  }, [authState, userId, toast]);
 
   const loadCuponsEmitidos = async (estabelecimentoId: string) => {
     const { count, error } = await supabase
@@ -425,21 +437,13 @@ export default function AreaEstabelecimento() {
     }
   };
 
-  // Loading state
-  if (isLoading) {
+  // Bloquear render até autorização confirmada
+  if (authState !== 'authorized') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-500"></div>
-          <p className="text-slate-400">Verificando acesso...</p>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-violet-950 via-purple-900 to-fuchsia-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
       </div>
     );
-  }
-
-  // Authorization guard
-  if (!isAuthorized || !userData) {
-    return null;
   }
 
   return (

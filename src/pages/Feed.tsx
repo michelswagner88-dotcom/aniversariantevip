@@ -10,11 +10,17 @@ import { usePostInteractions } from '@/hooks/usePostInteractions';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useTrackPostView, useTrackPostShare } from '@/hooks/usePostAnalytics';
+import { toast } from 'sonner';
 
 const PostCard = ({ post, navigate }: { post: any; navigate: any }) => {
   const { likesCount, hasLiked, toggleLike, commentsCount, addComment, isTogglingLike } = usePostInteractions(post.id);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
+  
+  // Track view (aguarda 2s para confirmar visualização)
+  useTrackPostView(post.id);
+  const { trackShare } = useTrackPostShare();
 
   const handleLike = () => {
     toggleLike({ postId: post.id, unlike: hasLiked });
@@ -24,6 +30,29 @@ const PostCard = ({ post, navigate }: { post: any; navigate: any }) => {
     if (!commentText.trim()) return;
     addComment({ postId: post.id, text: commentText });
     setCommentText('');
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: post.estabelecimentos.nome_fantasia,
+      text: post.caption || 'Confira esse post!',
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        trackShare(post.id, 'native');
+        toast.success('Post compartilhado!');
+      } else {
+        // Fallback: copiar link
+        await navigator.clipboard.writeText(window.location.href);
+        trackShare(post.id, 'clipboard');
+        toast.success('Link copiado!');
+      }
+    } catch (error) {
+      console.error('Erro ao compartilhar:', error);
+    }
   };
 
   return (
@@ -75,7 +104,10 @@ const PostCard = ({ post, navigate }: { post: any; navigate: any }) => {
             <MessageCircle size={22} />
             {commentsCount > 0 && <span className="text-sm">{commentsCount}</span>}
           </button>
-          <button className="flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-colors ml-auto">
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-colors ml-auto"
+          >
             <Share2 size={20} />
           </button>
         </div>

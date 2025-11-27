@@ -8,11 +8,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { GeolocationProgress } from './GeolocationProgress';
+import { LocationConfirmDialog } from './LocationConfirmDialog';
 
 const VoiceSearchBar = () => {
   const navigate = useNavigate();
   const { isListening, transcript, startListening, hasSupport } = useSpeechRecognition();
-  const { location, loading: geoLoading, currentStep, requestLocation } = useGeolocation();
+  const { 
+    location, 
+    loading: geoLoading, 
+    currentStep, 
+    cachedLocation,
+    showLocationConfirm,
+    requestLocation,
+    confirmCachedLocation,
+    rejectCachedLocation
+  } = useGeolocation();
   const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
   
   const [searchQuery, setSearchQuery] = useState("");
@@ -166,6 +176,17 @@ const VoiceSearchBar = () => {
 
       {/* Progress da Geolocalização */}
       <GeolocationProgress currentStep={currentStep} />
+
+      {/* Diálogo de Confirmação de Localização em Cache */}
+      {cachedLocation && (
+        <LocationConfirmDialog
+          open={showLocationConfirm}
+          cidade={cachedLocation.cidade}
+          estado={cachedLocation.estado}
+          onConfirm={confirmCachedLocation}
+          onReject={rejectCachedLocation}
+        />
+      )}
 
       {/* Diálogo de CEP */}
       <Dialog open={showCepDialog} onOpenChange={setShowCepDialog}>

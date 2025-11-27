@@ -32,6 +32,8 @@ export const useFlashPromos = (options: UseFlashPromosOptions = {}) => {
   return useQuery({
     queryKey: ['flash-promos', cidade, estado],
     queryFn: async () => {
+      const now = new Date().toISOString();
+      
       let query = supabase
         .from('flash_promos')
         .select(`
@@ -39,7 +41,7 @@ export const useFlashPromos = (options: UseFlashPromosOptions = {}) => {
           estabelecimentos(nome_fantasia, logo_url, categoria)
         `)
         .eq('status', 'ACTIVE')
-        .gt('expires_at', new Date().toISOString())
+        .gt('expires_at', now)
         .order('expires_at', { ascending: true });
 
       if (cidade) {
@@ -54,10 +56,17 @@ export const useFlashPromos = (options: UseFlashPromosOptions = {}) => {
 
       if (error) throw error;
       
-      return (data || []) as FlashPromo[];
+      // Filtro adicional no frontend como safety check
+      const activeDeals = (data || []).filter(deal => {
+        const expiresAt = new Date(deal.expires_at);
+        return expiresAt > new Date() && deal.status === 'ACTIVE';
+      });
+      
+      return activeDeals as FlashPromo[];
     },
     enabled,
-    staleTime: 30 * 1000, // 30 segundos (promos mudam rápido)
-    gcTime: 60 * 1000, // 1 minuto
+    staleTime: 10 * 1000, // 10 segundos para dados mais frescos
+    gcTime: 30 * 1000, // 30 segundos
+    refetchInterval: 30 * 1000, // Refetch a cada 30s automaticamente
   });
 };

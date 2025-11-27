@@ -72,6 +72,14 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
     }
   };
 
+  // Auto-fechar dropdown e selecionar cidade quando localização for detectada
+  useEffect(() => {
+    if (location?.cidade && location?.estado && open) {
+      onSelect(location.cidade, location.estado);
+      setOpen(false);
+    }
+  }, [location, open, onSelect]);
+
   const handleCepSubmit = async () => {
     const data = await fetchCep(cepInput);
     if (data) {
@@ -129,22 +137,24 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
               </div>
             ) : (
               <>
-                {/* Botão "Perto de Mim" */}
-                <CommandGroup heading="Localização">
-                  <CommandItem
-                    onSelect={handleUseMyLocation}
-                    className="cursor-pointer hover:bg-white/5"
-                    disabled={isRequestingLocation}
-                  >
-                    <Navigation className={cn(
-                      "mr-2 h-4 w-4 text-blue-400",
-                      isRequestingLocation && "animate-pulse"
-                    )} />
-                    <span className="text-white">
-                      {isRequestingLocation ? 'Detectando...' : 'Usar minha localização'}
-                    </span>
-                  </CommandItem>
-                </CommandGroup>
+                {/* Botão "Perto de Mim" - ocultar se localização já detectada */}
+                {!location?.cidade && (
+                  <CommandGroup heading="Localização">
+                    <CommandItem
+                      onSelect={handleUseMyLocation}
+                      className="cursor-pointer hover:bg-white/5"
+                      disabled={isRequestingLocation}
+                    >
+                      <Navigation className={cn(
+                        "mr-2 h-4 w-4 text-blue-400",
+                        isRequestingLocation && "animate-pulse"
+                      )} />
+                      <span className="text-white">
+                        {isRequestingLocation ? 'Detectando...' : 'Usar minha localização'}
+                      </span>
+                    </CommandItem>
+                  </CommandGroup>
+                )}
 
                 {/* Cidades em Alta ou Cidades Vizinhas */}
                 {!searchTerm && topCities.length > 0 && (

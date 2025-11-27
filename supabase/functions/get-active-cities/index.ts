@@ -81,9 +81,9 @@ Deno.serve(async (req) => {
       .not('cidade', 'is', null)
       .not('estado', 'is', null);
 
-    // Aplicar filtro de busca se fornecido
+    // Aplicar filtro de busca se fornecido (busca por prefixo case-insensitive)
     if (searchTerm && searchTerm.trim()) {
-      query = query.ilike('cidade', `%${searchTerm.trim()}%`);
+      query = query.ilike('cidade', `${searchTerm.trim()}%`);
     }
 
     const { data: establishments, error } = await query;

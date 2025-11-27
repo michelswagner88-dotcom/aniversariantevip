@@ -228,7 +228,7 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
                       <p className="text-slate-400 mb-2">{suggestionMessage}</p>
                       <p className="text-violet-400 font-semibold text-sm">🗺️ Cidades próximas disponíveis acima</p>
                     </>
-                  ) : (
+                  ) : searchTerm && searchTerm.length >= 3 ? (
                     <>
                       <p className="text-slate-400 mb-2">
                         Ainda não chegamos em <span className="font-bold text-white">{searchTerm}</span>
@@ -237,6 +237,10 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
                         Mas temos opções incríveis perto de você!
                       </p>
                     </>
+                  ) : (
+                    <p className="text-slate-400 text-sm">
+                      Digite pelo menos 3 letras para buscar...
+                    </p>
                   )}
                 </CommandEmpty>
               </>

@@ -265,7 +265,7 @@ USING (true);
 - `STRIPE_WEBHOOK_SECRET`
 - `RESEND_API_KEY` (emails)
 - `LOVABLE_API_KEY` (chatbot)
-- `VITE_MAPBOX_TOKEN` (mapas)
+- `VITE_GOOGLE_MAPS_API_KEY` (mapas e geocoding)
 
 ---
 

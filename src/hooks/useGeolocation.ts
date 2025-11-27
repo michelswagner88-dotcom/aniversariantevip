@@ -10,20 +10,8 @@ interface Location {
   };
 }
 
-// Buscar token do Mapbox das variáveis de ambiente
-const getMapboxToken = () => {
-  // Tenta primeiro de import.meta.env
-  let token = import.meta.env.VITE_MAPBOX_TOKEN;
-  
-  // Se não encontrar, tenta de process.env (fallback)
-  if (!token && typeof process !== 'undefined') {
-    token = process.env.VITE_MAPBOX_TOKEN;
-  }
-  
-  return token;
-};
-
-const MAPBOX_TOKEN = getMapboxToken();
+// Google Maps API Key
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
 export const useGeolocation = () => {
   const [location, setLocation] = useState<Location | null>(null);
@@ -33,35 +21,38 @@ export const useGeolocation = () => {
 
   const reverseGeocode = async (latitude: number, longitude: number) => {
     try {
-      if (!MAPBOX_TOKEN) {
-        throw new Error('Token do Mapbox não configurado');
+      if (!GOOGLE_MAPS_API_KEY) {
+        throw new Error('Google Maps API Key não configurada');
       }
 
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${MAPBOX_TOKEN}&language=pt&types=place,region`
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}&language=pt-BR&result_type=locality|administrative_area_level_1`
       );
 
       if (!response.ok) {
-        throw new Error(`Erro na API do Mapbox: ${response.status}`);
+        throw new Error(`Erro na API do Google Maps: ${response.status}`);
       }
       
       const data = await response.json();
       
-      if (data.features && data.features.length > 0) {
-        // Procurar cidade e estado nos resultados
+      if (data.status === 'OK' && data.results && data.results.length > 0) {
         let cidade = '';
         let estado = '';
         
-        for (const feature of data.features) {
-          if (feature.place_type.includes('place')) {
-            cidade = feature.text;
+        // Extrair cidade e estado dos componentes do endereço
+        for (const result of data.results) {
+          for (const component of result.address_components) {
+            if (component.types.includes('locality') || component.types.includes('administrative_area_level_2')) {
+              cidade = component.long_name;
+            }
+            if (component.types.includes('administrative_area_level_1')) {
+              estado = component.short_name;
+            }
           }
-          if (feature.place_type.includes('region')) {
-            estado = feature.properties?.short_code?.replace('BR-', '') || feature.text;
-          }
+          
+          if (cidade && estado) break;
         }
         
-        // Se encontrou ambos, salvar
         if (cidade && estado) {
           const locationData = {
             cidade,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Search, SlidersHorizontal, Map as MapIcon, List, X, Check, Clock, Gift, Share2, Heart, CalendarDays, Navigation } from 'lucide-react';
+import { MapPin, Search, SlidersHorizontal, Map as MapIcon, List, X, Check, Gift, Share2, Heart, CalendarDays, Navigation } from 'lucide-react';
 import { toast } from "sonner";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
 import { SafeImage } from "@/components/SafeImage";
@@ -73,12 +73,6 @@ const PlaceCard = ({ place }: any) => {
           <span className="w-fit rounded-full border border-white/10 bg-black/40 px-3 py-1 text-xs font-medium text-white backdrop-blur-md">
             {place.category}
           </span>
-          {place.isOpen && (
-            <span className="flex w-fit items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/20 px-2 py-1 text-[10px] font-bold text-emerald-400 backdrop-blur-md">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Aberto
-            </span>
-          )}
         </div>
         <div className="flex gap-2">
           <button onClick={handleShare} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white backdrop-blur-md hover:bg-white/20">
@@ -130,7 +124,6 @@ const Explorar = () => {
   });
 
   // --- ESTADOS DOS FILTROS ---
-  const [filterOpenNow, setFilterOpenNow] = useState(false);
   const [filterDay, setFilterDay] = useState("any");
   const [filterValidity, setFilterValidity] = useState("month");
   const [filterDistance, setFilterDistance] = useState<number | undefined>(undefined);
@@ -175,7 +168,6 @@ const Explorar = () => {
     neighborhood: est.bairro || est.cidade || "",
     distance: "N/A",
     benefit: est.descricao_beneficio || "Ver benefício exclusivo",
-    isOpen: true,
     validDays: ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'],
     latitude: est.latitude ? Number(est.latitude) : null,
     longitude: est.longitude ? Number(est.longitude) : null,
@@ -184,7 +176,6 @@ const Explorar = () => {
 
   const filteredPlaces = allPlaces.filter(place => {
     if (activeCategories.length > 0 && !activeCategories.includes(place.category)) return false;
-    if (filterOpenNow && !place.isOpen) return false;
     if (filterDay !== 'any' && !place.validDays.includes(filterDay)) return false;
     return true;
   });
@@ -286,7 +277,7 @@ const Explorar = () => {
             <div className="shrink-0 pl-16"></div>
             <button 
               onClick={() => setShowFilters(true)} 
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all duration-300 active:scale-95 ${filterOpenNow || filterDay !== 'any' || filterDistance ? 'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:scale-105'}`}
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all duration-300 active:scale-95 ${filterDay !== 'any' || filterDistance ? 'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:scale-105'}`}
             >
               <SlidersHorizontal size={18} className="transition-transform duration-300" />
             </button>
@@ -329,10 +320,6 @@ const Explorar = () => {
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 transition-all duration-300">
                 {filteredPlaces.length} Resultados
               </span>
-              <button onClick={() => setFilterOpenNow(!filterOpenNow)} className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all duration-300 ${filterOpenNow ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/50 scale-105' : 'text-slate-400 hover:text-white hover:scale-105'}`}>
-                <div className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${filterOpenNow ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}></div>
-                Aberto Agora
-              </button>
             </div>
 
             {filteredPlaces.length === 0 ? (
@@ -371,11 +358,6 @@ const Explorar = () => {
             </div>
             
             <div className="space-y-8 overflow-y-auto pb-24 scrollbar-hide flex-1">
-              <div className="space-y-3">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Disponibilidade</label>
-                <FilterOption label="🟢 Mostrar apenas Abertos Agora" icon={Clock} selected={filterOpenNow} onClick={() => setFilterOpenNow(!filterOpenNow)} className="w-full justify-start px-4 py-4" />
-              </div>
-
               <div className="space-y-3">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
                   <CalendarDays size={14} /> Planejar Dia da Festa

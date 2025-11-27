@@ -4,13 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Edit, Loader2, Search, Building2, ExternalLink, Trash2 } from "lucide-react";
+import { Edit, Loader2, Search, Building2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { CadastrarEstabelecimento } from "./CadastrarEstabelecimento";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { EditEstablishmentModal } from "@/components/admin/EditEstablishmentModal";
+import { Badge } from "@/components/ui/badge";
 
 type Estabelecimento = {
   id: string;
@@ -25,6 +24,17 @@ type Estabelecimento = {
   categoria: string[] | null;
   logo_url: string | null;
   descricao_beneficio: string | null;
+  cep: string | null;
+  numero: string | null;
+  complemento: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  whatsapp: string | null;
+  instagram: string | null;
+  site: string | null;
+  periodo_validade_beneficio: string | null;
+  plan_status: string | null;
+  ativo: boolean;
   created_at: string;
 };
 
@@ -33,7 +43,7 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [editando, setEditando] = useState<Estabelecimento | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
 
   useEffect(() => {
@@ -83,6 +93,17 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
           categoria: estab.categoria,
           logo_url: estab.logo_url,
           descricao_beneficio: estab.descricao_beneficio,
+          cep: estab.cep,
+          numero: estab.numero,
+          complemento: estab.complemento,
+          latitude: estab.latitude,
+          longitude: estab.longitude,
+          whatsapp: estab.whatsapp,
+          instagram: estab.instagram,
+          site: estab.site,
+          periodo_validade_beneficio: estab.periodo_validade_beneficio,
+          plan_status: estab.plan_status,
+          ativo: estab.ativo,
           created_at: estab.created_at || ''
         };
       }) || [];
@@ -97,39 +118,6 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
     }
   };
 
-  const handleSalvar = async () => {
-    if (!editando) return;
-
-    try {
-      setSalvando(true);
-
-      // Atualizar estabelecimento
-      const { error } = await supabase
-        .from('estabelecimentos')
-        .update({
-          nome_fantasia: editando.nome_fantasia,
-          razao_social: editando.razao_social,
-          cnpj: editando.cnpj,
-          telefone: editando.telefone,
-          endereco: editando.endereco,
-          cidade: editando.cidade,
-          estado: editando.estado,
-          descricao_beneficio: editando.descricao_beneficio
-        })
-        .eq('id', editando.id);
-
-      if (error) throw error;
-
-      toast.success("Estabelecimento atualizado com sucesso!");
-      setEditando(null);
-      await carregarEstabelecimentos();
-    } catch (error: any) {
-      console.error("Erro ao salvar:", error);
-      toast.error("Erro ao salvar alterações");
-    } finally {
-      setSalvando(false);
-    }
-  };
 
   const handleExcluir = async (id: string) => {
     try {
@@ -201,6 +189,7 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
   }
 
   return (
+    <>
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="flex-1">
@@ -252,7 +241,14 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
                             className="h-8 w-8 rounded object-cover"
                           />
                         )}
-                        {estab.nome_fantasia || '-'}
+                        <div className="flex flex-col gap-1">
+                          <span>{estab.nome_fantasia || '-'}</span>
+                          {(!estab.categoria || estab.categoria.length === 0) && (
+                            <Badge variant="destructive" className="w-fit text-xs">
+                              Sem Categoria
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -263,138 +259,16 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
                     <TableCell>{estab.telefone || '-'}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditando(estab)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>Editar Estabelecimento</DialogTitle>
-                            <DialogDescription>
-                              Edite as informações do estabelecimento
-                            </DialogDescription>
-                          </DialogHeader>
-                          
-                          {editando && (
-                            <div className="space-y-4">
-                              {editando.logo_url && (
-                                <div className="flex justify-center">
-                                  <img 
-                                    src={editando.logo_url} 
-                                    alt="Logo"
-                                    className="h-24 w-24 rounded object-cover"
-                                  />
-                                </div>
-                              )}
-                              
-                              <div>
-                                <Label>Nome Fantasia</Label>
-                                <Input
-                                  value={editando.nome_fantasia || ''}
-                                  onChange={(e) => setEditando({...editando, nome_fantasia: e.target.value})}
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label>Razão Social</Label>
-                                <Input 
-                                  value={editando.razao_social}
-                                  onChange={(e) => setEditando({...editando, razao_social: e.target.value})}
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label>CNPJ</Label>
-                                <Input 
-                                  value={editando.cnpj}
-                                  onChange={(e) => setEditando({...editando, cnpj: e.target.value})}
-                                  placeholder="00.000.000/0000-00"
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label>Email</Label>
-                                <Input 
-                                  type="email"
-                                  value={editando.email} 
-                                  disabled 
-                                  className="bg-muted" 
-                                />
-                                <p className="text-xs text-muted-foreground mt-1">Email está vinculado à conta de acesso</p>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <Label>Cidade</Label>
-                                  <Input
-                                    value={editando.cidade || ''}
-                                    onChange={(e) => setEditando({...editando, cidade: e.target.value})}
-                                    placeholder="Cidade"
-                                  />
-                                </div>
-                                <div>
-                                  <Label>Estado</Label>
-                                  <Input
-                                    value={editando.estado || ''}
-                                    onChange={(e) => setEditando({...editando, estado: e.target.value})}
-                                    placeholder="UF"
-                                    maxLength={2}
-                                  />
-                                </div>
-                              </div>
-                              
-                              <div>
-                                <Label>Telefone</Label>
-                                <Input
-                                  value={editando.telefone || ''}
-                                  onChange={(e) => setEditando({...editando, telefone: e.target.value})}
-                                  placeholder="(00) 00000-0000"
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label>Endereço</Label>
-                                <Input
-                                  value={editando.endereco || ''}
-                                  onChange={(e) => setEditando({...editando, endereco: e.target.value})}
-                                  placeholder="Rua, número, bairro, cidade - UF"
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label>Descrição do Benefício</Label>
-                                <Textarea
-                                  value={editando.descricao_beneficio || ''}
-                                  onChange={(e) => setEditando({...editando, descricao_beneficio: e.target.value})}
-                                  placeholder="Ex: 10% de desconto para aniversariantes"
-                                  rows={3}
-                                />
-                              </div>
-                              
-                              <Button 
-                                onClick={handleSalvar} 
-                                disabled={salvando}
-                                className="w-full"
-                              >
-                                {salvando ? (
-                                  <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Salvando...
-                                  </>
-                                ) : (
-                                  'Salvar Alterações'
-                                )}
-                              </Button>
-                            </div>
-                          )}
-                        </DialogContent>
-                        </Dialog>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditando(estab);
+                            setModalOpen(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                         
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -436,5 +310,13 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
         )}
       </CardContent>
     </Card>
+
+    <EditEstablishmentModal
+      establishment={editando}
+      open={modalOpen}
+      onOpenChange={setModalOpen}
+      onSuccess={carregarEstabelecimentos}
+    />
+    </>
   );
 }

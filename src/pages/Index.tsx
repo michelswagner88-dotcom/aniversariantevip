@@ -13,6 +13,7 @@ import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import { useNavigate, Link } from "react-router-dom";
 import { CityCombobox } from "@/components/CityCombobox";
+import { useQuery } from "@tanstack/react-query";
 
 interface Estabelecimento {
   id: string;
@@ -52,6 +53,36 @@ const Index = () => {
     const { data: { user } } = await supabase.auth.getUser();
     setCurrentUser(user);
   };
+
+  // Buscar cidade do perfil do usuário logado
+  const { data: userProfile } = useQuery({
+    queryKey: ['user-profile-cidade', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('aniversariantes')
+        .select('cidade, estado')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Erro ao buscar perfil:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!currentUser?.id,
+  });
+
+  // Preencher automaticamente a cidade quando o perfil carregar
+  useEffect(() => {
+    if (userProfile?.cidade && userProfile?.estado && !selectedCidade && !selectedEstado) {
+      setSelectedCidade(userProfile.cidade);
+      setSelectedEstado(userProfile.estado);
+    }
+  }, [userProfile]);
 
   const loadEstabelecimentos = async () => {
     const { data, error } = await supabase

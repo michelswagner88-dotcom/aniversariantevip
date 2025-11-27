@@ -63,22 +63,30 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
     setIsRequestingLocation(true);
     try {
       await requestLocation();
-      toast.success('Localização detectada!');
+      // Aguardar um pouco para garantir que location foi atualizado
+      setTimeout(() => {
+        if (location?.cidade && location?.estado) {
+          onSelect(location.cidade, location.estado);
+          setOpen(false);
+          toast.success('Localização detectada!');
+        }
+      }, 500);
     } catch (error) {
       // Abrir diálogo de CEP quando falhar
       setShowCepDialog(true);
-    } finally {
       setIsRequestingLocation(false);
     }
   };
 
-  // Auto-fechar dropdown e selecionar cidade quando localização for detectada
+  // Auto-fechar dropdown quando localização for detectada com sucesso
   useEffect(() => {
-    if (location?.cidade && location?.estado && open && !value) {
+    if (location?.cidade && location?.estado && isRequestingLocation) {
       onSelect(location.cidade, location.estado);
       setOpen(false);
+      setIsRequestingLocation(false);
+      toast.success('Localização detectada!');
     }
-  }, [location?.cidade, location?.estado, open, value, onSelect]);
+  }, [location?.cidade, location?.estado, isRequestingLocation]);
 
   const handleCepSubmit = async () => {
     const data = await fetchCep(cepInput);

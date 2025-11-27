@@ -380,34 +380,49 @@ const SmartAuth = () => {
     }
   };
 
-  // Google OAuth
+  // Google OAuth (funciona para login E cadastro)
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
       setError('');
 
       const redirectUrl = `${window.location.origin}/auth/callback`;
-      const { error } = await supabase.auth.signInWithOAuth({
+      
+      console.log('🔵 Iniciando Google OAuth...');
+      console.log('🔵 Redirect URL:', redirectUrl);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         }
       });
 
+      console.log('🔵 Google OAuth response:', { data, error });
+
       if (error) {
-        console.error('Erro Google OAuth:', error);
-        setError('Não foi possível conectar com o Google. Tente novamente.');
+        console.error('❌ Erro Google OAuth:', error);
+        setError('Não foi possível conectar com Google. Tente novamente.');
+        toast.error('Erro ao conectar com Google', {
+          description: 'Verifique sua conexão e tente novamente.',
+        });
         setIsLoading(false);
+        return;
       }
       
-      // Se não houver erro, o usuário será redirecionado para o Google
-      // Não precisa fazer nada aqui - o loading continuará até o redirect
+      // Se chegou aqui sem erro, o navegador DEVE redirecionar para o Google
+      // Se não redirecionou, há algo errado com a configuração
+      console.log('✅ Redirecionando para Google...');
+      
     } catch (err: any) {
-      console.error('Erro catch Google:', err);
-      const friendlyMessage = getFriendlyErrorMessage(err);
-      setError(friendlyMessage);
-      toast.error('Erro ao autenticar', {
-        description: friendlyMessage,
+      console.error('❌ Erro catch Google:', err);
+      setError('Erro ao conectar com Google. Tente novamente.');
+      toast.error('Erro inesperado', {
+        description: 'Ocorreu um erro ao tentar conectar com o Google.',
       });
       setIsLoading(false);
     }

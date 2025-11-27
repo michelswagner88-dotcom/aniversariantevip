@@ -1,26 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Check, ChevronsUpDown, Navigation, Loader2, MapPin } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { useActiveCities } from '@/hooks/useActiveCities';
-import { useGeolocation } from '@/hooks/useGeolocation';
-import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { useCepLookup } from '@/hooks/useCepLookup';
+import React, { useState, useRef, useEffect } from 'react';
+import { useCidadesAutocomplete } from '@/hooks/useCidadesAutocomplete';
 
 interface CityComboboxProps {
   value?: string;
@@ -35,275 +14,74 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
   placeholder = "Digite a cidade",
   className = "",
 }) => {
-  const [open, setOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
-  const [showCepDialog, setShowCepDialog] = useState(false);
-  const [cepInput, setCepInput] = useState("");
+  const [inputValue, setInputValue] = useState(value || "");
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   
-  const { 
-    location, 
-    requestLocation, 
-    currentStep
-  } = useGeolocation();
-  const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
-  
-  const { data: response, isLoading } = useActiveCities({
-    userLat: location?.coordinates?.latitude,
-    userLng: location?.coordinates?.longitude,
-    searchTerm,
-  });
+  const { cidades, isLoading } = useCidadesAutocomplete(inputValue);
 
-  const cities = response?.cities || [];
-  const isNearbyResults = response?.isNearbyResults || false;
-  const searchedCity = response?.searchedCity || '';
-  const suggestionMessage = response?.message || '';
-
-  const handleUseMyLocation = async () => {
-    setIsRequestingLocation(true);
-    try {
-      await requestLocation();
-      // Aguardar um pouco para garantir que location foi atualizado
-      setTimeout(() => {
-        if (location?.cidade && location?.estado) {
-          onSelect(location.cidade, location.estado);
-          setOpen(false);
-          toast.success('Localização detectada!');
-        }
-      }, 500);
-    } catch (error) {
-      // Abrir diálogo de CEP quando falhar
-      setShowCepDialog(true);
-      setIsRequestingLocation(false);
-    }
-  };
-
-  // Auto-fechar dropdown quando localização for detectada com sucesso
+  // Fechar dropdown ao clicar fora
   useEffect(() => {
-    if (location?.cidade && location?.estado && isRequestingLocation) {
-      onSelect(location.cidade, location.estado);
-      setOpen(false);
-      setIsRequestingLocation(false);
-      toast.success('Localização detectada!');
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Atualizar inputValue quando value mudar externamente
+  useEffect(() => {
+    if (value) {
+      setInputValue(value);
     }
-  }, [location?.cidade, location?.estado, isRequestingLocation]);
-
-  const handleCepSubmit = async () => {
-    const data = await fetchCep(cepInput);
-    if (data) {
-      onSelect(data.localidade, data.uf);
-      setShowCepDialog(false);
-      setCepInput("");
-      setOpen(false);
-    }
-  };
-
-  // Encontrar cidade selecionada
-  const selectedCity = cities.find(
-    city => `${city.cidade}, ${city.estado}` === value
-  );
-
-  // Cidades em destaque (top 5 com mais estabelecimentos)
-  const topCities = cities.slice(0, 5);
+  }, [value]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            "w-full justify-between bg-white/5 border-white/10 hover:bg-white/10 text-white",
-            className
-          )}
-        >
-          <span className="truncate">
-            {selectedCity
-              ? `${selectedCity.cidade}, ${selectedCity.estado}`
-              : placeholder}
-          </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent 
-        className="w-[400px] p-0 bg-slate-900 border-white/10" 
-        align="start"
-      >
-        <Command className="bg-slate-900">
-          <CommandInput
-            placeholder="Digite a cidade..."
-            value={searchTerm}
-            onValueChange={setSearchTerm}
-            className="text-white border-white/10"
-          />
-          <CommandList>
-            {isLoading ? (
-              <div className="flex items-center justify-center p-8">
-                <Loader2 className="w-6 h-6 animate-spin text-violet-400" />
-                <span className="ml-2 text-sm text-slate-400">Carregando cidades...</span>
-              </div>
-            ) : (
-              <>
-                {/* Botão "Perto de Mim" - ocultar se localização já detectada */}
-                {!location?.cidade && (
-                  <CommandGroup heading="Localização">
-                    <CommandItem
-                      onSelect={handleUseMyLocation}
-                      className="cursor-pointer hover:bg-white/5"
-                      disabled={isRequestingLocation}
-                    >
-                      <Navigation className={cn(
-                        "mr-2 h-4 w-4 text-blue-400",
-                        isRequestingLocation && "animate-pulse"
-                      )} />
-                      <span className="text-white">
-                        {isRequestingLocation ? 'Detectando...' : 'Usar minha localização'}
-                      </span>
-                    </CommandItem>
-                  </CommandGroup>
-                )}
-
-                {/* Cidades em Alta ou Cidades Vizinhas */}
-                {!searchTerm && topCities.length > 0 && (
-                  <CommandGroup heading={
-                    isNearbyResults 
-                      ? `🗺️ Cidades próximas a ${searchedCity}` 
-                      : "🔥 Cidades em Alta"
-                  }>
-                    {topCities.map((city) => (
-                      <CommandItem
-                        key={`${city.cidade}-${city.estado}`}
-                        value={`${city.cidade}, ${city.estado}`}
-                        onSelect={() => {
-                          onSelect(city.cidade, city.estado);
-                          setOpen(false);
-                        }}
-                        className="cursor-pointer hover:bg-white/5"
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            value === `${city.cidade}, ${city.estado}`
-                              ? "opacity-100 text-violet-400"
-                              : "opacity-0"
-                          )}
-                        />
-                        <MapPin className="mr-2 h-3 w-3 text-slate-400" />
-                        <div className="flex items-center justify-between flex-1">
-                          <span className="text-white">
-                            {city.cidade}, {city.estado}
-                          </span>
-                          <span className="text-xs text-slate-500 ml-2">
-                            {city.total_estabelecimentos} {city.total_estabelecimentos === 1 ? 'local' : 'locais'}
-                            {city.distancia && ` • ${city.distancia.toFixed(1)}km`}
-                          </span>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                )}
-
-                {/* Todas as cidades */}
-                {cities.length > 0 && (
-                  <CommandGroup heading={searchTerm ? "Resultados" : "Todas as Cidades"}>
-                    {cities.slice(searchTerm ? 0 : 5).map((city) => (
-                      <CommandItem
-                        key={`${city.cidade}-${city.estado}`}
-                        value={`${city.cidade}, ${city.estado}`}
-                        onSelect={() => {
-                          onSelect(city.cidade, city.estado);
-                          setOpen(false);
-                        }}
-                        className="cursor-pointer hover:bg-white/5"
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            value === `${city.cidade}, ${city.estado}`
-                              ? "opacity-100 text-violet-400"
-                              : "opacity-0"
-                          )}
-                        />
-                        <MapPin className="mr-2 h-3 w-3 text-slate-400" />
-                        <div className="flex items-center justify-between flex-1">
-                          <span className="text-white">
-                            {city.cidade}, {city.estado}
-                          </span>
-                          <span className="text-xs text-slate-500 ml-2">
-                            {city.total_estabelecimentos} {city.total_estabelecimentos === 1 ? 'local' : 'locais'}
-                            {city.distancia && ` • ${city.distancia.toFixed(1)}km`}
-                          </span>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                )}
-
-                <CommandEmpty className="text-center py-6">
-                  {isNearbyResults && suggestionMessage ? (
-                    <>
-                      <p className="text-slate-400 mb-2">{suggestionMessage}</p>
-                      <p className="text-violet-400 font-semibold text-sm">🗺️ Cidades próximas disponíveis acima</p>
-                    </>
-                  ) : searchTerm && searchTerm.length >= 3 ? (
-                    <>
-                      <p className="text-slate-400 mb-2">
-                        Ainda não chegamos em <span className="font-bold text-white">{searchTerm}</span>
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        Mas temos opções incríveis perto de você!
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-slate-400 text-sm">
-                      Digite pelo menos 3 letras para buscar...
-                    </p>
-                  )}
-                </CommandEmpty>
-              </>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
+    <div ref={containerRef} className={`relative ${className}`}>
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => {
+          setInputValue(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => setIsOpen(true)}
+        placeholder={placeholder}
+        className="w-full p-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
+      />
       
-      {/* Diálogo de Fallback para CEP */}
-      <Dialog open={showCepDialog} onOpenChange={setShowCepDialog}>
-        <DialogContent className="bg-slate-900 border-white/10 text-white">
-          <DialogHeader>
-            <DialogTitle>Informe seu CEP</DialogTitle>
-            <DialogDescription className="text-slate-400">
-              Não conseguimos detectar sua localização automaticamente. Por favor, digite seu CEP para continuar.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 mt-4">
-            <Input
-              type="text"
-              value={cepInput}
-              onChange={(e) => setCepInput(formatCep(e.target.value))}
-              placeholder="00000-000"
-              maxLength={9}
-              className="bg-white/5 border-white/10 text-white placeholder:text-slate-500"
-            />
-            <div className="flex gap-2">
-              <Button 
-                onClick={() => setShowCepDialog(false)} 
-                variant="outline"
-                className="flex-1 border-white/10 hover:bg-white/5"
+      {isOpen && inputValue.length >= 3 && (
+        <div className="absolute top-full left-0 w-full mt-1 bg-slate-900 border border-white/10 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+          {isLoading ? (
+            <div className="p-3 text-slate-400 text-sm">Buscando cidades...</div>
+          ) : cidades.length > 0 ? (
+            cidades.map((cidade, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  const cityValue = `${cidade.nome}, ${cidade.estado}`;
+                  onSelect(cidade.nome, cidade.estado);
+                  setInputValue(cityValue);
+                  setIsOpen(false);
+                }}
+                className="w-full text-left p-3 hover:bg-white/10 transition-colors text-white text-sm border-b border-white/5 last:border-0"
               >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleCepSubmit}
-                disabled={cepLoading}
-                className="flex-1 bg-gradient-to-r from-violet-600 to-pink-600"
-              >
-                {cepLoading ? <Loader2 className="animate-spin" size={20} /> : "Confirmar"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </Popover>
+                {cidade.nome}, {cidade.estado}
+              </button>
+            ))
+          ) : (
+            <div className="p-3 text-slate-400 text-sm">Nenhuma cidade encontrada</div>
+          )}
+        </div>
+      )}
+      
+      {inputValue.length > 0 && inputValue.length < 3 && isOpen && (
+        <div className="absolute top-full left-0 w-full mt-1 bg-slate-900 border border-white/10 rounded-lg shadow-xl z-50 p-3">
+          <p className="text-slate-400 text-sm">Digite pelo menos 3 letras...</p>
+        </div>
+      )}
+    </div>
   );
 };

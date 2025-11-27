@@ -63,12 +63,12 @@ const PlaceCard = ({ place }: any) => {
   return (
     <div 
       onClick={handleCardClick}
-      className="group relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-slate-800 shadow-lg border border-white/5 cursor-pointer hover:border-violet-500/50 transition-all animate-fade-in"
+      className="group relative h-72 sm:aspect-[4/5] w-full overflow-hidden rounded-2xl bg-slate-800 shadow-lg border border-white/5 cursor-pointer hover:border-violet-500/50 transition-all animate-fade-in"
     >
       <SafeImage src={place.image} alt={place.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
       
-      <div className="absolute left-0 right-0 top-0 flex items-start justify-between p-4">
+      <div className="absolute left-0 right-0 top-0 flex items-start justify-between p-3 sm:p-4">
         <div className="flex flex-col gap-2">
           <span className="w-fit rounded-full border border-white/10 bg-black/40 px-3 py-1 text-xs font-medium text-white backdrop-blur-md">
             {place.category}
@@ -90,14 +90,14 @@ const PlaceCard = ({ place }: any) => {
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-5">
-        <h3 className="font-plus-jakarta text-xl font-bold text-white leading-tight">{place.name}</h3>
-        <div className="mt-1.5 flex items-center gap-1.5 text-sm text-slate-300">
+      <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4">
+        <h3 className="font-plus-jakarta text-lg sm:text-xl font-bold text-white leading-tight">{place.name}</h3>
+        <div className="mt-1 sm:mt-1.5 flex items-center gap-1.5 text-xs sm:text-sm text-slate-300">
           <MapPin size={14} className="text-violet-400" /> 
           <span>{place.neighborhood} • {place.distance}</span>
         </div>
-        <div className="mt-4 inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 shadow-2xl shadow-violet-500/30">
-          <span className="text-lg font-extrabold text-white">
+        <div className="mt-3 sm:mt-4 inline-flex items-center gap-2 sm:gap-2.5 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 shadow-2xl shadow-violet-500/30">
+          <span className="text-base sm:text-lg font-extrabold text-white">
             🎁 Ver Benefício 🔒
           </span>
         </div>

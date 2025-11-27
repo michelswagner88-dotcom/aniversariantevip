@@ -220,34 +220,42 @@ export default function AdminImport() {
             };
           }
 
-          // NOVO FLUXO: Buscar endereço pelo CEP
+          // NOVO FLUXO: Buscar endereço pelo CEP (com fallback silencioso)
           const addressData = await fetchAddressByCep(row.CEP);
+          
+          let finalAddress: string;
+          let coordinates: { lat: number; lng: number } | null = null;
+          let cidade: string;
+          let estado: string;
+          let logradouro: string;
+          let bairro: string;
+
           if (!addressData) {
-            return {
-              success: false,
-              rowNumber,
-              empresa: row.EMPRESA,
-              error: `Erro: CEP Inválido - ${row.CEP}`,
-            };
+            // Fallback silencioso: CEP inválido, mas salvar mesmo assim
+            finalAddress = `Endereço pendente (CEP: ${row.CEP})`;
+            cidade = "Florianópolis";
+            estado = "SC";
+            logradouro = "";
+            bairro = "";
+          } else {
+            // Montar endereço completo
+            const complemento = row.COMPLEMENTO ? `, ${row.COMPLEMENTO}` : "";
+            finalAddress = `${addressData.street}, ${row.NUMERO}${complemento} - ${addressData.neighborhood}, ${addressData.city} - ${addressData.state}`;
+            cidade = addressData.city;
+            estado = addressData.state;
+            logradouro = addressData.street;
+            bairro = addressData.neighborhood;
+
+            // Geocoding do endereço completo
+            coordinates = await geocodeAddress(finalAddress);
+            // Se falhar, continua sem coordenadas (null)
           }
 
-          // Montar endereço completo
-          const complemento = row.COMPLEMENTO ? `, ${row.COMPLEMENTO}` : "";
-          const finalAddress = `${addressData.street}, ${row.NUMERO}${complemento} - ${addressData.neighborhood}, ${addressData.city} - ${addressData.state}`;
-
-          // Geocoding do endereço completo
-          const coordinates = await geocodeAddress(finalAddress);
-          if (!coordinates) {
-            return {
-              success: false,
-              rowNumber,
-              empresa: row.EMPRESA,
-              error: `Aviso: Localização aproximada (Rua) - Número ${row.NUMERO} não encontrado`,
-            };
+          // Google Places (foto e avaliação) - só tenta se tiver coordenadas
+          let placeDetails = { photoUrl: null, rating: null, ratingsTotal: null };
+          if (coordinates) {
+            placeDetails = await getPlaceDetails(row.EMPRESA, finalAddress);
           }
-
-          // Google Places (foto e avaliação)
-          const placeDetails = await getPlaceDetails(row.EMPRESA, finalAddress);
 
           // Preparar dados para inserção
           const estabelecimentoData = {
@@ -257,14 +265,14 @@ export default function AdminImport() {
             categoria: [mapCategory(row.CATEGORIA)],
             telefone: cleanPhone(row.CONTATO) || null,
             whatsapp: cleanPhone(row.CONTATO) || null,
-            endereco: finalAddress, // Endereço montado a partir de CEP + NÚMERO
+            endereco: finalAddress,
             cep: row.CEP.replace(/\D/g, ""),
-            logradouro: addressData.street,
+            logradouro: logradouro || null,
             numero: row.NUMERO,
             complemento: row.COMPLEMENTO || null,
-            bairro: addressData.neighborhood,
-            latitude: coordinates.lat,
-            longitude: coordinates.lng,
+            bairro: bairro || null,
+            latitude: coordinates?.lat || null,
+            longitude: coordinates?.lng || null,
             instagram: cleanInstagram(row.INSTAGRAM) || null,
             site: row.SITE || null,
             descricao_beneficio: row["BENEFICIO E REGRAS"] || null,
@@ -272,8 +280,8 @@ export default function AdminImport() {
             logo_url: placeDetails.photoUrl || null,
             ativo: true,
             plan_status: "active",
-            cidade: addressData.city,
-            estado: addressData.state,
+            cidade: cidade,
+            estado: estado,
           };
 
           // Inserir no Supabase

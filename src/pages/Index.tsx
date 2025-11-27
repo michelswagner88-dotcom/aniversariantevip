@@ -168,11 +168,11 @@ const Index = () => {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 pt-20 pb-24 sm:pb-8">
+    <div className="flex flex-col bg-slate-950 pt-20 pb-8">
       <Header />
 
       {/* Hero Section - State of the Art */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden py-16 sm:py-32 px-6">
+      <section className="relative flex items-center justify-center overflow-hidden py-16 sm:py-32 px-6">
         {/* Grid Pattern Background (Camada 1) */}
         <div 
           className="absolute inset-0 opacity-50"

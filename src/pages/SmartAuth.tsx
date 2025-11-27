@@ -75,6 +75,15 @@ const SmartAuth = () => {
   
   const isStep2Valid = isNameValid && isPhoneValid && isCpfValid && !cpfExists && !cpfChecking && isBirthDateValid && isCepValid;
 
+  // Validação de senha com regras específicas
+  const isPasswordValid = () => {
+    const hasMinLength = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    return hasMinLength && hasUppercase && hasSpecialChar;
+  };
+
   // Verificar sessão inicial
   useEffect(() => {
     const checkSession = async () => {
@@ -301,8 +310,8 @@ const SmartAuth = () => {
         throw new Error('Preencha email e senha');
       }
 
-      if (password.length < 6) {
-        throw new Error('Senha deve ter pelo menos 6 caracteres');
+      if (!isPasswordValid()) {
+        throw new Error('A senha não atende aos requisitos mínimos');
       }
 
       const redirectUrl = `${window.location.origin}/`;
@@ -550,25 +559,26 @@ const SmartAuth = () => {
                       </button>
                     </div>
                     {!isLogin && (
-                      <p className={`text-xs mt-1.5 ${
-                        password.length === 0 
-                          ? 'text-slate-400' 
-                          : password.length >= 8 
-                            ? 'text-green-400' 
-                            : 'text-red-400'
-                      }`}>
-                        {password.length === 0 
-                          ? 'Mínimo 8 caracteres' 
-                          : password.length >= 8 
-                            ? '✓ Senha válida' 
-                            : `Faltam ${8 - password.length} caracteres`}
-                      </p>
+                      <div className="space-y-2 mt-2">
+                        <p className="text-xs text-slate-400">A senha deve conter:</p>
+                        <ul className="text-xs space-y-1">
+                          <li className={password.length >= 8 ? 'text-green-400' : 'text-slate-400'}>
+                            {password.length >= 8 ? '✓' : '○'} Mínimo 8 caracteres
+                          </li>
+                          <li className={/[A-Z]/.test(password) ? 'text-green-400' : 'text-slate-400'}>
+                            {/[A-Z]/.test(password) ? '✓' : '○'} Uma letra maiúscula
+                          </li>
+                          <li className={/[!@#$%^&*(),.?":{}|<>]/.test(password) ? 'text-green-400' : 'text-slate-400'}>
+                            {/[!@#$%^&*(),.?":{}|<>]/.test(password) ? '✓' : '○'} Um caractere especial (!@#$%...)
+                          </li>
+                        </ul>
+                      </div>
                     )}
                   </div>
 
                   <Button
                     type="submit"
-                    disabled={isLoading || (!isLogin && (!email || password.length < 8))}
+                    disabled={isLoading || (!isLogin && (!email || !isPasswordValid()))}
                     className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (

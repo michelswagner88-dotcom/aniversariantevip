@@ -8,13 +8,25 @@ export const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000,
       // Manter dados em cache por 10 minutos
       gcTime: 10 * 60 * 1000,
-      // Retry em caso de falha (network issues)
-      retry: 3,
+      // Retry inteligente: não fazer retry em erros 4xx (cliente)
+      retry: (failureCount, error: any) => {
+        // Não fazer retry em erros 4xx (cliente)
+        if (error?.status >= 400 && error?.status < 500) {
+          return false;
+        }
+        // Retry até 3x em outros erros (5xx, timeout, rede)
+        return failureCount < 3;
+      },
+      // Exponential backoff: 1s, 2s, 4s
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-      // Refetch em background quando janela volta ao foco
-      refetchOnWindowFocus: true,
+      // Não refetch ao voltar para a aba
+      refetchOnWindowFocus: false,
       // Não refetch em mount se dados ainda são frescos
       refetchOnMount: false,
+    },
+    mutations: {
+      // Mutations não devem fazer retry automático
+      retry: false,
     },
   },
 });

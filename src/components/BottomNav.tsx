@@ -1,10 +1,80 @@
 import { Home, Search, Zap, User, Newspaper } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Páginas onde a barra NÃO deve aparecer
+  const hiddenRoutes = [
+    '/auth',
+    '/selecionar-perfil',
+    '/cadastro/aniversariante',
+    '/cadastro/estabelecimento',
+    '/login/aniversariante',
+    '/login/estabelecimento',
+    '/login/colaborador',
+    '/admin',
+    '/admin/dashboard',
+    '/admin/import',
+    '/setup-admin',
+    '/forgot-password',
+    '/update-password',
+    '/area-estabelecimento',
+    '/area-colaborador',
+  ];
+
+  // Verificar se está em uma rota onde a barra não deve aparecer
+  const shouldHide = hiddenRoutes.some(route => location.pathname.startsWith(route));
+
+  // Verificar autenticação
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUserId(session?.user?.id || null);
+    };
+    
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUserId(session?.user?.id || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Buscar dados do aniversariante para verificar se cadastro está completo
+  const { data: aniversarianteData } = useQuery({
+    queryKey: ['aniversariante', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      
+      const { data } = await supabase
+        .from('aniversariantes')
+        .select('cpf, data_nascimento')
+        .eq('id', userId)
+        .single();
+      
+      return data;
+    },
+    enabled: !!userId,
+  });
+
+  // Verificar se o cadastro está completo
+  const cadastroCompleto = aniversarianteData?.cpf && aniversarianteData?.data_nascimento;
+
+  // Não renderizar se:
+  // - Está em uma rota oculta
+  // - Usuário não está logado
+  // - Cadastro não está completo
+  if (shouldHide || !userId || !cadastroCompleto) {
+    return null;
+  }
 
   const navItems = [
     {

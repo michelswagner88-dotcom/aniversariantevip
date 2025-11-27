@@ -15,6 +15,7 @@ import { RadarOportunidades } from "@/components/estabelecimento/RadarOportunida
 import { EstabelecimentoAnalytics } from "@/components/estabelecimento/EstabelecimentoAnalytics";
 import { RadarAniversariantes } from "@/components/estabelecimento/RadarAniversariantes";
 import { EstablishmentSocialPanel } from "@/components/estabelecimento/EstablishmentSocialPanel";
+import { PostAnalyticsDashboard } from "@/components/estabelecimento/PostAnalyticsDashboard";
 
 export default function AreaEstabelecimento() {
   const navigate = useNavigate();
@@ -553,6 +554,11 @@ export default function AreaEstabelecimento() {
         {/* Gestão de Conteúdo Social */}
         <div className="max-w-3xl mx-auto mb-8">
           <EstablishmentSocialPanel establishmentId={userId || ''} />
+        </div>
+
+        {/* Analytics de Posts */}
+        <div className="max-w-4xl mx-auto mb-8">
+          <PostAnalyticsDashboard establishmentId={userId || ''} />
         </div>
 
         <Card className="max-w-3xl mx-auto">

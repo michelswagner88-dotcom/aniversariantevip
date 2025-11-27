@@ -617,6 +617,70 @@ export type Database = {
           },
         ]
       }
+      post_shares: {
+        Row: {
+          id: string
+          platform: string | null
+          post_id: string
+          shared_at: string
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          platform?: string | null
+          post_id: string
+          shared_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          platform?: string | null
+          post_id?: string
+          shared_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_shares_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_views: {
+        Row: {
+          id: string
+          post_id: string
+          session_id: string | null
+          user_id: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          session_id?: string | null
+          user_id?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          session_id?: string | null
+          user_id?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_views_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           caption: string | null
@@ -624,8 +688,10 @@ export type Database = {
           establishment_id: string
           id: string
           image_url: string
+          shares_count: number | null
           type: Database["public"]["Enums"]["post_type"]
           updated_at: string | null
+          views_count: number | null
         }
         Insert: {
           caption?: string | null
@@ -633,8 +699,10 @@ export type Database = {
           establishment_id: string
           id?: string
           image_url: string
+          shares_count?: number | null
           type?: Database["public"]["Enums"]["post_type"]
           updated_at?: string | null
+          views_count?: number | null
         }
         Update: {
           caption?: string | null
@@ -642,8 +710,10 @@ export type Database = {
           establishment_id?: string
           id?: string
           image_url?: string
+          shares_count?: number | null
           type?: Database["public"]["Enums"]["post_type"]
           updated_at?: string | null
+          views_count?: number | null
         }
         Relationships: [
           {

@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.83.0';
+import { checkRateLimit, getRequestIdentifier, rateLimitExceededResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,6 +43,22 @@ Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  // Rate limiting: 60 requisições por 1 minuto por IP
+  const identifier = getRequestIdentifier(req);
+  const { allowed, remaining } = await checkRateLimit(
+    supabaseUrl,
+    supabaseServiceKey,
+    identifier,
+    { limit: 60, windowMinutes: 1, keyPrefix: "cities" }
+  );
+
+  if (!allowed) {
+    return rateLimitExceededResponse(remaining);
   }
 
   try {

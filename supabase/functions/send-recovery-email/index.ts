@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { checkRateLimit, getRequestIdentifier, rateLimitExceededResponse } from "../_shared/rateLimit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -24,6 +25,22 @@ interface RecoveryEmailPayload {
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  // Rate limiting: 5 requisições por 15 minutos por IP
+  const identifier = getRequestIdentifier(req);
+  const { allowed, remaining } = await checkRateLimit(
+    supabaseUrl,
+    supabaseServiceKey,
+    identifier,
+    { limit: 5, windowMinutes: 15, keyPrefix: "recovery" }
+  );
+
+  if (!allowed) {
+    return rateLimitExceededResponse(remaining);
   }
 
   try {

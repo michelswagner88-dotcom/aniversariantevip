@@ -22,7 +22,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from '@/components/ui/input';
 import { useCepLookup } from '@/hooks/useCepLookup';
 import { GeolocationProgress } from './GeolocationProgress';
-import { LocationConfirmDialog } from './LocationConfirmDialog';
 
 interface CityComboboxProps {
   value?: string;
@@ -46,11 +45,7 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
   const { 
     location, 
     requestLocation, 
-    currentStep,
-    cachedLocation,
-    showLocationConfirm,
-    confirmCachedLocation,
-    rejectCachedLocation
+    currentStep
   } = useGeolocation();
   const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
   
@@ -252,22 +247,8 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
       </PopoverContent>
       
       {/* Progress da Geolocalização */}
-      {isRequestingLocation && (
+      {isRequestingLocation && currentStep !== 'idle' && currentStep !== 'success' && (
         <GeolocationProgress currentStep={currentStep} className="relative -bottom-4" />
-      )}
-      
-      {/* Diálogo de Confirmação de Localização em Cache */}
-      {cachedLocation && (
-        <LocationConfirmDialog
-          open={showLocationConfirm}
-          cidade={cachedLocation.cidade}
-          estado={cachedLocation.estado}
-          onConfirm={() => {
-            confirmCachedLocation();
-            onSelect(cachedLocation.cidade, cachedLocation.estado);
-          }}
-          onReject={rejectCachedLocation}
-        />
       )}
       
       {/* Diálogo de Fallback para CEP */}

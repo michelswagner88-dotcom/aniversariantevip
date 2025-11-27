@@ -82,6 +82,13 @@ export const Header = () => {
               Explorar
             </NavLink>
             <NavLink 
+              to="/feed" 
+              className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
+            >
+              Feed
+            </NavLink>
+            <NavLink 
               to="/como-funciona" 
               className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
               activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
@@ -163,6 +170,14 @@ export const Header = () => {
                 activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
               >
                 Explorar
+              </NavLink>
+              <NavLink
+                to="/feed"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
+                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
+              >
+                Feed
               </NavLink>
               <NavLink
                 to="/como-funciona"

@@ -322,42 +322,93 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome Fantasia</TableHead>
+                  <TableHead>Foto</TableHead>
+                  <TableHead>Nome & Categoria</TableHead>
                   <TableHead>Cidade/Estado</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Plano</TableHead>
                   <TableHead>CNPJ</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Telefone</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {estabelecimentosFiltrados.map((estab) => (
                   <TableRow key={estab.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {estab.logo_url && (
+                    <TableCell>
+                      <div className="flex items-center justify-center">
+                        {estab.logo_url ? (
                           <img 
                             src={estab.logo_url} 
                             alt={estab.nome_fantasia || ''}
-                            className="h-8 w-8 rounded object-cover"
+                            className="h-12 w-12 rounded-lg object-cover border"
                           />
+                        ) : (
+                          <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
+                            <Building2 className="h-6 w-6 text-muted-foreground" />
+                          </div>
                         )}
-                        <div className="flex flex-col gap-1">
-                          <span>{estab.nome_fantasia || '-'}</span>
-                          {(!estab.categoria || estab.categoria.length === 0) && (
-                            <Badge variant="destructive" className="w-fit text-xs">
-                              Sem Categoria
-                            </Badge>
-                          )}
-                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col gap-1.5">
+                        <span className="font-semibold">{estab.nome_fantasia || estab.razao_social}</span>
+                        {estab.categoria && estab.categoria.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {estab.categoria.map((cat, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs">
+                                {cat}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <Badge variant="destructive" className="w-fit text-xs">
+                            ⚠️ Sem Categoria
+                          </Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
                       {estab.cidade && estab.estado ? `${estab.cidade} - ${estab.estado}` : '-'}
                     </TableCell>
-                    <TableCell>{estab.cnpj}</TableCell>
-                    <TableCell>{estab.email}</TableCell>
-                    <TableCell>{estab.telefone || '-'}</TableCell>
+                    <TableCell>
+                      {estab.ativo ? (
+                        <Badge className="bg-green-500 hover:bg-green-600">
+                          ✓ Ativo
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">
+                          ⊗ Inativo
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {estab.plan_status === 'active' && (
+                        <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
+                          ⭐ Gold
+                        </Badge>
+                      )}
+                      {estab.plan_status === 'pending' && (
+                        <Badge variant="outline">
+                          🔵 Pending
+                        </Badge>
+                      )}
+                      {estab.plan_status === 'trialing' && (
+                        <Badge className="bg-blue-500 hover:bg-blue-600">
+                          🎁 Trial
+                        </Badge>
+                      )}
+                      {estab.plan_status === 'canceled' && (
+                        <Badge variant="destructive">
+                          ❌ Cancelado
+                        </Badge>
+                      )}
+                      {!estab.plan_status && (
+                        <Badge variant="secondary">
+                          Discovery
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{estab.cnpj}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button

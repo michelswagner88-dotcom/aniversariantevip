@@ -721,6 +721,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      upsert_establishment_bulk: { Args: { p_data: Json }; Returns: Json }
       use_coupon: {
         Args: { p_codigo: string; p_estabelecimento_id: string }
         Returns: {

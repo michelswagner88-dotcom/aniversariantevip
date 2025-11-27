@@ -55,7 +55,7 @@ const Index = () => {
 
   const loadEstabelecimentos = async () => {
     const { data, error } = await supabase
-      .from("estabelecimentos")
+      .from("public_estabelecimentos")
       .select("*")
       .order("nome_fantasia");
 

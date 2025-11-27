@@ -315,14 +315,16 @@ const Index = () => {
               {/* Mobile Layout */}
               <div className="sm:hidden flex flex-col">
                 {/* Cidade */}
-                <div className="flex items-center gap-3 px-4 h-12 border-b border-white/10">
+                <div className="flex items-center gap-3 px-4 h-12 border-b border-white/10 relative">
                   <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                  <CityCombobox
-                    value={selectedCidade && selectedEstado ? `${selectedCidade}, ${selectedEstado}` : ""}
-                    onSelect={handleCitySelect}
-                    placeholder="Digite a cidade"
-                    className="border-none bg-transparent shadow-none h-auto p-0 hover:bg-transparent flex-1"
-                  />
+                  <div className="flex-1 flex items-center relative">
+                    <CityCombobox
+                      value={selectedCidade && selectedEstado ? `${selectedCidade}, ${selectedEstado}` : ""}
+                      onSelect={handleCitySelect}
+                      placeholder="Digite a cidade"
+                      className="border-none bg-transparent shadow-none h-auto p-0 hover:bg-transparent"
+                    />
+                  </div>
                 </div>
 
                 {/* Categoria */}

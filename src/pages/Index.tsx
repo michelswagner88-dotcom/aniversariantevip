@@ -11,7 +11,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 import { useFavoritos } from "@/hooks/useFavoritos";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { CityCombobox } from "@/components/CityCombobox";
 
 interface Estabelecimento {
@@ -187,11 +187,14 @@ const Index = () => {
         <div className="absolute top-1/2 right-10 w-[500px] h-[500px] bg-cyan-500/20 blur-[120px] rounded-full pointer-events-none" />
         
         <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-700 bg-slate-900/50 backdrop-blur-sm mb-8 animate-fade-in">
+          {/* Badge Clicável */}
+          <Link 
+            to="/auth"
+            className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 backdrop-blur-sm mb-8 animate-fade-in transition-all hover:scale-105 cursor-pointer"
+          >
             <Sparkles className="w-4 h-4 text-violet-400" />
-            <span className="text-sm font-medium text-slate-300">Cadastro Gratuito Para Aniversariantes</span>
-          </div>
+            <span className="text-sm font-medium text-white">Cadastro Gratuito Para Aniversariantes</span>
+          </Link>
 
           {/* H1 - Título Principal (Tipografia de Impacto) */}
           <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl mb-6 tracking-tight leading-[1.1] animate-fade-in" style={{ animationDelay: '0.1s' }}>

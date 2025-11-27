@@ -325,10 +325,13 @@ export default function AdminImport() {
             estado: estado,
           };
 
-          // Inserir no Supabase
+          // Inserir/Atualizar no Supabase (UPSERT)
           const { error: insertError } = await supabase
             .from("estabelecimentos")
-            .insert(estabelecimentoData);
+            .upsert(estabelecimentoData, { 
+              onConflict: 'cnpj',
+              ignoreDuplicates: false 
+            });
 
           if (insertError) {
             return {

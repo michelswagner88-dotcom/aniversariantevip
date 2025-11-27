@@ -119,6 +119,8 @@ export const useGeolocation = () => {
       });
       setLoading(false);
       setShowLocationConfirm(false);
+      // Marcar como confirmado nesta sessão
+      sessionStorage.setItem('location_confirmed_session', 'true');
       toast({
         title: "Localização confirmada!",
         description: `${cachedLocation.cidade}, ${cachedLocation.estado}`,
@@ -130,6 +132,8 @@ export const useGeolocation = () => {
     localStorage.removeItem('user_location');
     setCachedLocation(null);
     setShowLocationConfirm(false);
+    // Marcar como confirmado nesta sessão (mesmo que tenha rejeitado)
+    sessionStorage.setItem('location_confirmed_session', 'true');
     requestLocation();
   };
 
@@ -242,11 +246,23 @@ export const useGeolocation = () => {
 
   useEffect(() => {
     const cached = loadCachedLocation();
+    const alreadyConfirmedThisSession = sessionStorage.getItem('location_confirmed_session');
     
     if (cached) {
-      setCachedLocation(cached);
-      setShowLocationConfirm(true);
-      setLoading(false);
+      // Se já foi confirmado nesta sessão, usar diretamente sem mostrar modal
+      if (alreadyConfirmedThisSession) {
+        setLocation({
+          cidade: cached.cidade,
+          estado: cached.estado,
+          coordinates: cached.coordinates
+        });
+        setLoading(false);
+      } else {
+        // Primeira vez na sessão: mostrar modal de confirmação
+        setCachedLocation(cached);
+        setShowLocationConfirm(true);
+        setLoading(false);
+      }
     } else {
       requestLocation();
     }

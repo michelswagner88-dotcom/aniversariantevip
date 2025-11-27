@@ -128,7 +128,14 @@ const SmartAuth = () => {
             setUserId(session.user.id);
             setStep(2);
           } else {
-            navigate('/dashboard', { replace: true });
+            // Verificar se há redirecionamento pendente
+            const redirectTo = sessionStorage.getItem('redirectAfterLogin');
+            if (redirectTo) {
+              sessionStorage.removeItem('redirectAfterLogin');
+              navigate(redirectTo, { replace: true });
+            } else {
+              navigate('/dashboard', { replace: true });
+            }
           }
         }
       }
@@ -143,6 +150,21 @@ const SmartAuth = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Limpar sessionStorage se usuário sair da página sem fazer login
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Só limpar se não estiver autenticado
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) {
+          sessionStorage.removeItem('redirectAfterLogin');
+        }
+      });
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   // Validações em tempo real
   const handleNameChange = (value: string) => {
@@ -287,7 +309,14 @@ const SmartAuth = () => {
         description: 'Bem-vindo de volta!',
       });
 
-      navigate('/dashboard', { replace: true });
+      // Verificar se há redirecionamento pendente
+      const redirectTo = sessionStorage.getItem('redirectAfterLogin');
+      if (redirectTo) {
+        sessionStorage.removeItem('redirectAfterLogin');
+        navigate(redirectTo, { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err: any) {
       const friendlyMessage = getFriendlyErrorMessage(err);
       setError(friendlyMessage);
@@ -434,7 +463,14 @@ const SmartAuth = () => {
         description: 'Bem-vindo ao Aniversariante VIP!',
       });
       
-      navigate('/dashboard');
+      // Verificar se há redirecionamento pendente
+      const redirectTo = sessionStorage.getItem('redirectAfterLogin');
+      if (redirectTo) {
+        sessionStorage.removeItem('redirectAfterLogin');
+        navigate(redirectTo);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       console.error('Erro ao completar cadastro:', error);
       const friendlyMessage = getFriendlyErrorMessage(error);

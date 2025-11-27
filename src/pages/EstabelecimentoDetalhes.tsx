@@ -135,6 +135,9 @@ export default function EstabelecimentoDetalhes() {
   };
 
   const handleEntrarParaVer = () => {
+    // Salvar URL atual para redirecionar após login
+    const currentPath = window.location.pathname + window.location.search;
+    sessionStorage.setItem('redirectAfterLogin', currentPath);
     navigate("/auth");
   };
 

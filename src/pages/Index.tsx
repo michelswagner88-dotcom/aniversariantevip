@@ -168,11 +168,11 @@ const Index = () => {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 pt-20 pb-20 sm:pb-0">
+    <div className="min-h-screen flex flex-col bg-slate-950 pt-20 pb-24 sm:pb-8">
       <Header />
 
       {/* Hero Section - State of the Art */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden py-32 px-6">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden py-16 sm:py-32 px-6">
         {/* Grid Pattern Background (Camada 1) */}
         <div 
           className="absolute inset-0 opacity-50"
@@ -190,14 +190,14 @@ const Index = () => {
           {/* Badge Clicável */}
           <Link 
             to="/auth"
-            className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 backdrop-blur-sm mb-8 animate-fade-in transition-all hover:scale-105 cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 backdrop-blur-sm mb-6 sm:mb-8 animate-fade-in transition-all duration-300 hover:scale-105 cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-violet-400" />
             <span className="text-sm font-medium text-white">Cadastro Gratuito Para Aniversariantes</span>
           </Link>
 
           {/* H1 - Título Principal (Tipografia de Impacto) */}
-          <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl mb-6 tracking-tight leading-[1.1] animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          <h1 className="font-display font-extrabold text-3xl sm:text-5xl md:text-6xl mb-4 sm:mb-6 tracking-tight leading-[1.1] animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <span className="text-white">
               O Maior Guia de Benefícios
               <br />
@@ -209,14 +209,14 @@ const Index = () => {
           </h1>
 
           {/* H2 - Subtítulo */}
-          <h2 className="text-lg sm:text-xl md:text-2xl text-slate-400 max-w-3xl mb-12 sm:mb-16 leading-relaxed animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <h2 className="text-base sm:text-xl md:text-2xl text-slate-400 max-w-3xl mb-8 sm:mb-12 leading-relaxed animate-fade-in" style={{ animationDelay: '0.2s' }}>
             Aqui seu aniversário vale muito mais. Encontre benefícios exclusivos para aproveitar no dia, na semana ou no mês inteiro.
           </h2>
 
           {/* Barra de Busca Hyper-Glass */}
-          <div className="w-full max-w-4xl mt-8 sm:mt-0 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <div className="w-full max-w-4xl animate-fade-in" style={{ animationDelay: '0.3s' }}>
             <div 
-              className="backdrop-blur-2xl bg-white/5 rounded-2xl p-3 border border-white/10"
+              className="backdrop-blur-2xl bg-white/10 rounded-2xl p-4 sm:p-3 border border-white/20 shadow-xl"
               style={{
                 boxShadow: '0 0 50px -12px rgba(139,92,246,0.3)'
               }}
@@ -261,14 +261,16 @@ const Index = () => {
                 <div className="h-8 w-[1px] bg-white/10" />
 
                 {/* Limpar e Buscar */}
-                <Button 
-                  size="lg"
-                  variant="ghost"
-                  onClick={limparFiltros}
-                  className="text-slate-400 hover:text-white hover:bg-white/5 h-12 px-4 rounded-xl"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
+                {(selectedCidade || selectedCategoria) && (
+                  <Button 
+                    size="lg"
+                    variant="ghost"
+                    onClick={limparFiltros}
+                    className="text-slate-400 hover:text-white hover:bg-white/5 h-12 px-4 rounded-xl"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                )}
 
                 <Button 
                   size="lg"
@@ -314,15 +316,17 @@ const Index = () => {
 
                 {/* Ações */}
                 <div className="p-3 space-y-2">
-                  <Button 
-                    size="lg"
-                    variant="ghost"
-                    onClick={limparFiltros}
-                    className="text-slate-400 hover:text-white hover:bg-white/5 h-12 rounded-xl w-full"
-                  >
-                    <X className="w-5 h-5 mr-2" />
-                    Limpar filtros
-                  </Button>
+                  {(selectedCidade || selectedCategoria) && (
+                    <Button 
+                      size="lg"
+                      variant="ghost"
+                      onClick={limparFiltros}
+                      className="text-slate-400 hover:text-white hover:bg-white/5 h-12 rounded-xl w-full"
+                    >
+                      <X className="w-5 h-5 mr-2" />
+                      Limpar filtros
+                    </Button>
+                  )}
                   
                   <Button 
                     size="lg"
@@ -337,7 +341,7 @@ const Index = () => {
           </div>
 
           {/* Social Proof Footer */}
-          <p className="text-slate-500 text-sm mt-8 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          <p className="text-slate-500 text-sm mt-8 pr-20 animate-fade-in" style={{ animationDelay: '0.4s' }}>
             Junte-se a mais de 50.000 aniversariantes que economizam todo mês.
           </p>
         </div>

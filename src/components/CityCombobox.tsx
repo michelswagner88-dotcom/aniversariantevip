@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { MapPin, X } from 'lucide-react';
 import { useCidadesAutocomplete } from '@/hooks/useCidadesAutocomplete';
 
 interface CityComboboxProps {
@@ -46,20 +47,32 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => {
-          setInputValue(e.target.value);
-          setIsOpen(true);
-        }}
-        onFocus={() => setIsOpen(true)}
-        placeholder={placeholder}
-        className="w-full p-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
-      />
+      <div className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-lg">
+        <MapPin className="w-5 h-5 text-gray-400 shrink-0" />
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            setIsOpen(true);
+          }}
+          onFocus={() => setIsOpen(true)}
+          placeholder={placeholder}
+          className="flex-1 bg-transparent outline-none text-white placeholder:text-gray-400"
+        />
+        {inputValue && (
+          <X 
+            className="w-4 h-4 text-gray-400 cursor-pointer hover:text-white transition-colors shrink-0" 
+            onClick={() => {
+              setInputValue('');
+              setIsOpen(false);
+            }}
+          />
+        )}
+      </div>
       
       {isOpen && inputValue.length >= 3 && (
-        <div className="absolute top-full left-0 w-full mt-1 bg-slate-900 border border-white/10 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+        <div className="absolute top-full left-0 w-full mt-2 bg-slate-900 border border-white/10 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
           {isLoading ? (
             <div className="p-3 text-slate-400 text-sm">Buscando cidades...</div>
           ) : cidades.length > 0 ? (

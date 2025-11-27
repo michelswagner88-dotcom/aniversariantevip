@@ -10,6 +10,7 @@ import BuscaCepPorEndereco from '@/components/BuscaCepPorEndereco';
 import { BackButton } from '@/components/BackButton';
 import ChatAssistant from '@/components/ChatAssistant';
 import { useInputMask } from '@/hooks/useInputMask';
+import { useCheckCpfExists } from '@/hooks/useCheckCpfExists';
 import { useCepLookup } from '@/hooks/useCepLookup';
 import { getFriendlyErrorMessage } from '@/lib/errorTranslator';
 
@@ -68,7 +69,10 @@ const SmartAuth = () => {
   const isBirthDateValid = birthDate.replace(/\D/g, '').length === 8 && validateBirthDate(birthDate).valid && !birthDateError;
   const isCepValid = cep.replace(/\D/g, '').length === 8 && estado && cidade && bairro && logradouro && !cepError;
   
-  const isStep2Valid = isNameValid && isPhoneValid && isCpfValid && isBirthDateValid && isCepValid;
+  // Verificação de CPF duplicado em tempo real (após declarações)
+  const { exists: cpfExists, loading: cpfChecking } = useCheckCpfExists(cpf, isCpfValid && !cpfError);
+  
+  const isStep2Valid = isNameValid && isPhoneValid && isCpfValid && !cpfExists && !cpfChecking && isBirthDateValid && isCepValid;
 
   // Verificar sessão inicial
   useEffect(() => {
@@ -160,6 +164,8 @@ const SmartAuth = () => {
     if (numbers.length === 11) {
       if (!validateCPF(value)) {
         setCpfError('CPF inválido');
+      } else if (cpfExists) {
+        setCpfError('Este CPF já está cadastrado. Se for você, tente fazer login.');
       } else {
         setCpfError('');
       }
@@ -594,9 +600,16 @@ const SmartAuth = () => {
                   mask={cpfMask}
                   placeholder="000.000.000-00"
                   error={cpfError}
-                  isValid={isCpfValid}
+                  isValid={isCpfValid && !cpfExists}
                   required
                 />
+                
+                {cpfChecking && cpf.replace(/\D/g, '').length === 11 && (
+                  <div className="flex items-center gap-2 text-violet-400 -mt-3">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span className="text-xs">Verificando CPF...</span>
+                  </div>
+                )}
 
                 <MaskedInput
                   label="Data de Nascimento"

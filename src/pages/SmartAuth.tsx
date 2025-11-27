@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, AlertCircle, Mail, Lock, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, AlertCircle, Mail, Lock, User, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import MaskedInput from '@/components/MaskedInput';
@@ -21,6 +21,7 @@ const SmartAuth = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [isLogin, setIsLogin] = useState(false);
   const [showCepSearch, setShowCepSearch] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -530,26 +531,50 @@ const SmartAuth = () => {
                     <label className="text-sm font-medium text-slate-200">Senha</label>
                     <div className="relative">
                       <Input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="bg-white/5 border-white/10 text-white pl-10"
+                        className="bg-white/5 border-white/10 text-white pl-10 pr-12"
                         required
+                        minLength={8}
                       />
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
                     </div>
+                    {!isLogin && (
+                      <p className={`text-xs mt-1.5 ${
+                        password.length === 0 
+                          ? 'text-slate-400' 
+                          : password.length >= 8 
+                            ? 'text-green-400' 
+                            : 'text-red-400'
+                      }`}>
+                        {password.length === 0 
+                          ? 'Mínimo 8 caracteres' 
+                          : password.length >= 8 
+                            ? '✓ Senha válida' 
+                            : `Faltam ${8 - password.length} caracteres`}
+                      </p>
+                    )}
                   </div>
 
                   <Button
                     type="submit"
-                    disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 transition-opacity"
+                    disabled={isLoading || (!isLogin && (!email || password.length < 8))}
+                    className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Aguarde...
+                        {isLogin ? 'Entrando...' : 'Criando conta...'}
                       </>
                     ) : (
                       isLogin ? 'Entrar' : 'Criar conta'

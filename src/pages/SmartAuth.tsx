@@ -172,25 +172,25 @@ const SmartAuth = () => {
     }
   };
 
-  // Função para buscar coordenadas de cidade/estado via Mapbox
+  // Função para buscar coordenadas de cidade/estado via Google Maps
   const geocodeCityState = async (cidade: string, estado: string) => {
     if (!cidade || !estado) return null;
     
     try {
-      const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN;
-      if (!mapboxToken) return null;
+      const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      if (!googleMapsKey) return null;
 
       const query = `${cidade}, ${estado}, Brasil`;
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxToken}&types=place&limit=1`
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${googleMapsKey}&language=pt-BR`
       );
       
       if (!response.ok) return null;
       
       const data = await response.json();
-      if (data.features && data.features.length > 0) {
-        const [longitude, latitude] = data.features[0].center;
-        return { latitude, longitude };
+      if (data.status === 'OK' && data.results && data.results.length > 0) {
+        const location = data.results[0].geometry.location;
+        return { latitude: location.lat, longitude: location.lng };
       }
       
       return null;

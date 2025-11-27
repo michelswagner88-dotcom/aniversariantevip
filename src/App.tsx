@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CookieConsent } from "@/components/CookieConsent";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Loader2 } from "lucide-react";
@@ -103,6 +103,10 @@ const App = () => (
                   <Route path="/selecionar-categoria" element={<SelecionarCategoria />} />
                   <Route path="/planos-pagamento" element={<PlanosPagamento />} />
                   <Route path="/planos" element={<PlanosPagamento />} />
+                  <Route path="/entrar" element={<Navigate to="/auth" replace />} />
+                  <Route path="/cadastro" element={<Navigate to="/auth" replace />} />
+                  <Route path="/login" element={<Navigate to="/auth" replace />} />
+                  <Route path="/registro" element={<Navigate to="/auth" replace />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

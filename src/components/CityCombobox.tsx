@@ -21,7 +21,6 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useCepLookup } from '@/hooks/useCepLookup';
-import { GeolocationProgress } from './GeolocationProgress';
 
 interface CityComboboxProps {
   value?: string;
@@ -245,11 +244,6 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
           </CommandList>
         </Command>
       </PopoverContent>
-      
-      {/* Progress da Geolocalização */}
-      {isRequestingLocation && currentStep !== 'idle' && currentStep !== 'success' && (
-        <GeolocationProgress currentStep={currentStep} className="relative -bottom-4" />
-      )}
       
       {/* Diálogo de Fallback para CEP */}
       <Dialog open={showCepDialog} onOpenChange={setShowCepDialog}>

@@ -7,7 +7,6 @@ import { useCepLookup } from '../hooks/useCepLookup';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { GeolocationProgress } from './GeolocationProgress';
 
 const VoiceSearchBar = () => {
   const navigate = useNavigate();
@@ -168,11 +167,6 @@ const VoiceSearchBar = () => {
             🎤 Ouvindo... Fale agora
           </span>
         </div>
-      )}
-
-      {/* Progress da Geolocalização - apenas se estiver carregando */}
-      {geoLoading && currentStep !== 'idle' && currentStep !== 'success' && (
-        <GeolocationProgress currentStep={currentStep} />
       )}
 
       {/* Diálogo de CEP */}

@@ -470,6 +470,35 @@ export type Database = {
           },
         ]
       }
+      followers: {
+        Row: {
+          created_at: string | null
+          establishment_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          establishment_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          establishment_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "followers_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       navigation_logs: {
         Row: {
           app_name: string
@@ -495,6 +524,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "navigation_logs_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          caption: string | null
+          created_at: string | null
+          establishment_id: string
+          id: string
+          image_url: string
+          updated_at: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string | null
+          establishment_id: string
+          id?: string
+          image_url: string
+          updated_at?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string | null
+          establishment_id?: string
+          id?: string
+          image_url?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_establishment_id_fkey"
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
@@ -637,6 +701,38 @@ export type Database = {
           user_lng?: number | null
         }
         Relationships: []
+      }
+      stories: {
+        Row: {
+          created_at: string | null
+          establishment_id: string
+          expires_at: string | null
+          id: string
+          media_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          establishment_id: string
+          expires_at?: string | null
+          id?: string
+          media_url: string
+        }
+        Update: {
+          created_at?: string | null
+          establishment_id?: string
+          expires_at?: string | null
+          id?: string
+          media_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stories_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

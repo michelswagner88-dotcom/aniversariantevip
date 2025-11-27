@@ -42,6 +42,7 @@ import EstabelecimentoDetalhes from "./pages/EstabelecimentoDetalhes";
 import SmartAuth from "./pages/SmartAuth";
 import SelecionarPerfil from "./pages/SelecionarPerfil";
 import FlashDeals from "./pages/FlashDeals";
+import Feed from "./pages/Feed";
 
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -69,6 +70,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
             <Route path="/explorar" element={<Explorar />} />
             <Route path="/flash-deals" element={<FlashDeals />} />
+            <Route path="/feed" element={<Feed />} />
             <Route path="/estabelecimento/:id" element={<EstabelecimentoDetalhes />} />
             <Route path="/como-funciona" element={<ComoFunciona />} />
                 <Route path="/seja-parceiro" element={<SejaParceito />} />

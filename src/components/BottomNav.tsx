@@ -1,4 +1,4 @@
-import { Home, Search, Zap, User } from "lucide-react";
+import { Home, Search, Zap, User, Newspaper } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,12 @@ const BottomNav = () => {
       icon: Search,
       label: "Explorar",
       path: "/explorar",
+      activeColor: "text-violet-400",
+    },
+    {
+      icon: Newspaper,
+      label: "Feed",
+      path: "/feed",
       activeColor: "text-violet-400",
     },
     {

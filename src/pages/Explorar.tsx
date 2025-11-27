@@ -135,10 +135,15 @@ const Explorar = () => {
   const [filterDistance, setFilterDistance] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    if (geoError && !location) {
+    // Se já tem localização, esconder o banner de CEP
+    if (location) {
+      setShowCepInput(false);
+    } 
+    // Só mostrar banner se falhou E não tem localização E não está carregando
+    else if (geoError && !location && !geoLoading) {
       setShowCepInput(true);
     }
-  }, [geoError, location]);
+  }, [geoError, location, geoLoading]);
 
   const handleCepSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

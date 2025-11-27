@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Upload, CheckCircle, XCircle, Download } from "lucide-react";
+import { ArrowLeft, Upload, CheckCircle, XCircle, Download, Loader2, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
@@ -26,6 +26,13 @@ export default function AdminImport() {
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<ProcessResult | null>(null);
+  const [cleaning, setCleaning] = useState(false);
+  const [stats, setStats] = useState({
+    removed: 0,
+    imported: 0,
+    geocoded: 0,
+    photosFound: 0
+  });
   const [showResult, setShowResult] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,6 +198,36 @@ export default function AdminImport() {
     }
   };
 
+  const cleanDatabase = async () => {
+    if (!confirm('⚠️ ATENÇÃO: Esta ação irá APAGAR TODOS os estabelecimentos da base de dados. Deseja continuar?')) {
+      return;
+    }
+
+    setCleaning(true);
+    try {
+      // Contar registros antes de limpar
+      const { count } = await supabase
+        .from('estabelecimentos')
+        .select('*', { count: 'exact', head: true });
+
+      // Limpar tabela
+      const { error } = await supabase
+        .from('estabelecimentos')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (error) throw error;
+
+      setStats(prev => ({ ...prev, removed: count || 0 }));
+      toast.success(`🗑️ ${count} registros removidos com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao limpar base:', error);
+      toast.error('Erro ao limpar base de dados');
+    } finally {
+      setCleaning(false);
+    }
+  };
+
   const processBatch = async (items: any[], startIndex: number) => {
     const batchSize = 3;
     const batch = items.slice(startIndex, startIndex + batchSize);
@@ -207,6 +244,8 @@ export default function AdminImport() {
               rowNumber,
               empresa: row.EMPRESA || "N/A",
               error: "Dados obrigatórios faltando (EMPRESA, CNPJ, CEP ou NUMERO)",
+              hasGeocode: false,
+              hasPhoto: false,
             };
           }
 
@@ -217,6 +256,8 @@ export default function AdminImport() {
               rowNumber,
               empresa: row.EMPRESA,
               error: `CNPJ inválido: ${row.CNPJ}`,
+              hasGeocode: false,
+              hasPhoto: false,
             };
           }
 
@@ -295,16 +336,26 @@ export default function AdminImport() {
               rowNumber,
               empresa: row.EMPRESA,
               error: `Erro ao salvar: ${insertError.message}`,
+              hasGeocode: false,
+              hasPhoto: false,
             };
           }
 
-          return { success: true, rowNumber, empresa: row.EMPRESA };
+          return {
+            success: true,
+            rowNumber,
+            empresa: row.EMPRESA,
+            hasGeocode: !!coordinates,
+            hasPhoto: !!placeDetails.photoUrl,
+          };
         } catch (error: any) {
           return {
             success: false,
             rowNumber,
             empresa: row.EMPRESA || "N/A",
             error: error.message || "Erro desconhecido",
+            hasGeocode: false,
+            hasPhoto: false,
           };
         }
       })
@@ -332,6 +383,8 @@ export default function AdminImport() {
 
       const total = jsonData.length;
       const batchSize = 3;
+      let geocodedCount = 0;
+      let photosFoundCount = 0;
 
       // Processar em batches de 3 em 3
       for (let i = 0; i < jsonData.length; i += batchSize) {
@@ -340,6 +393,8 @@ export default function AdminImport() {
         batchResults.forEach(result => {
           if (result.success) {
             successCount++;
+            if (result.hasGeocode) geocodedCount++;
+            if (result.hasPhoto) photosFoundCount++;
           } else {
             errors.push({
               row: result.rowNumber,
@@ -351,9 +406,16 @@ export default function AdminImport() {
 
         // Atualizar progresso
         setProgress(((Math.min(i + batchSize, total)) / total) * 100);
-      }
+        }
 
-      setResult({ success: successCount, errors });
+        setStats(prev => ({
+          ...prev,
+          imported: successCount,
+          geocoded: geocodedCount,
+          photosFound: photosFoundCount
+        }));
+
+        setResult({ success: successCount, errors });
       setShowResult(true);
     } catch (error: any) {
       toast.error(`Erro ao processar arquivo: ${error.message}`);
@@ -397,7 +459,26 @@ export default function AdminImport() {
             Faça upload do arquivo CSV/Excel com os dados dos estabelecimentos
           </p>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
+            <Button
+              onClick={cleanDatabase}
+              disabled={cleaning || processing}
+              variant="destructive"
+              className="w-full mb-4"
+            >
+              {cleaning ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Limpando base de dados...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  🗑️ Limpar Base de Dados
+                </>
+              )}
+            </Button>
+
             <div className="border-2 border-dashed border-white/20 rounded-lg p-8 text-center hover:border-violet-500/50 transition-colors">
               <input
                 type="file"
@@ -439,8 +520,26 @@ export default function AdminImport() {
               className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 text-white font-semibold h-12"
             >
               {processing ? "Processando..." : "Iniciar Importação"}
-            </Button>
+          </Button>
+        </div>
+
+        {(stats.removed > 0 || stats.imported > 0) && (
+          <div className="mt-4 p-4 bg-slate-900 border border-violet-500/20 rounded-lg space-y-2">
+            <h3 className="font-bold text-white mb-2">📊 Relatório de Execução</h3>
+            {stats.removed > 0 && (
+              <p className="text-slate-300">🗑️ Registros anteriores removidos: <span className="font-bold text-red-400">{stats.removed}</span></p>
+            )}
+            {stats.imported > 0 && (
+              <p className="text-slate-300">📥 Novos registros importados: <span className="font-bold text-green-400">{stats.imported}</span></p>
+            )}
+            {stats.geocoded > 0 && (
+              <p className="text-slate-300">📍 Geocoding com sucesso: <span className="font-bold text-blue-400">{stats.geocoded}</span></p>
+            )}
+            {stats.photosFound > 0 && (
+              <p className="text-slate-300">📸 Fotos encontradas: <span className="font-bold text-purple-400">{stats.photosFound}</span></p>
+            )}
           </div>
+        )}
         </Card>
       </div>
 

@@ -25,6 +25,10 @@ type GeolocationStep =
 // Google Maps API Key
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
+// Debug: Log API Key status
+console.log('🔑 Google Maps API Key presente:', !!GOOGLE_MAPS_API_KEY);
+console.log('🔑 Comprimento da key:', GOOGLE_MAPS_API_KEY?.length || 0);
+
 // Cache expira após 7 dias
 const CACHE_EXPIRY_DAYS = 7;
 const CACHE_EXPIRY_MS = CACHE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;

@@ -213,13 +213,61 @@ export const ImportarEstabelecimentos = () => {
         };
       });
 
-      const { error } = await supabase.from("estabelecimentos").insert(insertData);
+      // Inserir estabelecimentos primeiro
+      const { data: insertedEstabs, error } = await supabase
+        .from("estabelecimentos")
+        .insert(insertData)
+        .select("id, nome_fantasia, cidade, estado, logradouro");
 
       if (error) throw error;
 
       toast({
-        title: "✅ Importação concluída!",
-        description: `${validData.length} estabelecimentos cadastrados com sucesso`,
+        title: "✅ Estabelecimentos inseridos!",
+        description: `Agora buscando fotos do Google Places...`,
+      });
+
+      // Buscar fotos do Google Places em batch (com delay para evitar rate limit)
+      let photosFound = 0;
+      for (let i = 0; i < insertedEstabs.length; i++) {
+        const estab = insertedEstabs[i];
+        
+        try {
+          // Delay de 200ms entre requisições para evitar rate limit
+          if (i > 0) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+
+          const { data: photoData, error: photoError } = await supabase.functions.invoke(
+            'fetch-place-photo',
+            {
+              body: {
+                nome: estab.nome_fantasia,
+                endereco: estab.logradouro,
+                cidade: estab.cidade,
+                estado: estab.estado,
+              }
+            }
+          );
+
+          if (!photoError && photoData?.success && photoData.photo_url) {
+            // Atualizar estabelecimento com a foto
+            await supabase
+              .from("estabelecimentos")
+              .update({ logo_url: photoData.photo_url })
+              .eq("id", estab.id);
+            
+            photosFound++;
+            console.log(`📸 Foto encontrada para ${estab.nome_fantasia}`);
+          }
+        } catch (err) {
+          console.error(`❌ Erro ao buscar foto para ${estab.nome_fantasia}:`, err);
+          // Continuar mesmo com erro - não bloquear importação
+        }
+      }
+
+      toast({
+        title: "✅ Importação completa!",
+        description: `${validData.length} estabelecimentos cadastrados. ${photosFound} fotos encontradas no Google Places.`,
       });
 
       // Limpar estados

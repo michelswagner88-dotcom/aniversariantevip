@@ -296,10 +296,6 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
   };
 
   const handleOpenMap = () => {
-    if (!apiKey) {
-      toast.error('Google Maps não está configurado corretamente');
-      return;
-    }
     setIsMapOpen(true);
     setMapError(null);
     
@@ -310,31 +306,13 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
   };
 
   const handleMapError = () => {
-    setMapError('Erro ao carregar o Google Maps. Verifique o console do navegador (F12) para detalhes.');
+    setMapError('Não foi possível carregar o mapa.');
     setMapLoaded(true);
-    toast.error('Não foi possível carregar o mapa');
   };
 
-  // Mostrar erro crítico se não houver API key
+  // Se não houver API key, não mostrar o botão do mapa
   if (!apiKey) {
-    return (
-      <Card className="border-destructive bg-destructive/10 p-6 m-4">
-        <div className="flex items-start gap-3">
-          <div className="text-destructive text-2xl">⚠️</div>
-          <div>
-            <h3 className="text-lg font-bold text-destructive mb-2">
-              Erro Crítico: Google Maps não configurado
-            </h3>
-            <p className="text-sm text-muted-foreground mb-2">
-              A chave de API do Google Maps não está configurada no arquivo de ambiente.
-            </p>
-            <p className="text-xs text-muted-foreground font-mono bg-slate-900/50 p-2 rounded">
-              Configure VITE_GOOGLE_MAPS_API_KEY no .env
-            </p>
-          </div>
-        </div>
-      </Card>
-    );
+    return null;
   }
 
   return (

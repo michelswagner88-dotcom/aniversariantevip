@@ -96,32 +96,25 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
     try {
       setFetchingPhoto(true);
       
-      const query = `${formData.nome_fantasia || formData.razao_social} ${formData.endereco || formData.cidade || ''}`;
-      
-      // Find Place from Text
-      const findPlaceResponse = await fetch(
-        `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(query)}&inputtype=textquery&fields=place_id,photos&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
-      );
-      
-      const findPlaceData = await findPlaceResponse.json();
-      
-      if (findPlaceData.status === 'OK' && findPlaceData.candidates?.[0]) {
-        const place = findPlaceData.candidates[0];
-        
-        if (place.photos && place.photos.length > 0) {
-          const photoReference = place.photos[0].photo_reference;
-          const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoReference}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
-          
-          setFormData({
-            ...formData,
-            logo_url: photoUrl,
-          });
-          toast.success("Foto encontrada e carregada!");
-        } else {
-          toast.error("Estabelecimento encontrado, mas sem fotos disponíveis");
+      const { data, error } = await supabase.functions.invoke('fetch-place-photo', {
+        body: {
+          nome: formData.nome_fantasia || formData.razao_social,
+          endereco: formData.endereco,
+          cidade: formData.cidade,
+          estado: formData.estado,
         }
+      });
+
+      if (error) throw error;
+
+      if (data?.success && data.photo_url) {
+        setFormData({
+          ...formData,
+          logo_url: data.photo_url,
+        });
+        toast.success(`Foto encontrada! ${data.place_name || ''}`);
       } else {
-        toast.error("Estabelecimento não encontrado no Google Places");
+        toast.error(data?.error || "Estabelecimento não encontrado no Google Places");
       }
     } catch (error) {
       console.error("Erro ao buscar foto:", error);

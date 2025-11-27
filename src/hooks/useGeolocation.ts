@@ -23,11 +23,13 @@ type GeolocationStep =
   | 'error';
 
 // Google Maps API Key
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-// Debug: Log API Key status
-console.log('🔑 Google Maps API Key presente:', !!GOOGLE_MAPS_API_KEY);
-console.log('🔑 Comprimento da key:', GOOGLE_MAPS_API_KEY?.length || 0);
+// Debug: Log API Key status (sem vazar o valor)
+console.log('🔑 Maps key loaded:', Boolean(GOOGLE_MAPS_API_KEY));
+if (!GOOGLE_MAPS_API_KEY) {
+  console.error('❌ VITE_GOOGLE_MAPS_API_KEY não encontrada no build. Configure nas variáveis de ambiente de build/deploy.');
+}
 
 // Cache expira após 7 dias
 const CACHE_EXPIRY_DAYS = 7;

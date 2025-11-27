@@ -10,7 +10,6 @@ import { BackButton } from "@/components/BackButton";
 import { EmptyState } from "@/components/EmptyState";
 import { useEstabelecimentos } from "@/hooks/useEstabelecimentos";
 import { GeolocationProgress } from "@/components/GeolocationProgress";
-import { LocationConfirmDialog } from "@/components/LocationConfirmDialog";
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick }: any) => (
@@ -120,11 +119,7 @@ const Explorar = () => {
     loading: geoLoading, 
     error: geoError, 
     currentStep, 
-    cachedLocation,
-    showLocationConfirm,
-    setManualLocation,
-    confirmCachedLocation,
-    rejectCachedLocation
+    setManualLocation
   } = useGeolocation();
   const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
   
@@ -216,18 +211,9 @@ const Explorar = () => {
         </div>
         <VoiceSearchBar />
 
-        {/* Progress da Geolocalização */}
-        {geoLoading && <GeolocationProgress currentStep={currentStep} />}
-
-        {/* Diálogo de Confirmação de Localização em Cache */}
-        {cachedLocation && (
-          <LocationConfirmDialog
-            open={showLocationConfirm}
-            cidade={cachedLocation.cidade}
-            estado={cachedLocation.estado}
-            onConfirm={confirmCachedLocation}
-            onReject={rejectCachedLocation}
-          />
+        {/* Progress da Geolocalização - apenas se estiver carregando */}
+        {geoLoading && currentStep !== 'idle' && currentStep !== 'success' && (
+          <GeolocationProgress currentStep={currentStep} />
         )}
 
         {showCepInput && (

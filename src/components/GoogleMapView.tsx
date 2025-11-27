@@ -257,20 +257,22 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
   const [selectedEstablishmentId, setSelectedEstablishmentId] = useState<string | null>(null);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-
-  const selectedEstablishment = establishments.find(e => e.id === selectedEstablishmentId);
-
-  const defaultCenter = userLocation || { lat: -27.5954, lng: -48.5480 }; // Florianópolis
+  const [mapError, setMapError] = useState<string | null>(null);
 
   // Verificar se a API key está configurada
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   
-  useEffect(() => {
-    if (!apiKey) {
-      console.error('VITE_GOOGLE_MAPS_API_KEY não está configurada');
-      toast.error('Erro ao carregar o mapa. Entre em contato com o suporte.');
-    }
-  }, [apiKey]);
+  // Filtrar estabelecimentos com coordenadas válidas
+  const validEstablishments = establishments.filter(est => 
+    est.latitude && 
+    est.longitude && 
+    est.latitude !== 0 && 
+    est.longitude !== 0
+  );
+
+  const selectedEstablishment = validEstablishments.find(e => e.id === selectedEstablishmentId);
+
+  const defaultCenter = userLocation || { lat: -27.5954, lng: -48.5480 }; // Florianópolis
 
   const handleMarkerClick = (id: string) => {
     setSelectedEstablishmentId(id);
@@ -299,12 +301,41 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
       return;
     }
     setIsMapOpen(true);
+    setMapError(null);
     
     // Marcar como carregado e remover loading após delay
     setTimeout(() => {
       setMapLoaded(true);
     }, 800);
   };
+
+  const handleMapError = () => {
+    setMapError('Erro ao carregar o Google Maps. Verifique o console do navegador (F12) para detalhes.');
+    setMapLoaded(true);
+    toast.error('Não foi possível carregar o mapa');
+  };
+
+  // Mostrar erro crítico se não houver API key
+  if (!apiKey) {
+    return (
+      <Card className="border-destructive bg-destructive/10 p-6 m-4">
+        <div className="flex items-start gap-3">
+          <div className="text-destructive text-2xl">⚠️</div>
+          <div>
+            <h3 className="text-lg font-bold text-destructive mb-2">
+              Erro Crítico: Google Maps não configurado
+            </h3>
+            <p className="text-sm text-muted-foreground mb-2">
+              A chave de API do Google Maps não está configurada no arquivo de ambiente.
+            </p>
+            <p className="text-xs text-muted-foreground font-mono bg-slate-900/50 p-2 rounded">
+              Configure VITE_GOOGLE_MAPS_API_KEY no .env
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -318,7 +349,7 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
       </Button>
 
       {/* Full Screen Map - Lazy Loading */}
-      {isMapOpen && apiKey && (
+      {isMapOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950 animate-fade-in">
           {/* Close Button */}
           <Button
@@ -344,7 +375,7 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
           )}
 
           {/* Loading State */}
-          {!mapLoaded && (
+          {!mapLoaded && !mapError && (
             <div className="absolute inset-0 z-40 flex items-center justify-center bg-slate-950">
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="w-8 h-8 animate-spin text-violet-400" />
@@ -353,31 +384,67 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
             </div>
           )}
 
+          {/* Error State */}
+          {mapError && (
+            <div className="absolute inset-0 z-40 flex items-center justify-center bg-slate-950 p-6">
+              <Card className="border-destructive bg-destructive/10 p-6 max-w-md">
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <div className="text-6xl">🗺️</div>
+                  <div>
+                    <h3 className="text-lg font-bold text-destructive mb-2">
+                      Não foi possível carregar o mapa
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {mapError}
+                    </p>
+                    <p className="text-xs text-muted-foreground bg-slate-900/50 p-3 rounded">
+                      <strong>Para administradores:</strong><br />
+                      Abra o Console do navegador (F12) para ver o código de erro específico do Google Maps
+                      (Ex: RefererNotAllowed, InvalidKey, etc.)
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => setIsMapOpen(false)}
+                    variant="outline"
+                  >
+                    Fechar
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
+
           {/* Map */}
-          <Suspense fallback={null}>
-            <APIProvider apiKey={apiKey}>
-              <Map
-                defaultCenter={defaultCenter}
-                defaultZoom={13}
-                mapId="aniversariante-vip-map"
-                gestureHandling="greedy"
-                disableDefaultUI={false}
-                zoomControl={true}
-                fullscreenControl={false}
-                streetViewControl={false}
-                mapTypeControl={false}
-                className="w-full h-full"
+          {!mapError && (
+            <Suspense fallback={null}>
+              <APIProvider 
+                apiKey={apiKey}
+                onLoad={() => setMapLoaded(true)}
+                onError={handleMapError}
               >
-                <MapContent
-                  establishments={establishments}
-                  selectedId={selectedEstablishmentId}
-                  onMarkerClick={handleMarkerClick}
-                  userLocation={userLocation}
-                  onMapReady={setMapInstance}
-                />
-              </Map>
-            </APIProvider>
-          </Suspense>
+                <Map
+                  defaultCenter={defaultCenter}
+                  defaultZoom={13}
+                  mapId="aniversariante-vip-map"
+                  gestureHandling="greedy"
+                  disableDefaultUI={false}
+                  zoomControl={true}
+                  fullscreenControl={false}
+                  streetViewControl={false}
+                  mapTypeControl={false}
+                  className="w-full h-full"
+                >
+                  <MapContent
+                    establishments={validEstablishments}
+                    selectedId={selectedEstablishmentId}
+                    onMarkerClick={handleMarkerClick}
+                    userLocation={userLocation}
+                    onMapReady={setMapInstance}
+                  />
+                </Map>
+              </APIProvider>
+            </Suspense>
+          )}
 
           {/* Bottom Sheet */}
           {selectedEstablishment && (

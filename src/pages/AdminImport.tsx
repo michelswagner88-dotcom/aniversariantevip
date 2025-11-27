@@ -325,20 +325,18 @@ export default function AdminImport() {
             estado: estado,
           };
 
-          // Inserir/Atualizar no Supabase (UPSERT)
-          const { error: insertError } = await supabase
-            .from("estabelecimentos")
-            .upsert(estabelecimentoData, { 
-              onConflict: 'cnpj',
-              ignoreDuplicates: false 
-            });
+          // Inserir/Atualizar no Supabase usando RPC (ignora RLS)
+          const { data: rpcResult, error: insertError } = await supabase
+            .rpc('upsert_establishment_bulk', { p_data: estabelecimentoData });
 
-          if (insertError) {
+          const result = rpcResult as { success: boolean; error?: string } | null;
+
+          if (insertError || (result && !result.success)) {
             return {
               success: false,
               rowNumber,
               empresa: row.EMPRESA,
-              error: `Erro ao salvar: ${insertError.message}`,
+              error: `Erro ao salvar: ${insertError?.message || result?.error || 'Erro desconhecido'}`,
               hasGeocode: false,
               hasPhoto: false,
             };

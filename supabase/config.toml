@@ -1,5 +1,8 @@
 project_id = "muwugpcegkdgujfesrfq"
 
+[functions.reverse-geocode]
+verify_jwt = false
+
 [functions.get-active-cities]
 verify_jwt = false
 

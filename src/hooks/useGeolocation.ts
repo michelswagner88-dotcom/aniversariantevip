@@ -22,14 +22,8 @@ type GeolocationStep =
   | 'success'
   | 'error';
 
-// Google Maps API Key
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-
-// Debug: Log API Key status (sem vazar o valor)
-console.log('🔑 Maps key loaded:', Boolean(GOOGLE_MAPS_API_KEY));
-if (!GOOGLE_MAPS_API_KEY) {
-  console.error('❌ VITE_GOOGLE_MAPS_API_KEY não encontrada no build. Configure nas variáveis de ambiente de build/deploy.');
-}
+// Supabase URL para chamar Edge Functions
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 // Cache expira após 7 dias
 const CACHE_EXPIRY_DAYS = 7;
@@ -47,49 +41,25 @@ export const useGeolocation = () => {
   const reverseGeocode = async (latitude: number, longitude: number) => {
     try {
       console.log('📍 Coordenadas obtidas:', { latitude, longitude });
+      console.log('🌐 Chamando Edge Function para geocoding reverso...');
       
-      if (!GOOGLE_MAPS_API_KEY) {
-        throw new Error('Google Maps API Key não configurada');
-      }
-
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}&language=pt-BR`;
-      console.log('🌐 Fazendo requisição de geocoding reverso...');
-      
-      const response = await fetch(url);
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/reverse-geocode`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ latitude, longitude })
+      });
 
       if (!response.ok) {
-        throw new Error(`Erro na API do Google Maps: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Erro no geocoding: ${response.status}`);
       }
       
       const data = await response.json();
       console.log('📦 Resposta do geocoding:', data);
       
-      if (data.status !== 'OK' || !data.results?.length) {
-        throw new Error(`Geocoding falhou: ${data.status}`);
-      }
-      
-      const result = data.results[0];
-      let cidade = '';
-      let estado = '';
-      
-      // Extrair cidade e estado dos componentes do endereço
-      for (const component of result.address_components) {
-        if (component.types.includes('administrative_area_level_2')) {
-          cidade = component.long_name;
-        }
-        if (component.types.includes('administrative_area_level_1')) {
-          estado = component.short_name;
-        }
-      }
-      
-      // Fallback: tentar locality para cidade
-      if (!cidade) {
-        for (const component of result.address_components) {
-          if (component.types.includes('locality')) {
-            cidade = component.long_name;
-          }
-        }
-      }
+      const { cidade, estado } = data;
       
       if (!cidade || !estado) {
         throw new Error('Não foi possível extrair cidade/estado dos resultados');

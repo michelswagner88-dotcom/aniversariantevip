@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { BackButton } from '@/components/BackButton';
 import { Card } from '@/components/ui/card';
 import { Heart, MessageCircle, Share2, Sparkles } from 'lucide-react';
+import { SafeImage } from '@/components/SafeImage';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -59,8 +60,8 @@ const PostCard = ({ post, navigate }: { post: any; navigate: any }) => {
     <Card className="border-white/10 bg-slate-900/50 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 p-4">
-        <img
-          src={post.estabelecimentos.logo_url || 'https://via.placeholder.com/40'}
+        <SafeImage
+          src={post.estabelecimentos.logo_url || ''}
           alt={post.estabelecimentos.nome_fantasia}
           className="w-10 h-10 rounded-full object-cover border border-white/10"
         />
@@ -78,7 +79,7 @@ const PostCard = ({ post, navigate }: { post: any; navigate: any }) => {
       </div>
 
       {/* Image */}
-      <img
+      <SafeImage
         src={post.image_url}
         alt="Post"
         className="w-full aspect-square object-cover"

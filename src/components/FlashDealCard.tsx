@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { SafeImage } from "@/components/SafeImage";
 import { FlashPromo } from "@/hooks/useFlashPromos";
 import { useEffect, useState } from "react";
 
@@ -64,7 +65,7 @@ export const FlashDealCard = ({ promo }: FlashDealCardProps) => {
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 flex-1">
             {promo.estabelecimentos?.logo_url && (
-              <img 
+              <SafeImage 
                 src={promo.estabelecimentos.logo_url} 
                 alt={promo.estabelecimentos.nome_fantasia || "Logo"}
                 className="w-12 h-12 rounded-lg object-cover border border-white/10"

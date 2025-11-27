@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SafeImage } from "@/components/SafeImage";
 import {
   Accordion,
   AccordionContent,
@@ -171,8 +172,8 @@ export default function EstabelecimentoDetalhes() {
         {/* Hero Section */}
         <div className="relative h-[50vh] min-h-[400px]">
           {/* Image */}
-          <img
-            src={estabelecimento.logo_url || "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800&q=80"}
+          <SafeImage
+            src={estabelecimento.logo_url || ""}
             alt={estabelecimento.nome_fantasia}
             className="w-full h-full object-cover"
           />
@@ -199,8 +200,8 @@ export default function EstabelecimentoDetalhes() {
                     ? 'bg-gradient-to-tr from-violet-600 via-fuchsia-500 to-pink-500' 
                     : 'bg-white/20'
                 }`}>
-                  <img
-                    src={estabelecimento.logo_url || 'https://via.placeholder.com/96'}
+                  <SafeImage
+                    src={estabelecimento.logo_url || ''}
                     alt={estabelecimento.nome_fantasia}
                     className="w-full h-full rounded-full object-cover border-4 border-slate-950"
                   />
@@ -466,7 +467,7 @@ export default function EstabelecimentoDetalhes() {
                 <div className="grid grid-cols-3 gap-1">
                   {posts.map((post: any) => (
                     <div key={post.id} className="aspect-square">
-                      <img
+                      <SafeImage
                         src={post.image_url}
                         alt="Post"
                         className="w-full h-full object-cover rounded-lg"

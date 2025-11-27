@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MapPin, Search, SlidersHorizontal, Map as MapIcon, List, X, Check, Clock, Gift, Share2, Heart, CalendarDays, Navigation } from 'lucide-react';
 import { toast } from "sonner";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
+import { SafeImage } from "@/components/SafeImage";
 import { GoogleMapView } from "@/components/GoogleMapView";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useCepLookup } from "@/hooks/useCepLookup";
@@ -64,7 +65,7 @@ const PlaceCard = ({ place }: any) => {
       onClick={handleCardClick}
       className="group relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-slate-800 shadow-lg border border-white/5 cursor-pointer hover:border-violet-500/50 transition-all animate-fade-in"
     >
-      <img src={place.image} alt={place.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+      <SafeImage src={place.image} alt={place.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
       
       <div className="absolute left-0 right-0 top-0 flex items-start justify-between p-4">

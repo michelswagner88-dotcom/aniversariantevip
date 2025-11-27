@@ -36,7 +36,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategoria, setSelectedCategoria] = useState("todas");
+  const [selectedCategoria, setSelectedCategoria] = useState("");
   const [selectedCidade, setSelectedCidade] = useState("");
   const [selectedEstado, setSelectedEstado] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -125,7 +125,7 @@ const Index = () => {
   const limparFiltros = () => {
     setSelectedCidade("");
     setSelectedEstado("");
-    setSelectedCategoria("todas");
+    setSelectedCategoria("");
     setSearchTerm("");
   };
 
@@ -137,7 +137,7 @@ const Index = () => {
   // Filtros
   const estabelecimentosFiltrados = estabelecimentos.filter((est) => {
     const matchesSearch = !searchTerm || est.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-    const matchesCategoria = !selectedCategoria || selectedCategoria === "todas"
+    const matchesCategoria = !selectedCategoria || selectedCategoria === "" || selectedCategoria === "todas"
       ? true 
       : Array.isArray(est.categoria) 
         ? est.categoria.includes(selectedCategoria) 

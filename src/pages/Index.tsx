@@ -261,7 +261,7 @@ const Index = () => {
                 <div className="h-8 w-[1px] bg-white/10" />
 
                 {/* Limpar e Buscar */}
-                {(selectedCidade || selectedCategoria) && (
+                {(selectedCidade || (selectedCategoria && selectedCategoria !== 'todas' && selectedCategoria !== '')) && (
                   <Button 
                     size="lg"
                     variant="ghost"
@@ -316,7 +316,7 @@ const Index = () => {
 
                 {/* Ações */}
                 <div className="p-3 space-y-2">
-                  {(selectedCidade || selectedCategoria) && (
+                  {(selectedCidade || (selectedCategoria && selectedCategoria !== 'todas' && selectedCategoria !== '')) && (
                     <Button 
                       size="lg"
                       variant="ghost"

@@ -4,12 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Edit, Loader2, Search, Building2, Trash2 } from "lucide-react";
+import { Edit, Loader2, Search, Building2, Trash2, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { CadastrarEstabelecimento } from "./CadastrarEstabelecimento";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { EditEstablishmentModal } from "@/components/admin/EditEstablishmentModal";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 type Estabelecimento = {
   id: string;
@@ -45,6 +46,8 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
   const [editando, setEditando] = useState<Estabelecimento | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
+  const [bulkFetchingPhotos, setBulkFetchingPhotos] = useState(false);
+  const [photoProgress, setPhotoProgress] = useState({ current: 0, total: 0 });
 
   useEffect(() => {
     carregarEstabelecimentos();
@@ -172,6 +175,73 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
     }
   };
 
+  const handleBulkFetchPhotos = async () => {
+    try {
+      setBulkFetchingPhotos(true);
+      
+      // Buscar estabelecimentos sem foto
+      const { data: establishments, error } = await supabase
+        .from('estabelecimentos')
+        .select('*')
+        .or('logo_url.is.null,logo_url.eq.');
+
+      if (error) throw error;
+      if (!establishments || establishments.length === 0) {
+        toast.info("Todos os estabelecimentos já possuem fotos!");
+        setBulkFetchingPhotos(false);
+        return;
+      }
+
+      setPhotoProgress({ current: 0, total: establishments.length });
+      let updated = 0;
+
+      for (let i = 0; i < establishments.length; i++) {
+        const est = establishments[i];
+        setPhotoProgress({ current: i + 1, total: establishments.length });
+
+        try {
+          const query = `${est.nome_fantasia || est.razao_social} ${est.endereco || est.cidade || ''}`;
+          
+          const findPlaceResponse = await fetch(
+            `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(query)}&inputtype=textquery&fields=place_id,photos&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+          );
+          
+          const findPlaceData = await findPlaceResponse.json();
+          
+          if (findPlaceData.status === 'OK' && findPlaceData.candidates?.[0]) {
+            const place = findPlaceData.candidates[0];
+            
+            if (place.photos && place.photos.length > 0) {
+              const photoReference = place.photos[0].photo_reference;
+              const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoReference}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
+              
+              await supabase
+                .from('estabelecimentos')
+                .update({ logo_url: photoUrl })
+                .eq('id', est.id);
+              
+              updated++;
+            }
+          }
+          
+          // Delay para não sobrecarregar a API
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (err) {
+          console.error(`Erro ao buscar foto para ${est.nome_fantasia}:`, err);
+        }
+      }
+
+      toast.success(`${updated} fotos atualizadas de ${establishments.length} estabelecimentos`);
+      await carregarEstabelecimentos();
+    } catch (error: any) {
+      console.error("Erro ao buscar fotos em massa:", error);
+      toast.error("Erro ao buscar fotos");
+    } finally {
+      setBulkFetchingPhotos(false);
+      setPhotoProgress({ current: 0, total: 0 });
+    }
+  };
+
   const estabelecimentosFiltrados = estabelecimentos.filter(e =>
     (e.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
     e.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -193,10 +263,41 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="flex-1">
-          <CardTitle>Gerenciar Estabelecimentos</CardTitle>
-          <CardDescription>
-            Total de {estabelecimentos.length} estabelecimento(s) cadastrado(s)
-          </CardDescription>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <CardTitle>Gerenciar Estabelecimentos</CardTitle>
+              <CardDescription>
+                Total de {estabelecimentos.length} estabelecimento(s) cadastrado(s)
+              </CardDescription>
+            </div>
+            <Button
+              onClick={handleBulkFetchPhotos}
+              disabled={bulkFetchingPhotos}
+              variant="outline"
+            >
+              {bulkFetchingPhotos ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Buscando Fotos...
+                </>
+              ) : (
+                <>
+                  <Camera className="mr-2 h-4 w-4" />
+                  🔄 Buscar Fotos Sem Imagem
+                </>
+              )}
+            </Button>
+          </div>
+
+          {bulkFetchingPhotos && photoProgress.total > 0 && (
+            <div className="mb-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Processando fotos...</span>
+                <span>{photoProgress.current} / {photoProgress.total}</span>
+              </div>
+              <Progress value={(photoProgress.current / photoProgress.total) * 100} />
+            </div>
+          )}
           
           <div className="relative mt-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -74,11 +74,11 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
 
   // Auto-fechar dropdown e selecionar cidade quando localização for detectada
   useEffect(() => {
-    if (location?.cidade && location?.estado && open) {
+    if (location?.cidade && location?.estado && open && !value) {
       onSelect(location.cidade, location.estado);
       setOpen(false);
     }
-  }, [location, open, onSelect]);
+  }, [location?.cidade, location?.estado, open, value, onSelect]);
 
   const handleCepSubmit = async () => {
     const data = await fetchCep(cepInput);

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { useCidadesAutocomplete } from '@/hooks/useCidadesAutocomplete';
 
 interface CityComboboxProps {
@@ -55,8 +56,9 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
         }}
         onFocus={() => setIsOpen(true)}
         placeholder={placeholder}
-        className="w-full bg-transparent outline-none text-white placeholder:text-slate-300"
+        className="w-full bg-transparent outline-none text-white placeholder:text-slate-300 text-base pr-7"
       />
+      <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
       
       {isOpen && inputValue.length >= 3 && (
         <div className="absolute top-full left-0 w-full mt-2 bg-slate-900 border border-white/10 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">

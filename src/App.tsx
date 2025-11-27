@@ -90,6 +90,7 @@ const App = () => (
                 <Route path="/cadastro/estabelecimento" element={<CadastroEstabelecimento />} />
                 <Route path="/login/estabelecimento" element={<LoginEstabelecimento />} />
                 <Route path="/area-estabelecimento" element={<AreaEstabelecimento />} />
+                <Route path="/estabelecimento/dashboard" element={<AreaEstabelecimento />} />
                 <Route path="/login/colaborador" element={<LoginColaborador />} />
                 <Route path="/area-colaborador" element={<AreaColaborador />} />
                 <Route path="/setup-admin" element={<SetupAdmin />} />

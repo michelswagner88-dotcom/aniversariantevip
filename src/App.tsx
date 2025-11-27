@@ -44,6 +44,7 @@ import SmartAuth from "./pages/SmartAuth";
 import SelecionarPerfil from "./pages/SelecionarPerfil";
 import FlashDeals from "./pages/FlashDeals";
 import Feed from "./pages/Feed";
+import AuthCallback from "./pages/AuthCallback";
 
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -85,6 +86,7 @@ const App = () => (
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/update-password" element={<ResetPassword />} />
                   <Route path="/auth" element={<SmartAuth />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
                   <Route path="/selecionar-perfil" element={<SelecionarPerfil />} />
                   <Route path="/cadastro/aniversariante" element={<CadastroAniversariante />} />
                   <Route path="/login/aniversariante" element={<LoginAniversariante />} />

@@ -4,13 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Edit, Loader2, Search, Building2, Trash2, Camera } from "lucide-react";
+import { Edit, Loader2, Search, Building2, Trash2, Camera, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { CadastrarEstabelecimento } from "./CadastrarEstabelecimento";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { EditEstablishmentModal } from "@/components/admin/EditEstablishmentModal";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Estabelecimento = {
   id: string;
@@ -43,11 +44,16 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
   const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [planoFilter, setPlanoFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const [editando, setEditando] = useState<Estabelecimento | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [bulkFetchingPhotos, setBulkFetchingPhotos] = useState(false);
   const [photoProgress, setPhotoProgress] = useState({ current: 0, total: 0 });
+  
+  const ITEMS_PER_PAGE = 50;
 
   useEffect(() => {
     carregarEstabelecimentos();
@@ -242,11 +248,36 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
     }
   };
 
-  const estabelecimentosFiltrados = estabelecimentos.filter(e =>
-    (e.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
-    e.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.cnpj.includes(searchTerm)
-  );
+  // Aplicar filtros combinados
+  const estabelecimentosFiltrados = estabelecimentos.filter(e => {
+    const matchesSearch = 
+      (e.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      e.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.cnpj.includes(searchTerm);
+    
+    const matchesStatus = 
+      statusFilter === "all" || 
+      (statusFilter === "active" && e.ativo) ||
+      (statusFilter === "inactive" && !e.ativo);
+    
+    const matchesPlano = 
+      planoFilter === "all" ||
+      (planoFilter === "discovery" && (!e.plan_status || e.plan_status === "pending")) ||
+      e.plan_status === planoFilter;
+    
+    return matchesSearch && matchesStatus && matchesPlano;
+  });
+
+  // Calcular paginação
+  const totalPages = Math.ceil(estabelecimentosFiltrados.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const estabelecimentosPaginados = estabelecimentosFiltrados.slice(startIndex, endIndex);
+
+  // Reset para primeira página quando filtros mudam
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, planoFilter]);
 
   if (loading) {
     return (
@@ -299,23 +330,77 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
             </div>
           )}
           
-          <div className="relative mt-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome, razão social ou CNPJ..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
+          <div className="mt-4 space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, razão social ou CNPJ..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="bg-background">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4" />
+                      <SelectValue placeholder="Filtrar por Status" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="all">🔍 Todos os Status</SelectItem>
+                    <SelectItem value="active">✓ Ativos</SelectItem>
+                    <SelectItem value="inactive">⊗ Inativos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex-1">
+                <Select value={planoFilter} onValueChange={setPlanoFilter}>
+                  <SelectTrigger className="bg-background">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4" />
+                      <SelectValue placeholder="Filtrar por Plano" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="all">🔍 Todos os Planos</SelectItem>
+                    <SelectItem value="active">⭐ Gold</SelectItem>
+                    <SelectItem value="trialing">🎁 Trial</SelectItem>
+                    <SelectItem value="discovery">🔵 Discovery</SelectItem>
+                    <SelectItem value="canceled">❌ Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </div>
         <CadastrarEstabelecimento onSuccess={carregarEstabelecimentos} />
       </CardHeader>
       <CardContent>
+        <div className="mb-4 text-sm text-muted-foreground">
+          Exibindo {estabelecimentosPaginados.length} de {estabelecimentosFiltrados.length} estabelecimento(s)
+          {estabelecimentosFiltrados.length !== estabelecimentos.length && " (filtrados)"}
+        </div>
+
         {estabelecimentosFiltrados.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Nenhum estabelecimento encontrado</p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => {
+                setSearchTerm("");
+                setStatusFilter("all");
+                setPlanoFilter("all");
+              }}
+            >
+              Limpar Filtros
+            </Button>
           </div>
         ) : (
           <div className="rounded-md border">
@@ -332,7 +417,7 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {estabelecimentosFiltrados.map((estab) => (
+                {estabelecimentosPaginados.map((estab) => (
                   <TableRow key={estab.id}>
                     <TableCell>
                       <div className="flex items-center justify-center">
@@ -458,6 +543,35 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
                 ))}
               </TableBody>
             </Table>
+          </div>
+        )}
+
+        {/* Paginação */}
+        {estabelecimentosFiltrados.length > ITEMS_PER_PAGE && (
+          <div className="flex items-center justify-between mt-6 pt-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Página {currentPage} de {totalPages}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Próxima
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>

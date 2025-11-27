@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 interface CreatePostData {
   image_url: string;
   caption?: string;
+  type?: 'photo' | 'promo' | 'agenda';
 }
 
 export const usePosts = (establishmentId?: string) => {

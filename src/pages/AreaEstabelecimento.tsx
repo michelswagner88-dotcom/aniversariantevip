@@ -14,6 +14,7 @@ import { resizeImage } from "@/lib/imageUtils";
 import { RadarOportunidades } from "@/components/estabelecimento/RadarOportunidades";
 import { EstabelecimentoAnalytics } from "@/components/estabelecimento/EstabelecimentoAnalytics";
 import { RadarAniversariantes } from "@/components/estabelecimento/RadarAniversariantes";
+import { EstablishmentSocialPanel } from "@/components/estabelecimento/EstablishmentSocialPanel";
 
 export default function AreaEstabelecimento() {
   const navigate = useNavigate();
@@ -547,6 +548,11 @@ export default function AreaEstabelecimento() {
               <p className="text-xs text-muted-foreground mt-1">Links e contatos</p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Gestão de Conteúdo Social */}
+        <div className="max-w-3xl mx-auto mb-8">
+          <EstablishmentSocialPanel establishmentId={userId || ''} />
         </div>
 
         <Card className="max-w-3xl mx-auto">

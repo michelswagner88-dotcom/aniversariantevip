@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resizeImage } from "@/lib/imageUtils";
 import { RadarOportunidades } from "@/components/estabelecimento/RadarOportunidades";
 import { EstabelecimentoAnalytics } from "@/components/estabelecimento/EstabelecimentoAnalytics";
+import { RadarAniversariantes } from "@/components/estabelecimento/RadarAniversariantes";
 
 export default function AreaEstabelecimento() {
   const navigate = useNavigate();
@@ -479,6 +480,16 @@ export default function AreaEstabelecimento() {
               estado={userData.estado || ""}
               userPlan={userData.planStatus || null}
               estabelecimentoId={userData.id || ""}
+            />
+          </div>
+        )}
+
+        {/* Radar de Aniversariantes - Previsão de Demanda */}
+        {userData?.cidade && userData?.estado && (
+          <div className="max-w-6xl mx-auto mt-6">
+            <RadarAniversariantes 
+              cidade={userData.cidade}
+              estado={userData.estado}
             />
           </div>
         )}

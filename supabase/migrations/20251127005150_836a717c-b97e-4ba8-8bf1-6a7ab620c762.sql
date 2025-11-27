@@ -1,0 +1,124 @@
+-- Function: Radar de Aniversariantes - Previsão de Demanda
+-- Retorna agregados de aniversários futuros na cidade do estabelecimento
+-- Respeita LGPD: apenas contagens, sem dados pessoais
+
+CREATE OR REPLACE FUNCTION get_birthday_forecast(
+  p_cidade TEXT,
+  p_estado TEXT
+)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_next_7_days INTEGER;
+  v_next_30_days INTEGER;
+  v_previous_7_days INTEGER;
+  v_trend_percentage NUMERIC;
+  v_trend_direction TEXT;
+  v_status TEXT;
+  v_result JSON;
+BEGIN
+  -- Validar parâmetros
+  IF p_cidade IS NULL OR p_estado IS NULL THEN
+    RETURN json_build_object(
+      'error', 'Cidade e estado são obrigatórios',
+      'next_7_days', 0,
+      'next_30_days', 0,
+      'trend', '0%',
+      'status', 'unknown'
+    );
+  END IF;
+
+  -- Contar aniversariantes dos próximos 7 dias na mesma cidade
+  SELECT COUNT(*) INTO v_next_7_days
+  FROM aniversariantes
+  WHERE cidade = p_cidade
+    AND estado = p_estado
+    AND deleted_at IS NULL
+    AND (
+      (EXTRACT(MONTH FROM data_nascimento), EXTRACT(DAY FROM data_nascimento)) 
+      BETWEEN 
+      (EXTRACT(MONTH FROM CURRENT_DATE), EXTRACT(DAY FROM CURRENT_DATE))
+      AND
+      (EXTRACT(MONTH FROM CURRENT_DATE + INTERVAL '7 days'), EXTRACT(DAY FROM CURRENT_DATE + INTERVAL '7 days'))
+    );
+
+  -- Contar aniversariantes dos próximos 30 dias
+  SELECT COUNT(*) INTO v_next_30_days
+  FROM aniversariantes
+  WHERE cidade = p_cidade
+    AND estado = p_estado
+    AND deleted_at IS NULL
+    AND (
+      (EXTRACT(MONTH FROM data_nascimento), EXTRACT(DAY FROM data_nascimento)) 
+      BETWEEN 
+      (EXTRACT(MONTH FROM CURRENT_DATE), EXTRACT(DAY FROM CURRENT_DATE))
+      AND
+      (EXTRACT(MONTH FROM CURRENT_DATE + INTERVAL '30 days'), EXTRACT(DAY FROM CURRENT_DATE + INTERVAL '30 days'))
+    );
+
+  -- Contar aniversariantes dos 7 dias ANTERIORES (para comparação de tendência)
+  SELECT COUNT(*) INTO v_previous_7_days
+  FROM aniversariantes
+  WHERE cidade = p_cidade
+    AND estado = p_estado
+    AND deleted_at IS NULL
+    AND (
+      (EXTRACT(MONTH FROM data_nascimento), EXTRACT(DAY FROM data_nascimento)) 
+      BETWEEN 
+      (EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '7 days'), EXTRACT(DAY FROM CURRENT_DATE - INTERVAL '7 days'))
+      AND
+      (EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '1 day'), EXTRACT(DAY FROM CURRENT_DATE - INTERVAL '1 day'))
+    );
+
+  -- Calcular tendência percentual
+  IF v_previous_7_days > 0 THEN
+    v_trend_percentage := ((v_next_7_days - v_previous_7_days)::NUMERIC / v_previous_7_days::NUMERIC) * 100;
+  ELSE
+    IF v_next_7_days > 0 THEN
+      v_trend_percentage := 100;
+    ELSE
+      v_trend_percentage := 0;
+    END IF;
+  END IF;
+
+  -- Determinar direção da tendência
+  IF v_trend_percentage > 10 THEN
+    v_trend_direction := '+' || ROUND(v_trend_percentage, 0)::TEXT || '%';
+    v_status := 'hot';
+  ELSIF v_trend_percentage < -10 THEN
+    v_trend_direction := ROUND(v_trend_percentage, 0)::TEXT || '%';
+    v_status := 'cold';
+  ELSE
+    v_trend_direction := ROUND(v_trend_percentage, 0)::TEXT || '%';
+    v_status := 'stable';
+  END IF;
+
+  -- Construir resposta JSON
+  v_result := json_build_object(
+    'next_7_days', v_next_7_days,
+    'next_30_days', v_next_30_days,
+    'trend', v_trend_direction,
+    'status', v_status,
+    'previous_7_days', v_previous_7_days,
+    'cidade', p_cidade,
+    'estado', p_estado,
+    'updated_at', NOW()
+  );
+
+  RETURN v_result;
+
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE WARNING 'Erro em get_birthday_forecast: %', SQLERRM;
+    RETURN json_build_object(
+      'error', SQLERRM,
+      'next_7_days', 0,
+      'next_30_days', 0,
+      'trend', '0%',
+      'status', 'error'
+    );
+END;
+$$;

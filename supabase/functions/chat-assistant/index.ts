@@ -30,9 +30,8 @@ serve(async (req) => {
     if (includeContext) {
       // Buscar estatísticas gerais
       const { count: totalEstabelecimentos } = await supabase
-        .from("estabelecimentos")
-        .select("*", { count: "exact", head: true })
-        .is("deleted_at", null);
+        .from("public_estabelecimentos")
+        .select("*", { count: "exact", head: true });
 
       const { count: totalAniversariantes } = await supabase
         .from("aniversariantes")
@@ -45,9 +44,8 @@ serve(async (req) => {
 
       // Buscar categorias disponíveis
       const { data: estabelecimentos } = await supabase
-        .from("estabelecimentos")
+        .from("public_estabelecimentos")
         .select("categoria")
-        .is("deleted_at", null)
         .limit(100);
 
       const categorias = new Set<string>();
@@ -59,9 +57,8 @@ serve(async (req) => {
 
       // Buscar alguns estabelecimentos de exemplo
       const { data: exemplos } = await supabase
-        .from("estabelecimentos")
+        .from("public_estabelecimentos")
         .select("nome_fantasia, categoria, cidade, descricao_beneficio")
-        .is("deleted_at", null)
         .limit(5);
 
       contextInfo = `

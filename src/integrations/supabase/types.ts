@@ -57,6 +57,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "agenda_events_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "public_estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "agenda_events_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
@@ -184,6 +191,13 @@ export type Database = {
             columns: ["estabelecimento_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cupom_rate_limit_estabelecimento_id_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
         ]
@@ -315,6 +329,13 @@ export type Database = {
             columns: ["estabelecimento_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estabelecimento_analytics_estabelecimento_id_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
         ]
@@ -469,6 +490,13 @@ export type Database = {
             referencedRelation: "estabelecimentos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "favoritos_estabelecimento_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "public_estabelecimentos"
+            referencedColumns: ["id"]
+          },
         ]
       }
       flash_promos: {
@@ -519,6 +547,13 @@ export type Database = {
             referencedRelation: "estabelecimentos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "flash_promos_estabelecimento_id_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "public_estabelecimentos"
+            referencedColumns: ["id"]
+          },
         ]
       }
       followers: {
@@ -546,6 +581,13 @@ export type Database = {
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "followers_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
         ]
@@ -578,6 +620,13 @@ export type Database = {
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "navigation_logs_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
         ]
@@ -723,6 +772,13 @@ export type Database = {
             referencedRelation: "estabelecimentos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "posts_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "public_estabelecimentos"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -798,6 +854,13 @@ export type Database = {
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
           {
@@ -891,6 +954,13 @@ export type Database = {
             referencedRelation: "estabelecimentos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "stories_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "public_estabelecimentos"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roles: {
@@ -939,6 +1009,90 @@ export type Database = {
           total_searches: number | null
           unique_users: number | null
           zero_results_count: number | null
+        }
+        Relationships: []
+      }
+      public_estabelecimentos: {
+        Row: {
+          ativo: boolean | null
+          bairro: string | null
+          categoria: string[] | null
+          cep: string | null
+          cidade: string | null
+          complemento: string | null
+          created_at: string | null
+          descricao_beneficio: string | null
+          endereco: string | null
+          estado: string | null
+          horario_funcionamento: string | null
+          id: string | null
+          instagram: string | null
+          latitude: number | null
+          link_cardapio: string | null
+          logo_url: string | null
+          longitude: number | null
+          nome_fantasia: string | null
+          numero: string | null
+          periodo_validade_beneficio: string | null
+          razao_social: string | null
+          regras_utilizacao: string | null
+          site: string | null
+          telefone: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          bairro?: string | null
+          categoria?: string[] | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          created_at?: string | null
+          descricao_beneficio?: string | null
+          endereco?: string | null
+          estado?: string | null
+          horario_funcionamento?: string | null
+          id?: string | null
+          instagram?: string | null
+          latitude?: number | null
+          link_cardapio?: string | null
+          logo_url?: string | null
+          longitude?: number | null
+          nome_fantasia?: string | null
+          numero?: string | null
+          periodo_validade_beneficio?: string | null
+          razao_social?: string | null
+          regras_utilizacao?: string | null
+          site?: string | null
+          telefone?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          bairro?: string | null
+          categoria?: string[] | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          created_at?: string | null
+          descricao_beneficio?: string | null
+          endereco?: string | null
+          estado?: string | null
+          horario_funcionamento?: string | null
+          id?: string | null
+          instagram?: string | null
+          latitude?: number | null
+          link_cardapio?: string | null
+          logo_url?: string | null
+          longitude?: number | null
+          nome_fantasia?: string | null
+          numero?: string | null
+          periodo_validade_beneficio?: string | null
+          razao_social?: string | null
+          regras_utilizacao?: string | null
+          site?: string | null
+          telefone?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }

@@ -18,9 +18,8 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
     queryKey: queryKeys.estabelecimentos.list(filters),
     queryFn: async () => {
       let query = supabase
-        .from('estabelecimentos')
+        .from('public_estabelecimentos')
         .select('*')
-        .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       // Aplicar filtros
@@ -56,10 +55,9 @@ export const useEstabelecimento = (id: string | undefined) => {
       if (!id) throw new Error('ID não fornecido');
       
       const { data, error } = await supabase
-        .from('estabelecimentos')
+        .from('public_estabelecimentos')
         .select('*')
         .eq('id', id)
-        .is('deleted_at', null)
         .single();
       
       if (error) throw error;

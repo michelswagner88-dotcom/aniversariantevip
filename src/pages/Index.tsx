@@ -242,11 +242,11 @@ const Index = () => {
                   <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
                     <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 [&>span]:!bg-transparent [&>span]:appearance-none">
-                      <SelectValue placeholder="Categoria" />
+                      <SelectValue placeholder="Escolha a categoria" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 z-50">
                       <SelectItem value="todas" className="text-white font-semibold">
-                        🚀 Todas Categorias
+                        🎉 Ver todas
                       </SelectItem>
                       {CATEGORIAS_ESTABELECIMENTO.map(cat => (
                         <SelectItem key={cat.value} value={cat.value} className="text-white">
@@ -297,11 +297,11 @@ const Index = () => {
                   <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
                     <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 [&>span]:!bg-transparent">
-                      <SelectValue placeholder="Selecione a categoria" />
+                      <SelectValue placeholder="Escolha a categoria" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 z-50">
                       <SelectItem value="todas" className="text-white font-semibold">
-                        🚀 Todas Categorias
+                        🎉 Ver todas
                       </SelectItem>
                       {CATEGORIAS_ESTABELECIMENTO.map(cat => (
                         <SelectItem key={cat.value} value={cat.value} className="text-white">

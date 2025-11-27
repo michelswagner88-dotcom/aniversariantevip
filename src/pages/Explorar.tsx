@@ -10,6 +10,7 @@ import { BackButton } from "@/components/BackButton";
 import { EmptyState } from "@/components/EmptyState";
 import { useEstabelecimentos } from "@/hooks/useEstabelecimentos";
 import { GeolocationProgress } from "@/components/GeolocationProgress";
+import { LocationConfirmDialog } from "@/components/LocationConfirmDialog";
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick }: any) => (
@@ -114,7 +115,17 @@ const Explorar = () => {
   const [cepValue, setCepValue] = useState("");
 
   // --- HOOKS ---
-  const { location, loading: geoLoading, error: geoError, currentStep, setManualLocation } = useGeolocation();
+  const { 
+    location, 
+    loading: geoLoading, 
+    error: geoError, 
+    currentStep, 
+    cachedLocation,
+    showLocationConfirm,
+    setManualLocation,
+    confirmCachedLocation,
+    rejectCachedLocation
+  } = useGeolocation();
   const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
   
   // Buscar estabelecimentos reais do banco de dados
@@ -207,6 +218,17 @@ const Explorar = () => {
 
         {/* Progress da Geolocalização */}
         {geoLoading && <GeolocationProgress currentStep={currentStep} />}
+
+        {/* Diálogo de Confirmação de Localização em Cache */}
+        {cachedLocation && (
+          <LocationConfirmDialog
+            open={showLocationConfirm}
+            cidade={cachedLocation.cidade}
+            estado={cachedLocation.estado}
+            onConfirm={confirmCachedLocation}
+            onReject={rejectCachedLocation}
+          />
+        )}
 
         {showCepInput && (
           <div className="container mx-auto px-6 mt-3 animate-in slide-in-from-top duration-300">

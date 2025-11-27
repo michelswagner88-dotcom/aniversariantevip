@@ -10,6 +10,10 @@ interface Location {
   };
 }
 
+interface CachedLocation extends Location {
+  timestamp: number;
+}
+
 type GeolocationStep = 
   | 'idle'
   | 'requesting_permission'
@@ -21,11 +25,17 @@ type GeolocationStep =
 // Google Maps API Key
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
+// Cache expira após 7 dias
+const CACHE_EXPIRY_DAYS = 7;
+const CACHE_EXPIRY_MS = CACHE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+
 export const useGeolocation = () => {
   const [location, setLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<GeolocationStep>('idle');
+  const [cachedLocation, setCachedLocation] = useState<CachedLocation | null>(null);
+  const [showLocationConfirm, setShowLocationConfirm] = useState(false);
   const { toast } = useToast();
 
   const reverseGeocode = async (latitude: number, longitude: number) => {
@@ -87,13 +97,64 @@ export const useGeolocation = () => {
         coordinates: { latitude, longitude }
       };
       
+      saveLocationToCache(locationData);
       setLocation(locationData);
-      localStorage.setItem('user_location', JSON.stringify(locationData));
       return locationData;
     } catch (err) {
       console.error('❌ Erro ao fazer geocoding reverso:', err);
       throw err;
     }
+  };
+
+  const saveLocationToCache = (locationData: Location) => {
+    const cachedData: CachedLocation = {
+      ...locationData,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('user_location', JSON.stringify(cachedData));
+  };
+
+  const loadCachedLocation = (): CachedLocation | null => {
+    try {
+      const cached = localStorage.getItem('user_location');
+      if (!cached) return null;
+
+      const data: CachedLocation = JSON.parse(cached);
+      
+      // Verificar se o cache expirou
+      const now = Date.now();
+      if (now - data.timestamp > CACHE_EXPIRY_MS) {
+        localStorage.removeItem('user_location');
+        return null;
+      }
+
+      return data;
+    } catch {
+      return null;
+    }
+  };
+
+  const confirmCachedLocation = () => {
+    if (cachedLocation) {
+      setLocation({
+        cidade: cachedLocation.cidade,
+        estado: cachedLocation.estado,
+        coordinates: cachedLocation.coordinates
+      });
+      setLoading(false);
+      setShowLocationConfirm(false);
+      toast({
+        title: "Localização confirmada!",
+        description: `${cachedLocation.cidade}, ${cachedLocation.estado}`,
+      });
+    }
+  };
+
+  const rejectCachedLocation = () => {
+    localStorage.removeItem('user_location');
+    setCachedLocation(null);
+    setShowLocationConfirm(false);
+    requestLocation();
   };
 
   const requestLocation = async () => {
@@ -102,16 +163,6 @@ export const useGeolocation = () => {
     setCurrentStep('requesting_permission');
 
     try {
-      // Verificar se há localização salva no localStorage
-      const savedLocation = localStorage.getItem('user_location');
-      if (savedLocation) {
-        const parsed = JSON.parse(savedLocation);
-        setLocation(parsed);
-        setLoading(false);
-        setCurrentStep('success');
-        return;
-      }
-
       // Verificar se geolocalização está disponível
       if (!navigator.geolocation) {
         throw new Error('Geolocalização não suportada pelo navegador');
@@ -145,7 +196,7 @@ export const useGeolocation = () => {
               description: "Por favor, selecione manualmente.",
               variant: "destructive",
             });
-            throw err; // Re-throw para o componente saber que falhou
+            throw err;
           } finally {
             setLoading(false);
           }
@@ -181,7 +232,7 @@ export const useGeolocation = () => {
             variant: "destructive",
           });
           
-          throw err; // Re-throw para o componente saber que falhou
+          throw err;
         },
         {
           enableHighAccuracy: true,
@@ -193,14 +244,14 @@ export const useGeolocation = () => {
       setCurrentStep('error');
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
       setLoading(false);
-      throw err; // Re-throw para o componente saber que falhou
+      throw err;
     }
   };
 
   const setManualLocation = (cidade: string, estado: string) => {
     const locationData = { cidade, estado };
+    saveLocationToCache(locationData);
     setLocation(locationData);
-    localStorage.setItem('user_location', JSON.stringify(locationData));
     
     toast({
       title: "Localização definida",
@@ -214,7 +265,15 @@ export const useGeolocation = () => {
   };
 
   useEffect(() => {
-    requestLocation();
+    const cached = loadCachedLocation();
+    
+    if (cached) {
+      setCachedLocation(cached);
+      setShowLocationConfirm(true);
+      setLoading(false);
+    } else {
+      requestLocation();
+    }
   }, []);
 
   return {
@@ -222,8 +281,12 @@ export const useGeolocation = () => {
     loading,
     error,
     currentStep,
+    cachedLocation,
+    showLocationConfirm,
     requestLocation,
     setManualLocation,
-    clearLocation
+    clearLocation,
+    confirmCachedLocation,
+    rejectCachedLocation
   };
 };

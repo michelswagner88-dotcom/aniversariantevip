@@ -8,6 +8,12 @@ interface CityComboboxProps {
   className?: string;
 }
 
+interface Cidade {
+  nome: string;
+  estado: string;
+  disponivel?: boolean;
+}
+
 export const CityCombobox: React.FC<CityComboboxProps> = ({
   value,
   onSelect,
@@ -66,9 +72,16 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
                   setInputValue(cityValue);
                   setIsOpen(false);
                 }}
-                className="w-full text-left p-3 hover:bg-white/10 transition-colors text-white text-sm border-b border-white/5 last:border-0"
+                className="w-full text-left p-3 hover:bg-white/10 transition-colors text-white text-sm border-b border-white/5 last:border-0 flex justify-between items-center"
               >
-                {cidade.nome}, {cidade.estado}
+                <span>
+                  {cidade.nome}, {cidade.estado}
+                </span>
+                {cidade.disponivel && (
+                  <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">
+                    ✓ Disponível
+                  </span>
+                )}
               </button>
             ))
           ) : (

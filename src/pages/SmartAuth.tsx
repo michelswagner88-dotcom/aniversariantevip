@@ -1,86 +1,80 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Mail, Lock, User, Phone, ArrowRight, AlertCircle, CheckCircle2, Loader2, Calendar, MapPin, Home } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useCepLookup } from '@/hooks/useCepLookup';
-import ChatAssistant from '@/components/ChatAssistant';
-import { useFormBehaviorMonitor } from '@/hooks/useFormBehaviorMonitor';
+import { toast } from 'sonner';
+import { Loader2, AlertCircle, Mail, Lock, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import MaskedInput from '@/components/MaskedInput';
+import BuscaCepPorEndereco from '@/components/BuscaCepPorEndereco';
 import { BackButton } from '@/components/BackButton';
+import ChatAssistant from '@/components/ChatAssistant';
+import { useInputMask } from '@/hooks/useInputMask';
+import { useCepLookup } from '@/hooks/useCepLookup';
 import { getFriendlyErrorMessage } from '@/lib/errorTranslator';
-import { validateCPF, formatCPF } from '@/lib/validators';
-
-// --- Componentes UI (Inputs com estilo Glass) ---
-const InputGroup = ({ icon: Icon, label, onFocus, onBlur, ...props }: any) => (
-  <div className="mb-4 space-y-1.5">
-    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">{label}</label>
-    <div className="group relative flex items-center">
-      <div className="absolute left-4 text-slate-500 transition-colors group-focus-within:text-violet-400">
-        <Icon size={18} />
-      </div>
-      <input
-        {...props}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        className="w-full rounded-xl border border-white/10 bg-white/5 py-3.5 pl-11 pr-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10"
-      />
-    </div>
-  </div>
-);
 
 const SmartAuth = () => {
+  const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isLogin, setIsLogin] = useState(false);
+  const [showCepSearch, setShowCepSearch] = useState(false);
+  
   const navigate = useNavigate();
   const location = useLocation();
-  const { toast } = useToast();
-  const [step, setStep] = useState(1); // 1 = Básico/Google, 2 = Completion (CPF + Data)
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isLogin, setIsLogin] = useState(false); // Toggle entre Login e Cadastro
-  const chatAssistantRef = useRef<((msg: string) => void) | null>(null);
   
-  // Captura a página de origem (se houver)
-  const from = (location.state as any)?.from?.pathname || '/';
+  const { 
+    phoneMask, 
+    cpfMask, 
+    cepMask, 
+    dateMask,
+    validateCPF,
+    validatePhone,
+    validateBirthDate,
+    validateFullName,
+  } = useInputMask();
   
-  // Estado do Formulário
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    password: '',
-    cpf: '', 
-    dataNascimento: '',
-    cep: '',
-    logradouro: '',
-    numero: '',
-    complemento: '',
-    bairro: '',
-    cidade: '',
-    estado: '',
-    latitude: null as number | null,
-    longitude: null as number | null,
-  });
+  const { fetchCep, loading: cepLoading } = useCepLookup();
 
-  const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
+  // Step 1: Basic info
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
+  // Step 2: Complete registration
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [cep, setCep] = useState('');
+  const [estado, setEstado] = useState('');
+  const [cidade, setCidade] = useState('');
+  const [bairro, setBairro] = useState('');
+  const [logradouro, setLogradouro] = useState('');
+  const [numero, setNumero] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  
+  // Validation states
+  const [nameError, setNameError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [cpfError, setCpfError] = useState('');
+  const [birthDateError, setBirthDateError] = useState('');
+  const [cepError, setCepError] = useState('');
+  
+  const isNameValid = name.trim() && validateFullName(name) && !nameError;
+  const isPhoneValid = phone.replace(/\D/g, '').length === 11 && validatePhone(phone) && !phoneError;
+  const isCpfValid = cpf.replace(/\D/g, '').length === 11 && validateCPF(cpf) && !cpfError;
+  const isBirthDateValid = birthDate.replace(/\D/g, '').length === 8 && validateBirthDate(birthDate).valid && !birthDateError;
+  const isCepValid = cep.replace(/\D/g, '').length === 8 && estado && cidade && bairro && logradouro && !cepError;
+  
+  const isStep2Valid = isNameValid && isPhoneValid && isCpfValid && isBirthDateValid && isCepValid;
 
-  const [rememberMe, setRememberMe] = useState(true); // Manter conectado por padrão
-
-  // Hook de monitoramento comportamental
-  const { trackFieldFocus, trackFieldBlur, trackValidationError, trackServerError } = useFormBehaviorMonitor(
-    (trigger) => {
-      if (chatAssistantRef.current) {
-        chatAssistantRef.current(trigger.message);
-      }
-    },
-    true // Sempre habilitado
-  );
-
-  // Verifica se já está logado e se precisa completar cadastro
+  // Verificar sessão inicial
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Verifica se tem role de aniversariante
         const { data: roleData } = await supabase
           .from('user_roles')
           .select('role')
@@ -88,12 +82,12 @@ const SmartAuth = () => {
           .single();
         
         if (!roleData) {
-          // Primeira vez logando (provavelmente via Google), cria profile e role
+          // Primeira vez logando (Google), criar profile e role
           try {
             await supabase.from('profiles').insert({
               id: session.user.id,
               email: session.user.email!,
-              nome: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0],
+              nome: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
             });
 
             await supabase.from('user_roles').insert({
@@ -101,7 +95,6 @@ const SmartAuth = () => {
               role: 'aniversariante',
             });
 
-            // Precisa completar cadastro
             setUserId(session.user.id);
             setStep(2);
             return;
@@ -111,7 +104,6 @@ const SmartAuth = () => {
         }
         
         if (roleData?.role === 'aniversariante') {
-          // Verifica se já completou o cadastro (tem CPF)
           const { data: anivData } = await supabase
             .from('aniversariantes')
             .select('cpf')
@@ -119,19 +111,16 @@ const SmartAuth = () => {
             .single();
           
           if (!anivData?.cpf) {
-            // Precisa completar cadastro, vai para Step 2
             setUserId(session.user.id);
             setStep(2);
           } else {
-            // Cadastro completo, redireciona para página de origem
-            navigate(from, { replace: true });
+            navigate('/dashboard', { replace: true });
           }
         }
       }
     };
     checkSession();
 
-    // Listener para mudanças de auth (retorno do Google OAuth)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         checkSession();
@@ -141,120 +130,120 @@ const SmartAuth = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Máscara de Telefone
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 11) value = value.slice(0, 11);
-    value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
-    value = value.replace(/(\d)(\d{4})$/, '$1-$2');
-    setFormData({ ...formData, phone: value });
-
-    // Validar telefone quando completo
-    const cleanPhone = value.replace(/\D/g, '');
-    if (cleanPhone.length > 0 && cleanPhone.length !== 11) {
-      trackValidationError('telefone', 'WhatsApp deve ter 11 dígitos (DDD + 9)');
+  // Validações em tempo real
+  const handleNameChange = (value: string) => {
+    setName(value);
+    if (value.trim() && !validateFullName(value)) {
+      setNameError('Digite seu nome completo (nome e sobrenome)');
+    } else {
+      setNameError('');
     }
   };
 
-  // Máscara de CPF com validação robusta
-  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCPF(e.target.value);
-    setFormData({ ...formData, cpf: formatted });
-  };
-
-  const handleCPFBlur = () => {
-    const cleanCPF = formData.cpf.replace(/\D/g, '');
-    if (cleanCPF.length === 11 && !validateCPF(cleanCPF)) {
-      trackValidationError('cpf', 'CPF inválido. Verifique os dígitos verificadores.');
-      setError('CPF inválido. Verifique os dígitos verificadores.');
-    } else if (cleanCPF.length === 11) {
-      setError(''); // Limpa erro se CPF válido
+  const handlePhoneChange = (value: string) => {
+    setPhone(value);
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length === 11) {
+      if (!validatePhone(value)) {
+        setPhoneError('Digite um celular válido com DDD');
+      } else {
+        setPhoneError('');
+      }
+    } else {
+      setPhoneError('');
     }
   };
 
-  // Função para buscar coordenadas de cidade/estado via Google Maps
-  const geocodeCityState = async (cidade: string, estado: string) => {
-    if (!cidade || !estado) return null;
+  const handleCpfChange = (value: string) => {
+    setCpf(value);
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length === 11) {
+      if (!validateCPF(value)) {
+        setCpfError('CPF inválido');
+      } else {
+        setCpfError('');
+      }
+    } else {
+      setCpfError('');
+    }
+  };
+
+  const handleBirthDateChange = (value: string) => {
+    setBirthDate(value);
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length === 8) {
+      const validation = validateBirthDate(value);
+      if (!validation.valid) {
+        setBirthDateError(validation.message || 'Data de nascimento inválida');
+      } else {
+        setBirthDateError('');
+      }
+    } else {
+      setBirthDateError('');
+    }
+  };
+
+  const handleCepChange = async (value: string) => {
+    setCep(value);
+    const numbers = value.replace(/\D/g, '');
     
-    try {
-      const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-      if (!googleMapsKey) return null;
-
-      const query = `${cidade}, ${estado}, Brasil`;
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${googleMapsKey}&language=pt-BR`
-      );
+    if (numbers.length === 8) {
+      setCepError('');
+      const cepData = await fetchCep(value);
       
-      if (!response.ok) return null;
-      
-      const data = await response.json();
-      if (data.status === 'OK' && data.results && data.results.length > 0) {
-        const location = data.results[0].geometry.location;
-        return { latitude: location.lat, longitude: location.lng };
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Erro ao buscar coordenadas:', error);
-      return null;
-    }
-  };
-
-  // Buscar CEP
-  const handleCepBlur = async () => {
-    const cleanCep = formData.cep.replace(/\D/g, '');
-    if (cleanCep.length === 8) {
-      const data = await fetchCep(cleanCep);
-      if (data) {
-        const cidade = data.localidade || '';
-        const estado = data.uf || '';
+      if (cepData) {
+        setEstado(cepData.uf);
+        setCidade(cepData.localidade);
+        setBairro(cepData.bairro);
+        setLogradouro(cepData.logradouro);
         
-        // Buscar coordenadas da cidade
-        const coords = await geocodeCityState(cidade, estado);
-        
-        setFormData(prev => ({
-          ...prev,
-          logradouro: data.logradouro,
-          bairro: data.bairro,
-          cidade,
-          estado,
-          latitude: coords?.latitude || null,
-          longitude: coords?.longitude || null,
-        }));
+        // Geocode para latitude/longitude
+        try {
+          const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+          if (googleMapsKey) {
+            const address = `${cepData.logradouro}, ${cepData.localidade}, ${cepData.uf}`;
+            const geoResponse = await fetch(
+              `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleMapsKey}`
+            );
+            const geoData = await geoResponse.json();
+            
+            if (geoData.results && geoData.results[0]) {
+              setLatitude(geoData.results[0].geometry.location.lat);
+              setLongitude(geoData.results[0].geometry.location.lng);
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao buscar coordenadas:', error);
+        }
+      } else {
+        setCepError('CEP não encontrado');
+        setEstado('');
+        setCidade('');
+        setBairro('');
+        setLogradouro('');
       }
     }
   };
 
-  // Máscara de CEP
-  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCep(e.target.value);
-    setFormData({ ...formData, cep: formatted });
+  const handleCepFoundBySearch = (foundCep: string) => {
+    handleCepChange(foundCep);
+    setShowCepSearch(false);
   };
 
-  // Lógica: LOGIN via E-mail
+  // Login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
+    setError('');
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+        email,
+        password,
       });
 
       if (error) throw error;
 
-      // Se "Manter conectado" estiver desmarcado, configura sessão temporária
-      if (!rememberMe && data.session) {
-        // Move a sessão para sessionStorage (expira ao fechar navegador)
-        sessionStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
-        localStorage.removeItem('supabase.auth.token');
-      }
-
-      if (error) throw error;
-
-      // Verifica role
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
@@ -266,7 +255,6 @@ const SmartAuth = () => {
         throw new Error('Esta conta não é de aniversariante.');
       }
 
-      // Verifica se já completou o cadastro (tem CPF)
       const { data: anivData } = await supabase
         .from('aniversariantes')
         .select('cpf')
@@ -274,111 +262,83 @@ const SmartAuth = () => {
         .single();
 
       if (!anivData?.cpf) {
-        // Precisa completar cadastro
         setUserId(data.user.id);
         setStep(2);
         return;
       }
 
-      toast({
-        title: "Login realizado!",
-        description: "Bem-vindo de volta ao Aniversariante VIP.",
+      toast.success('Login realizado!', {
+        description: 'Bem-vindo de volta!',
       });
 
-      navigate(from, { replace: true });
+      navigate('/dashboard', { replace: true });
     } catch (err: any) {
       const friendlyMessage = getFriendlyErrorMessage(err);
       setError(friendlyMessage);
-      trackServerError(500, friendlyMessage);
+      toast.error('Erro ao fazer login', {
+        description: friendlyMessage,
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Lógica: Cadastro via E-mail (Fase 1)
+  // Cadastro básico (Step 1)
   const handleBasicSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
+    setError('');
 
     try {
-      // Validações básicas
-      if (!formData.name || !formData.email || !formData.phone || !formData.password) {
-        throw new Error("Preencha todos os campos obrigatórios.");
+      if (!email || !password) {
+        throw new Error('Preencha email e senha');
       }
 
-      // Validação de telefone (11 dígitos: DDD + 9 dígitos)
-      const phoneClean = formData.phone.replace(/\D/g, '');
-      if (phoneClean.length !== 11) {
-        throw new Error("WhatsApp deve ter 11 dígitos (DDD + número com 9). Ex: (11) 99999-9999");
+      if (password.length < 6) {
+        throw new Error('Senha deve ter pelo menos 6 caracteres');
       }
 
-      if (formData.password.length < 6) {
-        throw new Error("Senha deve ter pelo menos 6 caracteres.");
-      }
-
-      // Verifica se email já existe
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', formData.email)
-        .single();
-
-      if (existingUser) {
-        setError("Este e-mail já possui cadastro. Tente fazer login.");
-        setIsLoading(false);
-        return;
-      }
-
-      // Cria usuário no Supabase Auth
       const redirectUrl = `${window.location.origin}/`;
       const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
+        email,
+        password,
         options: {
           emailRedirectTo: redirectUrl,
-          data: {
-            nome: formData.name,
-          }
         }
       });
 
       if (error) throw error;
-      if (!data.user) throw new Error("Erro ao criar usuário.");
+      if (!data.user) throw new Error('Erro ao criar usuário');
 
       setUserId(data.user.id);
 
-      // Salva no profiles
       await supabase.from('profiles').insert({
         id: data.user.id,
-        email: formData.email,
-        nome: formData.name,
+        email: email,
+        nome: '',
       });
 
-      // Atribui role
       await supabase.from('user_roles').insert({
         user_id: data.user.id,
         role: 'aniversariante',
       });
 
-      // Sucesso: Vai para Fase 2
       setStep(2);
     } catch (err: any) {
       const friendlyMessage = getFriendlyErrorMessage(err);
       setError(friendlyMessage);
-      trackServerError(500, friendlyMessage);
-      if (err.message?.includes('11 dígitos')) {
-        trackValidationError('telefone', 'Formato de telefone inválido');
-      }
+      toast.error('Erro no cadastro', {
+        description: friendlyMessage,
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Lógica: Login/Cadastro com Google
+  // Google OAuth
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    setError("");
+    setError('');
 
     try {
       const redirectUrl = `${window.location.origin}/auth`;
@@ -390,461 +350,386 @@ const SmartAuth = () => {
       });
 
       if (error) throw error;
-
-      // Após redirect, o useEffect verificará se precisa completar cadastro
     } catch (err: any) {
       const friendlyMessage = getFriendlyErrorMessage(err);
       setError(friendlyMessage);
-      trackServerError(500, friendlyMessage);
+      toast.error('Erro ao autenticar', {
+        description: friendlyMessage,
+      });
       setIsLoading(false);
     }
   };
 
-  // Lógica: Finalização (Fase 2) - CPF + Data de Nascimento
+  // Completar cadastro (Step 2)
   const handleCompletion = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!userId) {
+      setError('Usuário não autenticado');
+      return;
+    }
+    
+    if (!isStep2Valid) {
+      toast.error('Preencha todos os campos corretamente');
+      return;
+    }
+
     setIsLoading(true);
-    setError("");
+    setError('');
 
     try {
-      // Validação de telefone OBRIGATÓRIO (11 dígitos: DDD + 9 dígitos)
-      const telefone = formData.phone ? formData.phone.replace(/\D/g, '') : '';
-      if (!telefone || telefone.length !== 11) {
-        throw new Error("WhatsApp deve ter 11 dígitos (DDD + número com 9). Ex: (11) 99999-9999");
-      }
+      // Atualizar profile com nome
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          nome: name,
+        })
+        .eq('id', userId);
 
-      // Validação de CPF
-      const cpfClean = formData.cpf.replace(/\D/g, '');
-      if (!validateCPF(formData.cpf)) {
-        throw new Error("CPF inválido. Verifique os dígitos verificadores.");
-      }
+      if (profileError) throw profileError;
 
-      // Validação de data de nascimento
-      if (!formData.dataNascimento) {
-        throw new Error("Data de nascimento é obrigatória.");
-      }
-
-      // Verifica se CPF já existe
-      const { data: existingCPF } = await supabase
-        .from('aniversariantes')
-        .select('id')
-        .eq('cpf', cpfClean)
-        .single();
-
-      if (existingCPF) {
-        throw new Error("Este CPF já está cadastrado.");
-      }
-
-      // Insere na tabela aniversariantes
+      // Inserir na tabela aniversariantes
+      const birthDateFormatted = birthDate.split('/').reverse().join('-'); // DD/MM/YYYY -> YYYY-MM-DD
+      
       const { error: insertError } = await supabase
         .from('aniversariantes')
         .insert({
-          id: userId!,
-          cpf: cpfClean,
-          telefone: telefone,
-          data_nascimento: formData.dataNascimento,
-          cep: formData.cep.replace(/\D/g, ''),
-          logradouro: formData.logradouro,
-          numero: formData.numero,
-          complemento: formData.complemento,
-          bairro: formData.bairro,
-          cidade: formData.cidade,
-          estado: formData.estado,
-          latitude: formData.latitude,
-          longitude: formData.longitude,
+          id: userId,
+          cpf: cpf.replace(/\D/g, ''),
+          telefone: phone.replace(/\D/g, ''),
+          data_nascimento: birthDateFormatted,
+          cep: cep.replace(/\D/g, ''),
+          cidade: cidade,
+          estado: estado,
+          bairro: bairro,
+          logradouro: logradouro,
+          numero: numero || '',
+          latitude: latitude,
+          longitude: longitude,
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Erro ao inserir aniversariante:', insertError);
+        const friendlyMessage = getFriendlyErrorMessage(insertError);
+        throw new Error(friendlyMessage);
+      }
 
-      toast({
-        title: "Cadastro finalizado!",
-        description: "Sua conta VIP está pronta. Bem-vindo! 🎉",
+      toast.success('Cadastro concluído! 🎉', {
+        description: 'Bem-vindo ao Aniversariante VIP!',
       });
-
-      // Redireciona para página de origem
-      setTimeout(() => {
-        navigate(from, { replace: true });
-      }, 1000);
-    } catch (err: any) {
-      const friendlyMessage = getFriendlyErrorMessage(err);
+      
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Erro ao completar cadastro:', error);
+      const friendlyMessage = getFriendlyErrorMessage(error);
       setError(friendlyMessage);
-      trackServerError(500, friendlyMessage);
-      if (err.message?.includes('CPF inválido')) {
-        trackValidationError('cpf', 'CPF com dígitos verificadores inválidos');
-      }
-      if (err.message?.includes('11 dígitos')) {
-        trackValidationError('telefone', 'Formato de telefone inválido');
-      }
+      toast.error('Erro ao completar cadastro', {
+        description: friendlyMessage,
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-12 font-inter">
-      {/* Background Tech */}
-      <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-violet-600/20 blur-[120px] pointer-events-none"></div>
+    <div className="min-h-screen bg-slate-950 relative overflow-hidden">
+      <BackButton />
+      
+      {/* Background effects */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-violet-600/30 rounded-full blur-[120px]" />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[120px]" />
 
-      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl backdrop-blur-xl">
-        
-        {/* Botão Voltar */}
-        <div className="absolute top-4 left-4 z-20">
-          <BackButton to="/" />
-        </div>
-        
-        {/* Barra de Progresso */}
-        <div className="h-1 w-full bg-slate-800">
-          <div 
-            className="h-full bg-gradient-to-r from-violet-500 to-pink-500 transition-all duration-500 ease-out"
-            style={{ width: step === 1 ? '30%' : '100%' }}
-          ></div>
-        </div>
-
-        <div className="p-8">
-          {/* Cabeçalho */}
-          <div className="mb-6 text-center">
-            <h2 className="font-plus-jakarta text-2xl font-extrabold text-white">
-              {step === 1 ? (isLogin ? 'Bem-vindo de Volta' : 'Comece a Celebrar') : 'Última etapa!'}
-            </h2>
-            <p className="mt-1 text-sm text-slate-400">
-              {step === 1 
-                ? (isLogin ? 'Entre na sua conta VIP.' : 'Crie sua conta gratuita para acessar benefícios.') 
-                : 'Complete seu cadastro com CPF, endereço e telefone para validar sua identidade VIP.'}
-            </p>
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl backdrop-blur-xl">
+          
+          {/* Progress bar */}
+          <div className="h-1 w-full bg-slate-800">
+            <div 
+              className="h-full bg-gradient-to-r from-violet-500 to-pink-500 transition-all duration-500 ease-out"
+              style={{ width: step === 1 ? '30%' : '100%' }}
+            />
           </div>
 
-          {/* --- STEP 1: ESCOLHA (Google ou Email ou Login) --- */}
-          {step === 1 && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              
-              {/* Botão Google */}
-              {!isLogin && (
-                <button 
-                  onClick={handleGoogleLogin}
-                  disabled={isLoading}
-                  className="mb-6 flex w-full items-center justify-center gap-3 rounded-xl bg-white py-3.5 font-bold text-slate-900 transition-transform hover:scale-[1.02] hover:shadow-lg hover:shadow-white/10 active:scale-95"
-                >
-                  {isLoading ? <Loader2 className="animate-spin" /> : (
-                    <>
-                      <svg className="h-5 w-5" viewBox="0 0 24 24">
-                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.84.81-.06z" fill="#FBBC05"/>
-                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                      </svg>
-                      Entrar com Google
-                    </>
-                  )}
-                </button>
-              )}
-
-              {!isLogin && (
-                <div className="relative mb-6 flex items-center justify-center">
-                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
-                  <span className="relative bg-slate-900 px-3 text-xs font-medium uppercase text-slate-500">ou use seu e-mail</span>
-                </div>
-              )}
-
-              {/* Formulário de Email - Login ou Cadastro */}
-              <form onSubmit={isLogin ? handleLogin : handleBasicSignup}>
-                {!isLogin && (
-                  <InputGroup 
-                    icon={User} label="Nome" placeholder="Como quer ser chamado?" required
-                    value={formData.name} 
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
-                    onFocus={() => trackFieldFocus('nome')}
-                    onBlur={() => trackFieldBlur('nome', false)}
-                  />
-                )}
-                <InputGroup 
-                  icon={Mail} label="E-mail" type="email" placeholder="seu@email.com" required
-                  value={formData.email} 
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, email: e.target.value})}
-                  onFocus={() => trackFieldFocus('email')}
-                  onBlur={() => trackFieldBlur('email', false)}
-                />
-                {!isLogin && (
-                  <div>
-                    <InputGroup 
-                      icon={Phone} label="WhatsApp" placeholder="(11) 99999-9999" required maxLength={15}
-                      value={formData.phone} 
-                      onChange={handlePhoneChange}
-                      onFocus={() => trackFieldFocus('telefone')}
-                      onBlur={() => trackFieldBlur('telefone', false)}
-                    />
-                    <div className="mt-1 flex items-center justify-end gap-1.5 text-xs">
-                      <span className={`font-medium ${
-                        formData.phone.replace(/\D/g, '').length === 11 
-                          ? 'text-emerald-400' 
-                          : formData.phone.replace(/\D/g, '').length > 0 
-                            ? 'text-amber-400' 
-                            : 'text-slate-500'
-                      }`}>
-                        {formData.phone.replace(/\D/g, '').length}/11 dígitos
-                      </span>
-                      {formData.phone.replace(/\D/g, '').length === 11 && (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                      )}
-                    </div>
-                  </div>
-                )}
-                <InputGroup 
-                  icon={Lock} label="Senha" type="password" placeholder={isLogin ? "Digite sua senha" : "Crie uma senha forte"} required minLength={6}
-                  value={formData.password} 
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, password: e.target.value})}
-                  onFocus={() => trackFieldFocus('senha')}
-                  onBlur={() => trackFieldBlur('senha', true)}
-                />
-
-                {/* Checkbox Manter Conectado (apenas no login) */}
-                {isLogin && (
-                  <div className="mb-4">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="rememberMe"
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                        className="h-4 w-4 rounded border-white/20 bg-white/5 text-violet-600 focus:ring-2 focus:ring-violet-500 focus:ring-offset-0 cursor-pointer"
-                      />
-                      <label htmlFor="rememberMe" className="text-sm text-slate-300 cursor-pointer select-none">
-                        Manter-me conectado
-                      </label>
-                    </div>
-                    {!rememberMe && (
-                      <p className="mt-1.5 ml-6 text-xs text-slate-500">
-                        Sua sessão expirará ao fechar o navegador
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {isLogin && (
-                  <div className="mb-4 text-right">
-                    <button
-                      type="button"
-                      onClick={() => navigate('/forgot-password')}
-                      className="text-sm text-violet-400 hover:text-violet-300 transition-colors underline"
-                    >
-                      Esqueci minha senha
-                    </button>
-                  </div>
-                )}
-
-                {error && (
-                  <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400">
-                    <AlertCircle size={14} /> {error}
-                  </div>
-                )}
-
-                <button 
-                  type="submit" disabled={isLoading}
-                  className="group mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 py-3.5 font-bold text-white transition-all hover:brightness-110 hover:shadow-lg hover:shadow-violet-500/25 active:scale-95"
-                >
-                  {isLoading ? <Loader2 className="animate-spin" /> : <>{isLogin ? 'Entrar' : 'Continuar'} <ArrowRight size={18} /></>}
-                </button>
-              </form>
+          <div className="p-8 space-y-6">
+            {/* Header */}
+            <div className="space-y-2 text-center">
+              <h1 className="text-3xl font-extrabold text-white">
+                {step === 1 ? (isLogin ? 'Bem-vindo de volta' : 'Criar conta VIP') : 'Complete seu cadastro'}
+              </h1>
+              <p className="text-slate-400">
+                {step === 1 
+                  ? (isLogin ? 'Entre para acessar seus benefícios' : 'Cadastre-se grátis em segundos') 
+                  : 'Só mais alguns dados para finalizar'}
+              </p>
             </div>
-          )}
 
-          {/* --- STEP 2: COMPLETION (CPF + Data de Nascimento + Telefone) --- */}
-          {step === 2 && (
-            <div className="animate-in fade-in slide-in-from-right-8 duration-500">
-              <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-400 shrink-0" />
-                <div className="text-sm text-emerald-100">
-                  <strong className="block text-emerald-400">Conta criada!</strong>
-                  Falta pouco para liberar seus cupons.
+            {error && (
+              <div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* Step 1: Login ou Cadastro Básico */}
+            {step === 1 && (
+              <div className="space-y-5">
+                {/* Google Button */}
+                {!isLogin && (
+                  <Button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    disabled={isLoading}
+                    className="w-full bg-white hover:bg-slate-100 text-slate-900"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      </svg>
+                    )}
+                    Continuar com Google
+                  </Button>
+                )}
+
+                {!isLogin && (
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-white/10" />
+                    <span className="text-sm text-slate-400">ou com email</span>
+                    <div className="h-px flex-1 bg-white/10" />
+                  </div>
+                )}
+
+                <form onSubmit={isLogin ? handleLogin : handleBasicSignup} className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-200">Email</label>
+                    <div className="relative">
+                      <Input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="seu@email.com"
+                        className="bg-white/5 border-white/10 text-white pl-10"
+                        required
+                      />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-200">Senha</label>
+                    <div className="relative">
+                      <Input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="bg-white/5 border-white/10 text-white pl-10"
+                        required
+                      />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 transition-opacity"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Aguarde...
+                      </>
+                    ) : (
+                      isLogin ? 'Entrar' : 'Criar conta'
+                    )}
+                  </Button>
+                </form>
+
+                <div className="text-center">
+                  <button
+                    onClick={() => setIsLogin(!isLogin)}
+                    className="text-sm text-violet-400 hover:text-violet-300 transition-colors"
+                  >
+                    {isLogin ? 'Ainda não tem conta? Cadastre-se' : 'Já tem conta? Faça login'}
+                  </button>
                 </div>
               </div>
+            )}
 
-              <form onSubmit={handleCompletion}>
-                {/* Campo WhatsApp - sempre obrigatório para todos */}
-                <div>
-                  <InputGroup 
-                    icon={Phone} label="WhatsApp (Obrigatório)" placeholder="(11) 99999-9999" required maxLength={15}
-                    value={formData.phone} 
-                    onChange={handlePhoneChange}
-                    onFocus={() => trackFieldFocus('telefone')}
-                    onBlur={() => trackFieldBlur('telefone', false)}
-                  />
-                  <div className="mt-1 flex items-center justify-end gap-1.5 text-xs">
-                    <span className={`font-medium ${
-                      formData.phone.replace(/\D/g, '').length === 11 
-                        ? 'text-emerald-400' 
-                        : formData.phone.replace(/\D/g, '').length > 0 
-                          ? 'text-amber-400' 
-                          : 'text-slate-500'
-                    }`}>
-                      {formData.phone.replace(/\D/g, '').length}/11 dígitos
-                    </span>
-                    {formData.phone.replace(/\D/g, '').length === 11 && (
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                    )}
-                  </div>
-                </div>
-                <InputGroup 
-                  icon={User} label="CPF" placeholder="000.000.000-00" required maxLength={14}
-                  value={formData.cpf} 
-                  onChange={handleCPFChange}
-                  onFocus={() => trackFieldFocus('cpf')}
-                  onBlur={handleCPFBlur}
-                />
-                <InputGroup 
-                  icon={Calendar} label="Data de Nascimento" type="date" required
-                  value={formData.dataNascimento} 
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, dataNascimento: e.target.value})}
-                  onFocus={() => trackFieldFocus('dataNascimento')}
-                  onBlur={() => trackFieldBlur('dataNascimento', false)}
+            {/* Step 2: Complete registration */}
+            {step === 2 && (
+              <form onSubmit={handleCompletion} className="space-y-5">
+                <MaskedInput
+                  label="Nome Completo"
+                  value={name}
+                  onChange={handleNameChange}
+                  mask={(v) => v}
+                  placeholder="João Silva Santos"
+                  error={nameError}
+                  isValid={isNameValid}
+                  required
                 />
 
-                {/* CEP (Opcional) */}
-                <div>
-                  <InputGroup 
-                    icon={MapPin} label="CEP (Opcional)" placeholder="00000-000"
-                    value={formData.cep} 
+                <MaskedInput
+                  label="Celular (WhatsApp)"
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  mask={phoneMask}
+                  placeholder="(11) 99999-9999"
+                  error={phoneError}
+                  isValid={isPhoneValid}
+                  required
+                />
+
+                <MaskedInput
+                  label="CPF"
+                  value={cpf}
+                  onChange={handleCpfChange}
+                  mask={cpfMask}
+                  placeholder="000.000.000-00"
+                  error={cpfError}
+                  isValid={isCpfValid}
+                  required
+                />
+
+                <MaskedInput
+                  label="Data de Nascimento"
+                  value={birthDate}
+                  onChange={handleBirthDateChange}
+                  mask={dateMask}
+                  placeholder="DD/MM/AAAA"
+                  error={birthDateError}
+                  isValid={isBirthDateValid}
+                  required
+                />
+
+                <div className="space-y-3">
+                  <MaskedInput
+                    label="CEP"
+                    value={cep}
                     onChange={handleCepChange}
-                    onBlur={handleCepBlur}
-                    disabled={cepLoading}
-                    onFocus={() => trackFieldFocus('cep')}
+                    mask={cepMask}
+                    placeholder="00000-000"
+                    error={cepError}
+                    isValid={isCepValid}
+                    required
                   />
-                  {cepLoading && (
-                    <div className="mb-4 flex items-center gap-2 text-xs text-slate-400">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Buscando endereço...
-                    </div>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setShowCepSearch(!showCepSearch)}
+                    className="text-sm text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1"
+                  >
+                    {showCepSearch ? (
+                      <>
+                        <ChevronUp className="h-4 w-4" />
+                        Fechar busca de CEP
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4" />
+                        Não sei meu CEP
+                      </>
+                    )}
+                  </button>
+
+                  {showCepSearch && (
+                    <BuscaCepPorEndereco onCepFound={handleCepFoundBySearch} />
                   )}
-                  <p className="mt-1 mb-4 text-xs text-slate-500">
-                    Digite seu CEP para preencher automaticamente ou preencha manualmente abaixo
-                  </p>
                 </div>
 
-                {/* Cidade e Estado - Sempre visíveis para preenchimento manual */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Cidade (Opcional)</label>
-                    <input
-                      placeholder="Ex: São Paulo"
-                      value={formData.cidade} 
-                      onChange={async (e) => {
-                        const cidade = e.target.value;
-                        setFormData({...formData, cidade});
-                        
-                        // Buscar coordenadas quando cidade e estado estiverem preenchidos
-                        if (cidade && formData.estado) {
-                          const coords = await geocodeCityState(cidade, formData.estado);
-                          if (coords) {
-                            setFormData(prev => ({ ...prev, latitude: coords.latitude, longitude: coords.longitude }));
-                          }
-                        }
-                      }}
-                      disabled={!!formData.logradouro}
-                      className={`w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10 ${formData.logradouro ? 'opacity-60 cursor-not-allowed' : ''}`}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Estado (Opcional)</label>
-                    <input
-                      placeholder="Ex: SP"
-                      maxLength={2}
-                      value={formData.estado} 
-                      onChange={async (e) => {
-                        const estado = e.target.value.toUpperCase();
-                        setFormData({...formData, estado});
-                        
-                        // Buscar coordenadas quando cidade e estado estiverem preenchidos
-                        if (formData.cidade && estado) {
-                          const coords = await geocodeCityState(formData.cidade, estado);
-                          if (coords) {
-                            setFormData(prev => ({ ...prev, latitude: coords.latitude, longitude: coords.longitude }));
-                          }
-                        }
-                      }}
-                      disabled={!!formData.logradouro}
-                      className={`w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10 ${formData.logradouro ? 'opacity-60 cursor-not-allowed' : ''}`}
-                    />
-                  </div>
-                </div>
-
-                {/* Campos de endereço detalhado (aparecem quando CEP é preenchido) */}
-                {formData.logradouro && (
-                  <>
-                    <InputGroup 
-                      icon={Home} label="Logradouro" placeholder="Rua, Avenida..." 
-                      value={formData.logradouro} 
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, logradouro: e.target.value})}
-                      disabled
-                    />
-                    <InputGroup 
-                      icon={MapPin} label="Bairro" 
-                      value={formData.bairro} 
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, bairro: e.target.value})}
-                      disabled
-                    />
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Número</label>
-                        <input
-                          placeholder="123"
-                          value={formData.numero} 
-                          onChange={(e) => setFormData({...formData, numero: e.target.value})}
-                          className="w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Complemento</label>
-                        <input
-                          placeholder="Apto 101"
-                          value={formData.complemento} 
-                          onChange={(e) => setFormData({...formData, complemento: e.target.value})}
-                          className="w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-white placeholder-slate-600 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10 focus:ring-4 focus:ring-violet-500/10"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-                
-                {error && (
-                  <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400">
-                    <AlertCircle size={14} /> {error}
+                {cepLoading && (
+                  <div className="flex items-center justify-center gap-2 text-violet-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Buscando endereço...</span>
                   </div>
                 )}
 
-                <div className="mb-6 text-center text-xs text-slate-500">
-                  🔒 Seus dados são protegidos e usados apenas para validar o benefício junto ao estabelecimento.
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-200">Estado</label>
+                    <Input
+                      type="text"
+                      value={estado}
+                      readOnly
+                      className="bg-white/5 border-white/10 text-slate-400 cursor-not-allowed"
+                      placeholder="Preenchido pelo CEP"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-200">Cidade</label>
+                    <Input
+                      type="text"
+                      value={cidade}
+                      readOnly
+                      className="bg-white/5 border-white/10 text-slate-400 cursor-not-allowed"
+                      placeholder="Preenchido pelo CEP"
+                    />
+                  </div>
                 </div>
 
-                <button 
-                  type="submit" disabled={isLoading}
-                  className="w-full rounded-xl bg-white py-3.5 font-bold text-slate-900 transition-all hover:bg-slate-200 hover:shadow-lg active:scale-95"
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-200">Bairro</label>
+                  <Input
+                    type="text"
+                    value={bairro}
+                    readOnly
+                    className="bg-white/5 border-white/10 text-slate-400 cursor-not-allowed"
+                    placeholder="Preenchido pelo CEP"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-200">Rua/Logradouro</label>
+                  <Input
+                    type="text"
+                    value={logradouro}
+                    readOnly
+                    className="bg-white/5 border-white/10 text-slate-400 cursor-not-allowed"
+                    placeholder="Preenchido pelo CEP"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-200">
+                    Número <span className="text-slate-400 text-xs">(opcional)</span>
+                  </label>
+                  <Input
+                    type="text"
+                    value={numero}
+                    onChange={(e) => setNumero(e.target.value.replace(/\D/g, ''))}
+                    placeholder="123"
+                    className="bg-white/5 border-white/10 text-white"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isLoading || !isStep2Valid}
+                  className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? <Loader2 className="animate-spin mx-auto" /> : 'Finalizar e Acessar Cupons 🚀'}
-                </button>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Finalizando...
+                    </>
+                  ) : (
+                    'Completar Cadastro'
+                  )}
+                </Button>
               </form>
-            </div>
-          )}
-
-          {/* Login/Cadastro Toggle */}
-          {step === 1 && (
-            <p className="mt-6 text-center text-sm text-slate-500">
-              {isLogin ? 'Novo por aqui?' : 'Já é VIP?'} {' '}
-              <button 
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setError("");
-                }}
-                className="font-bold text-violet-400 hover:text-violet-300 hover:underline"
-              >
-                {isLogin ? 'Criar Conta' : 'Fazer Login'}
-              </button>
-            </p>
-          )}
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Chat Assistente com monitoramento ativo */}
-      <ChatAssistant onMount={(sendMessage) => { chatAssistantRef.current = sendMessage; }} />
+      
+      <ChatAssistant />
     </div>
   );
 };

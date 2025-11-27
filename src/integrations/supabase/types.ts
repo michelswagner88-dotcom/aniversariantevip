@@ -98,57 +98,57 @@ export type Database = {
       }
       aniversariantes: {
         Row: {
-          bairro: string | null
-          cep: string | null
-          cidade: string | null
+          bairro: string
+          cep: string
+          cidade: string
           complemento: string | null
           cpf: string
           created_at: string | null
           data_nascimento: string
           deleted_at: string | null
-          estado: string | null
+          estado: string
           id: string
           latitude: number | null
-          logradouro: string | null
+          logradouro: string
           longitude: number | null
           numero: string | null
-          telefone: string | null
+          telefone: string
           updated_at: string | null
         }
         Insert: {
-          bairro?: string | null
-          cep?: string | null
-          cidade?: string | null
+          bairro: string
+          cep: string
+          cidade: string
           complemento?: string | null
           cpf: string
           created_at?: string | null
           data_nascimento: string
           deleted_at?: string | null
-          estado?: string | null
+          estado: string
           id: string
           latitude?: number | null
-          logradouro?: string | null
+          logradouro: string
           longitude?: number | null
           numero?: string | null
-          telefone?: string | null
+          telefone: string
           updated_at?: string | null
         }
         Update: {
-          bairro?: string | null
-          cep?: string | null
-          cidade?: string | null
+          bairro?: string
+          cep?: string
+          cidade?: string
           complemento?: string | null
           cpf?: string
           created_at?: string | null
           data_nascimento?: string
           deleted_at?: string | null
-          estado?: string | null
+          estado?: string
           id?: string
           latitude?: number | null
-          logradouro?: string | null
+          logradouro?: string
           longitude?: number | null
           numero?: string | null
-          telefone?: string | null
+          telefone?: string
           updated_at?: string | null
         }
         Relationships: []

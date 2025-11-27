@@ -21,6 +21,10 @@ export default function AreaEstabelecimento() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Estados de autorização
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [searchCPF, setSearchCPF] = useState("");
@@ -54,14 +58,14 @@ export default function AreaEstabelecimento() {
 
   useEffect(() => {
     checkUser();
-  }, []);
+  }, [navigate]);
 
   const checkUser = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        navigate("/login/estabelecimento");
+        navigate("/login/estabelecimento", { replace: true });
         return;
       }
 
@@ -70,8 +74,15 @@ export default function AreaEstabelecimento() {
         .select("role")
         .eq("user_id", session.user.id);
 
-      if (!roles?.some(r => r.role === "estabelecimento")) {
-        navigate("/login/estabelecimento");
+      const isEstabelecimento = roles?.some(r => r.role === "estabelecimento");
+      
+      if (!isEstabelecimento) {
+        toast({
+          variant: "destructive",
+          title: "Acesso restrito",
+          description: "Esta área é exclusiva para estabelecimentos parceiros",
+        });
+        navigate("/", { replace: true });
         return;
       }
 
@@ -124,10 +135,20 @@ export default function AreaEstabelecimento() {
           site: estabelecimento.site || "",
         });
         await loadCuponsEmitidos(session.user.id);
+        
+        // Autorização completa
+        setIsAuthorized(true);
       }
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
-      navigate("/login/estabelecimento");
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar dados",
+        description: "Não foi possível carregar suas informações. Tente fazer login novamente.",
+      });
+      navigate("/login/estabelecimento", { replace: true });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -404,7 +425,22 @@ export default function AreaEstabelecimento() {
     }
   };
 
-  if (!userData) return null;
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-500"></div>
+          <p className="text-slate-400">Verificando acesso...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Authorization guard
+  if (!isAuthorized || !userData) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">

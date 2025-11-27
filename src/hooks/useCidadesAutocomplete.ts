@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Cidade {
   nome: string;
+  estado: string;
+  disponivel?: boolean;
+}
+
+interface CidadeDisponivel {
+  cidade: string;
   estado: string;
 }
 
@@ -40,9 +48,53 @@ const getCidadesBrasil = async (): Promise<any[]> => {
   return cidadesCache;
 };
 
+// Normalizar string removendo acentos
+const normalizeString = (str: string): string => {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+};
+
 export const useCidadesAutocomplete = (searchTerm: string) => {
   const [cidades, setCidades] = useState<Cidade[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Buscar cidades que têm estabelecimentos cadastrados
+  const { data: cidadesDisponiveis } = useQuery({
+    queryKey: ['cidades-disponiveis'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('estabelecimentos')
+        .select('cidade, estado')
+        .not('cidade', 'is', null)
+        .not('estado', 'is', null);
+      
+      if (error) {
+        console.error('Erro ao buscar cidades disponíveis:', error);
+        return [];
+      }
+
+      // Criar lista única normalizada
+      const cidadesUnicas = new Map<string, CidadeDisponivel>();
+      data?.forEach((e) => {
+        if (e.cidade && e.estado) {
+          const key = `${normalizeString(e.cidade)}-${e.estado.toLowerCase()}`;
+          if (!cidadesUnicas.has(key)) {
+            cidadesUnicas.set(key, {
+              cidade: e.cidade,
+              estado: e.estado,
+            });
+          }
+        }
+      });
+      
+      const result = Array.from(cidadesUnicas.values());
+      console.log('Cidades disponíveis no banco:', result);
+      return result;
+    },
+    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+  });
 
   useEffect(() => {
     // Só buscar com 3+ caracteres
@@ -56,17 +108,40 @@ export const useCidadesAutocomplete = (searchTerm: string) => {
       try {
         const data = await getCidadesBrasil();
         
-        // Filtrar pelo termo digitado (case insensitive)
-        const searchLower = searchTerm.toLowerCase();
+        // Normalizar termo de busca
+        const searchNormalizado = normalizeString(searchTerm);
+        console.log('Buscando por:', searchTerm, '(normalizado:', searchNormalizado + ')');
+        
+        // Filtrar pelo termo digitado (case insensitive e sem acentos)
         const filtradas = data
-          .filter((cidade: any) => 
-            cidade.nome.toLowerCase().startsWith(searchLower)
-          )
+          .filter((cidade: any) => {
+            const cidadeNormalizada = normalizeString(cidade.nome);
+            return cidadeNormalizada.startsWith(searchNormalizado);
+          })
           .slice(0, 10) // Limitar a 10 resultados
-          .map((cidade: any) => ({
-            nome: cidade.nome,
-            estado: cidade.microrregiao.mesorregiao.UF.sigla,
-          }));
+          .map((cidade: any) => {
+            const estado = cidade.microrregiao.mesorregiao.UF.sigla;
+            
+            // Verificar se esta cidade tem estabelecimentos
+            const disponivel = cidadesDisponiveis?.some((cd) => {
+              const cidadeMatch = normalizeString(cd.cidade) === normalizeString(cidade.nome);
+              const estadoMatch = cd.estado.toLowerCase() === estado.toLowerCase();
+              return cidadeMatch && estadoMatch;
+            }) || false;
+
+            return {
+              nome: cidade.nome,
+              estado,
+              disponivel,
+            };
+          });
+        
+        // Ordenar: cidades disponíveis primeiro
+        filtradas.sort((a, b) => {
+          if (a.disponivel && !b.disponivel) return -1;
+          if (!a.disponivel && b.disponivel) return 1;
+          return 0;
+        });
         
         setCidades(filtradas);
       } catch (error) {
@@ -80,7 +155,7 @@ export const useCidadesAutocomplete = (searchTerm: string) => {
     // Debounce de 300ms
     const timer = setTimeout(buscarCidades, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, cidadesDisponiveis]);
 
   return { cidades, isLoading };
 };

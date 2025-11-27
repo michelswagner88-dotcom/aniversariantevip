@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mail, Lock, User, Phone, ArrowRight, AlertCircle, CheckCircle2, Loader2, Calendar, MapPin, Home } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCepLookup } from '@/hooks/useCepLookup';
@@ -30,6 +30,7 @@ const InputGroup = ({ icon: Icon, label, onFocus, onBlur, ...props }: any) => (
 
 const SmartAuth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [step, setStep] = useState(1); // 1 = Básico/Google, 2 = Completion (CPF + Data)
   const [isLoading, setIsLoading] = useState(false);
@@ -37,6 +38,9 @@ const SmartAuth = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [isLogin, setIsLogin] = useState(false); // Toggle entre Login e Cadastro
   const chatAssistantRef = useRef<((msg: string) => void) | null>(null);
+  
+  // Captura a página de origem (se houver)
+  const from = (location.state as any)?.from?.pathname || '/';
   
   // Estado do Formulário
   const [formData, setFormData] = useState({
@@ -119,8 +123,8 @@ const SmartAuth = () => {
             setUserId(session.user.id);
             setStep(2);
           } else {
-            // Cadastro completo, redireciona para home
-            navigate('/');
+            // Cadastro completo, redireciona para página de origem
+            navigate(from, { replace: true });
           }
         }
       }
@@ -281,7 +285,7 @@ const SmartAuth = () => {
         description: "Bem-vindo de volta ao Aniversariante VIP.",
       });
 
-      navigate('/');
+      navigate(from, { replace: true });
     } catch (err: any) {
       const friendlyMessage = getFriendlyErrorMessage(err);
       setError(friendlyMessage);
@@ -457,9 +461,9 @@ const SmartAuth = () => {
         description: "Sua conta VIP está pronta. Bem-vindo! 🎉",
       });
 
-      // Redireciona para home
+      // Redireciona para página de origem
       setTimeout(() => {
-        navigate('/');
+        navigate(from, { replace: true });
       }, 1000);
     } catch (err: any) {
       const friendlyMessage = getFriendlyErrorMessage(err);

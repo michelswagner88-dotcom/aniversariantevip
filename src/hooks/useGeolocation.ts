@@ -21,54 +21,68 @@ export const useGeolocation = () => {
 
   const reverseGeocode = async (latitude: number, longitude: number) => {
     try {
+      console.log('📍 Coordenadas obtidas:', { latitude, longitude });
+      
       if (!GOOGLE_MAPS_API_KEY) {
         throw new Error('Google Maps API Key não configurada');
       }
 
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}&language=pt-BR&result_type=locality|administrative_area_level_1`
-      );
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}&language=pt-BR`;
+      console.log('🌐 Fazendo requisição de geocoding reverso...');
+      
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error(`Erro na API do Google Maps: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('📦 Resposta do geocoding:', data);
       
-      if (data.status === 'OK' && data.results && data.results.length > 0) {
-        let cidade = '';
-        let estado = '';
-        
-        // Extrair cidade e estado dos componentes do endereço
-        for (const result of data.results) {
-          for (const component of result.address_components) {
-            if (component.types.includes('locality') || component.types.includes('administrative_area_level_2')) {
-              cidade = component.long_name;
-            }
-            if (component.types.includes('administrative_area_level_1')) {
-              estado = component.short_name;
-            }
-          }
-          
-          if (cidade && estado) break;
+      if (data.status !== 'OK' || !data.results?.length) {
+        throw new Error(`Geocoding falhou: ${data.status}`);
+      }
+      
+      const result = data.results[0];
+      let cidade = '';
+      let estado = '';
+      
+      // Extrair cidade e estado dos componentes do endereço
+      for (const component of result.address_components) {
+        if (component.types.includes('administrative_area_level_2')) {
+          cidade = component.long_name;
         }
-        
-        if (cidade && estado) {
-          const locationData = {
-            cidade,
-            estado,
-            coordinates: { latitude, longitude }
-          };
-          
-          setLocation(locationData);
-          localStorage.setItem('user_location', JSON.stringify(locationData));
-          return locationData;
+        if (component.types.includes('administrative_area_level_1')) {
+          estado = component.short_name;
         }
       }
       
-      throw new Error('Não foi possível determinar a localização');
+      // Fallback: tentar locality para cidade
+      if (!cidade) {
+        for (const component of result.address_components) {
+          if (component.types.includes('locality')) {
+            cidade = component.long_name;
+          }
+        }
+      }
+      
+      if (!cidade || !estado) {
+        throw new Error('Não foi possível extrair cidade/estado dos resultados');
+      }
+      
+      console.log('✅ Localização identificada:', { cidade, estado });
+      
+      const locationData = {
+        cidade,
+        estado,
+        coordinates: { latitude, longitude }
+      };
+      
+      setLocation(locationData);
+      localStorage.setItem('user_location', JSON.stringify(locationData));
+      return locationData;
     } catch (err) {
-      console.error('Erro ao fazer geocoding reverso:', err);
+      console.error('❌ Erro ao fazer geocoding reverso:', err);
       throw err;
     }
   };
@@ -106,7 +120,8 @@ export const useGeolocation = () => {
               description: "Sua cidade foi identificada automaticamente.",
             });
           } catch (err) {
-            setError('Erro ao identificar cidade');
+            console.error('❌ Erro ao identificar cidade:', err);
+            setError('Localização obtida, mas não conseguimos identificar sua cidade');
             toast({
               title: "Não foi possível identificar a cidade",
               description: "Por favor, selecione manualmente.",
@@ -117,19 +132,23 @@ export const useGeolocation = () => {
           }
         },
         (err) => {
-          console.error('Erro ao obter localização:', err);
+          console.error('❌ Erro ao obter localização:', err);
           
           let errorMessage = 'Erro ao obter localização';
+          let toastDescription = 'Selecione sua cidade manualmente.';
           
           switch (err.code) {
             case err.PERMISSION_DENIED:
-              errorMessage = 'Permissão negada para acessar localização';
+              errorMessage = 'Permissão de localização negada';
+              toastDescription = 'Você precisa permitir o acesso à sua localização.';
               break;
             case err.POSITION_UNAVAILABLE:
               errorMessage = 'Localização indisponível';
+              toastDescription = 'Não foi possível determinar sua localização.';
               break;
             case err.TIMEOUT:
               errorMessage = 'Tempo esgotado ao obter localização';
+              toastDescription = 'Verifique se o GPS está ativo e tente novamente.';
               break;
           }
           
@@ -137,14 +156,15 @@ export const useGeolocation = () => {
           setLoading(false);
           
           toast({
-            title: "Localização não disponível",
-            description: "Selecione sua cidade manualmente.",
+            title: errorMessage,
+            description: toastDescription,
+            variant: "destructive",
           });
         },
         {
-          enableHighAccuracy: true, // Precisão alta para melhor resultado
-          timeout: 15000, // Aumentar timeout
-          maximumAge: 0 // Sempre pegar localização nova
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutos de cache
         }
       );
     } catch (err) {

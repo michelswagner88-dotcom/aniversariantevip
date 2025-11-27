@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import ChatAssistant from "@/components/ChatAssistant";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import CadastroAniversariante from "./pages/CadastroAniversariante";
 import LoginAniversariante from "./pages/LoginAniversariante";
@@ -63,49 +64,51 @@ const App = () => (
         <Sonner />
         <ChatAssistant />
         <BrowserRouter>
-          <PageTransition>
-            <Suspense fallback={<LoadingScreen />}>
-              <BottomNav />
-              <Routes>
-                <Route path="/" element={<Index />} />
-            <Route path="/explorar" element={<Explorar />} />
-            <Route path="/flash-deals" element={<FlashDeals />} />
-            <Route path="/feed" element={<Feed />} />
-            <Route path="/estabelecimento/:id" element={<EstabelecimentoDetalhes />} />
-            <Route path="/como-funciona" element={<ComoFunciona />} />
-                <Route path="/seja-parceiro" element={<SejaParceito />} />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="/meus-cupons" element={<MeusCupons />} />
-                <Route path="/meus-favoritos" element={<MeusFavoritos />} />
-                <Route path="/emitir-cupom" element={<EmitirCupom />} />
-                <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
-                <Route path="/termos-uso" element={<TermosUso />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/update-password" element={<ResetPassword />} />
-                <Route path="/auth" element={<SmartAuth />} />
-                <Route path="/selecionar-perfil" element={<SelecionarPerfil />} />
-                <Route path="/cadastro/aniversariante" element={<CadastroAniversariante />} />
-                <Route path="/login/aniversariante" element={<LoginAniversariante />} />
-                <Route path="/area-aniversariante" element={<AreaAniversariante />} />
-                <Route path="/cadastro/estabelecimento" element={<CadastroEstabelecimento />} />
-                <Route path="/login/estabelecimento" element={<LoginEstabelecimento />} />
-                <Route path="/area-estabelecimento" element={<AreaEstabelecimento />} />
-                <Route path="/estabelecimento/dashboard" element={<AreaEstabelecimento />} />
-                <Route path="/login/colaborador" element={<LoginColaborador />} />
-                <Route path="/area-colaborador" element={<AreaColaborador />} />
-                <Route path="/setup-admin" element={<SetupAdmin />} />
-                <Route path="/admin" element={<AdminLogin />} />
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/admin/import" element={<AdminImport />} />
-                <Route path="/afiliado" element={<Afiliado />} />
-                <Route path="/selecionar-categoria" element={<SelecionarCategoria />} />
-                <Route path="/planos-pagamento" element={<PlanosPagamento />} />
-                <Route path="/planos" element={<PlanosPagamento />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </PageTransition>
-          <CookieConsent />
+          <ErrorBoundary>
+            <PageTransition>
+              <Suspense fallback={<LoadingScreen />}>
+                <BottomNav />
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/explorar" element={<Explorar />} />
+                  <Route path="/flash-deals" element={<FlashDeals />} />
+                  <Route path="/feed" element={<Feed />} />
+                  <Route path="/estabelecimento/:id" element={<EstabelecimentoDetalhes />} />
+                  <Route path="/como-funciona" element={<ComoFunciona />} />
+                  <Route path="/seja-parceiro" element={<SejaParceito />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/meus-cupons" element={<MeusCupons />} />
+                  <Route path="/meus-favoritos" element={<MeusFavoritos />} />
+                  <Route path="/emitir-cupom" element={<EmitirCupom />} />
+                  <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
+                  <Route path="/termos-uso" element={<TermosUso />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/update-password" element={<ResetPassword />} />
+                  <Route path="/auth" element={<SmartAuth />} />
+                  <Route path="/selecionar-perfil" element={<SelecionarPerfil />} />
+                  <Route path="/cadastro/aniversariante" element={<CadastroAniversariante />} />
+                  <Route path="/login/aniversariante" element={<LoginAniversariante />} />
+                  <Route path="/area-aniversariante" element={<AreaAniversariante />} />
+                  <Route path="/cadastro/estabelecimento" element={<CadastroEstabelecimento />} />
+                  <Route path="/login/estabelecimento" element={<LoginEstabelecimento />} />
+                  <Route path="/area-estabelecimento" element={<AreaEstabelecimento />} />
+                  <Route path="/estabelecimento/dashboard" element={<AreaEstabelecimento />} />
+                  <Route path="/login/colaborador" element={<LoginColaborador />} />
+                  <Route path="/area-colaborador" element={<AreaColaborador />} />
+                  <Route path="/setup-admin" element={<SetupAdmin />} />
+                  <Route path="/admin" element={<AdminLogin />} />
+                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/import" element={<AdminImport />} />
+                  <Route path="/afiliado" element={<Afiliado />} />
+                  <Route path="/selecionar-categoria" element={<SelecionarCategoria />} />
+                  <Route path="/planos-pagamento" element={<PlanosPagamento />} />
+                  <Route path="/planos" element={<PlanosPagamento />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </PageTransition>
+            <CookieConsent />
+          </ErrorBoundary>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>

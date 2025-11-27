@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, MapPin } from "lucide-react";
+import { Loader2, MapPin, Camera } from "lucide-react";
 import { CATEGORIAS_ESTABELECIMENTO, PERIODOS_VALIDADE } from "@/lib/constants";
 
 interface Establishment {
@@ -45,6 +45,7 @@ interface EditEstablishmentModalProps {
 export function EditEstablishmentModal({ establishment, open, onOpenChange, onSuccess }: EditEstablishmentModalProps) {
   const [saving, setSaving] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
+  const [fetchingPhoto, setFetchingPhoto] = useState(false);
   const [formData, setFormData] = useState<Establishment | null>(establishment);
 
   // Update formData when establishment changes
@@ -83,6 +84,50 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
       toast.error("Erro ao calcular posição");
     } finally {
       setRecalculating(false);
+    }
+  };
+
+  const handleFetchGooglePhoto = async () => {
+    if (!formData?.nome_fantasia && !formData?.razao_social) {
+      toast.error("Nome do estabelecimento é necessário para buscar foto");
+      return;
+    }
+
+    try {
+      setFetchingPhoto(true);
+      
+      const query = `${formData.nome_fantasia || formData.razao_social} ${formData.endereco || formData.cidade || ''}`;
+      
+      // Find Place from Text
+      const findPlaceResponse = await fetch(
+        `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(query)}&inputtype=textquery&fields=place_id,photos&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+      );
+      
+      const findPlaceData = await findPlaceResponse.json();
+      
+      if (findPlaceData.status === 'OK' && findPlaceData.candidates?.[0]) {
+        const place = findPlaceData.candidates[0];
+        
+        if (place.photos && place.photos.length > 0) {
+          const photoReference = place.photos[0].photo_reference;
+          const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoReference}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
+          
+          setFormData({
+            ...formData,
+            logo_url: photoUrl,
+          });
+          toast.success("Foto encontrada e carregada!");
+        } else {
+          toast.error("Estabelecimento encontrado, mas sem fotos disponíveis");
+        }
+      } else {
+        toast.error("Estabelecimento não encontrado no Google Places");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar foto:", error);
+      toast.error("Erro ao buscar foto no Google");
+    } finally {
+      setFetchingPhoto(false);
     }
   };
 
@@ -341,11 +386,32 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
 
             <div>
               <Label>URL da Foto (Cover Image)</Label>
-              <Input
-                value={formData.logo_url || ''}
-                onChange={(e) => setFormData({...formData, logo_url: e.target.value})}
-                placeholder="https://storage.url/imagem.jpg"
-              />
+              <div className="flex gap-2">
+                <Input
+                  value={formData.logo_url || ''}
+                  onChange={(e) => setFormData({...formData, logo_url: e.target.value})}
+                  placeholder="https://storage.url/imagem.jpg"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleFetchGooglePhoto}
+                  disabled={fetchingPhoto}
+                >
+                  {fetchingPhoto ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Buscando...
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="mr-2 h-4 w-4" />
+                      📸 Buscar Foto
+                    </>
+                  )}
+                </Button>
+              </div>
               {formData.logo_url && (
                 <div className="mt-3 flex justify-center">
                   <img

@@ -10,6 +10,14 @@ interface Location {
   };
 }
 
+type GeolocationStep = 
+  | 'idle'
+  | 'requesting_permission'
+  | 'getting_coordinates'
+  | 'geocoding'
+  | 'success'
+  | 'error';
+
 // Google Maps API Key
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
@@ -17,6 +25,7 @@ export const useGeolocation = () => {
   const [location, setLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState<GeolocationStep>('idle');
   const { toast } = useToast();
 
   const reverseGeocode = async (latitude: number, longitude: number) => {
@@ -90,6 +99,7 @@ export const useGeolocation = () => {
   const requestLocation = async () => {
     setLoading(true);
     setError(null);
+    setCurrentStep('requesting_permission');
 
     try {
       // Verificar se há localização salva no localStorage
@@ -98,6 +108,7 @@ export const useGeolocation = () => {
         const parsed = JSON.parse(savedLocation);
         setLocation(parsed);
         setLoading(false);
+        setCurrentStep('success');
         return;
       }
 
@@ -106,14 +117,20 @@ export const useGeolocation = () => {
         throw new Error('Geolocalização não suportada pelo navegador');
       }
 
+      setCurrentStep('getting_coordinates');
+
       // Solicitar localização
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
+            setCurrentStep('geocoding');
+            
             await reverseGeocode(
               position.coords.latitude,
               position.coords.longitude
             );
+            
+            setCurrentStep('success');
             
             toast({
               title: "Localização detectada!",
@@ -121,12 +138,14 @@ export const useGeolocation = () => {
             });
           } catch (err) {
             console.error('❌ Erro ao identificar cidade:', err);
+            setCurrentStep('error');
             setError('Localização obtida, mas não conseguimos identificar sua cidade');
             toast({
               title: "Não foi possível identificar a cidade",
               description: "Por favor, selecione manualmente.",
               variant: "destructive",
             });
+            throw err; // Re-throw para o componente saber que falhou
           } finally {
             setLoading(false);
           }
@@ -152,6 +171,7 @@ export const useGeolocation = () => {
               break;
           }
           
+          setCurrentStep('error');
           setError(errorMessage);
           setLoading(false);
           
@@ -160,6 +180,8 @@ export const useGeolocation = () => {
             description: toastDescription,
             variant: "destructive",
           });
+          
+          throw err; // Re-throw para o componente saber que falhou
         },
         {
           enableHighAccuracy: true,
@@ -168,8 +190,10 @@ export const useGeolocation = () => {
         }
       );
     } catch (err) {
+      setCurrentStep('error');
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
       setLoading(false);
+      throw err; // Re-throw para o componente saber que falhou
     }
   };
 
@@ -197,6 +221,7 @@ export const useGeolocation = () => {
     location,
     loading,
     error,
+    currentStep,
     requestLocation,
     setManualLocation,
     clearLocation

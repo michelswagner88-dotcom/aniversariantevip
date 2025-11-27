@@ -18,6 +18,10 @@ import {
 import { useActiveCities } from '@/hooks/useActiveCities';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { useCepLookup } from '@/hooks/useCepLookup';
+import { GeolocationProgress } from './GeolocationProgress';
 
 interface CityComboboxProps {
   value?: string;
@@ -35,8 +39,11 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
+  const [showCepDialog, setShowCepDialog] = useState(false);
+  const [cepInput, setCepInput] = useState("");
   
-  const { location, requestLocation } = useGeolocation();
+  const { location, requestLocation, currentStep } = useGeolocation();
+  const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
   
   const { data: response, isLoading } = useActiveCities({
     userLat: location?.coordinates?.latitude,
@@ -55,9 +62,20 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
       await requestLocation();
       toast.success('Localização detectada!');
     } catch (error) {
-      toast.error('Não foi possível obter sua localização');
+      // Abrir diálogo de CEP quando falhar
+      setShowCepDialog(true);
     } finally {
       setIsRequestingLocation(false);
+    }
+  };
+
+  const handleCepSubmit = async () => {
+    const data = await fetchCep(cepInput);
+    if (data) {
+      onSelect(data.localidade, data.uf);
+      setShowCepDialog(false);
+      setCepInput("");
+      setOpen(false);
     }
   };
 
@@ -223,6 +241,49 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
           </CommandList>
         </Command>
       </PopoverContent>
+      
+      {/* Progress da Geolocalização */}
+      {isRequestingLocation && (
+        <GeolocationProgress currentStep={currentStep} className="relative -bottom-4" />
+      )}
+      
+      {/* Diálogo de Fallback para CEP */}
+      <Dialog open={showCepDialog} onOpenChange={setShowCepDialog}>
+        <DialogContent className="bg-slate-900 border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle>Informe seu CEP</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Não conseguimos detectar sua localização automaticamente. Por favor, digite seu CEP para continuar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 mt-4">
+            <Input
+              type="text"
+              value={cepInput}
+              onChange={(e) => setCepInput(formatCep(e.target.value))}
+              placeholder="00000-000"
+              maxLength={9}
+              className="bg-white/5 border-white/10 text-white placeholder:text-slate-500"
+            />
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowCepDialog(false)} 
+                variant="outline"
+                className="flex-1 border-white/10 hover:bg-white/5"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleCepSubmit}
+                disabled={cepLoading}
+                className="flex-1 bg-gradient-to-r from-violet-600 to-pink-600"
+              >
+                {cepLoading ? <Loader2 className="animate-spin" size={20} /> : "Confirmar"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Popover>
   );
 };

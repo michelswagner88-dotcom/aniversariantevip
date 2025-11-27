@@ -9,6 +9,7 @@ import { useCepLookup } from "@/hooks/useCepLookup";
 import { BackButton } from "@/components/BackButton";
 import { EmptyState } from "@/components/EmptyState";
 import { useEstabelecimentos } from "@/hooks/useEstabelecimentos";
+import { GeolocationProgress } from "@/components/GeolocationProgress";
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick }: any) => (
@@ -113,7 +114,7 @@ const Explorar = () => {
   const [cepValue, setCepValue] = useState("");
 
   // --- HOOKS ---
-  const { location, loading: geoLoading, error: geoError, setManualLocation } = useGeolocation();
+  const { location, loading: geoLoading, error: geoError, currentStep, setManualLocation } = useGeolocation();
   const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
   
   // Buscar estabelecimentos reais do banco de dados
@@ -203,6 +204,9 @@ const Explorar = () => {
           <BackButton to="/" />
         </div>
         <VoiceSearchBar />
+
+        {/* Progress da Geolocalização */}
+        {geoLoading && <GeolocationProgress currentStep={currentStep} />}
 
         {showCepInput && (
           <div className="container mx-auto px-6 mt-3 animate-in slide-in-from-top duration-300">

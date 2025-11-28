@@ -40,6 +40,7 @@ interface Estabelecimento {
   instagram: string | null;
   horario_funcionamento: string | null;
   link_cardapio: string | null;
+  galeria_fotos: string[];
   logo_url: string | null;
   latitude: number | null;
   longitude: number | null;

@@ -35,9 +35,8 @@ const estabelecimentoSchema = z.object({
 export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isProcessingImage, setIsProcessingImage] = useState(false);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
+  const [galeriaFotos, setGaleriaFotos] = useState<string[]>([]);
   const [horariosFuncionamento, setHorariosFuncionamento] = useState<HorarioFuncionamento[]>([
     { id: '1', dias: [], abertura: '', fechamento: '' }
   ]);
@@ -535,86 +534,13 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
               </div>
             </div>
 
-            <div className="space-y-4">
-              <Label>Foto do Estabelecimento</Label>
-              
-              <div className="flex items-start gap-6">
-                {/* Preview da foto */}
-                <div className="relative">
-                  <div 
-                    className={`w-32 h-32 rounded-xl overflow-hidden border-2 border-dashed 
-                      ${isProcessingImage ? 'border-violet-500' : 'border-white/20'} 
-                      bg-white/5 flex items-center justify-center cursor-pointer 
-                      hover:border-violet-500 transition-colors`}
-                    onClick={() => !isProcessingImage && document.getElementById('logo')?.click()}
-                  >
-                    {isProcessingImage ? (
-                      <div className="text-center">
-                        <Loader2 className="w-8 h-8 text-violet-500 mx-auto mb-2 animate-spin" />
-                        <span className="text-xs text-gray-400">Processando...</span>
-                      </div>
-                    ) : logoPreview ? (
-                      <img 
-                        src={logoPreview} 
-                        alt="Foto do estabelecimento" 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="text-center p-2">
-                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <span className="text-xs text-gray-400">Toque para adicionar</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {logoPreview && !isProcessingImage && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="destructive"
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLogoPreview('');
-                        setLogoFile(null);
-                      }}
-                    >
-                      ✕
-                    </Button>
-                  )}
-                </div>
-                
-                {/* Input file oculto */}
-                <input
-                  id="logo"
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleLogoChange}
-                  className="hidden"
-                  disabled={isProcessingImage}
-                />
-                
-                {/* Opções */}
-                <div className="flex-1 space-y-3">
-                  <Button 
-                    type="button"
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => document.getElementById('logo')?.click()}
-                    disabled={isProcessingImage}
-                    className="w-full"
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Enviar Foto
-                  </Button>
-                  
-                  <p className="text-xs text-gray-400">
-                    📱 Envie qualquer foto - ajustamos automaticamente para formato quadrado!
-                  </p>
-                </div>
-              </div>
-            </div>
+            <GaleriaFotosUpload
+              fotoPrincipal={logoPreview}
+              setFotoPrincipal={setLogoPreview}
+              galeriaFotos={galeriaFotos}
+              setGaleriaFotos={setGaleriaFotos}
+              maxFotos={5}
+            />
 
             <div className="space-y-2">
               <Label htmlFor="descricaoBeneficio">Descrição do Benefício</Label>

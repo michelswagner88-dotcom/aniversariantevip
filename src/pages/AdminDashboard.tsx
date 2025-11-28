@@ -125,6 +125,11 @@ export default function AdminDashboard() {
   const [emailAnalytics, setEmailAnalytics] = useState<any[]>([]);
   const [bulkFetchingPhotos, setBulkFetchingPhotos] = useState(false);
   const [photoProgress, setPhotoProgress] = useState({ current: 0, total: 0 });
+  
+  // Filtros avançados
+  const [filterCity, setFilterCity] = useState<string>('');
+  const [filterCategory, setFilterCategory] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
   useEffect(() => {
     checkAdminAccess();
@@ -188,9 +193,18 @@ export default function AdminDashboard() {
     navigate('/admin');
   };
 
-  const estabelecimentosSemFoto = establishments?.filter(
+  // Aplicar filtros
+  const filteredEstablishments = establishments?.filter((e) => {
+    if (filterCity && e.cidade !== filterCity) return false;
+    if (filterCategory && !e.categoria?.includes(filterCategory)) return false;
+    if (filterStatus === 'active' && !e.ativo) return false;
+    if (filterStatus === 'inactive' && e.ativo) return false;
+    return true;
+  }) || [];
+
+  const estabelecimentosSemFoto = filteredEstablishments.filter(
     (e) => !e.logo_url || e.logo_url === ''
-  ) || [];
+  );
 
   const handleBuscarFotosEmLote = async () => {
     if (estabelecimentosSemFoto.length === 0) {
@@ -238,6 +252,36 @@ export default function AdminDashboard() {
     setBulkFetchingPhotos(false);
     loadData();
     toast.success(`✅ ${sucesso} fotos encontradas | ❌ ${erros} não encontradas`);
+  };
+
+  const handleBuscarFotoIndividual = async (estab: any) => {
+    try {
+      toast.info(`Buscando foto para ${estab.nome_fantasia}...`);
+      
+      const { data, error } = await supabase.functions.invoke('fetch-place-photo', {
+        body: {
+          nome: estab.nome_fantasia,
+          endereco: estab.logradouro || '',
+          cidade: estab.cidade,
+          estado: estab.estado,
+        },
+      });
+
+      if (data?.success && data?.photo_url) {
+        await supabase
+          .from('estabelecimentos')
+          .update({ logo_url: data.photo_url })
+          .eq('id', estab.id);
+        
+        toast.success(`✅ Foto encontrada!`);
+        loadData();
+      } else {
+        toast.error('❌ Foto não encontrada no Google');
+      }
+    } catch (err) {
+      console.error('Erro ao buscar foto:', err);
+      toast.error('Erro ao buscar foto');
+    }
   };
 
   const handleSimulateBirthdayRobot = async () => {
@@ -352,13 +396,6 @@ export default function AdminDashboard() {
       user.telefone?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [users, searchTerm]);
-
-  const filteredEstablishments = useMemo(() => {
-    return establishments.filter(est => 
-      est.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      est.razao_social?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [establishments, searchTerm]);
 
   const MOCK_STATS_HISTORY = [
     { name: 'Jan', usuarios: Math.round(users.length * 0.4), cupons: Math.round(cupons.length * 0.3), receita: 2400 },

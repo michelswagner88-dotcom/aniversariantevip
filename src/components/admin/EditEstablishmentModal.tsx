@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, MapPin, Camera } from "lucide-react";
 import { CATEGORIAS_ESTABELECIMENTO, PERIODOS_VALIDADE } from "@/lib/constants";
+import { HorarioFuncionamentoEditor } from "./HorarioFuncionamentoEditor";
+import { Switch } from "@/components/ui/switch";
 
 interface Establishment {
   id: string;
@@ -33,6 +35,10 @@ interface Establishment {
   periodo_validade_beneficio: string | null;
   plan_status: string | null;
   ativo: boolean;
+  telefone: string | null;
+  email: string | null;
+  horario_funcionamento: string | null;
+  regras_utilizacao: string | null;
 }
 
 interface EditEstablishmentModalProps {
@@ -182,11 +188,13 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
         </DialogHeader>
 
         <Tabs defaultValue="basico" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="basico">Dados Básicos</TabsTrigger>
-            <TabsTrigger value="localizacao">Localização</TabsTrigger>
-            <TabsTrigger value="contato">Contato & Mídia</TabsTrigger>
-            <TabsTrigger value="negocio">Negócio</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="basico">Básico</TabsTrigger>
+            <TabsTrigger value="localizacao">Endereço</TabsTrigger>
+            <TabsTrigger value="contato">Contato</TabsTrigger>
+            <TabsTrigger value="beneficio">Benefício</TabsTrigger>
+            <TabsTrigger value="imagens">Imagens</TabsTrigger>
+            <TabsTrigger value="config">Config</TabsTrigger>
           </TabsList>
 
           {/* DADOS BÁSICOS */}
@@ -348,14 +356,33 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
             </div>
           </TabsContent>
 
-          {/* CONTATO & MÍDIA */}
+          {/* CONTATO */}
           <TabsContent value="contato" className="space-y-4">
+            <div>
+              <Label>Telefone Fixo</Label>
+              <Input
+                value={formData.telefone || ''}
+                onChange={(e) => setFormData({...formData, telefone: e.target.value})}
+                placeholder="(48) 3333-3333"
+              />
+            </div>
+
             <div>
               <Label>WhatsApp</Label>
               <Input
                 value={formData.whatsapp || ''}
                 onChange={(e) => setFormData({...formData, whatsapp: e.target.value})}
                 placeholder="(48) 99999-9999"
+              />
+            </div>
+
+            <div>
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={formData.email || ''}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                placeholder="contato@estabelecimento.com.br"
               />
             </div>
 
@@ -378,45 +405,149 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
             </div>
 
             <div>
-              <Label>URL da Foto (Cover Image)</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={formData.logo_url || ''}
-                  onChange={(e) => setFormData({...formData, logo_url: e.target.value})}
-                  placeholder="https://storage.url/imagem.jpg"
-                  className="flex-1"
+              <Label>Horário de Funcionamento</Label>
+              <HorarioFuncionamentoEditor
+                value={formData.horario_funcionamento}
+                onChange={(json) => setFormData({...formData, horario_funcionamento: json})}
+              />
+            </div>
+          </TabsContent>
+
+          {/* BENEFÍCIO */}
+          <TabsContent value="beneficio" className="space-y-4">
+            <div>
+              <Label>Descrição do Benefício</Label>
+              <Textarea
+                value={formData.descricao_beneficio || ''}
+                onChange={(e) => setFormData({...formData, descricao_beneficio: e.target.value})}
+                placeholder="Ex: 10% de desconto no rodízio completo"
+                rows={4}
+                maxLength={200}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {formData.descricao_beneficio?.length || 0}/200 caracteres
+              </p>
+            </div>
+
+            <div>
+              <Label>Regras de Utilização</Label>
+              <Textarea
+                value={formData.regras_utilizacao || ''}
+                onChange={(e) => setFormData({...formData, regras_utilizacao: e.target.value})}
+                placeholder="Ex: Válido apenas para consumo no local. Não cumulativo com outras promoções."
+                rows={4}
+              />
+            </div>
+
+            <div>
+              <Label>Período de Validade</Label>
+              <Select
+                value={formData.periodo_validade_beneficio || 'dia_aniversario'}
+                onValueChange={(value) => setFormData({...formData, periodo_validade_beneficio: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PERIODOS_VALIDADE.map((period) => (
+                    <SelectItem key={period.value} value={period.value}>
+                      {period.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </TabsContent>
+
+          {/* IMAGENS */}
+          <TabsContent value="imagens" className="space-y-4">
+            {formData.logo_url && (
+              <div className="relative">
+                <img 
+                  src={formData.logo_url} 
+                  alt="Foto atual" 
+                  className="w-full h-48 object-cover rounded-lg border"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://via.placeholder.com/400x200?text=Erro+ao+carregar';
+                  }}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleFetchGooglePhoto}
-                  disabled={fetchingPhoto}
-                >
-                  {fetchingPhoto ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Buscando...
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="mr-2 h-4 w-4" />
-                      📸 Buscar Foto
-                    </>
-                  )}
-                </Button>
               </div>
-              {formData.logo_url && (
-                <div className="mt-3 flex justify-center">
-                  <img
-                    src={formData.logo_url}
-                    alt="Preview"
-                    className="h-32 w-auto rounded-lg object-cover border"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://via.placeholder.com/300x200?text=Imagem+Inválida';
-                    }}
-                  />
-                </div>
+            )}
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleFetchGooglePhoto}
+              disabled={fetchingPhoto}
+              className="w-full"
+            >
+              {fetchingPhoto ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Buscando...
+                </>
+              ) : (
+                <>
+                  <Camera className="mr-2 h-4 w-4" />
+                  Buscar Foto do Google
+                </>
               )}
+            </Button>
+
+            <div>
+              <Label>URL da Imagem</Label>
+              <Input
+                value={formData.logo_url || ''}
+                onChange={(e) => setFormData({...formData, logo_url: e.target.value})}
+                placeholder="https://exemplo.com/foto.jpg"
+              />
+            </div>
+
+            <div>
+              <Label>Ou faça upload</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  
+                  toast.info('Upload de arquivo ainda não implementado. Use URL ou busca do Google.');
+                }}
+              />
+              <p className="text-xs text-slate-500 mt-1">Upload direto em desenvolvimento. Use URL ou Google por enquanto.</p>
+            </div>
+          </TabsContent>
+
+          {/* CONFIGURAÇÕES */}
+          <TabsContent value="config" className="space-y-4">
+            <div className="flex items-center justify-between p-4 border border-white/10 rounded-lg">
+              <div>
+                <Label className="text-base">Status: Ativo/Inativo</Label>
+                <p className="text-sm text-slate-400">Estabelecimento visível no app</p>
+              </div>
+              <Switch
+                checked={formData.ativo}
+                onCheckedChange={(checked) => setFormData({...formData, ativo: checked})}
+              />
+            </div>
+
+            <div>
+              <Label>Plano (Tier)</Label>
+              <Select
+                value={formData.plan_status || 'pending'}
+                onValueChange={(value) => setFormData({...formData, plan_status: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">🔵 Pending (Aguardando)</SelectItem>
+                  <SelectItem value="active">✅ Active (Gold/Pago)</SelectItem>
+                  <SelectItem value="trialing">🎁 Trialing (Teste)</SelectItem>
+                  <SelectItem value="canceled">❌ Canceled (Cancelado)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </TabsContent>
 

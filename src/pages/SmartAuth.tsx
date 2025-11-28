@@ -22,6 +22,7 @@ const SmartAuth = () => {
   const [isLogin, setIsLogin] = useState(true); // Prioriza LOGIN
   const [showCepSearch, setShowCepSearch] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isGoogleUser, setIsGoogleUser] = useState(false); // Flag para usuário Google
   
   // Refs para controle de race condition
   const isProcessingRef = useRef(false);
@@ -154,12 +155,15 @@ const SmartAuth = () => {
             sessionStorage.removeItem('forceStep2');
             sessionStorage.removeItem('needsCompletion');
             
+            // Preencher dados do usuário Google
             setUserId(session.user.id);
+            setEmail(session.user.email || '');
             setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
+            setIsGoogleUser(true); // Marcar como usuário Google
             setStep(2);
             hasProcessedRef.current = true; // Marca que já processou
             
-            console.log('✅ Step 2 configurado com sucesso');
+            console.log('✅ Step 2 configurado com sucesso para usuário Google');
           }
           return; // PARA AQUI - não faz mais nada
         }
@@ -214,7 +218,9 @@ const SmartAuth = () => {
           if (!anivData?.cpf || !anivData?.data_nascimento) {
             console.log('📋 Precisa completar cadastro, mantendo no Step 2...');
             setUserId(session.user.id);
+            setEmail(session.user.email || '');
             setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
+            setIsGoogleUser(true); // Marcar como usuário Google
             setStep(2);
           } else {
             console.log('✅ Cadastro completo, redirecionando...');
@@ -857,6 +863,21 @@ const SmartAuth = () => {
             {/* Step 2: Complete registration */}
             {step === 2 && (
               <form onSubmit={handleCompletion} className="space-y-5">
+                {/* Mensagem para usuário Google */}
+                {isGoogleUser && email && (
+                  <div className="bg-violet-500/10 border border-violet-500/30 rounded-lg p-4 space-y-2">
+                    <p className="text-violet-300 text-sm font-medium">
+                      ✓ Você está cadastrando com sua conta Google
+                    </p>
+                    <div className="space-y-1">
+                      <label className="text-xs text-slate-400">Email (Google)</label>
+                      <div className="bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300">
+                        {email}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <MaskedInput
                   label="Nome Completo"
                   value={name}

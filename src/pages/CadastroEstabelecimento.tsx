@@ -314,10 +314,13 @@ export default function EstablishmentRegistration() {
 
   const handleGoogleSignUp = async () => {
     try {
+      // Salvar no sessionStorage que é cadastro de estabelecimento
+      sessionStorage.setItem('authType', 'estabelecimento');
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/cadastro/estabelecimento?step=2&provider=google`,
+          redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

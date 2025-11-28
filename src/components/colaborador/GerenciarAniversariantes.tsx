@@ -4,11 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Edit, Loader2, Search, User, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { EditUserModal } from "@/components/admin/EditUserModal";
 
 type Aniversariante = {
   id: string;
@@ -17,6 +16,13 @@ type Aniversariante = {
   cpf: string;
   telefone: string | null;
   data_nascimento: string;
+  cidade: string;
+  estado: string;
+  bairro: string;
+  logradouro: string;
+  numero: string | null;
+  complemento: string | null;
+  cep: string;
   created_at: string;
 };
 
@@ -25,7 +31,7 @@ export function GerenciarAniversariantes() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [editando, setEditando] = useState<Aniversariante | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
 
   useEffect(() => {
@@ -77,6 +83,13 @@ export function GerenciarAniversariantes() {
           cpf: aniv?.cpf || '',
           telefone: aniv?.telefone,
           data_nascimento: aniv?.data_nascimento || '',
+          cidade: aniv?.cidade || '',
+          estado: aniv?.estado || '',
+          bairro: aniv?.bairro || '',
+          logradouro: aniv?.logradouro || '',
+          numero: aniv?.numero,
+          complemento: aniv?.complemento,
+          cep: aniv?.cep || '',
           created_at: profile.created_at || ''
         };
       }) || [];
@@ -90,45 +103,6 @@ export function GerenciarAniversariantes() {
     }
   };
 
-  const handleSalvar = async () => {
-    if (!editando) return;
-
-    try {
-      setSalvando(true);
-
-      // Atualizar profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ 
-          nome: editando.nome,
-          email: editando.email 
-        })
-        .eq('id', editando.id);
-
-      if (profileError) throw profileError;
-
-      // Atualizar aniversariante
-      const { error: anivError } = await supabase
-        .from('aniversariantes')
-        .update({
-          cpf: editando.cpf,
-          telefone: editando.telefone,
-          data_nascimento: editando.data_nascimento
-        })
-        .eq('id', editando.id);
-
-      if (anivError) throw anivError;
-
-      toast.success("Aniversariante atualizado com sucesso!");
-      setEditando(null);
-      await carregarAniversariantes();
-    } catch (error: any) {
-      console.error("Erro ao salvar:", error);
-      toast.error("Erro ao salvar alterações");
-    } finally {
-      setSalvando(false);
-    }
-  };
 
   const handleExcluir = async (id: string) => {
     try {
@@ -181,185 +155,133 @@ export function GerenciarAniversariantes() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Gerenciar Aniversariantes</CardTitle>
-        <CardDescription>
-          Total de {aniversariantes.length} aniversariante(s) cadastrado(s)
-        </CardDescription>
-        
-        <div className="relative mt-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome, email ou CPF..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-      </CardHeader>
-      <CardContent>
-        {aniversariantesFiltrados.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Nenhum aniversariante encontrado</p>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Gerenciar Aniversariantes</CardTitle>
+          <CardDescription>
+            Total de {aniversariantes.length} aniversariante(s) cadastrado(s)
+          </CardDescription>
+          
+          <div className="relative mt-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, email ou CPF..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
           </div>
-        ) : (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>CPF</TableHead>
-                  <TableHead>Telefone</TableHead>
-                  <TableHead>Data Nasc.</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {aniversariantesFiltrados.map((aniv) => (
-                  <TableRow key={aniv.id}>
-                    <TableCell className="font-medium">{aniv.nome}</TableCell>
-                    <TableCell>{aniv.email}</TableCell>
-                    <TableCell>{aniv.cpf}</TableCell>
-                    <TableCell>{aniv.telefone || '-'}</TableCell>
-                    <TableCell>
-                      {aniv.data_nascimento ? new Date(aniv.data_nascimento).toLocaleDateString('pt-BR') : '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditando(aniv)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Editar Aniversariante</DialogTitle>
-                            <DialogDescription>
-                              Edite as informações do aniversariante
-                            </DialogDescription>
-                          </DialogHeader>
-                          
-                          {editando && (
-                            <div className="space-y-4">
-                              <div>
-                                <Label>Nome</Label>
-                                <Input
-                                  value={editando.nome}
-                                  onChange={(e) => setEditando({...editando, nome: e.target.value})}
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label>Email</Label>
-                                <Input 
-                                  type="email"
-                                  value={editando.email}
-                                  onChange={(e) => setEditando({...editando, email: e.target.value})}
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label>CPF</Label>
-                                <Input 
-                                  value={editando.cpf}
-                                  onChange={(e) => setEditando({...editando, cpf: e.target.value})}
-                                  placeholder="000.000.000-00"
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label>Telefone</Label>
-                                <Input
-                                  value={editando.telefone || ''}
-                                  onChange={(e) => setEditando({...editando, telefone: e.target.value})}
-                                  placeholder="(00) 00000-0000"
-                                />
-                              </div>
-                              
-                              <div>
-                                <Label>Data de Nascimento</Label>
-                                <Input
-                                  type="date"
-                                  value={editando.data_nascimento}
-                                  onChange={(e) => setEditando({...editando, data_nascimento: e.target.value})}
-                                />
-                              </div>
-                              
-                              <Button 
-                                onClick={handleSalvar} 
-                                disabled={salvando}
-                                className="w-full"
-                              >
-                                {salvando ? (
-                                  <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Salvando...
-                                  </>
-                                ) : (
-                                  'Salvar Alterações'
-                                )}
-                              </Button>
-                            </div>
-                          )}
-                        </DialogContent>
-                        </Dialog>
-                        
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>⚠️ Confirmar Exclusão Permanente</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                <strong className="text-destructive">ATENÇÃO: Esta ação é irreversível!</strong>
-                                <br /><br />
-                                Ao confirmar, o usuário <strong>{aniv.nome}</strong> será completamente removido do sistema:
-                                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                                  <li>Todos os cupons emitidos serão excluídos</li>
-                                  <li>Favoritos e interações serão apagados</li>
-                                  <li>CPF, telefone e email ficarão livres para novo cadastro</li>
-                                  <li>Conta de acesso será removida permanentemente</li>
-                                </ul>
-                                <br />
-                                <strong>Tem certeza que deseja prosseguir?</strong>
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleExcluir(aniv.id)}
-                                disabled={excluindo}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                {excluindo ? "Excluindo..." : "Excluir"}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
+        </CardHeader>
+        <CardContent>
+          {aniversariantesFiltrados.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhum aniversariante encontrado</p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Usuário</TableHead>
+                    <TableHead>CPF</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Cidade</TableHead>
+                    <TableHead>Data Nasc.</TableHead>
+                    <TableHead>Cadastro</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                </TableHeader>
+                <TableBody>
+                  {aniversariantesFiltrados.map((aniv) => (
+                    <TableRow key={aniv.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{aniv.nome}</p>
+                          <p className="text-sm text-muted-foreground">{aniv.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">{aniv.cpf}</TableCell>
+                      <TableCell>{aniv.telefone || '-'}</TableCell>
+                      <TableCell>
+                        {aniv.cidade && aniv.estado ? `${aniv.cidade}, ${aniv.estado}` : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {aniv.data_nascimento ? new Date(aniv.data_nascimento).toLocaleDateString('pt-BR') : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {aniv.created_at ? new Date(aniv.created_at).toLocaleDateString('pt-BR') : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditando(aniv);
+                              setModalOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>⚠️ Confirmar Exclusão Permanente</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  <strong className="text-destructive">ATENÇÃO: Esta ação é irreversível!</strong>
+                                  <br /><br />
+                                  Ao confirmar, o usuário <strong>{aniv.nome}</strong> será completamente removido do sistema:
+                                  <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                                    <li>Todos os cupons emitidos serão excluídos</li>
+                                    <li>Favoritos e interações serão apagados</li>
+                                    <li>CPF, telefone e email ficarão livres para novo cadastro</li>
+                                    <li>Conta de acesso será removida permanentemente</li>
+                                  </ul>
+                                  <br />
+                                  <strong>Tem certeza que deseja prosseguir?</strong>
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleExcluir(aniv.id)}
+                                  disabled={excluindo}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  {excluindo ? "Excluindo..." : "Excluir"}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <EditUserModal
+        user={editando}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onSuccess={carregarAniversariantes}
+      />
+    </>
   );
 }

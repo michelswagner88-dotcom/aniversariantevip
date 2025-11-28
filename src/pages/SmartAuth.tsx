@@ -446,7 +446,32 @@ const SmartAuth = () => {
     setError('');
 
     try {
+      console.log('🔵 Iniciando salvamento de dados...');
+      console.log('🔵 User ID:', userId);
+      
+      // Preparar dados formatados
+      const birthDateFormatted = birthDate.split('/').reverse().join('-'); // DD/MM/YYYY -> YYYY-MM-DD
+      const cpfClean = cpf.replace(/\D/g, '');
+      const telefoneClean = phone.replace(/\D/g, '');
+      const cepClean = cep.replace(/\D/g, '');
+      
+      console.log('🔵 Dados formatados:', {
+        nome: name,
+        cpf: cpfClean,
+        telefone: telefoneClean,
+        data_nascimento: birthDateFormatted,
+        cep: cepClean,
+        cidade,
+        estado,
+        bairro,
+        logradouro,
+        numero,
+        latitude,
+        longitude,
+      });
+
       // Atualizar profile com nome
+      console.log('🔵 Atualizando profile...');
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -454,19 +479,22 @@ const SmartAuth = () => {
         })
         .eq('id', userId);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('❌ Erro ao atualizar profile:', profileError);
+        throw profileError;
+      }
+      console.log('✅ Profile atualizado com sucesso');
 
       // Inserir na tabela aniversariantes
-      const birthDateFormatted = birthDate.split('/').reverse().join('-'); // DD/MM/YYYY -> YYYY-MM-DD
-      
+      console.log('🔵 Inserindo dados de aniversariante...');
       const { error: insertError } = await supabase
         .from('aniversariantes')
         .insert({
           id: userId,
-          cpf: cpf.replace(/\D/g, ''),
-          telefone: phone.replace(/\D/g, ''),
+          cpf: cpfClean,
+          telefone: telefoneClean,
           data_nascimento: birthDateFormatted,
-          cep: cep.replace(/\D/g, ''),
+          cep: cepClean,
           cidade: cidade,
           estado: estado,
           bairro: bairro,
@@ -477,10 +505,12 @@ const SmartAuth = () => {
         });
 
       if (insertError) {
-        console.error('Erro ao inserir aniversariante:', insertError);
+        console.error('❌ Erro ao inserir aniversariante:', insertError);
         const friendlyMessage = getFriendlyErrorMessage(insertError);
         throw new Error(friendlyMessage);
       }
+      
+      console.log('✅ Dados de aniversariante salvos com sucesso!');
 
       toast.success('Cadastro concluído! 🎉', {
         description: 'Bem-vindo ao Aniversariante VIP!',
@@ -489,13 +519,15 @@ const SmartAuth = () => {
       // Verificar se há redirecionamento pendente
       const redirectTo = sessionStorage.getItem('redirectAfterLogin');
       if (redirectTo) {
+        console.log('🔵 Redirecionando para:', redirectTo);
         sessionStorage.removeItem('redirectAfterLogin');
         navigate(redirectTo);
       } else {
-        navigate('/dashboard');
+        console.log('🔵 Redirecionando para área do aniversariante');
+        navigate('/area-aniversariante');
       }
     } catch (error: any) {
-      console.error('Erro ao completar cadastro:', error);
+      console.error('❌ Erro ao completar cadastro:', error);
       const friendlyMessage = getFriendlyErrorMessage(error);
       setError(friendlyMessage);
       toast.error('Erro ao completar cadastro', {

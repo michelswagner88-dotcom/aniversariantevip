@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -57,9 +57,12 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
   const [formData, setFormData] = useState<Establishment | null>(establishment);
 
   // Update formData when establishment changes
-  useState(() => {
-    setFormData(establishment);
-  });
+  useEffect(() => {
+    if (establishment) {
+      console.log('Modal: Carregando dados do estabelecimento:', establishment);
+      setFormData(establishment);
+    }
+  }, [establishment]);
 
   const handleRecalculatePosition = async () => {
     if (!formData?.endereco) {

@@ -39,6 +39,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
+import * as XLSX from 'xlsx';
 import { 
   Dialog,
   DialogContent,
@@ -125,6 +126,8 @@ export default function AdminDashboard() {
   const [emailAnalytics, setEmailAnalytics] = useState<any[]>([]);
   const [bulkFetchingPhotos, setBulkFetchingPhotos] = useState(false);
   const [photoProgress, setPhotoProgress] = useState({ current: 0, total: 0 });
+  const [importingCSV, setImportingCSV] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   
   // Filtros avançados
   const [filterCity, setFilterCity] = useState<string>('');
@@ -191,6 +194,80 @@ export default function AdminDashboard() {
     await supabase.auth.signOut();
     toast.success('Logout realizado com sucesso');
     navigate('/admin');
+  };
+
+  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportingCSV(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const data = new Uint8Array(event.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+
+        setImportProgress({ current: 0, total: rows.length });
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = 0; i < rows.length; i++) {
+          const row: any = rows[i];
+          setImportProgress({ current: i + 1, total: rows.length });
+
+          try {
+            const cnpj = row.CNPJ?.toString().replace(/\D/g, '');
+            const instagram = row.INSTAGRAM ? (row.INSTAGRAM.startsWith('@') ? row.INSTAGRAM : `@${row.INSTAGRAM}`) : null;
+
+            const estabelecimentoData = {
+              cnpj: cnpj || '',
+              nome_fantasia: row.NOME_ESTABELECIMENTO || '',
+              razao_social: row.NOME_ESTABELECIMENTO || '',
+              horario_funcionamento: row.HORARIO_FUNCIONAMENTO || null,
+              estado: row.ESTADO || '',
+              cidade: row.CIDADE || '',
+              bairro: row.BAIRRO || null,
+              logradouro: row.RUA || null,
+              numero: row.NUMERO || null,
+              complemento: row.COMPLEMENTO || null,
+              telefone: row.TELEFONE?.toString().replace(/\D/g, '') || null,
+              whatsapp: row.WHATSAPP?.toString().replace(/\D/g, '') || null,
+              instagram: instagram,
+              site: row.SITE || null,
+              categoria: row.CATEGORIA ? [row.CATEGORIA] : [],
+              descricao_beneficio: row.BENEFICIO || null,
+              regras_utilizacao: row.REGRAS || null,
+              ativo: true,
+              plan_status: 'active',
+            };
+
+            const { error } = await supabase
+              .from('estabelecimentos')
+              .upsert(estabelecimentoData, { onConflict: 'cnpj', ignoreDuplicates: false });
+
+            if (error) throw error;
+            successCount++;
+          } catch (err) {
+            console.error('Erro ao importar linha:', err);
+            errorCount++;
+          }
+        }
+
+        toast.success(`✅ Importação concluída! ${successCount} estabelecimentos importados, ${errorCount} erros.`);
+        loadData();
+      };
+
+      reader.readAsArrayBuffer(file);
+    } catch (error) {
+      console.error('Erro ao importar CSV:', error);
+      toast.error('Erro ao importar arquivo');
+    } finally {
+      setImportingCSV(false);
+    }
   };
 
   // Aplicar filtros
@@ -361,11 +438,11 @@ export default function AdminDashboard() {
       });
       setEditUserModalOpen(true);
     } else {
-      // Para estabelecimento, já temos todos os dados
-      setSelectedEstab(item);
-      setEditEstabModalOpen(true);
+      // Navegar para página de edição completa
+      navigate(`/admin/estabelecimento/${item.id}/editar`);
     }
   };
+
 
   const handleToggleEstablishmentStatus = async (establishmentId: string, currentStatus: boolean) => {
     try {
@@ -396,6 +473,108 @@ export default function AdminDashboard() {
       user.telefone?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [users, searchTerm]);
+
+  const filteredEstablishments = useMemo(() => {
+    return establishments.filter(est => {
+      const matchesSearch = !searchTerm || 
+        est.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        est.cnpj?.includes(searchTerm) ||
+        est.cidade?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesCity = !filterCity || est.cidade === filterCity;
+      const matchesCategory = !filterCategory || est.categoria?.includes(filterCategory);
+      const matchesStatus = filterStatus === 'all' || 
+        (filterStatus === 'active' && est.ativo) || 
+        (filterStatus === 'inactive' && !est.ativo);
+
+      return matchesSearch && matchesCity && matchesCategory && matchesStatus;
+    });
+  }, [establishments, searchTerm, filterCity, filterCategory, filterStatus]);
+
+  const estabelecimentosSemFoto = useMemo(() => {
+    return establishments.filter(e => !e.logo_url || e.logo_url === '');
+  }, [establishments]);
+
+  const uniqueCities = useMemo(() => {
+    const cities = establishments.map(e => e.cidade).filter(Boolean);
+    return Array.from(new Set(cities)).sort();
+  }, [establishments]);
+
+  const handleBuscarFotosEmLote = async () => {
+    if (estabelecimentosSemFoto.length === 0) {
+      toast.info('Todos os estabelecimentos já têm foto!');
+      return;
+    }
+
+    setBulkFetchingPhotos(true);
+    setPhotoProgress({ current: 0, total: estabelecimentosSemFoto.length });
+
+    let sucesso = 0;
+    let erros = 0;
+
+    for (let i = 0; i < estabelecimentosSemFoto.length; i++) {
+      const est = estabelecimentosSemFoto[i];
+      setPhotoProgress({ current: i + 1, total: estabelecimentosSemFoto.length });
+
+      try {
+        const { data, error } = await supabase.functions.invoke('fetch-place-photo', {
+          body: {
+            nome: est.nome_fantasia,
+            endereco: est.logradouro || '',
+            cidade: est.cidade,
+            estado: est.estado,
+          },
+        });
+
+        if (data?.success && data?.photo_url) {
+          await supabase
+            .from('estabelecimentos')
+            .update({ logo_url: data.photo_url })
+            .eq('id', est.id);
+          sucesso++;
+        } else {
+          erros++;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (err) {
+        erros++;
+      }
+    }
+
+    setBulkFetchingPhotos(false);
+    loadData();
+    toast.success(`✅ ${sucesso} fotos encontradas | ❌ ${erros} não encontradas`);
+  };
+
+  const handleBuscarFotoIndividual = async (est: any) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-place-photo', {
+        body: {
+          nome: est.nome_fantasia,
+          endereco: est.logradouro || '',
+          cidade: est.cidade,
+          estado: est.estado,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.success && data?.photo_url) {
+        await supabase
+          .from('estabelecimentos')
+          .update({ logo_url: data.photo_url })
+          .eq('id', est.id);
+        toast.success('Foto encontrada!');
+        loadData();
+      } else {
+        toast.error('Nenhuma foto encontrada');
+      }
+    } catch (err) {
+      console.error('Erro ao buscar foto:', err);
+      toast.error('Erro ao buscar foto');
+    }
+  };
 
   const MOCK_STATS_HISTORY = [
     { name: 'Jan', usuarios: Math.round(users.length * 0.4), cupons: Math.round(cupons.length * 0.3), receita: 2400 },
@@ -583,17 +762,93 @@ export default function AdminDashboard() {
 
   const renderEstablishmentsTable = () => (
     <div className="bg-slate-900/80 backdrop-blur-xl rounded-xl border border-white/10 overflow-hidden">
-      <div className="p-6 border-b border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h2 className="text-xl font-bold text-white">Gerenciar Estabelecimentos</h2>
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500" size={18} />
-          <input 
-            type="text" 
-            placeholder="Buscar empresa..." 
-            className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 placeholder:text-slate-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="p-6 border-b border-white/10 space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 className="text-xl font-bold text-white">Gerenciar Estabelecimentos</h2>
+          <div className="flex gap-2">
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                className="hidden"
+                onChange={handleImportCSV}
+                disabled={importingCSV}
+              />
+              <div className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-semibold flex items-center gap-2 transition-colors">
+                {importingCSV ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Importando... ({importProgress.current}/{importProgress.total})
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Importar CSV
+                  </>
+                )}
+              </div>
+            </label>
+            <button
+              onClick={handleBuscarFotosEmLote}
+              disabled={bulkFetchingPhotos || estabelecimentosSemFoto.length === 0}
+              className="px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-semibold flex items-center gap-2 transition-colors"
+            >
+              {bulkFetchingPhotos ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Buscando... ({photoProgress.current}/{photoProgress.total})
+                </>
+              ) : (
+                <>
+                  <Camera className="w-4 h-4" />
+                  Buscar Fotos ({estabelecimentosSemFoto.length})
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+        
+        {/* Filtros */}
+        <div className="flex flex-wrap gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500" size={18} />
+            <input 
+              type="text" 
+              placeholder="Buscar..." 
+              className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 placeholder:text-slate-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <select
+            value={filterCity}
+            onChange={(e) => setFilterCity(e.target.value)}
+            className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+          >
+            <option value="">Todas as cidades</option>
+            {uniqueCities.map(city => (
+              <option key={city} value={city}>{city}</option>
+            ))}
+          </select>
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+          >
+            <option value="">Todas as categorias</option>
+            {CATEGORIAS_ESTABELECIMENTO.map(cat => (
+              <option key={cat.value} value={cat.value}>{cat.label}</option>
+            ))}
+          </select>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+          >
+            <option value="all">Todos</option>
+            <option value="active">Ativos</option>
+            <option value="inactive">Inativos</option>
+          </select>
         </div>
       </div>
       <div className="overflow-x-auto">
@@ -636,14 +891,23 @@ export default function AdminDashboard() {
                 <td className="p-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button 
+                      onClick={() => handleBuscarFotoIndividual(est)}
+                      className="p-2 text-slate-400 hover:text-fuchsia-400 hover:bg-fuchsia-500/10 rounded-lg transition-colors"
+                      title="Buscar foto"
+                    >
+                      <Camera size={18} />
+                    </button>
+                    <button 
                       onClick={() => handleEditClick(est, 'establishment')}
                       className="p-2 text-slate-400 hover:text-violet-400 hover:bg-violet-500/10 rounded-lg transition-colors"
+                      title="Editar"
                     >
                       <Edit2 size={18} />
                     </button>
                     <button 
                       onClick={() => handleDeleteClick(est, 'establishment')}
                       className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                      title="Deletar"
                     >
                       <Trash2 size={18} />
                     </button>

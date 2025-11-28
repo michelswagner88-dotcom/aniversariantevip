@@ -152,13 +152,14 @@ export default function LoginEstabelecimento() {
               {loading ? "Entrando..." : "Entrar"}
             </Button>
 
-            <button
-              type="button"
-              onClick={handleRecuperarSenha}
-              className="w-full text-center text-sm text-primary hover:underline mt-2"
-            >
-              Esqueci Minha Senha
-            </button>
+            <div className="flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-primary hover:underline"
+              >
+                Esqueci minha senha
+              </Link>
+            </div>
             
             <p className="text-center text-sm text-muted-foreground mt-4">
               Não tem uma conta?{" "}

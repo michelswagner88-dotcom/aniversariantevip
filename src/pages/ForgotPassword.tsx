@@ -44,30 +44,35 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+    <div className="min-h-screen flex flex-col bg-slate-950 relative overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-violet-600/30 rounded-full blur-[120px]" />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[120px]" />
+      
       <Header />
-      <main className="flex-1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+      <main className="relative z-10 flex-1 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-white/10 bg-slate-900/80 backdrop-blur-xl">
           <CardHeader>
-            <CardTitle>Esqueci Minha Senha</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-white">Recuperar Senha</CardTitle>
+            <CardDescription className="text-slate-400">
               {emailSent 
                 ? "Verifique seu e-mail para continuar"
-                : "Digite seu e-mail para receber o link de recuperação"
+                : "Digite seu e-mail e enviaremos um link para você criar uma nova senha"
               }
             </CardDescription>
           </CardHeader>
           <CardContent>
             {emailSent ? (
               <div className="space-y-4">
-                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-                  <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                  <p className="text-sm text-green-400">
                     Se este e-mail estiver cadastrado, você receberá um link em instantes.
                     Verifique também sua caixa de spam.
                   </p>
                 </div>
-                <Link to="/auth">
-                  <Button variant="outline" className="w-full">
+                <Link to="/auth" className="block">
+                  <Button variant="ghost" className="w-full text-slate-400 hover:text-white">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Voltar para o Login
                   </Button>
@@ -76,16 +81,16 @@ export default function ForgotPassword() {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">E-mail *</Label>
+                  <Label htmlFor="email" className="text-slate-300">E-mail *</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input
                       id="email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="seu@email.com"
-                      className="pl-10"
+                      className="pl-10 bg-white/5 border-white/10 text-white"
                       required
                     />
                   </div>
@@ -93,7 +98,7 @@ export default function ForgotPassword() {
 
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700"
                   disabled={loading}
                 >
                   {loading ? (
@@ -102,7 +107,10 @@ export default function ForgotPassword() {
                       Enviando...
                     </>
                   ) : (
-                    "Enviar Link de Recuperação"
+                    <>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Enviar Link de Recuperação
+                    </>
                   )}
                 </Button>
 

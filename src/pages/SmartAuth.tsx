@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, AlertCircle, Mail, Lock, User, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
@@ -832,6 +832,17 @@ const SmartAuth = () => {
                       </div>
                     )}
                   </div>
+
+                  {isLogin && (
+                    <div className="flex justify-end">
+                      <Link
+                        to="/forgot-password"
+                        className="text-sm text-violet-400 hover:text-violet-300 transition-colors"
+                      >
+                        Esqueci minha senha
+                      </Link>
+                    </div>
+                  )}
 
                   <Button
                     type="submit"

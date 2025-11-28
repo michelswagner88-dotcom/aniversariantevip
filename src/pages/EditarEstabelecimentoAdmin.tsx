@@ -103,9 +103,10 @@ const BenefitRulesSection = ({ rules, setRules }: any) => {
 export default function EditarEstabelecimentoAdmin() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // ← CORRIGIDO: Iniciar como TRUE
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false); // ← NOVO: Flag de dados carregados
   const [fetchingPhoto, setFetchingPhoto] = useState(false);
   const [cnpjVerified, setCnpjVerified] = useState(false);
   const [error, setError] = useState('');
@@ -186,7 +187,10 @@ export default function EditarEstabelecimentoAdmin() {
   }, [isAuthenticated, id]);
 
   const loadEstabelecimento = async () => {
+    if (!id) return;
+
     setLoading(true);
+    setDataLoaded(false); // ← Resetar flag ao iniciar carregamento
     console.log('=== CARREGANDO ESTABELECIMENTO ===');
     console.log('ID:', id);
 
@@ -206,6 +210,7 @@ export default function EditarEstabelecimentoAdmin() {
         console.error('Erro ao buscar:', error);
         toast.error(`Erro ao carregar: ${error.message}`);
         setLoading(false);
+        setDataLoaded(false); // ← Marcar como falhou
         return;
       }
 
@@ -213,6 +218,7 @@ export default function EditarEstabelecimentoAdmin() {
         toast.error('Estabelecimento não encontrado');
         navigate('/admin/dashboard');
         setLoading(false);
+        setDataLoaded(false); // ← Marcar como falhou
         return;
       }
 
@@ -257,10 +263,12 @@ export default function EditarEstabelecimentoAdmin() {
       });
 
       setCnpjVerified(true);
+      setDataLoaded(true); // ← MARCAR como carregado com sucesso
       console.log('✅ Dados carregados e formulário preenchido com sucesso!');
     } catch (error: any) {
       console.error('❌ Exceção ao carregar:', error);
       toast.error('Erro ao carregar estabelecimento');
+      setDataLoaded(false); // ← Marcar como falhou
     } finally {
       setLoading(false);
     }
@@ -437,7 +445,7 @@ export default function EditarEstabelecimentoAdmin() {
     }
   };
 
-  // Loading enquanto verifica autenticação
+  // 1. Loading enquanto verifica autenticação
   if (loadingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950">
@@ -449,13 +457,30 @@ export default function EditarEstabelecimentoAdmin() {
     );
   }
 
-  // Loading enquanto carrega dados
-  if (loading && !establishmentData.cnpj) {
+  // 2. Loading enquanto carrega dados do estabelecimento
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-violet-500 mx-auto mb-4" />
-          <p className="text-gray-400">Carregando estabelecimento...</p>
+          <p className="text-gray-400">Carregando dados do estabelecimento...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Se terminou de carregar mas dados não foram populados = ERRO
+  if (!dataLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="text-center">
+          <p className="text-red-400 mb-4">Não foi possível carregar os dados do estabelecimento.</p>
+          <Button onClick={loadEstabelecimento} className="mr-2">
+            Tentar novamente
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/admin/dashboard')}>
+            Voltar ao Dashboard
+          </Button>
         </div>
       </div>
     );

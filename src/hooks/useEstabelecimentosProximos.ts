@@ -1,80 +1,58 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useMemo } from 'react';
 import { calcularDistancia } from '@/lib/geoUtils';
-import { Tables } from '@/integrations/supabase/types';
-
-type Estabelecimento = Tables<'estabelecimentos'>;
-
-interface EstabelecimentoComDistancia extends Estabelecimento {
-  distancia: number;
-}
-
-interface UseEstabelecimentosProximosOptions {
-  userLat?: number;
-  userLng?: number;
-  raioKm?: number;
-  categoria?: string[];
-  enabled?: boolean;
-}
 
 /**
- * Hook para buscar estabelecimentos por proximidade
- * @param userLat Latitude do usuário
- * @param userLng Longitude do usuário
- * @param raioKm Raio de busca em quilômetros (padrão: 10km)
- * @param categoria Filtro de categoria
- * @param enabled Habilitar query
- * @returns Estabelecimentos ordenados por distância
+ * Hook para filtrar e ordenar estabelecimentos por proximidade
+ * @param estabelecimentos Lista de estabelecimentos
+ * @param userLocation Localização do usuário
+ * @param raioKm Raio de filtragem ('all' ou número em km)
+ * @param ordenacao Tipo de ordenação
+ * @returns Estabelecimentos filtrados e ordenados com distância calculada
  */
-export const useEstabelecimentosProximos = ({
-  userLat,
-  userLng,
-  raioKm = 10,
-  categoria,
-  enabled = true,
-}: UseEstabelecimentosProximosOptions) => {
-  return useQuery<EstabelecimentoComDistancia[]>({
-    queryKey: ['estabelecimentos-proximos', userLat, userLng, raioKm, categoria],
-    queryFn: async () => {
-      if (!userLat || !userLng) {
-        throw new Error('Localização do usuário não fornecida');
-      }
+export const useEstabelecimentosProximos = (
+  estabelecimentos: any[] | undefined,
+  userLocation: { lat: number; lng: number } | null,
+  raioKm: string,
+  ordenacao: string
+) => {
+  return useMemo(() => {
+    if (!estabelecimentos) return [];
 
-      let query = supabase
-        .from('public_estabelecimentos')
-        .select('*')
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null);
+    // Calcular distância para cada estabelecimento
+    let resultado = estabelecimentos.map(est => {
+      const distancia = userLocation && est.latitude && est.longitude
+        ? calcularDistancia(userLocation.lat, userLocation.lng, Number(est.latitude), Number(est.longitude))
+        : null;
+      
+      return { ...est, distancia };
+    });
 
-      // Aplicar filtro de categoria se fornecido
-      if (categoria && categoria.length > 0) {
-        query = query.overlaps('categoria', categoria);
-      }
+    // Filtrar por raio
+    if (raioKm !== 'all' && userLocation) {
+      const raio = parseFloat(raioKm);
+      resultado = resultado.filter(est => est.distancia !== null && est.distancia <= raio);
+    }
 
-      const { data, error } = await query;
+    // Ordenar
+    switch (ordenacao) {
+      case 'distancia':
+        resultado.sort((a, b) => {
+          if (a.distancia === null) return 1;
+          if (b.distancia === null) return -1;
+          return a.distancia - b.distancia;
+        });
+        break;
+      case 'nome':
+        resultado.sort((a, b) => (a.nome_fantasia || '').localeCompare(b.nome_fantasia || ''));
+        break;
+      case 'avaliacao':
+        resultado.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        break;
+      case 'recentes':
+        resultado.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+    }
 
-      if (error) throw error;
-
-      if (!data) return [];
-
-      // Calcular distância e filtrar por raio
-      const comDistancia = data
-        .map((est) => ({
-          ...est,
-          distancia: calcularDistancia(
-            userLat,
-            userLng,
-            Number(est.latitude),
-            Number(est.longitude)
-          ),
-        }))
-        .filter((est) => est.distancia <= raioKm)
-        .sort((a, b) => a.distancia - b.distancia);
-
-      return comDistancia as EstabelecimentoComDistancia[];
-    },
-    enabled: enabled && !!userLat && !!userLng,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
-  });
+    return resultado;
+  }, [estabelecimentos, userLocation, raioKm, ordenacao]);
 };

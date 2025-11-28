@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Search, SlidersHorizontal, Map as MapIcon, List, X, Check, Gift, Share2, Heart, CalendarDays, Navigation } from 'lucide-react';
+import { MapPin, Search, SlidersHorizontal, Map as MapIconLucide, List, X, Check, Gift, Share2, Heart, CalendarDays, Navigation, Crosshair } from 'lucide-react';
 import { toast } from "sonner";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
 import { SafeImage } from "@/components/SafeImage";
-import { GoogleMapView } from "@/components/GoogleMapView";
+import { MapaEstabelecimentos } from "@/components/MapaEstabelecimentos";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useCepLookup } from "@/hooks/useCepLookup";
 import { BackButton } from "@/components/BackButton";
 import { EmptyState } from "@/components/EmptyState";
 import { useEstabelecimentos } from "@/hooks/useEstabelecimentos";
+import { useEstabelecimentosProximos } from "@/hooks/useEstabelecimentosProximos";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick }: any) => (
@@ -106,6 +110,13 @@ const Explorar = () => {
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [showCepInput, setShowCepInput] = useState(false);
   const [cepValue, setCepValue] = useState("");
+  
+  // --- TOGGLE LISTA/MAPA ---
+  const [viewMode, setViewMode] = useState<'lista' | 'mapa'>('lista');
+  
+  // --- FILTROS DE DISTÂNCIA E ORDENAÇÃO ---
+  const [raioKm, setRaioKm] = useState('all');
+  const [ordenacao, setOrdenacao] = useState('distancia');
 
   // --- HOOKS ---
   const { 
@@ -116,6 +127,7 @@ const Explorar = () => {
     setManualLocation
   } = useGeolocation();
   const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
+  const { location: userLocation, requestLocation, loading: userLocationLoading } = useUserLocation();
   
   // Buscar estabelecimentos reais do banco de dados
   const { data: estabelecimentos = [], isLoading: loadingEstabelecimentos } = useEstabelecimentos({
@@ -160,18 +172,31 @@ const Explorar = () => {
     ? "Detectando localização..." 
     : "Localização não disponível";
 
+  // Aplicar filtros de proximidade e ordenação
+  const estabelecimentosComDistancia = useEstabelecimentosProximos(
+    estabelecimentos,
+    userLocation,
+    raioKm,
+    ordenacao
+  );
+
   // Transformar dados reais do banco em formato do card
-  const allPlaces = estabelecimentos.map(est => ({
+  const allPlaces = estabelecimentosComDistancia.map(est => ({
     id: est.id,
     name: est.nome_fantasia || est.razao_social,
     category: est.categoria?.[0] || "Outros",
     neighborhood: est.bairro || est.cidade || "",
-    distance: "N/A",
+    distance: est.distancia !== null && est.distancia !== undefined
+      ? est.distancia < 1 
+        ? `${Math.round(est.distancia * 1000)}m` 
+        : `${est.distancia.toFixed(1)}km`
+      : "N/A",
     benefit: est.descricao_beneficio || "Ver benefício exclusivo",
     validDays: ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'],
     latitude: est.latitude ? Number(est.latitude) : null,
     longitude: est.longitude ? Number(est.longitude) : null,
     image: est.logo_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
+    distancia: est.distancia,
   }));
 
   const filteredPlaces = allPlaces.filter(place => {
@@ -316,37 +341,111 @@ const Explorar = () => {
 
         {!loadingEstabelecimentos && estabelecimentos.length > 0 && (
           <>
-            <div className="mb-4 flex items-center justify-between animate-fade-in">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 transition-all duration-300">
-                {filteredPlaces.length} Resultados
-              </span>
+            {/* Banner para ativar localização */}
+            {!userLocation && (
+              <div className="bg-violet-500/10 border border-violet-500/30 rounded-lg p-4 mb-4 flex items-center justify-between">
+                <div>
+                  <p className="text-white font-medium">Ative sua localização</p>
+                  <p className="text-slate-400 text-sm">Para ver estabelecimentos perto de você</p>
+                </div>
+                <Button 
+                  onClick={requestLocation} 
+                  variant="outline" 
+                  size="sm"
+                  disabled={userLocationLoading}
+                  className="bg-violet-600/20 border-violet-500/50 hover:bg-violet-600/30"
+                >
+                  <Crosshair className="w-4 h-4 mr-2" />
+                  {userLocationLoading ? 'Obtendo...' : 'Ativar'}
+                </Button>
+              </div>
+            )}
+
+            {/* Filtros de distância e ordenação */}
+            <div className="flex flex-wrap gap-3 mb-4">
+              <Select value={raioKm} onValueChange={setRaioKm}>
+                <SelectTrigger className="w-[180px] bg-white/5 border-white/10">
+                  <SelectValue placeholder="Distância" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Qualquer distância</SelectItem>
+                  <SelectItem value="1">Até 1 km</SelectItem>
+                  <SelectItem value="3">Até 3 km</SelectItem>
+                  <SelectItem value="5">Até 5 km</SelectItem>
+                  <SelectItem value="10">Até 10 km</SelectItem>
+                  <SelectItem value="25">Até 25 km</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={ordenacao} onValueChange={setOrdenacao}>
+                <SelectTrigger className="w-[180px] bg-white/5 border-white/10">
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="distancia">Mais próximos</SelectItem>
+                  <SelectItem value="nome">Nome A-Z</SelectItem>
+                  <SelectItem value="avaliacao">Melhor avaliados</SelectItem>
+                  <SelectItem value="recentes">Mais recentes</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
+            {/* Toggle Lista/Mapa */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-slate-400 text-sm">
+                {filteredPlaces.length} estabelecimentos encontrados
+              </p>
+              
+              <div className="flex bg-white/5 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('lista')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+                    viewMode === 'lista' 
+                      ? 'bg-violet-600 text-white' 
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <List className="w-4 h-4" />
+                  Lista
+                </button>
+                <button
+                  onClick={() => setViewMode('mapa')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+                    viewMode === 'mapa' 
+                      ? 'bg-violet-600 text-white' 
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <MapIconLucide className="w-4 h-4" />
+                  Mapa
+                </button>
+              </div>
+            </div>
+
+            {/* Conteúdo: Lista ou Mapa */}
             {filteredPlaces.length === 0 ? (
               <div className="col-span-full text-center py-12 text-slate-400">
                 Nenhum resultado encontrado com os filtros selecionados
               </div>
-            ) : (
+            ) : viewMode === 'lista' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredPlaces.map((place) => (
                   <PlaceCard key={place.id} place={place} />
                 ))}
               </div>
+            ) : (
+              <div className="rounded-xl overflow-hidden border border-white/10">
+                <MapaEstabelecimentos
+                  estabelecimentos={estabelecimentosComDistancia}
+                  userLocation={userLocation}
+                  onMarkerClick={(est: any) => navigate(`/estabelecimento/${est.id}`)}
+                  height="600px"
+                />
+              </div>
             )}
           </>
         )}
       </div>
-
-      {estabelecimentos.length > 0 && (
-        <GoogleMapView
-          establishments={estabelecimentos}
-          userLocation={location?.coordinates ? {
-            lat: location.coordinates.latitude,
-            lng: location.coordinates.longitude,
-          } : undefined}
-          onEstablishmentClick={(id) => navigate(`/estabelecimento/${id}`)}
-        />
-      )}
 
       {showFilters && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">

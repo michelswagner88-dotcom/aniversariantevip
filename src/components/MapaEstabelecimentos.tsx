@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { GoogleMap, LoadScript, Marker, InfoWindow, MarkerClusterer } from '@react-google-maps/api';
 import { Button } from '@/components/ui/button';
 import { Navigation } from 'lucide-react';
-import { calcularCentro, getCategoryIcon } from '@/lib/geoUtils';
+import { calcularCentro } from '@/lib/geoUtils';
 
 interface Estabelecimento {
   id: string;
@@ -14,6 +14,7 @@ interface Estabelecimento {
   logo_url?: string;
   cidade?: string;
   estado?: string;
+  bairro?: string;
   distancia?: number;
 }
 
@@ -30,6 +31,16 @@ const mapContainerStyle = {
 };
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+
+// Dark mode styles para o mapa
+const darkModeStyles = [
+  { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a2e' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#8b5cf6' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2d2d44' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0e0e1a' }] },
+  { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+];
 
 export const MapaEstabelecimentos = ({
   estabelecimentos,
@@ -61,11 +72,6 @@ export const MapaEstabelecimentos = ({
     }
   };
 
-  const handleComoChegar = (est: Estabelecimento) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${est.latitude},${est.longitude}`;
-    window.open(url, '_blank');
-  };
-
   if (!GOOGLE_MAPS_API_KEY) {
     return (
       <div className="w-full bg-destructive/10 text-destructive p-4 rounded-lg" style={{ height }}>
@@ -83,13 +89,12 @@ export const MapaEstabelecimentos = ({
         zoom={userLocation ? 13 : 12}
         onLoad={setMap}
         options={{
-          styles: [
-            {
-              featureType: 'poi',
-              elementType: 'labels',
-              stylers: [{ visibility: 'off' }],
-            },
-          ],
+          styles: darkModeStyles,
+          disableDefaultUI: false,
+          zoomControl: true,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: true,
         }}
       >
         {/* Marker do usuário */}
@@ -97,8 +102,12 @@ export const MapaEstabelecimentos = ({
           <Marker
             position={userLocation}
             icon={{
-              url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-              scaledSize: new google.maps.Size(40, 40),
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 10,
+              fillColor: '#3b82f6',
+              fillOpacity: 1,
+              strokeColor: '#fff',
+              strokeWeight: 3,
             }}
             title="Você está aqui"
           />
@@ -116,8 +125,13 @@ export const MapaEstabelecimentos = ({
                     clusterer={clusterer}
                     onClick={() => handleMarkerClick(est)}
                     icon={{
-                      url: getCategoryIcon(est.categoria),
-                      scaledSize: new google.maps.Size(32, 32),
+                      url: `data:image/svg+xml,${encodeURIComponent(`
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#8b5cf6" stroke="#fff" stroke-width="2">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                          <circle cx="12" cy="10" r="3" fill="#fff"/>
+                        </svg>
+                      `)}`,
+                      scaledSize: new google.maps.Size(40, 40),
                     }}
                     title={est.nome_fantasia}
                   />
@@ -133,8 +147,13 @@ export const MapaEstabelecimentos = ({
                 position={{ lat: est.latitude, lng: est.longitude }}
                 onClick={() => handleMarkerClick(est)}
                 icon={{
-                  url: getCategoryIcon(est.categoria),
-                  scaledSize: new google.maps.Size(32, 32),
+                  url: `data:image/svg+xml,${encodeURIComponent(`
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#8b5cf6" stroke="#fff" stroke-width="2">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                      <circle cx="12" cy="10" r="3" fill="#fff"/>
+                    </svg>
+                  `)}`,
+                  scaledSize: new google.maps.Size(40, 40),
                 }}
                 title={est.nome_fantasia}
               />
@@ -151,7 +170,7 @@ export const MapaEstabelecimentos = ({
             }}
             onCloseClick={() => setSelectedPlace(null)}
           >
-            <div className="p-2 max-w-xs">
+            <div className="p-2 min-w-[200px]">
               {selectedPlace.logo_url && (
                 <img
                   src={selectedPlace.logo_url}
@@ -159,33 +178,31 @@ export const MapaEstabelecimentos = ({
                   className="w-full h-24 object-cover rounded mb-2"
                 />
               )}
-              <h3 className="font-bold text-lg mb-1">
-                {selectedPlace.nome_fantasia}
-              </h3>
+              <h3 className="font-bold text-gray-900">{selectedPlace.nome_fantasia}</h3>
               {selectedPlace.categoria && selectedPlace.categoria.length > 0 && (
-                <p className="text-sm text-gray-600 mb-1">
-                  {selectedPlace.categoria.join(', ')}
-                </p>
+                <p className="text-sm text-gray-600">{selectedPlace.categoria[0]}</p>
               )}
-              {selectedPlace.endereco_formatado && (
-                <p className="text-sm text-gray-500 mb-2">
-                  {selectedPlace.endereco_formatado}
-                </p>
-              )}
+              <p className="text-sm text-gray-500 mt-1">
+                {selectedPlace.bairro}, {selectedPlace.cidade}
+              </p>
               {selectedPlace.distancia !== undefined && (
-                <p className="text-sm text-gray-500 mb-2">
+                <p className="text-sm text-violet-600 mt-1 font-medium">
                   {selectedPlace.distancia < 1
-                    ? `${Math.round(selectedPlace.distancia * 1000)}m de você`
-                    : `${selectedPlace.distancia.toFixed(1)}km de você`}
+                    ? `${Math.round(selectedPlace.distancia * 1000)}m`
+                    : `${selectedPlace.distancia.toFixed(1)}km`}
                 </p>
               )}
               <Button
                 size="sm"
-                onClick={() => handleComoChegar(selectedPlace)}
-                className="w-full"
+                className="w-full mt-2"
+                onClick={() => {
+                  setSelectedPlace(null);
+                  if (onMarkerClick) {
+                    onMarkerClick(selectedPlace);
+                  }
+                }}
               >
-                <Navigation className="w-4 h-4 mr-2" />
-                Como Chegar
+                Ver Benefício
               </Button>
             </div>
           </InfoWindow>

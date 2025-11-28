@@ -209,11 +209,11 @@ const Index = () => {
   });
 
   return (
-    <div className="flex flex-col bg-slate-950 pt-20 pb-8">
+    <div className="flex flex-col min-h-screen bg-slate-950">
       <Header />
 
       {/* Hero Section - State of the Art */}
-      <section className="relative flex items-center justify-center overflow-hidden py-16 sm:py-32 px-6">
+      <section className="flex-1 relative flex items-center justify-center overflow-hidden py-16 sm:py-32 px-6">
         {/* Grid Pattern Background (Camada 1) */}
         <div 
           className="absolute inset-0 opacity-50"

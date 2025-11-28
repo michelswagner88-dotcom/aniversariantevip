@@ -29,7 +29,7 @@ export default function SelecionarPerfil() {
   };
 
   const handleEstabelecimentoClick = () => {
-    navigate('/login-estabelecimento');
+    navigate('/login/estabelecimento');
   };
 
   return (

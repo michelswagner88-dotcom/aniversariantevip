@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Clock, Phone, Instagram, FileText, Lock, CheckCircle, Ticket, Loader2, UserPlus, UserCheck, Calendar, Grid3x3 } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Phone, Instagram, FileText, Lock, CheckCircle, Loader2, UserPlus, UserCheck, Calendar, Grid3x3 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -141,10 +141,11 @@ export default function EstabelecimentoDetalhes() {
     navigate("/auth");
   };
 
-  const handleEmitirCupom = () => {
-    if (!id) return;
-    navigate(`/emitir-cupom?estabelecimento=${id}`);
-  };
+  // FUNCIONALIDADE DE CUPONS REMOVIDA TEMPORARIAMENTE
+  // const handleEmitirCupom = () => {
+  //   if (!id) return;
+  //   navigate(`/emitir-cupom?estabelecimento=${id}`);
+  // };
 
   if (loading) {
     return (
@@ -351,7 +352,7 @@ export default function EstabelecimentoDetalhes() {
                       
                       <div className="pt-2 flex items-center gap-2 text-xs text-green-400">
                         <CheckCircle className="w-3 h-3" />
-                        <span>Benefício desbloqueado! Emita seu cupom abaixo</span>
+                        <span>Benefício desbloqueado! Apresente este código no estabelecimento</span>
                       </div>
                     </>
                   ) : (
@@ -502,17 +503,9 @@ export default function EstabelecimentoDetalhes() {
         />
       )}
 
-      {/* Sticky Footer - Conditional Button */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 backdrop-blur-xl bg-slate-950/90 border-t border-white/10">
-        {isLoggedIn ? (
-          <Button
-            onClick={handleEmitirCupom}
-            className="w-full h-14 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white font-bold text-lg rounded-xl shadow-lg shadow-violet-500/30"
-          >
-            <Ticket className="w-5 h-5 mr-2" />
-            EMITIR CUPOM 🎟️
-          </Button>
-        ) : (
+      {/* Sticky Footer - Login Button Only */}
+      {!isLoggedIn && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 backdrop-blur-xl bg-slate-950/90 border-t border-white/10">
           <Button
             onClick={handleEntrarParaVer}
             className="w-full h-14 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white font-bold text-lg rounded-xl shadow-lg shadow-violet-500/30"
@@ -520,8 +513,8 @@ export default function EstabelecimentoDetalhes() {
             <Lock className="w-5 h-5 mr-2" />
             ENTRAR PARA VER 🔒
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -57,7 +57,7 @@ const PlaceCard = ({ place }: any) => {
   };
 
   const handleCardClick = () => {
-    navigate('/auth');
+    navigate(`/estabelecimento/${place.id}`);
   };
 
   return (
@@ -92,7 +92,7 @@ const PlaceCard = ({ place }: any) => {
         </div>
         <div className="mt-3 sm:mt-4 inline-flex items-center gap-2 sm:gap-2.5 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 shadow-2xl shadow-violet-500/30">
           <span className="text-base sm:text-lg font-extrabold text-white">
-            🎁 Ver Benefício 🔒
+            🎁 Ver Detalhes
           </span>
         </div>
       </div>

@@ -145,7 +145,7 @@ export default function PlanosPagamento() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast.error("Você precisa estar logado para assinar");
-        navigate("/login-estabelecimento");
+        navigate("/login/estabelecimento");
         return;
       }
 

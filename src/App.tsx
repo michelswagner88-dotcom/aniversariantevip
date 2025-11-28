@@ -16,7 +16,7 @@ import CadastroAniversariante from "./pages/CadastroAniversariante";
 import LoginAniversariante from "./pages/LoginAniversariante";
 import AreaAniversariante from "./pages/AreaAniversariante";
 import CadastroEstabelecimento from "./pages/CadastroEstabelecimento";
-import PlanosPagamento from "./pages/PlanosPagamento";
+// import PlanosPagamento from "./pages/PlanosPagamento"; // REMOVIDO TEMPORARIAMENTE
 import SelecionarCategoria from "./pages/SelecionarCategoria";
 import LoginEstabelecimento from "./pages/LoginEstabelecimento";
 import AreaEstabelecimento from "./pages/AreaEstabelecimento";
@@ -31,9 +31,9 @@ import NotFound from "./pages/NotFound";
 import ComoFunciona from "./pages/ComoFunciona";
 import SejaParceito from "./pages/SejaParceito";
 import FAQ from "./pages/FAQ";
-import MeusCupons from "./pages/MeusCupons";
+// import MeusCupons from "./pages/MeusCupons"; // REMOVIDO TEMPORARIAMENTE
 import MeusFavoritos from "./pages/MeusFavoritos";
-import EmitirCupom from "./pages/EmitirCupom";
+// import EmitirCupom from "./pages/EmitirCupom"; // REMOVIDO TEMPORARIAMENTE
 import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import TermosUso from "./pages/TermosUso";
 import ResetPassword from "./pages/ResetPassword";
@@ -78,9 +78,12 @@ const App = () => (
                   <Route path="/como-funciona" element={<ComoFunciona />} />
                   <Route path="/seja-parceiro" element={<SejaParceito />} />
                   <Route path="/faq" element={<FAQ />} />
-                  <Route path="/meus-cupons" element={<MeusCupons />} />
+                  {/* CUPONS E PLANOS REMOVIDOS TEMPORARIAMENTE */}
+                  {/* <Route path="/meus-cupons" element={<MeusCupons />} /> */}
+                  {/* <Route path="/emitir-cupom" element={<EmitirCupom />} /> */}
+                  {/* <Route path="/planos-pagamento" element={<PlanosPagamento />} /> */}
+                  {/* <Route path="/planos" element={<PlanosPagamento />} /> */}
                   <Route path="/meus-favoritos" element={<MeusFavoritos />} />
-                  <Route path="/emitir-cupom" element={<EmitirCupom />} />
                   <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
                   <Route path="/termos-uso" element={<TermosUso />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -103,12 +106,16 @@ const App = () => (
                   <Route path="/admin/import" element={<AdminImport />} />
                   <Route path="/afiliado" element={<Afiliado />} />
                   <Route path="/selecionar-categoria" element={<SelecionarCategoria />} />
-                  <Route path="/planos-pagamento" element={<PlanosPagamento />} />
-                  <Route path="/planos" element={<PlanosPagamento />} />
+                  
+                  {/* Redirects para rotas legadas */}
+                  <Route path="/dashboard" element={<Navigate to="/" replace />} />
+                  <Route path="/login-estabelecimento" element={<Navigate to="/login/estabelecimento" replace />} />
+                  <Route path="/login-aniversariante" element={<Navigate to="/auth" replace />} />
                   <Route path="/entrar" element={<Navigate to="/auth" replace />} />
                   <Route path="/cadastro" element={<Navigate to="/auth" replace />} />
                   <Route path="/login" element={<Navigate to="/auth" replace />} />
                   <Route path="/registro" element={<Navigate to="/auth" replace />} />
+                  
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

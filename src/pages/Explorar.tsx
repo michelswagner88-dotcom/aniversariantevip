@@ -225,8 +225,6 @@ const Explorar = () => {
 
   return (
     <div className="min-h-screen w-full bg-slate-950 pb-24 font-inter text-white">
-      <div className="fixed inset-0 pointer-events-none opacity-30" style={{ backgroundImage: 'linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-
       <div className="sticky top-0 z-40 border-b border-white/5 bg-slate-950/90 py-4 backdrop-blur-xl">
         <div className="container mx-auto px-6 mb-3">
           <BackButton to="/" />

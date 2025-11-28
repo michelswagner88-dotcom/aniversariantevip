@@ -45,14 +45,22 @@ const Index = () => {
   const { favoritos, toggleFavorito, isFavorito, loading: favoritosLoading } = useFavoritos(currentUser?.id || null);
 
   useEffect(() => {
-    checkUser();
-    loadEstabelecimentos();
-  }, []);
+    // Listener que reage a mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setCurrentUser(session?.user || null);
+      }
+    );
 
-  const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setCurrentUser(user);
-  };
+    // Verificar usuário atual no mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUser(session?.user || null);
+    });
+
+    loadEstabelecimentos();
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Buscar cidade do perfil do usuário logado
   const { data: userProfile } = useQuery({
@@ -74,6 +82,7 @@ const Index = () => {
       return data;
     },
     enabled: !!currentUser?.id,
+    staleTime: 0, // Sempre buscar dados frescos
   });
 
   // Preencher automaticamente a cidade quando o perfil carregar
@@ -82,7 +91,7 @@ const Index = () => {
       setSelectedCidade(userProfile.cidade);
       setSelectedEstado(userProfile.estado);
     }
-  }, [userProfile]);
+  }, [userProfile, selectedCidade, selectedEstado]);
 
   const loadEstabelecimentos = async () => {
     const { data, error } = await supabase

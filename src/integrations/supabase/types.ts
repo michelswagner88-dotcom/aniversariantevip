@@ -355,6 +355,7 @@ export type Database = {
           endereco: string | null
           endereco_formatado: string | null
           estado: string | null
+          galeria_fotos: string[] | null
           horario_funcionamento: string | null
           id: string
           instagram: string | null
@@ -391,6 +392,7 @@ export type Database = {
           endereco?: string | null
           endereco_formatado?: string | null
           estado?: string | null
+          galeria_fotos?: string[] | null
           horario_funcionamento?: string | null
           id?: string
           instagram?: string | null
@@ -427,6 +429,7 @@ export type Database = {
           endereco?: string | null
           endereco_formatado?: string | null
           estado?: string | null
+          galeria_fotos?: string[] | null
           horario_funcionamento?: string | null
           id?: string
           instagram?: string | null

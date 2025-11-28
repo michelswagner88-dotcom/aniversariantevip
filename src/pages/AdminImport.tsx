@@ -71,23 +71,25 @@ export default function AdminImport() {
   const mapCategory = (categoria: string): string => {
     if (!categoria) return "Outros Comércios";
     const first = categoria.split("/")[0].trim();
+    const normalized = first.toLowerCase().trim();
     const categoryMap: Record<string, string> = {
-      "Restaurante": "Restaurante",
-      "Restaurantes": "Restaurante",
-      "Bar": "Bar",
-      "Bares": "Bar",
-      "Casa Noturna": "Casa Noturna",
-      "Balada": "Casa Noturna",
-      "Cafeteria": "Cafeteria",
-      "Café": "Cafeteria",
-      "Loja": "Loja de Presentes",
-      "Salão": "Salão de Beleza",
-      "Barbearia": "Barbearia",
-      "Academia": "Academia",
-      "Entretenimento": "Entretenimento",
-      "Hospedagem": "Hospedagem",
+      "restaurante": "Restaurante",
+      "restaurantes": "Restaurante",
+      "pizzaria": "Restaurante",
+      "bar": "Bar",
+      "bares": "Bar",
+      "casa noturna": "Casa Noturna",
+      "balada": "Casa Noturna",
+      "cafeteria": "Cafeteria",
+      "café": "Cafeteria",
+      "loja": "Loja de Presentes",
+      "salão": "Salão de Beleza",
+      "barbearia": "Barbearia",
+      "academia": "Academia",
+      "entretenimento": "Entretenimento",
+      "hospedagem": "Hospedagem",
     };
-    return categoryMap[first] || "Outros Comércios";
+    return categoryMap[normalized] || first || "Outros Comércios";
   };
 
   const mapValidity = (validity: string): string => {
@@ -267,39 +269,37 @@ export default function AdminImport() {
           
           let finalAddress: string | null = null;
           let coordinates: { lat: number; lng: number } | null = null;
-          let cidade: string | null = null;
-          let estado: string | null = null;
-          let logradouro: string | null = null;
-          let bairro: string | null = null;
 
-          if (!addressData) {
-            // Sem CEP ou CEP inválido - salvar tudo como null
-            finalAddress = row.CEP ? `Endereço pendente (CEP: ${row.CEP})` : null;
-            cidade = null;
-            estado = null;
-            logradouro = null;
-            bairro = null;
-          } else {
-            // CEP válido - montar endereço completo
-            const numero = row.NUMERO || "S/N";
-            const complemento = row.COMPLEMENTO ? `, ${row.COMPLEMENTO}` : "";
-            finalAddress = `${addressData.street}, ${numero}${complemento} - ${addressData.neighborhood}, ${addressData.city} - ${addressData.state}`;
-            cidade = addressData.city;
-            estado = addressData.state;
-            logradouro = addressData.street;
-            bairro = addressData.neighborhood;
+          // PASSO 1: Extrair dados - prioridade CEP, fallback campos diretos da planilha
+          let cidade = addressData?.city || row.CIDADE || null;
+          let estado = addressData?.state || row.ESTADO || null;
+          let logradouro = addressData?.street || row.RUA || null;
+          let bairro = addressData?.neighborhood || row.BAIRRO || null;
+          const numero = row.NUMERO || "S/N";
+          const complemento = row.COMPLEMENTO ? `, ${row.COMPLEMENTO}` : "";
 
-            // Geocoding do endereço completo usando Edge Function
+          // PASSO 2: Montar endereço formatado se tiver dados mínimos (cidade + estado)
+          if (cidade && estado) {
+            const partes = [];
+            if (logradouro) partes.push(`${logradouro}, ${numero}${complemento}`);
+            if (bairro) partes.push(bairro);
+            partes.push(`${cidade} - ${estado}`);
+            finalAddress = partes.join(" - ");
+            
+            // PASSO 3: Geocodificar usando Edge Function
             const coords = await geocodeAddress(
-              addressData.street,
+              logradouro || '',
               numero,
-              addressData.neighborhood,
-              addressData.city,
-              addressData.state
+              bairro || '',
+              cidade,
+              estado
             );
             if (coords) {
               coordinates = coords;
             }
+          } else {
+            // Sem cidade/estado - não consegue geocodificar
+            finalAddress = row.CEP ? `Endereço pendente (CEP: ${row.CEP})` : null;
           }
 
           // Google Places (foto e avaliação) - só tenta se tiver nome E endereço

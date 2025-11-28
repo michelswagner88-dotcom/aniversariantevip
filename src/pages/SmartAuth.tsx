@@ -348,7 +348,7 @@ const SmartAuth = () => {
     setShowCepSearch(false);
   };
 
-  // Login
+  // Login - COM VERIFICAÇÃO DE CADASTRO COMPLETO
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -362,6 +362,7 @@ const SmartAuth = () => {
 
       if (error) throw error;
 
+      // Verificar role
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
@@ -373,15 +374,20 @@ const SmartAuth = () => {
         throw new Error('Esta conta não é de aniversariante.');
       }
 
+      // Verificar se cadastro está COMPLETO (com CPF)
       const { data: anivData } = await supabase
         .from('aniversariantes')
-        .select('cpf')
+        .select('cpf, data_nascimento')
         .eq('id', data.user.id)
-        .single();
+        .maybeSingle();
 
-      if (!anivData?.cpf) {
+      if (!anivData?.cpf || !anivData?.data_nascimento) {
+        // Cadastro incompleto - redirecionar para Step 2
         setUserId(data.user.id);
         setStep(2);
+        toast.warning('Complete seu cadastro para continuar', {
+          description: 'Preencha os dados restantes para acessar sua conta.',
+        });
         return;
       }
 
@@ -408,7 +414,7 @@ const SmartAuth = () => {
     }
   };
 
-  // Cadastro básico (Step 1)
+  // Cadastro básico (Step 1) - APENAS VALIDA, NÃO CRIA CONTA
   const handleBasicSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -423,36 +429,25 @@ const SmartAuth = () => {
         throw new Error('A senha não atende aos requisitos mínimos');
       }
 
-      const redirectUrl = `${window.location.origin}/`;
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-        }
-      });
+      // Verificar se email já existe (sem criar conta)
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', email)
+        .maybeSingle();
 
-      if (error) throw error;
-      if (!data.user) throw new Error('Erro ao criar usuário');
+      if (existingProfile) {
+        throw new Error('Este email já está cadastrado. Faça login ou use outro email.');
+      }
 
-      setUserId(data.user.id);
-
-      await supabase.from('profiles').insert({
-        id: data.user.id,
-        email: email,
-        nome: '',
-      });
-
-      await supabase.from('user_roles').insert({
-        user_id: data.user.id,
-        role: 'aniversariante',
-      });
-
+      // NÃO CRIA CONTA - apenas avança para Step 2
+      // Dados ficam salvos no estado local (email, password)
       setStep(2);
+      toast.success('Dados validados! Complete seu cadastro.');
     } catch (err: any) {
       const friendlyMessage = getFriendlyErrorMessage(err);
       setError(friendlyMessage);
-      toast.error('Erro no cadastro', {
+      toast.error('Erro na validação', {
         description: friendlyMessage,
       });
     } finally {
@@ -508,170 +503,147 @@ const SmartAuth = () => {
     }
   };
 
-  // Completar cadastro (Step 2)
+  // Completar cadastro (Step 2) - CRIA CONTA COMPLETA APÓS TODAS AS VALIDAÇÕES
   const handleCompletion = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!userId) {
-      setError('Usuário não autenticado');
+    if (!isStep2Valid) {
+      toast.error('Por favor, preencha todos os campos corretamente');
       return;
     }
     
-    if (!isStep2Valid) {
-      toast.error('Preencha todos os campos corretamente');
-      return;
-    }
-
     setIsLoading(true);
     setError('');
 
     try {
-      console.log('🔵 Iniciando salvamento de dados...');
-      console.log('🔵 User ID:', userId);
+      // Verificar se é novo cadastro (não tem userId) ou completar Google OAuth
+      let currentUserId = userId;
+      let isNewSignup = false;
       
-      // Preparar dados formatados
-      const cpfClean = cpf.replace(/\D/g, '');
-      const telefoneClean = phone.replace(/\D/g, '');
-      
-      // VALIDAÇÃO 1: Verificar se CPF já existe (em outro usuário)
-      const { data: cpfExistente } = await supabase
-        .from('aniversariantes')
-        .select('id')
-        .eq('cpf', cpfClean)
-        .neq('id', userId)
-        .maybeSingle();
-      
-      if (cpfExistente) {
-        setError('Este CPF já está cadastrado em outra conta. Se você já tem uma conta, faça login com ela.');
-        setIsLoading(false);
-        return;
-      }
-      
-      // VALIDAÇÃO 2: Verificar se telefone já existe (em outro usuário)
-      const { data: telefoneExistente } = await supabase
-        .from('aniversariantes')
-        .select('id')
-        .eq('telefone', telefoneClean)
-        .neq('id', userId)
-        .maybeSingle();
-      
-      if (telefoneExistente) {
-        setError('Este telefone já está cadastrado em outra conta. Se você já tem uma conta, faça login com ela.');
-        setIsLoading(false);
-        return;
-      }
-      
-      // VALIDAÇÃO 3: Verificar se email já existe (em outro usuário)
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      const currentEmail = currentUser?.email || email;
-      
-      if (currentEmail) {
-        const { data: emailExistente } = await supabase
-          .from('profiles')
-          .select('id')
-          .ilike('email', currentEmail.trim())
-          .neq('id', userId)
-          .maybeSingle();
-        
-        if (emailExistente) {
-          setError('Este email já está cadastrado em outra conta. Faça login com essa conta ou use outro email.');
-          setIsLoading(false);
-          return;
+      if (!currentUserId) {
+        // Verificar se tem sessão do Google OAuth
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          currentUserId = session.user.id;
+        } else {
+          // É novo cadastro via email/senha - precisa criar conta AGORA
+          isNewSignup = true;
         }
       }
-      
-      // Se passou todas as validações, continuar com o salvamento
-      const birthDateFormatted = birthDate.split('/').reverse().join('-'); // DD/MM/YYYY -> YYYY-MM-DD
-      const cepClean = cep.replace(/\D/g, '');
-      
-      console.log('🔵 Dados formatados:', {
-        nome: name,
-        cpf: cpfClean,
-        telefone: telefoneClean,
-        data_nascimento: birthDateFormatted,
-        cep: cepClean,
-        cidade,
-        estado,
-        bairro,
-        logradouro,
-        numero,
-        latitude,
-        longitude,
-      });
 
-      // Atualizar profile com nome
-      console.log('🔵 Atualizando profile...');
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          nome: name,
-        })
-        .eq('id', userId);
+      // Verificar duplicação de CPF ANTES de criar conta
+      const cpfLimpo = cpf.replace(/\D/g, '');
+      const { data: cpfDuplicado } = await supabase
+        .from('aniversariantes')
+        .select('id')
+        .eq('cpf', cpfLimpo)
+        .maybeSingle();
 
-      if (profileError) {
-        console.error('❌ Erro ao atualizar profile:', profileError);
-        throw profileError;
+      if (cpfDuplicado && cpfDuplicado.id !== currentUserId) {
+        throw new Error('Este CPF já está cadastrado em outra conta. Se você já tem uma conta, faça login com ela.');
       }
-      console.log('✅ Profile atualizado com sucesso');
 
-      // Inserir na tabela aniversariantes
-      console.log('🔵 Inserindo dados de aniversariante...');
+      // Verificar duplicação de telefone ANTES de criar conta
+      const telefoneLimpo = phone.replace(/\D/g, '');
+      const { data: telefoneDuplicado } = await supabase
+        .from('aniversariantes')
+        .select('id')
+        .eq('telefone', telefoneLimpo)
+        .maybeSingle();
+
+      if (telefoneDuplicado && telefoneDuplicado.id !== currentUserId) {
+        throw new Error('Este telefone já está cadastrado em outra conta. Se você já tem uma conta, faça login com ela.');
+      }
+
+      // SE É NOVO CADASTRO, CRIAR CONTA AGORA (após todas as validações)
+      if (isNewSignup) {
+        console.log('🔐 Criando conta COMPLETA após validações...');
+        
+        const redirectUrl = `${window.location.origin}/`;
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              nome: name,
+            }
+          }
+        });
+
+        if (authError) throw authError;
+        if (!authData.user) throw new Error('Erro ao criar usuário');
+
+        currentUserId = authData.user.id;
+
+        // Criar profile
+        await supabase.from('profiles').insert({
+          id: authData.user.id,
+          email: email,
+          nome: name,
+        });
+
+        // Criar role
+        await supabase.from('user_roles').insert({
+          user_id: authData.user.id,
+          role: 'aniversariante',
+        });
+      }
+
+      // Converter data de DD/MM/YYYY para YYYY-MM-DD
+      const [day, month, year] = birthDate.split('/');
+      const formattedDate = `${year}-${month}-${day}`;
+
+      // Inserir ou atualizar dados completos do aniversariante
       const { error: insertError } = await supabase
         .from('aniversariantes')
-        .insert({
-          id: userId,
-          cpf: cpfClean,
-          telefone: telefoneClean,
-          data_nascimento: birthDateFormatted,
-          cep: cepClean,
-          cidade: cidade,
-          estado: estado,
-          bairro: bairro,
-          logradouro: logradouro,
-          numero: numero || '',
-          latitude: latitude,
-          longitude: longitude,
+        .upsert({
+          id: currentUserId,
+          cpf: cpfLimpo,
+          telefone: telefoneLimpo,
+          data_nascimento: formattedDate,
+          cep: cep.replace(/\D/g, ''),
+          estado,
+          cidade,
+          bairro,
+          logradouro,
+          numero: numero || 'S/N',
+          latitude,
+          longitude,
         });
 
       if (insertError) {
-        console.error('❌ Erro ao inserir aniversariante:', insertError);
-        
-        // Tratar erros específicos do banco (fallback)
-        if (insertError.code === '23505') {
-          if (insertError.message.includes('cpf')) {
-            setError('Este CPF já está cadastrado em outra conta.');
-          } else if (insertError.message.includes('telefone')) {
-            setError('Este telefone já está cadastrado em outra conta.');
-          } else {
-            setError('Alguns dados já estão cadastrados em outra conta. Verifique CPF e telefone.');
-          }
-          setIsLoading(false);
-          return;
-        }
-        
-        const friendlyMessage = getFriendlyErrorMessage(insertError);
-        throw new Error(friendlyMessage);
+        console.error('Erro ao salvar dados:', insertError);
+        throw insertError;
       }
-      
-      console.log('✅ Dados de aniversariante salvos com sucesso!');
 
-      toast.success('Cadastro concluído! 🎉', {
+      // Atualizar nome no perfil (para casos Google OAuth)
+      if (!isNewSignup) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ nome: name })
+          .eq('id', currentUserId);
+
+        if (profileError) {
+          console.error('Erro ao atualizar perfil:', profileError);
+        }
+      }
+
+      toast.success('Cadastro completo!', {
         description: 'Bem-vindo ao Aniversariante VIP!',
       });
-      
+
       // Verificar se há redirecionamento pendente
       const redirectTo = sessionStorage.getItem('redirectAfterLogin');
       if (redirectTo) {
-        console.log('🔵 Redirecionando para:', redirectTo);
         sessionStorage.removeItem('redirectAfterLogin');
-        navigate(redirectTo);
+        navigate(redirectTo, { replace: true });
       } else {
-        console.log('🔵 Redirecionando para área do aniversariante');
-        navigate('/area-aniversariante');
+        navigate('/', { replace: true });
       }
-    } catch (error: any) {
-      console.error('❌ Erro ao completar cadastro:', error);
-      const friendlyMessage = getFriendlyErrorMessage(error);
+    } catch (err: any) {
+      console.error('Erro ao completar cadastro:', err);
+      const friendlyMessage = getFriendlyErrorMessage(err);
       setError(friendlyMessage);
       toast.error('Erro ao completar cadastro', {
         description: friendlyMessage,

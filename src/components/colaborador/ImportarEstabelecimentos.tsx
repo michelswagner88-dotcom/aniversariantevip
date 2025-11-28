@@ -1,43 +1,59 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, Download, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Upload, Download, CheckCircle, XCircle, AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
-import { z } from "zod";
-import { validateCNPJ } from "@/lib/validators";
-
-// Schema de validação
-const estabelecimentoSchema = z.object({
-  cnpj: z.string().refine((val) => validateCNPJ(val), {
-    message: "CNPJ inválido",
-  }),
-  razao_social: z.string().min(1, "Razão social obrigatória").max(255),
-  nome_fantasia: z.string().min(1, "Nome fantasia obrigatório").max(255),
-  categoria: z.string().min(1, "Categoria obrigatória"),
-  cep: z.string().regex(/^\d{8}$/, "CEP deve ter 8 dígitos"),
-  logradouro: z.string().min(1, "Logradouro obrigatório"),
-  numero: z.string().optional(),
-  bairro: z.string().min(1, "Bairro obrigatório"),
-  cidade: z.string().min(1, "Cidade obrigatória"),
-  estado: z.string().length(2, "Estado deve ter 2 letras"),
-  telefone: z.string().optional(),
-  whatsapp: z.string().optional(),
-  instagram: z.string().optional(),
-  site: z.string().url("URL inválida").optional().or(z.literal("")),
-  descricao_beneficio: z.string().min(1, "Descrição do benefício obrigatória").max(500),
-  regras_utilizacao: z.string().max(200).optional(),
-  periodo_validade_beneficio: z.enum(["dia_aniversario", "semana_aniversario", "mes_aniversario"]),
-});
-
-type EstabelecimentoImport = z.infer<typeof estabelecimentoSchema>;
 
 interface ValidationResult {
   valid: boolean;
   errors: string[];
-  data: EstabelecimentoImport | null;
+  data: any;
+  linha: number;
 }
+
+// Função para buscar endereço pelo CEP via ViaCEP
+const buscarEnderecoPorCEP = async (cep: string): Promise<{
+  estado: string;
+  cidade: string;
+  bairro: string;
+  rua: string;
+} | null> => {
+  if (!cep) return null;
+  
+  const cepLimpo = cep.replace(/\D/g, '');
+  if (cepLimpo.length !== 8) return null;
+  
+  try {
+    const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+    const data = await response.json();
+    
+    if (data.erro) {
+      console.warn(`CEP não encontrado: ${cep}`);
+      return null;
+    }
+    
+    return {
+      estado: data.uf || '',
+      cidade: data.localidade || '',
+      bairro: data.bairro || '',
+      rua: data.logradouro || '',
+    };
+  } catch (error) {
+    console.error(`Erro ao buscar CEP ${cep}:`, error);
+    return null;
+  }
+};
+
+// Mapear período de validade
+const mapearPeriodoValidade = (regras: string): string => {
+  if (!regras) return 'mes_aniversario';
+  const regrasUpper = regras.toUpperCase();
+  if (regrasUpper.includes('DIA')) return 'dia_aniversario';
+  if (regrasUpper.includes('SEMANA')) return 'semana_aniversario';
+  return 'mes_aniversario';
+};
 
 export const ImportarEstabelecimentos = () => {
   const { toast } = useToast();
@@ -45,27 +61,31 @@ export const ImportarEstabelecimentos = () => {
   const [importing, setImporting] = useState(false);
   const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [processando, setProcessando] = useState(false);
 
   const downloadTemplate = () => {
     const template = [
       {
-        cnpj: "12345678000100",
-        razao_social: "Exemplo Restaurante LTDA",
-        nome_fantasia: "Restaurante Exemplo",
-        categoria: "Restaurante",
-        cep: "88010000",
-        logradouro: "Rua Exemplo",
-        numero: "123",
-        bairro: "Centro",
-        cidade: "Florianópolis",
-        estado: "SC",
-        telefone: "4899999999",
-        whatsapp: "48999999999",
-        instagram: "@restauranteexemplo",
-        site: "https://exemplo.com.br",
-        descricao_beneficio: "Ganhe 15% de desconto no seu aniversário",
-        regras_utilizacao: "Válido apenas para consumo no local. Não cumulativo com outras promoções.",
-        periodo_validade_beneficio: "mes_aniversario",
+        CODIGO: "",
+        EMAIL: "",
+        SENHA: "",
+        NOME_ESTABELECIMENTO: "Restaurante Exemplo",
+        HORARIO_FUNCIONAMENTO: "Seg-Sex: 11h-23h",
+        CNPJ: "12.345.678/0001-00",
+        CEP: "88010-000",
+        ESTADO: "",
+        CIDADE: "",
+        BAIRRO: "",
+        RUA: "",
+        NUMERO: "123",
+        COMPLEMENTO: "Sala 1",
+        TELEFONE: "(48) 3333-4444",
+        WHATSAPP: "(48) 99999-8888",
+        INSTAGRAM: "restauranteexemplo",
+        SITE: "https://exemplo.com.br",
+        CATEGORIA: "Restaurante",
+        BENEFICIO: "Ganhe 15% de desconto no seu aniversário",
+        REGRAS: "SEMANA",
       },
     ];
 
@@ -89,37 +109,110 @@ export const ImportarEstabelecimentos = () => {
     }
   };
 
-  const validateData = (data: any[]): ValidationResult[] => {
-    return data.map((row, index) => {
-      try {
-        // Converter categoria string para array
-        const categorias = row.categoria?.split(",").map((c: string) => c.trim()) || [];
-        
-        const validated = estabelecimentoSchema.parse({
-          ...row,
-          categoria: categorias[0], // Validar apenas primeira categoria
-        });
-
-        return {
-          valid: true,
-          errors: [],
-          data: validated,
-        };
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          return {
-            valid: false,
-            errors: error.errors.map((e) => `Linha ${index + 2}: ${e.path.join(".")} - ${e.message}`),
-            data: null,
-          };
-        }
+  const mapearLinhaPlanilha = async (row: any, index: number): Promise<ValidationResult> => {
+    try {
+      // Validação básica
+      if (!row.NOME_ESTABELECIMENTO) {
         return {
           valid: false,
-          errors: [`Linha ${index + 2}: Erro desconhecido`],
+          errors: [`Nome do estabelecimento obrigatório`],
           data: null,
+          linha: index + 2,
         };
       }
-    });
+
+      if (!row.CEP) {
+        return {
+          valid: false,
+          errors: [`CEP obrigatório`],
+          data: null,
+          linha: index + 2,
+        };
+      }
+
+      // Buscar endereço pelo CEP se campos estiverem vazios
+      let endereco = {
+        estado: row.ESTADO || '',
+        cidade: row.CIDADE || '',
+        bairro: row.BAIRRO || '',
+        rua: row.RUA || '',
+      };
+
+      if (row.CEP && (!endereco.estado || !endereco.cidade)) {
+        console.log(`Buscando endereço para CEP: ${row.CEP}`);
+        const enderecoAPI = await buscarEnderecoPorCEP(row.CEP);
+        
+        if (enderecoAPI) {
+          endereco = {
+            estado: endereco.estado || enderecoAPI.estado,
+            cidade: endereco.cidade || enderecoAPI.cidade,
+            bairro: endereco.bairro || enderecoAPI.bairro,
+            rua: endereco.rua || enderecoAPI.rua,
+          };
+          console.log(`Endereço encontrado:`, endereco);
+        } else {
+          return {
+            valid: false,
+            errors: [`CEP inválido ou não encontrado`],
+            data: null,
+            linha: index + 2,
+          };
+        }
+      }
+
+      // Mapear categoria
+      let categoria: string[] = [];
+      if (row.CATEGORIA) {
+        categoria = [row.CATEGORIA];
+      }
+
+      // Formatar Instagram (adicionar @ se necessário)
+      let instagram = row.INSTAGRAM || null;
+      if (instagram && !instagram.startsWith('@')) {
+        instagram = `@${instagram}`;
+      }
+
+      const dadosMapeados = {
+        codigo: row.CODIGO || null,
+        nome_fantasia: row.NOME_ESTABELECIMENTO || 'Pendente de preenchimento',
+        razao_social: row.NOME_ESTABELECIMENTO || 'Pendente de preenchimento',
+        cnpj: row.CNPJ ? row.CNPJ.replace(/\D/g, '') : null,
+        email: row.EMAIL || null,
+        telefone: row.TELEFONE || null,
+        whatsapp: row.WHATSAPP || null,
+        instagram,
+        site: row.SITE || null,
+        cep: row.CEP ? row.CEP.replace(/\D/g, '') : null,
+        estado: endereco.estado,
+        cidade: endereco.cidade,
+        bairro: endereco.bairro,
+        logradouro: endereco.rua,
+        numero: row.NUMERO ? String(row.NUMERO) : null,
+        complemento: row.COMPLEMENTO || null,
+        categoria: categoria.length > 0 ? categoria : null,
+        descricao_beneficio: row.BENEFICIO || null,
+        regras_utilizacao: row.REGRAS || null,
+        periodo_validade_beneficio: mapearPeriodoValidade(row.REGRAS),
+        horario_funcionamento: row.HORARIO_FUNCIONAMENTO || null,
+        ativo: true,
+        plan_status: 'pending',
+      };
+
+      return {
+        valid: true,
+        errors: [],
+        data: dadosMapeados,
+        linha: index + 2,
+      };
+    } catch (error) {
+      console.error('Erro ao mapear linha:', error);
+      return {
+        valid: false,
+        errors: [`Erro ao processar linha: ${error}`],
+        data: null,
+        linha: index + 2,
+      };
+    }
   };
 
   const processFile = async () => {
@@ -132,7 +225,7 @@ export const ImportarEstabelecimentos = () => {
       return;
     }
 
-    setImporting(true);
+    setProcessando(true);
 
     try {
       const data = await file.arrayBuffer();
@@ -146,11 +239,22 @@ export const ImportarEstabelecimentos = () => {
           description: "Planilha vazia",
           variant: "destructive",
         });
-        setImporting(false);
+        setProcessando(false);
         return;
       }
 
-      const results = validateData(jsonData);
+      // Mapear e validar dados (incluindo busca de CEP)
+      const results: ValidationResult[] = [];
+      for (let i = 0; i < jsonData.length; i++) {
+        const result = await mapearLinhaPlanilha(jsonData[i], i);
+        results.push(result);
+        
+        // Delay pequeno para não sobrecarregar ViaCEP
+        if (i < jsonData.length - 1) {
+          await new Promise(r => setTimeout(r, 100));
+        }
+      }
+
       setValidationResults(results);
       setShowPreview(true);
 
@@ -169,7 +273,36 @@ export const ImportarEstabelecimentos = () => {
         variant: "destructive",
       });
     } finally {
-      setImporting(false);
+      setProcessando(false);
+    }
+  };
+
+  const geocodificarEstabelecimento = async (id: string, dados: any) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('geocode-address', {
+        body: {
+          rua: dados.logradouro,
+          numero: dados.numero,
+          bairro: dados.bairro,
+          cidade: dados.cidade,
+          estado: dados.estado,
+        }
+      });
+      
+      if (data?.success) {
+        await supabase
+          .from('estabelecimentos')
+          .update({
+            latitude: data.latitude,
+            longitude: data.longitude,
+            endereco_formatado: data.endereco_formatado,
+          })
+          .eq('id', id);
+        
+        console.log(`✅ Geocodificado: ${dados.nome_fantasia}`);
+      }
+    } catch (err) {
+      console.warn(`⚠️ Erro ao geocodificar ${dados.nome_fantasia}:`, err);
     }
   };
 
@@ -188,86 +321,50 @@ export const ImportarEstabelecimentos = () => {
     setImporting(true);
 
     try {
-      const insertData = validData.map((result) => {
-        const data = result.data!;
-        return {
-          cnpj: data.cnpj.replace(/\D/g, ""),
-          razao_social: data.razao_social,
-          nome_fantasia: data.nome_fantasia,
-          categoria: [data.categoria],
-          cep: data.cep,
-          logradouro: data.logradouro,
-          numero: data.numero || null,
-          bairro: data.bairro,
-          cidade: data.cidade,
-          estado: data.estado,
-          telefone: data.telefone || null,
-          whatsapp: data.whatsapp || null,
-          instagram: data.instagram || null,
-          site: data.site || null,
-          descricao_beneficio: data.descricao_beneficio,
-          regras_utilizacao: data.regras_utilizacao || null,
-          periodo_validade_beneficio: data.periodo_validade_beneficio,
-          ativo: true,
-          plan_status: "pending",
-        };
-      });
+      let sucessos = 0;
+      let erros = 0;
 
-      // Inserir estabelecimentos primeiro
-      const { data: insertedEstabs, error } = await supabase
-        .from("estabelecimentos")
-        .insert(insertData)
-        .select("id, nome_fantasia, cidade, estado, logradouro");
-
-      if (error) throw error;
-
-      toast({
-        title: "✅ Estabelecimentos inseridos!",
-        description: `Agora buscando fotos do Google Places...`,
-      });
-
-      // Buscar fotos do Google Places em batch (com delay para evitar rate limit)
-      let photosFound = 0;
-      for (let i = 0; i < insertedEstabs.length; i++) {
-        const estab = insertedEstabs[i];
+      for (let i = 0; i < validData.length; i++) {
+        const result = validData[i];
         
         try {
-          // Delay de 200ms entre requisições para evitar rate limit
-          if (i > 0) {
-            await new Promise(resolve => setTimeout(resolve, 200));
-          }
+          console.log(`[${i + 1}/${validData.length}] Importando: ${result.data.nome_fantasia}`);
+          
+          // Inserir estabelecimento usando UPSERT (onConflict: cnpj)
+          const { data: insertedData, error } = await supabase
+            .from('estabelecimentos')
+            .upsert(result.data, { 
+              onConflict: 'cnpj',
+              ignoreDuplicates: false 
+            })
+            .select()
+            .single();
 
-          const { data: photoData, error: photoError } = await supabase.functions.invoke(
-            'fetch-place-photo',
-            {
-              body: {
-                nome: estab.nome_fantasia,
-                endereco: estab.logradouro,
-                cidade: estab.cidade,
-                estado: estab.estado,
-              }
-            }
-          );
-
-          if (!photoError && photoData?.success && photoData.photo_url) {
-            // Atualizar estabelecimento com a foto
-            await supabase
-              .from("estabelecimentos")
-              .update({ logo_url: photoData.photo_url })
-              .eq("id", estab.id);
+          if (error) {
+            console.error(`Erro na linha ${result.linha}:`, error);
+            erros++;
+          } else {
+            sucessos++;
             
-            photosFound++;
-            console.log(`📸 Foto encontrada para ${estab.nome_fantasia}`);
+            // Geocodificar após inserir (se tiver endereço)
+            if (insertedData && result.data.cidade && result.data.estado) {
+              await geocodificarEstabelecimento(insertedData.id, result.data);
+            }
+          }
+          
+          // Rate limit
+          if (i < validData.length - 1) {
+            await new Promise(r => setTimeout(r, 100));
           }
         } catch (err) {
-          console.error(`❌ Erro ao buscar foto para ${estab.nome_fantasia}:`, err);
-          // Continuar mesmo com erro - não bloquear importação
+          console.error(`Exceção na linha ${result.linha}:`, err);
+          erros++;
         }
       }
 
       toast({
         title: "✅ Importação completa!",
-        description: `${validData.length} estabelecimentos cadastrados. ${photosFound} fotos encontradas no Google Places.`,
+        description: `${sucessos} estabelecimentos cadastrados. ${erros} erros.`,
       });
 
       // Limpar estados
@@ -329,10 +426,17 @@ export const ImportarEstabelecimentos = () => {
           {file && !showPreview && (
             <Button
               onClick={processFile}
-              disabled={importing}
+              disabled={processando}
               className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600"
             >
-              {importing ? "Processando..." : "Validar Dados"}
+              {processando ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processando e buscando endereços...
+                </>
+              ) : (
+                "Validar Dados"
+              )}
             </Button>
           )}
 
@@ -368,9 +472,8 @@ export const ImportarEstabelecimentos = () => {
                       <ul className="text-xs text-slate-300 space-y-1 max-h-40 overflow-auto">
                         {validationResults
                           .filter((r) => !r.valid)
-                          .flatMap((r) => r.errors)
-                          .map((error, i) => (
-                            <li key={i}>• {error}</li>
+                          .map((r, i) => (
+                            <li key={i}>• Linha {r.linha}: {r.errors.join(', ')}</li>
                           ))}
                       </ul>
                     </div>
@@ -384,7 +487,14 @@ export const ImportarEstabelecimentos = () => {
                   disabled={importing}
                   className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600"
                 >
-                  {importing ? "Importando..." : `Importar ${validCount} Estabelecimento(s)`}
+                  {importing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Importando e geocodificando...
+                    </>
+                  ) : (
+                    `Importar ${validCount} Estabelecimento(s)`
+                  )}
                 </Button>
               )}
             </div>

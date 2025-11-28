@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
+import GaleriaFullscreen from './GaleriaFullscreen';
 
 interface GaleriaFotosViewerProps {
   fotoPrincipal: string | null;
@@ -9,6 +10,8 @@ interface GaleriaFotosViewerProps {
 
 const GaleriaFotosViewer = ({ fotoPrincipal, galeriaFotos }: GaleriaFotosViewerProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
+  const [fullscreenIndex, setFullscreenIndex] = useState(0);
   const todasFotos = [fotoPrincipal, ...(galeriaFotos || [])].filter(Boolean);
   
   const handlers = useSwipeable({
@@ -26,15 +29,22 @@ const GaleriaFotosViewer = ({ fotoPrincipal, galeriaFotos }: GaleriaFotosViewerP
   }
 
   return (
-    <div {...handlers} className="relative select-none">
-      {/* Foto atual */}
-      <div className="aspect-square rounded-xl overflow-hidden bg-muted">
-        <img 
-          src={todasFotos[currentIndex]} 
-          alt={`Foto ${currentIndex + 1} do estabelecimento`}
-          className="w-full h-full object-cover"
-        />
-      </div>
+    <>
+      <div {...handlers} className="relative select-none">
+        {/* Foto atual */}
+        <div 
+          className="aspect-square rounded-xl overflow-hidden bg-muted cursor-pointer"
+          onClick={() => {
+            setFullscreenIndex(currentIndex);
+            setFullscreenOpen(true);
+          }}
+        >
+          <img 
+            src={todasFotos[currentIndex]} 
+            alt={`Foto ${currentIndex + 1} do estabelecimento`}
+            className="w-full h-full object-cover"
+          />
+        </div>
       
       {/* Indicadores de posição (bolinhas) */}
       {todasFotos.length > 1 && (
@@ -78,7 +88,16 @@ const GaleriaFotosViewer = ({ fotoPrincipal, galeriaFotos }: GaleriaFotosViewerP
           {currentIndex + 1}/{todasFotos.length}
         </span>
       )}
-    </div>
+      </div>
+
+      {/* Modal Fullscreen */}
+      <GaleriaFullscreen
+        fotos={todasFotos as string[]}
+        indexInicial={fullscreenIndex}
+        isOpen={fullscreenOpen}
+        onClose={() => setFullscreenOpen(false)}
+      />
+    </>
   );
 };
 

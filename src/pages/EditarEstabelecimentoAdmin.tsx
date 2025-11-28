@@ -364,6 +364,12 @@ export default function EditarEstabelecimentoAdmin() {
     
     if (rawCep.length !== 8) return;
 
+    // Proteção modo edição
+    if (dataLoaded || isInitialLoadRef.current) {
+      console.log('Modo edição - CEP atualizado sem buscar API');
+      return;
+    }
+
     setLoading(true);
     
     try {

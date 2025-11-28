@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft,
@@ -103,10 +103,11 @@ const BenefitRulesSection = ({ rules, setRules }: any) => {
 export default function EditarEstabelecimentoAdmin() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true); // ← CORRIGIDO: Iniciar como TRUE
+  const [loading, setLoading] = useState(true);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false); // ← NOVO: Flag de dados carregados
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const isInitialLoadRef = useRef(true);
   const [fetchingPhoto, setFetchingPhoto] = useState(false);
   const [cnpjVerified, setCnpjVerified] = useState(false);
   const [error, setError] = useState('');
@@ -190,7 +191,7 @@ export default function EditarEstabelecimentoAdmin() {
     if (!id) return;
 
     setLoading(true);
-    setDataLoaded(false); // ← Resetar flag ao iniciar carregamento
+    setDataLoaded(false);
     console.log('=== CARREGANDO ESTABELECIMENTO ===');
     console.log('ID:', id);
 
@@ -210,7 +211,7 @@ export default function EditarEstabelecimentoAdmin() {
         console.error('Erro ao buscar:', error);
         toast.error(`Erro ao carregar: ${error.message}`);
         setLoading(false);
-        setDataLoaded(false); // ← Marcar como falhou
+        setDataLoaded(false);
         return;
       }
 
@@ -218,9 +219,13 @@ export default function EditarEstabelecimentoAdmin() {
         toast.error('Estabelecimento não encontrado');
         navigate('/admin/dashboard');
         setLoading(false);
-        setDataLoaded(false); // ← Marcar como falhou
+        setDataLoaded(false);
         return;
       }
+
+      // CRITICAL: Setar dataLoaded ANTES de popular os dados para prevenir race conditions
+      setDataLoaded(true);
+      setCnpjVerified(true);
 
       // Preencher todos os campos do formulário
       const novoEstablishmentData = {
@@ -262,13 +267,16 @@ export default function EditarEstabelecimentoAdmin() {
                : 'Dia'
       });
 
-      setCnpjVerified(true);
-      setDataLoaded(true); // ← MARCAR como carregado com sucesso
+      // Desabilitar proteção inicial após um delay
+      setTimeout(() => {
+        isInitialLoadRef.current = false;
+      }, 500);
+
       console.log('✅ Dados carregados e formulário preenchido com sucesso!');
     } catch (error: any) {
       console.error('❌ Exceção ao carregar:', error);
       toast.error('Erro ao carregar estabelecimento');
-      setDataLoaded(false); // ← Marcar como falhou
+      setDataLoaded(false);
     } finally {
       setLoading(false);
     }
@@ -283,8 +291,8 @@ export default function EditarEstabelecimentoAdmin() {
   const verifyCnpj = async () => {
     const rawCnpj = establishmentData.cnpj.replace(/\D/g, '');
 
-    // Se estamos em modo edição (dados já carregados do banco), apenas validar formato
-    if (dataLoaded) {
+    // Se estamos em modo edição ou carregamento inicial, apenas validar formato
+    if (dataLoaded || isInitialLoadRef.current) {
       console.log('Modo edição - apenas validando formato do CNPJ sem sobrescrever dados');
       
       if (rawCnpj.length !== 14) {
@@ -540,10 +548,9 @@ export default function EditarEstabelecimentoAdmin() {
                 <div className="flex-1 relative">
                   <input 
                     type="text" 
-                    value={establishmentData.cnpj}
-                    onChange={handleCnpjChange}
-                    onBlur={verifyCnpj}
-                    maxLength={18}
+                  value={establishmentData.cnpj}
+                  onChange={handleCnpjChange}
+                  maxLength={18}
                     className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
                     placeholder="00.000.000/0000-00"
                     disabled={loading}

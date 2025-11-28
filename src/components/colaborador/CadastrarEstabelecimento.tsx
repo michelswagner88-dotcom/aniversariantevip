@@ -6,13 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Building2, Loader2, Upload, Plus, Trash2 } from "lucide-react";
+import { Building2, Loader2, Plus, Trash2 } from "lucide-react";
 import { z } from "zod";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { processarImagemQuadrada, dataURLtoBlob } from "@/lib/imageUtils";
 import { cnpjSchema } from "@/lib/validation";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
+import GaleriaFotosUpload from "@/components/GaleriaFotosUpload";
 
 type HorarioFuncionamento = {
   id: string;
@@ -108,42 +108,6 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
       .join(' | ');
   };
 
-  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error("Por favor, envie apenas imagens");
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Imagem muito grande. Máximo 10MB.");
-      return;
-    }
-
-    try {
-      setIsProcessingImage(true);
-      toast.info("Processando imagem...");
-      
-      // Processar e recortar automaticamente para formato quadrado
-      const imagemProcessada = await processarImagemQuadrada(file, 400);
-      
-      // Converter base64 para blob
-      const blob = dataURLtoBlob(imagemProcessada);
-      const processedFile = new File([blob], file.name, { type: 'image/jpeg' });
-      
-      setLogoFile(processedFile);
-      setLogoPreview(imagemProcessada);
-      toast.success("Foto processada com sucesso!");
-    } catch (error) {
-      console.error("Erro ao processar imagem:", error);
-      toast.error("Erro ao processar imagem. Tente novamente.");
-    } finally {
-      setIsProcessingImage(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -181,25 +145,6 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
 
       const userId = authData.user.id;
 
-      // Upload da logo se houver
-      let logoUrl = null;
-      if (logoFile) {
-        const fileExt = logoFile.name.split('.').pop();
-        const fileName = `${userId}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('estabelecimento-logos')
-          .upload(fileName, logoFile, { upsert: true });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('estabelecimento-logos')
-          .getPublicUrl(fileName);
-
-        logoUrl = publicUrl;
-      }
-
       // Criar registro do estabelecimento
       const { error: estabError } = await supabase
         .from('estabelecimentos')
@@ -214,11 +159,13 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
           estado: formData.estado,
           categoria: formData.categorias.length > 0 ? formData.categorias : null,
           descricao_beneficio: validatedData.descricaoBeneficio,
-          logo_url: logoUrl,
+          logo_url: logoPreview || null,
+          galeria_fotos: galeriaFotos,
           tem_conta_acesso: true,
           link_cardapio: formData.linkCardapio || null,
           regras_utilizacao: formData.regrasUtilizacao || null,
           periodo_validade_beneficio: formData.periodoValidade,
+          horario_funcionamento: formatarHorarios() || null,
         });
 
       if (estabError) throw estabError;
@@ -251,8 +198,8 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
         regrasUtilizacao: "",
         periodoValidade: "dia_aniversario",
       });
-      setLogoFile(null);
       setLogoPreview("");
+      setGaleriaFotos([]);
       setHorariosFuncionamento([{ id: '1', dias: [], abertura: '', fechamento: '' }]);
       
       if (onSuccess) onSuccess();

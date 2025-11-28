@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 import { BackButton } from "@/components/BackButton";
 import { NavigationButtons } from "@/components/NavigationButtons";
+import GaleriaFotosViewer from "@/components/GaleriaFotosViewer";
 import { useFollowers } from "@/hooks/useFollowers";
 import { useStories } from "@/hooks/useStories";
 import { usePosts } from "@/hooks/usePosts";
@@ -179,17 +180,15 @@ export default function EstabelecimentoDetalhes() {
 
       {/* Content */}
       <div className="relative pb-28">
-        {/* Hero Section */}
+        {/* Hero Section com Galeria */}
         <div className="relative h-[50vh] min-h-[400px]">
-          {/* Image */}
-          <SafeImage
-            src={estabelecimento.logo_url || ""}
-            alt={estabelecimento.nome_fantasia}
-            className="w-full h-full object-cover"
+          <GaleriaFotosViewer
+            fotoPrincipal={estabelecimento.logo_url}
+            galeriaFotos={estabelecimento.galeria_fotos || []}
           />
           
           {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent pointer-events-none" />
           
           {/* Back Button */}
           <div className="absolute top-6 left-6 z-10">

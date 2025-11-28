@@ -71,4 +71,26 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks principais
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': [
+            '@radix-ui/react-dialog', 
+            '@radix-ui/react-dropdown-menu', 
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-select',
+            '@radix-ui/react-toast',
+          ],
+          'supabase': ['@supabase/supabase-js'],
+          'maps': ['@react-google-maps/api'],
+          'query': ['@tanstack/react-query'],
+          'icons': ['lucide-react'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 500,
+  },
 }));

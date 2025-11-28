@@ -16,7 +16,8 @@ import {
   Mail,
   Send,
   Upload,
-  UserCog
+  UserCog,
+  Camera
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -122,6 +123,8 @@ export default function AdminDashboard() {
   const [itemType, setItemType] = useState<'user' | 'establishment' | null>(null);
   const [sendingEmails, setSendingEmails] = useState(false);
   const [emailAnalytics, setEmailAnalytics] = useState<any[]>([]);
+  const [bulkFetchingPhotos, setBulkFetchingPhotos] = useState(false);
+  const [photoProgress, setPhotoProgress] = useState({ current: 0, total: 0 });
 
   useEffect(() => {
     checkAdminAccess();
@@ -183,6 +186,58 @@ export default function AdminDashboard() {
     await supabase.auth.signOut();
     toast.success('Logout realizado com sucesso');
     navigate('/admin');
+  };
+
+  const estabelecimentosSemFoto = establishments?.filter(
+    (e) => !e.logo_url || e.logo_url === ''
+  ) || [];
+
+  const handleBuscarFotosEmLote = async () => {
+    if (estabelecimentosSemFoto.length === 0) {
+      toast.info('Todos os estabelecimentos já têm foto!');
+      return;
+    }
+
+    setBulkFetchingPhotos(true);
+    setPhotoProgress({ current: 0, total: estabelecimentosSemFoto.length });
+
+    let sucesso = 0;
+    let erros = 0;
+
+    for (let i = 0; i < estabelecimentosSemFoto.length; i++) {
+      const est = estabelecimentosSemFoto[i];
+      setPhotoProgress({ current: i + 1, total: estabelecimentosSemFoto.length });
+
+      try {
+        const { data, error } = await supabase.functions.invoke('fetch-place-photo', {
+          body: {
+            nome: est.nome_fantasia,
+            endereco: est.logradouro || '',
+            cidade: est.cidade,
+            estado: est.estado,
+          },
+        });
+
+        if (data?.success && data?.photo_url) {
+          await supabase
+            .from('estabelecimentos')
+            .update({ logo_url: data.photo_url })
+            .eq('id', est.id);
+          sucesso++;
+        } else {
+          erros++;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (err) {
+        console.error('Erro ao buscar foto:', err);
+        erros++;
+      }
+    }
+
+    setBulkFetchingPhotos(false);
+    loadData();
+    toast.success(`✅ ${sucesso} fotos encontradas | ❌ ${erros} não encontradas`);
   };
 
   const handleSimulateBirthdayRobot = async () => {
@@ -416,6 +471,25 @@ export default function AdminDashboard() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+      </div>
+      <div className="p-4 border-b border-white/10 flex justify-end">
+        <button
+          onClick={handleBuscarFotosEmLote}
+          disabled={bulkFetchingPhotos || estabelecimentosSemFoto.length === 0}
+          className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg transition-colors"
+        >
+          {bulkFetchingPhotos ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Buscando... ({photoProgress.current}/{photoProgress.total})
+            </>
+          ) : (
+            <>
+              <Camera className="w-4 h-4" />
+              Buscar Fotos do Google ({estabelecimentosSemFoto.length})
+            </>
+          )}
+        </button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">

@@ -99,7 +99,7 @@ const App = () => (
                   <Route path="/area-estabelecimento" element={<AreaEstabelecimento />} />
                   <Route path="/estabelecimento/dashboard" element={<AreaEstabelecimento />} />
                   <Route path="/login/colaborador" element={<LoginColaborador />} />
-                  <Route path="/area-colaborador" element={<AreaColaborador />} />
+                  <Route path="/area-colaborador" element={<Navigate to="/admin/dashboard" replace />} />
                   <Route path="/setup-admin" element={<SetupAdmin />} />
                   <Route path="/admin" element={<AdminLogin />} />
                   <Route path="/admin/dashboard" element={<AdminDashboard />} />

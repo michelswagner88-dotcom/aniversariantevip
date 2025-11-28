@@ -134,39 +134,31 @@ export function GerenciarAniversariantes() {
     try {
       setExcluindo(true);
 
-      // Deletar role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', id);
+      console.log('🔵 Iniciando exclusão completa do usuário:', id);
+      
+      // Chamar Edge Function que faz hard delete completo
+      // Inclui: cupons, favoritos, followers, interactions, aniversariantes, 
+      // user_roles, profiles e Auth
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: id }
+      });
 
-      if (roleError) throw roleError;
+      if (error) {
+        console.error('❌ Erro ao chamar delete-user:', error);
+        throw new Error(error.message || 'Erro ao excluir usuário');
+      }
 
-      // Deletar aniversariante
-      const { error: anivError } = await supabase
-        .from('aniversariantes')
-        .delete()
-        .eq('id', id);
+      if (!data?.success) {
+        console.error('❌ Edge Function retornou erro:', data);
+        throw new Error(data?.error || 'Erro ao excluir usuário');
+      }
 
-      if (anivError) throw anivError;
-
-      // Deletar profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', id);
-
-      if (profileError) throw profileError;
-
-      // Deletar usuário do auth (requer service role, então pode falhar)
-      // mas não vamos bloquear a exclusão por isso
-      await supabase.auth.admin.deleteUser(id).catch(() => {});
-
-      toast.success("Aniversariante excluído com sucesso!");
+      console.log('✅ Usuário excluído completamente:', data);
+      toast.success("Usuário removido completamente do sistema!");
       await carregarAniversariantes();
     } catch (error: any) {
-      console.error("Erro ao excluir:", error);
-      toast.error("Erro ao excluir aniversariante");
+      console.error("❌ Erro ao excluir:", error);
+      toast.error(error.message || "Erro ao excluir aniversariante. Tente novamente.");
     } finally {
       setExcluindo(false);
     }
@@ -332,10 +324,19 @@ export function GerenciarAniversariantes() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                              <AlertDialogTitle>⚠️ Confirmar Exclusão Permanente</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Tem certeza que deseja excluir <strong>{aniv.nome}</strong>? 
-                                Esta ação é irreversível e removerá todos os dados, incluindo cupons associados.
+                                <strong className="text-destructive">ATENÇÃO: Esta ação é irreversível!</strong>
+                                <br /><br />
+                                Ao confirmar, o usuário <strong>{aniv.nome}</strong> será completamente removido do sistema:
+                                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                                  <li>Todos os cupons emitidos serão excluídos</li>
+                                  <li>Favoritos e interações serão apagados</li>
+                                  <li>CPF, telefone e email ficarão livres para novo cadastro</li>
+                                  <li>Conta de acesso será removida permanentemente</li>
+                                </ul>
+                                <br />
+                                <strong>Tem certeza que deseja prosseguir?</strong>
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

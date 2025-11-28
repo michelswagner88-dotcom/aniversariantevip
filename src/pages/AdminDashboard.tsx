@@ -59,6 +59,8 @@ import { ExpansionInsights } from '@/components/admin/ExpansionInsights';
 import { GrowthMetricsChart } from '@/components/admin/GrowthMetricsChart';
 import { NavigationMetricsPanel } from '@/components/admin/NavigationMetricsPanel';
 import { GerenciarColaboradores } from '@/components/colaborador/GerenciarColaboradores';
+import { EditUserModal } from '@/components/admin/EditUserModal';
+import { EditEstablishmentModal } from '@/components/admin/EditEstablishmentModal';
 
 const COLORS = ['#94a3b8', '#8b5cf6', '#ec4899'];
 
@@ -111,8 +113,11 @@ export default function AdminDashboard() {
   const [adminName, setAdminName] = useState('');
 
   // Estados de Modal
-  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editUserModalOpen, setEditUserModalOpen] = useState(false);
+  const [editEstabModalOpen, setEditEstabModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedEstab, setSelectedEstab] = useState<any>(null);
   const [currentItem, setCurrentItem] = useState<any>(null);
   const [itemType, setItemType] = useState<'user' | 'establishment' | null>(null);
   const [sendingEmails, setSendingEmails] = useState(false);
@@ -241,48 +246,25 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleEditClick = (item: any, type: 'user' | 'establishment') => {
-    setCurrentItem({ ...item });
-    setItemType(type);
-    setEditModalOpen(true);
-  };
+  const handleEditClick = async (item: any, type: 'user' | 'establishment') => {
+    if (type === 'user') {
+      // Buscar dados completos do usuário (profile + aniversariante)
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('nome, email')
+        .eq('id', item.id)
+        .single();
 
-  const handleSaveEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (itemType === 'user') {
-        const { error } = await supabase
-          .from('aniversariantes')
-          .update({ 
-            telefone: currentItem.telefone,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', currentItem.id);
-        
-        if (error) throw error;
-        setUsers(users.map(u => u.id === currentItem.id ? currentItem : u));
-        toast.success('Usuário atualizado com sucesso');
-      } else {
-        const { error } = await supabase
-          .from('estabelecimentos')
-          .update({
-            nome_fantasia: currentItem.nome_fantasia,
-            telefone: currentItem.telefone,
-            categoria: currentItem.categoria,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', currentItem.id);
-        
-        if (error) throw error;
-        setEstablishments(establishments.map(e => e.id === currentItem.id ? currentItem : e));
-        toast.success('Estabelecimento atualizado com sucesso');
-      }
-    } catch (error) {
-      console.error('Erro ao salvar:', error);
-      toast.error('Erro ao salvar alterações');
-    } finally {
-      setEditModalOpen(false);
-      setCurrentItem(null);
+      setSelectedUser({
+        ...item,
+        nome: profileData?.nome || '',
+        email: profileData?.email || '',
+      });
+      setEditUserModalOpen(true);
+    } else {
+      // Para estabelecimento, já temos todos os dados
+      setSelectedEstab(item);
+      setEditEstabModalOpen(true);
     }
   };
 
@@ -923,77 +905,20 @@ export default function AdminDashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* MODAL DE EDIÇÃO */}
-      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <DialogContent className="bg-slate-900 border-white/10 text-white">
-          <DialogHeader>
-            <DialogTitle>Editar {itemType === 'user' ? 'Usuário' : 'Estabelecimento'}</DialogTitle>
-          </DialogHeader>
-          {currentItem && (
-            <form onSubmit={handleSaveEdit} className="space-y-4">
-              {itemType === 'user' ? (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">CPF (não editável)</label>
-                    <input 
-                      type="text" 
-                      value={currentItem.cpf}
-                      disabled
-                      className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-slate-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Telefone</label>
-                    <input 
-                      type="text" 
-                      value={currentItem.telefone || ''}
-                      onChange={(e) => setCurrentItem({...currentItem, telefone: e.target.value})}
-                      className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none text-white"
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Nome Fantasia</label>
-                    <input 
-                      type="text" 
-                      value={currentItem.nome_fantasia || ''}
-                      onChange={(e) => setCurrentItem({...currentItem, nome_fantasia: e.target.value})}
-                      className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Telefone</label>
-                    <input 
-                      type="text" 
-                      value={currentItem.telefone || ''}
-                      onChange={(e) => setCurrentItem({...currentItem, telefone: e.target.value})}
-                      className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none text-white"
-                    />
-                  </div>
-                </>
-              )}
-              
-              <div className="pt-4 flex justify-end gap-3">
-                <button 
-                  type="button"
-                  onClick={() => setEditModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 font-medium"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-lg hover:shadow-lg font-medium"
-                >
-                  Salvar Alterações
-                </button>
-              </div>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* MODAIS DE EDIÇÃO COMPLETOS */}
+      <EditUserModal
+        user={selectedUser}
+        open={editUserModalOpen}
+        onOpenChange={setEditUserModalOpen}
+        onSuccess={loadData}
+      />
+
+      <EditEstablishmentModal
+        establishment={selectedEstab}
+        open={editEstabModalOpen}
+        onOpenChange={setEditEstabModalOpen}
+        onSuccess={loadData}
+      />
     </div>
   );
 }

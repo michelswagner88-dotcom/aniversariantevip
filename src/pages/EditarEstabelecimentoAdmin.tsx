@@ -104,6 +104,8 @@ export default function EditarEstabelecimentoAdmin() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [fetchingPhoto, setFetchingPhoto] = useState(false);
   const [cnpjVerified, setCnpjVerified] = useState(false);
   const [error, setError] = useState('');
@@ -135,20 +137,83 @@ export default function EditarEstabelecimentoAdmin() {
   
   const { fetchCep: lookupCep } = useCepLookup();
 
-  // Carregar dados do estabelecimento
+  // Verificar autenticação PRIMEIRO
   useEffect(() => {
-    loadEstabelecimento();
-  }, [id]);
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.user) {
+          console.log('Usuário não autenticado');
+          toast.error('Você precisa estar logado');
+          navigate('/auth');
+          return;
+        }
+
+        // Verificar se é admin
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .eq('role', 'admin')
+          .single();
+
+        if (!roleData) {
+          console.log('Usuário não é admin');
+          toast.error('Acesso negado - apenas administradores');
+          navigate('/');
+          return;
+        }
+
+        console.log('Autenticação confirmada - usuário é admin');
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
+        navigate('/auth');
+      } finally {
+        setLoadingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  // Carregar dados SOMENTE após autenticação confirmada
+  useEffect(() => {
+    if (isAuthenticated && id) {
+      loadEstabelecimento();
+    }
+  }, [isAuthenticated, id]);
 
   const loadEstabelecimento = async () => {
+    setLoading(true);
+    console.log('=== CARREGANDO ESTABELECIMENTO ===');
+    console.log('ID:', id);
+
     try {
-      const { data, error } = await supabase
+      const { data, error, status } = await supabase
         .from('estabelecimentos')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      console.log('Status:', status);
+      console.log('Data:', data);
+      console.log('Error:', error);
+
+      if (error) {
+        console.error('Erro ao buscar:', error);
+        toast.error('Erro ao carregar estabelecimento');
+        setLoading(false);
+        return;
+      }
+
+      if (!data) {
+        toast.error('Estabelecimento não encontrado');
+        navigate('/admin/dashboard');
+        setLoading(false);
+        return;
+      }
 
       if (data) {
         setEstablishmentData({
@@ -182,10 +247,13 @@ export default function EditarEstabelecimentoAdmin() {
         });
 
         setCnpjVerified(true);
+        console.log('Campos preenchidos com sucesso!');
       }
     } catch (error: any) {
       console.error('Erro ao carregar:', error);
       toast.error('Erro ao carregar estabelecimento');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -359,6 +427,30 @@ export default function EditarEstabelecimentoAdmin() {
       setLoading(false);
     }
   };
+
+  // Loading enquanto verifica autenticação
+  if (loadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-violet-500 mx-auto mb-4" />
+          <p className="text-gray-400">Verificando permissões...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading enquanto carrega dados
+  if (loading && !establishmentData.cnpj) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-violet-500 mx-auto mb-4" />
+          <p className="text-gray-400">Carregando estabelecimento...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 p-4 sm:p-8 font-sans">

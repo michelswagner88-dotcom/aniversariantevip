@@ -138,35 +138,25 @@ export default function AdminImport() {
     }
   };
 
-  const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
+  const geocodeAddress = async (rua: string, numero: string, bairro: string, cidade: string, estado: string): Promise<{ lat: number; lng: number } | null> => {
     try {
-      console.log(`[Geocoding] Processando endereço: ${address}`);
+      console.log(`[Geocoding] Processando: ${rua}, ${numero} - ${bairro}, ${cidade} - ${estado}`);
       
-      const fullAddress = address.includes("Florianópolis") ? address : `${address}, Florianópolis - SC`;
-      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      const { data, error } = await supabase.functions.invoke('geocode-address', {
+        body: { rua, numero, bairro, cidade, estado }
+      });
       
-      if (!apiKey) {
-        console.error('[Geocoding] ❌ VITE_GOOGLE_MAPS_API_KEY não encontrada');
+      if (error) {
+        console.error('[Geocoding] Erro Edge Function:', error);
         return null;
       }
       
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullAddress)}&key=${apiKey}`
-      );
-      const data = await response.json();
-
-      console.log(`[Geocoding] Status da API: ${data.status}`);
-
-      if (data.status === "OK" && data.results[0]) {
-        const coords = {
-          lat: data.results[0].geometry.location.lat,
-          lng: data.results[0].geometry.location.lng,
-        };
-        console.log(`[Geocoding] ✓ Sucesso: ${coords.lat}, ${coords.lng}`);
-        return coords;
+      if (data?.success) {
+        console.log(`[Geocoding] ✓ Sucesso: ${data.latitude}, ${data.longitude}`);
+        return { lat: data.latitude, lng: data.longitude };
       }
       
-      console.warn(`[Geocoding] ⚠ Falhou: ${data.status} - ${data.error_message || 'Sem coordenadas'}`);
+      console.warn('[Geocoding] ⚠ Falhou:', data?.error);
       return null;
     } catch (error) {
       console.error("[Geocoding] ❌ Exceção:", error);
@@ -176,13 +166,15 @@ export default function AdminImport() {
 
   const geocodificarEstabelecimento = async (estabelecimento: any) => {
     try {
-      const endereco = `${estabelecimento.logradouro}, ${estabelecimento.numero} - ${estabelecimento.bairro}, ${estabelecimento.cidade} - ${estabelecimento.estado}, ${estabelecimento.cep}`;
-
       console.log(`[Geocoding] Processando: ${estabelecimento.nome_fantasia}`);
-      console.log(`[Geocoding] Endereço: ${endereco}`);
 
-      // Usar geocoding direto via Google Maps API
-      const coords = await geocodeAddress(endereco);
+      const coords = await geocodeAddress(
+        estabelecimento.logradouro || estabelecimento.rua || '',
+        estabelecimento.numero || '',
+        estabelecimento.bairro || '',
+        estabelecimento.cidade || '',
+        estabelecimento.estado || ''
+      );
 
       if (coords) {
         console.log(`[Geocoding] ✓ Sucesso: ${coords.lat}, ${coords.lng}`);
@@ -297,8 +289,17 @@ export default function AdminImport() {
             logradouro = addressData.street;
             bairro = addressData.neighborhood;
 
-            // Geocoding do endereço completo
-            coordinates = await geocodeAddress(finalAddress);
+            // Geocoding do endereço completo usando Edge Function
+            const coords = await geocodeAddress(
+              addressData.street,
+              numero,
+              addressData.neighborhood,
+              addressData.city,
+              addressData.state
+            );
+            if (coords) {
+              coordinates = coords;
+            }
           }
 
           // Google Places (foto e avaliação) - só tenta se tiver nome E endereço

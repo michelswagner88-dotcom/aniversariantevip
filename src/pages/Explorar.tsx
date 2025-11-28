@@ -14,6 +14,7 @@ import { useEstabelecimentosProximos } from "@/hooks/useEstabelecimentosProximos
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { sanitizarInput } from "@/lib/sanitize";
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick }: any) => (

@@ -14,6 +14,7 @@ import { useFavoritos } from "@/hooks/useFavoritos";
 import { useNavigate, Link } from "react-router-dom";
 import { CityCombobox } from "@/components/CityCombobox";
 import { useQuery } from "@tanstack/react-query";
+import { sanitizarInput } from "@/lib/sanitize";
 
 interface Estabelecimento {
   id: string;

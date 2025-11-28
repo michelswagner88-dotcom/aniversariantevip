@@ -11,6 +11,8 @@ import BottomNav from "@/components/BottomNav";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { LazyRoute } from "@/components/LazyRoute";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
+import * as Sentry from "@sentry/react";
+import { Button } from "@/components/ui/button";
 
 // Lazy load das páginas principais
 const Index = lazy(() => import("./pages/Index"));
@@ -59,10 +61,30 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 
 const App = () => (
   <ThemeProvider defaultTheme="dark" storageKey="vip-theme">
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <ChatAssistant />
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <ChatAssistant />
+      <Sentry.ErrorBoundary
+        fallback={({ error, resetError }) => (
+          <div className="min-h-screen flex items-center justify-center bg-background p-4">
+            <div className="text-center max-w-md">
+              <h1 className="text-2xl font-bold text-foreground mb-4">Ops! Algo deu errado</h1>
+              <p className="text-muted-foreground mb-6">
+                Encontramos um problema inesperado. Nossa equipe já foi notificada.
+              </p>
+              <div className="space-y-3">
+                <Button onClick={resetError} className="w-full">
+                  Tentar novamente
+                </Button>
+                <Button variant="outline" onClick={() => window.location.href = '/'} className="w-full">
+                  Voltar para o início
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      >
         <BrowserRouter>
           <AnalyticsProvider>
             <ErrorBoundary>
@@ -123,8 +145,9 @@ const App = () => (
           </ErrorBoundary>
           </AnalyticsProvider>
         </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
+      </Sentry.ErrorBoundary>
+    </TooltipProvider>
+  </ThemeProvider>
 );
 
 export default App;

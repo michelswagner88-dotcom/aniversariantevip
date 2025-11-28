@@ -338,15 +338,28 @@ export default function AdminDashboard() {
   const confirmDelete = async () => {
     try {
       if (itemType === 'user') {
-        const { error } = await supabase
-          .from('aniversariantes')
-          .update({ deleted_at: new Date().toISOString() })
-          .eq('id', currentItem.id);
+        // HARD DELETE via Edge Function - Remove completamente do sistema
+        console.log('🔵 Iniciando exclusão completa do usuário:', currentItem.id);
         
-        if (error) throw error;
+        const { data, error } = await supabase.functions.invoke('delete-user', {
+          body: { userId: currentItem.id }
+        });
+
+        if (error) {
+          console.error('❌ Erro ao chamar delete-user:', error);
+          throw new Error(error.message || 'Erro ao excluir usuário');
+        }
+
+        if (!data?.success) {
+          console.error('❌ Edge Function retornou erro:', data);
+          throw new Error(data?.error || 'Erro ao excluir usuário');
+        }
+
+        console.log('✅ Usuário excluído completamente:', data);
         setUsers(users.filter(u => u.id !== currentItem.id));
-        toast.success('Usuário removido com sucesso');
+        toast.success('Usuário removido completamente do sistema!');
       } else {
+        // Estabelecimentos continuam com soft delete
         const { error } = await supabase
           .from('estabelecimentos')
           .update({ deleted_at: new Date().toISOString() })
@@ -356,9 +369,9 @@ export default function AdminDashboard() {
         setEstablishments(establishments.filter(e => e.id !== currentItem.id));
         toast.success('Estabelecimento removido com sucesso');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao deletar:', error);
-      toast.error('Erro ao remover');
+      toast.error(error.message || 'Erro ao remover');
     } finally {
       setDeleteModalOpen(false);
       setCurrentItem(null);
@@ -1337,7 +1350,26 @@ export default function AdminDashboard() {
               Confirmar Exclusão
             </AlertDialogTitle>
             <AlertDialogDescription className="text-slate-400">
-              Tem certeza que deseja excluir <strong className="text-white">{currentItem?.nome_fantasia || currentItem?.cpf}</strong>? Esta ação não pode ser desfeita.
+              {itemType === 'user' ? (
+                <div className="space-y-3">
+                  <p className="text-rose-400 font-semibold">
+                    ⚠️ ATENÇÃO: Esta ação é IRREVERSÍVEL!
+                  </p>
+                  <p>
+                    O usuário <strong className="text-white">{currentItem?.cpf}</strong> será <strong className="text-rose-400">completamente removido</strong> do sistema:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-slate-300 ml-2">
+                    <li>Conta de acesso (email/senha)</li>
+                    <li>Todos os cupons emitidos</li>
+                    <li>Favoritos e interações</li>
+                    <li>CPF, telefone e email ficarão livres para novo cadastro</li>
+                  </ul>
+                </div>
+              ) : (
+                <p>
+                  Tem certeza que deseja excluir <strong className="text-white">{currentItem?.nome_fantasia}</strong>? Esta ação não pode ser desfeita.
+                </p>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -89,14 +89,28 @@ const SmartAuth = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        console.log('🔵 Sessão encontrada:', session.user.email);
+        
+        // Verificar se precisa completar cadastro (vindo do AuthCallback)
+        const needsCompletion = sessionStorage.getItem('needsCompletion');
+        if (needsCompletion === 'true') {
+          console.log('🔵 needsCompletion=true, forçando Step 2');
+          sessionStorage.removeItem('needsCompletion');
+          setUserId(session.user.id);
+          setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
+          setStep(2);
+          return;
+        }
+        
         const { data: roleData } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
         
         if (!roleData) {
           // Primeira vez logando (Google), criar profile e role
+          console.log('🔵 Primeira vez com Google, criando profile/role');
           try {
             await supabase.from('profiles').insert({
               id: session.user.id,
@@ -110,6 +124,7 @@ const SmartAuth = () => {
             });
 
             setUserId(session.user.id);
+            setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
             setStep(2);
             return;
           } catch (error) {
@@ -120,21 +135,24 @@ const SmartAuth = () => {
         if (roleData?.role === 'aniversariante') {
           const { data: anivData } = await supabase
             .from('aniversariantes')
-            .select('cpf')
+            .select('cpf, data_nascimento')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
           
-          if (!anivData?.cpf) {
+          if (!anivData?.cpf || !anivData?.data_nascimento) {
+            console.log('🔵 Dados incompletos, indo para Step 2');
             setUserId(session.user.id);
+            setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
             setStep(2);
           } else {
+            console.log('✅ Cadastro completo, redirecionando');
             // Verificar se há redirecionamento pendente
             const redirectTo = sessionStorage.getItem('redirectAfterLogin');
             if (redirectTo) {
               sessionStorage.removeItem('redirectAfterLogin');
               navigate(redirectTo, { replace: true });
             } else {
-              navigate('/dashboard', { replace: true });
+              navigate('/', { replace: true });
             }
           }
         }

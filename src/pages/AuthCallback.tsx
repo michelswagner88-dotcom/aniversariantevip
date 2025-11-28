@@ -13,90 +13,84 @@ const AuthCallback = () => {
       try {
         console.log('🔄 Processando callback do Google OAuth...');
         
+        // Aguardar processamento da URL
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         // Verificar se o usuário foi autenticado
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (sessionError) {
+        if (sessionError || !session?.user) {
           console.error('❌ Erro ao obter sessão:', sessionError);
           setError('Erro no login. Tente novamente.');
-          toast.error('Erro no login', {
-            description: 'Não foi possível completar a autenticação. Tente novamente.',
-          });
-          setTimeout(() => navigate('/auth'), 2000);
+          toast.error('Erro no login');
+          setTimeout(() => navigate('/auth', { replace: true }), 2000);
           return;
         }
         
-        if (session?.user) {
-          console.log('✅ Login OK, usuário:', session.user.email);
+        const user = session.user;
+        console.log('✅ Login OK, usuário:', user.email);
+        
+        // Verificar se tem role
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        // Se não tem role, criar (primeira vez com Google)
+        if (!roleData) {
+          console.log('📝 Criando perfil e role para novo usuário Google...');
           
-          // Verificar se tem role
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .single();
-          
-          // Se não tem role, criar (primeira vez com Google)
-          if (!roleData) {
-            console.log('📝 Criando perfil e role para novo usuário Google...');
-            
-            try {
-              await supabase.from('profiles').insert({
-                id: session.user.id,
-                email: session.user.email!,
-                nome: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
-              });
+          try {
+            await supabase.from('profiles').insert({
+              id: user.id,
+              email: user.email!,
+              nome: user.user_metadata?.full_name || user.user_metadata?.name || '',
+            });
 
-              await supabase.from('user_roles').insert({
-                user_id: session.user.id,
-                role: 'aniversariante',
-              });
-            } catch (err) {
-              console.error('Erro ao criar profile/role:', err);
-            }
-          }
-          
-          // Verificar se precisa completar cadastro (CPF, data nascimento)
-          const { data: anivData } = await supabase
-            .from('aniversariantes')
-            .select('cpf, data_nascimento')
-            .eq('id', session.user.id)
-            .single();
-          
-          // Pegar redirecionamento salvo
-          const redirectTo = sessionStorage.getItem('redirectAfterLogin');
-          
-          if (!anivData?.cpf || !anivData?.data_nascimento) {
-            console.log('📋 Precisa completar cadastro, redirecionando para Step 2...');
-            // Precisa completar cadastro - redirecionar para /auth que detectará Step 2
-            sessionStorage.removeItem('redirectAfterLogin');
-            navigate('/auth', { replace: true });
-          } else if (redirectTo) {
-            console.log('🎯 Redirecionando para:', redirectTo);
-            sessionStorage.removeItem('redirectAfterLogin');
-            toast.success('Login realizado!', {
-              description: 'Bem-vindo de volta!',
+            await supabase.from('user_roles').insert({
+              user_id: user.id,
+              role: 'aniversariante',
             });
-            navigate(redirectTo, { replace: true });
-          } else {
-            console.log('🏠 Redirecionando para dashboard...');
-            toast.success('Login realizado!', {
-              description: 'Bem-vindo de volta!',
-            });
-            navigate('/dashboard', { replace: true });
+          } catch (err) {
+            console.error('Erro ao criar profile/role:', err);
           }
+        }
+        
+        // Verificar se precisa completar cadastro (CPF, data nascimento)
+        const { data: anivData } = await supabase
+          .from('aniversariantes')
+          .select('cpf, data_nascimento')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        console.log('Dados aniversariante:', anivData);
+        
+        // Pegar redirecionamento salvo
+        const redirectTo = sessionStorage.getItem('redirectAfterLogin');
+        
+        if (!anivData?.cpf || !anivData?.data_nascimento) {
+          console.log('📋 Precisa completar cadastro, redirecionando para /auth Step 2...');
+          // Marca que precisa completar para o SmartAuth detectar
+          sessionStorage.setItem('needsCompletion', 'true');
+          sessionStorage.removeItem('redirectAfterLogin');
+          toast.success('Conta criada! Complete seu cadastro.');
+          navigate('/auth', { replace: true });
+        } else if (redirectTo) {
+          console.log('🎯 Redirecionando para:', redirectTo);
+          sessionStorage.removeItem('redirectAfterLogin');
+          toast.success('Login realizado!');
+          navigate(redirectTo, { replace: true });
         } else {
-          console.log('⚠️ Sem sessão, voltando para login...');
-          setError('Não foi possível fazer login. Tente novamente.');
-          setTimeout(() => navigate('/auth'), 2000);
+          console.log('🏠 Redirecionando para home...');
+          toast.success('Login realizado!');
+          navigate('/', { replace: true });
         }
       } catch (err) {
         console.error('❌ Erro no callback:', err);
         setError('Erro inesperado. Redirecionando...');
-        toast.error('Erro inesperado', {
-          description: 'Ocorreu um erro ao processar o login. Tente novamente.',
-        });
-        setTimeout(() => navigate('/auth'), 2000);
+        toast.error('Erro inesperado');
+        setTimeout(() => navigate('/auth', { replace: true }), 2000);
       }
     };
 

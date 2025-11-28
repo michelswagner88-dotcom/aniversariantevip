@@ -34,6 +34,12 @@ export default function AdminImport() {
     photosFound: 0
   });
   const [showResult, setShowResult] = useState(false);
+  const [geocodingStatus, setGeocodingStatus] = useState<{
+    total: number;
+    processados: number;
+    sucesso: number;
+    falhas: number;
+  }>({ total: 0, processados: 0, sucesso: 0, falhas: 0 });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -134,23 +140,59 @@ export default function AdminImport() {
 
   const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
     try {
+      console.log(`[Geocoding] Processando endereço: ${address}`);
+      
       const fullAddress = address.includes("Florianópolis") ? address : `${address}, Florianópolis - SC`;
       const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      
+      if (!apiKey) {
+        console.error('[Geocoding] ❌ VITE_GOOGLE_MAPS_API_KEY não encontrada');
+        return null;
+      }
       
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullAddress)}&key=${apiKey}`
       );
       const data = await response.json();
 
+      console.log(`[Geocoding] Status da API: ${data.status}`);
+
       if (data.status === "OK" && data.results[0]) {
-        return {
+        const coords = {
           lat: data.results[0].geometry.location.lat,
           lng: data.results[0].geometry.location.lng,
         };
+        console.log(`[Geocoding] ✓ Sucesso: ${coords.lat}, ${coords.lng}`);
+        return coords;
       }
+      
+      console.warn(`[Geocoding] ⚠ Falhou: ${data.status} - ${data.error_message || 'Sem coordenadas'}`);
       return null;
     } catch (error) {
-      console.error("Geocoding error:", error);
+      console.error("[Geocoding] ❌ Exceção:", error);
+      return null;
+    }
+  };
+
+  const geocodificarEstabelecimento = async (estabelecimento: any) => {
+    try {
+      const endereco = `${estabelecimento.logradouro}, ${estabelecimento.numero} - ${estabelecimento.bairro}, ${estabelecimento.cidade} - ${estabelecimento.estado}, ${estabelecimento.cep}`;
+
+      console.log(`[Geocoding] Processando: ${estabelecimento.nome_fantasia}`);
+      console.log(`[Geocoding] Endereço: ${endereco}`);
+
+      // Usar geocoding direto via Google Maps API
+      const coords = await geocodeAddress(endereco);
+
+      if (coords) {
+        console.log(`[Geocoding] ✓ Sucesso: ${coords.lat}, ${coords.lng}`);
+        return { latitude: coords.lat, longitude: coords.lng };
+      }
+
+      console.warn(`[Geocoding] ⚠ Sem coordenadas retornadas`);
+      return null;
+    } catch (err) {
+      console.error(`[Geocoding] Exceção:`, err);
       return null;
     }
   };
@@ -405,11 +447,82 @@ export default function AdminImport() {
         }));
 
         setResult({ success: successCount, errors });
-      setShowResult(true);
+        setShowResult(true);
+
+        // Processo adicional de geocodificação para estabelecimentos sem coordenadas
+        toast.info('🗺️ Iniciando processo de geocodificação adicional...');
+        await processarGeocodificacaoAdicional();
+
     } catch (error: any) {
       toast.error(`Erro ao processar arquivo: ${error.message}`);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const processarGeocodificacaoAdicional = async () => {
+    try {
+      // Buscar estabelecimentos sem coordenadas
+      const { data: estabelecimentosSemCoords, error } = await supabase
+        .from('estabelecimentos')
+        .select('id, nome_fantasia, logradouro, numero, bairro, cidade, estado, cep')
+        .or('latitude.is.null,longitude.is.null');
+
+      if (error) {
+        console.error('[Geocoding] Erro ao buscar estabelecimentos:', error);
+        return;
+      }
+
+      if (!estabelecimentosSemCoords || estabelecimentosSemCoords.length === 0) {
+        console.log('[Geocoding] Nenhum estabelecimento sem coordenadas encontrado');
+        return;
+      }
+
+      setGeocodingStatus({ 
+        total: estabelecimentosSemCoords.length, 
+        processados: 0, 
+        sucesso: 0, 
+        falhas: 0 
+      });
+
+      for (const est of estabelecimentosSemCoords) {
+        const coords = await geocodificarEstabelecimento(est);
+
+        if (coords) {
+          const { error: updateError } = await supabase
+            .from('estabelecimentos')
+            .update({ latitude: coords.latitude, longitude: coords.longitude })
+            .eq('id', est.id);
+
+          if (!updateError) {
+            setGeocodingStatus(prev => ({
+              ...prev,
+              processados: prev.processados + 1,
+              sucesso: prev.sucesso + 1
+            }));
+          } else {
+            console.error(`[Geocoding] Erro ao atualizar ${est.nome_fantasia}:`, updateError);
+            setGeocodingStatus(prev => ({
+              ...prev,
+              processados: prev.processados + 1,
+              falhas: prev.falhas + 1
+            }));
+          }
+        } else {
+          setGeocodingStatus(prev => ({
+            ...prev,
+            processados: prev.processados + 1,
+            falhas: prev.falhas + 1
+          }));
+        }
+
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      toast.success(`Geocodificação concluída: ${geocodingStatus.sucesso} sucesso, ${geocodingStatus.falhas} falhas`);
+    } catch (error) {
+      console.error('[Geocoding] Erro no processo:', error);
     }
   };
 
@@ -492,6 +605,24 @@ export default function AdminImport() {
                 </div>
               </label>
             </div>
+
+            {/* Status de geocodificação */}
+            {geocodingStatus.total > 0 && (
+              <div className="p-4 bg-violet-500/10 border border-violet-500/20 rounded-lg">
+                <p className="text-white font-medium mb-2">
+                  🗺️ Geocodificando endereços...
+                </p>
+                <p className="text-sm text-slate-300">
+                  {geocodingStatus.processados}/{geocodingStatus.total} • 
+                  <span className="text-green-400"> ✓ {geocodingStatus.sucesso}</span> • 
+                  <span className="text-red-400"> ✗ {geocodingStatus.falhas}</span>
+                </p>
+                <Progress 
+                  value={(geocodingStatus.processados / geocodingStatus.total) * 100} 
+                  className="mt-2"
+                />
+              </div>
+            )}
 
             {processing && (
               <div className="space-y-2">

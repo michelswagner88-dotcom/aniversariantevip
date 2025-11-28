@@ -264,51 +264,34 @@ export default function AdminImport() {
         const rowNumber = startIndex + batchIdx + 2;
         
         try {
-          // Validações básicas - NOVA LÓGICA COM CEP + NÚMERO
-          if (!row.EMPRESA || !row.CNPJ || !row.CEP || !row.NUMERO) {
-            return {
-              success: false,
-              rowNumber,
-              empresa: row.EMPRESA || "N/A",
-              error: "Dados obrigatórios faltando (EMPRESA, CNPJ, CEP ou NUMERO)",
-              hasGeocode: false,
-              hasPhoto: false,
-            };
-          }
+          // NENHUMA VALIDAÇÃO OBRIGATÓRIA - Admin pode importar qualquer dado
+          // CNPJ: Se vazio, gera placeholder único
+          const cnpj = row.CNPJ 
+            ? cleanCNPJ(row.CNPJ)
+            : `PENDENTE_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-          const cnpj = cleanCNPJ(row.CNPJ);
-          if (cnpj.length !== 14) {
-            return {
-              success: false,
-              rowNumber,
-              empresa: row.EMPRESA,
-              error: `CNPJ inválido: ${row.CNPJ}`,
-              hasGeocode: false,
-              hasPhoto: false,
-            };
-          }
-
-          // NOVO FLUXO: Buscar endereço pelo CEP (com fallback silencioso)
-          const addressData = await fetchAddressByCep(row.CEP);
+          // NOVO FLUXO: Buscar endereço pelo CEP (só se tiver CEP)
+          const addressData = row.CEP ? await fetchAddressByCep(row.CEP) : null;
           
-          let finalAddress: string;
+          let finalAddress: string | null = null;
           let coordinates: { lat: number; lng: number } | null = null;
-          let cidade: string;
-          let estado: string;
-          let logradouro: string;
-          let bairro: string;
+          let cidade: string | null = null;
+          let estado: string | null = null;
+          let logradouro: string | null = null;
+          let bairro: string | null = null;
 
           if (!addressData) {
-            // Fallback silencioso: CEP inválido, mas salvar mesmo assim
-            finalAddress = `Endereço pendente (CEP: ${row.CEP})`;
-            cidade = "Florianópolis";
-            estado = "SC";
-            logradouro = "";
-            bairro = "";
+            // Sem CEP ou CEP inválido - salvar tudo como null
+            finalAddress = row.CEP ? `Endereço pendente (CEP: ${row.CEP})` : null;
+            cidade = null;
+            estado = null;
+            logradouro = null;
+            bairro = null;
           } else {
-            // Montar endereço completo
+            // CEP válido - montar endereço completo
+            const numero = row.NUMERO || "S/N";
             const complemento = row.COMPLEMENTO ? `, ${row.COMPLEMENTO}` : "";
-            finalAddress = `${addressData.street}, ${row.NUMERO}${complemento} - ${addressData.neighborhood}, ${addressData.city} - ${addressData.state}`;
+            finalAddress = `${addressData.street}, ${numero}${complemento} - ${addressData.neighborhood}, ${addressData.city} - ${addressData.state}`;
             cidade = addressData.city;
             estado = addressData.state;
             logradouro = addressData.street;
@@ -316,35 +299,34 @@ export default function AdminImport() {
 
             // Geocoding do endereço completo
             coordinates = await geocodeAddress(finalAddress);
-            // Se falhar, continua sem coordenadas (null)
           }
 
-          // Google Places (foto e avaliação) - só tenta se tiver coordenadas
+          // Google Places (foto e avaliação) - só tenta se tiver nome E endereço
           let placeDetails = { photoUrl: null, rating: null, ratingsTotal: null };
-          if (coordinates) {
-            placeDetails = await getPlaceDetails(row.EMPRESA, finalAddress, cidade, estado);
+          if (row.EMPRESA && finalAddress && coordinates) {
+            placeDetails = await getPlaceDetails(row.EMPRESA, finalAddress, cidade || "Florianópolis", estado || "SC");
           }
 
-          // Preparar dados para inserção
+          // Preparar dados para inserção - TODOS os campos são opcionais
           const estabelecimentoData = {
-            razao_social: row.EMPRESA,
-            nome_fantasia: row.EMPRESA,
+            razao_social: row.EMPRESA || null,
+            nome_fantasia: row.EMPRESA || null,
             cnpj: cnpj,
-            categoria: [mapCategory(row.CATEGORIA)],
-            telefone: cleanPhone(row.CONTATO) || null,
-            whatsapp: cleanPhone(row.CONTATO) || null,
+            categoria: row.CATEGORIA ? [mapCategory(row.CATEGORIA)] : null,
+            telefone: row.CONTATO ? cleanPhone(row.CONTATO) : null,
+            whatsapp: row.CONTATO ? cleanPhone(row.CONTATO) : null,
             endereco: finalAddress,
-            cep: row.CEP.replace(/\D/g, ""),
-            logradouro: logradouro || null,
-            numero: row.NUMERO,
+            cep: row.CEP ? row.CEP.replace(/\D/g, "") : null,
+            logradouro: logradouro,
+            numero: row.NUMERO || null,
             complemento: row.COMPLEMENTO || null,
-            bairro: bairro || null,
+            bairro: bairro,
             latitude: coordinates?.lat || null,
             longitude: coordinates?.lng || null,
-            instagram: cleanInstagram(row.INSTAGRAM) || null,
+            instagram: row.INSTAGRAM ? cleanInstagram(row.INSTAGRAM) : null,
             site: row.SITE || null,
             descricao_beneficio: row.BENEFICIO || row["BENEFICIO E REGRAS"] || null,
-            periodo_validade_beneficio: mapValidity(row.VALIDADE || row["DIA/SEMANA/MÊS"]),
+            periodo_validade_beneficio: row.VALIDADE || row["DIA/SEMANA/MÊS"] ? mapValidity(row.VALIDADE || row["DIA/SEMANA/MÊS"]) : "dia_aniversario",
             logo_url: placeDetails.photoUrl || null,
             ativo: true,
             plan_status: "active",

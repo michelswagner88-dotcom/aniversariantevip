@@ -214,7 +214,7 @@ const Index = () => {
       <Header />
 
       {/* Hero Section - State of the Art */}
-      <section className="flex-1 relative flex items-center justify-center overflow-hidden py-16 sm:py-32 px-6">
+      <section className="flex-1 relative flex items-center justify-center overflow-hidden pt-20 pb-16 sm:pt-28 sm:pb-32 px-6">
         {/* Grid Pattern Background (Camada 1) */}
         <div 
           className="absolute inset-0 opacity-50"

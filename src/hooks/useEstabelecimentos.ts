@@ -21,6 +21,7 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
       let query = supabase
         .from('public_estabelecimentos')
         .select('*')
+        .eq('ativo', true) // Apenas estabelecimentos ativos
         .order('created_at', { ascending: false });
 
       // Aplicar filtros
@@ -62,6 +63,7 @@ export const useEstabelecimento = (id: string | undefined) => {
         .from('public_estabelecimentos')
         .select('*')
         .eq('id', id)
+        .eq('ativo', true) // Apenas estabelecimentos ativos
         .single();
       
       if (error) throw error;

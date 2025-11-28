@@ -21,7 +21,7 @@ export const Footer = () => {
 
           {/* Coluna 2 - Aniversariantes */}
           <div>
-            <h3 className="font-bold text-white mb-3 text-sm uppercase tracking-wider">
+            <h3 className="font-bold mb-3 text-sm uppercase tracking-wider bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
               Para Você
             </h3>
             <nav className="flex flex-col gap-2">
@@ -48,7 +48,7 @@ export const Footer = () => {
 
           {/* Coluna 3 - Estabelecimentos */}
           <div>
-            <h3 className="font-bold text-white mb-3 text-sm uppercase tracking-wider">
+            <h3 className="font-bold mb-3 text-sm uppercase tracking-wider bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
               Para Estabelecimentos
             </h3>
             <nav className="flex flex-col gap-2">
@@ -69,7 +69,7 @@ export const Footer = () => {
 
           {/* Coluna 4 - Legal */}
           <div>
-            <h3 className="font-bold text-white mb-3 text-sm uppercase tracking-wider">
+            <h3 className="font-bold mb-3 text-sm uppercase tracking-wider bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
               Legal
             </h3>
             <nav className="flex flex-col gap-2">

@@ -333,6 +333,7 @@ export default function AdminImport() {
             plan_status: "active",
             cidade: cidade,
             estado: estado,
+            deleted_at: null, // IMPORTANTE: Garantir que nunca seja marcado como deletado na importação
           };
 
           // Inserir/Atualizar no Supabase usando RPC (ignora RLS)

@@ -231,7 +231,7 @@ export default function EstablishmentRegistration() {
         }));
         
         setCnpjVerified(true);
-        toast.success(`✅ CNPJ verificado: ${data.nome_fantasia || data.razao_social}`);
+        toast.success('Dados carregados! Verifique e ajuste se necessário.');
       }
     } catch (error: any) {
       const friendlyError = getFriendlyErrorMessage(error);
@@ -447,13 +447,14 @@ export default function EstablishmentRegistration() {
         
         {/* Nome e Slogan */}
         <label className="block">
-          <span className="text-sm font-medium text-slate-700 mb-1 block">Nome da Empresa (Receita Federal)</span>
+          <span className="text-sm font-medium text-slate-700 mb-1 block">Nome do Estabelecimento *</span>
           <input 
             type="text" 
             value={establishmentData.name}
-            readOnly
-            className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-xl outline-none"
-            placeholder="Preenchido automaticamente após CNPJ"
+            onChange={(e) => setEstablishmentData(prev => ({ ...prev, name: e.target.value }))}
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+            placeholder="Nome do seu estabelecimento"
+            required
           />
         </label>
         <label className="block">
@@ -561,17 +562,40 @@ export default function EstablishmentRegistration() {
           />
         </label>
 
-        {/* Campos Auto-Preenchidos */}
+        {/* Campos de Endereço */}
         <div className="grid grid-cols-2 gap-4">
           <label className="col-span-2 md:col-span-1">
             <span className="text-sm font-medium text-slate-700 mb-1 block">Estado *</span>
-            <input type="text" value={establishmentData.estado} readOnly className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-xl" />
+            <input 
+              type="text" 
+              value={establishmentData.estado}
+              onChange={(e) => setEstablishmentData(prev => ({ ...prev, estado: e.target.value }))}
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              required
+            />
           </label>
           <label className="col-span-2 md:col-span-1">
             <span className="text-sm font-medium text-slate-700 mb-1 block">Cidade *</span>
-            <input type="text" value={establishmentData.cidade} readOnly className="w-full px-4 py-3 border border-slate-200 bg-slate-50 rounded-xl" />
+            <input 
+              type="text" 
+              value={establishmentData.cidade}
+              onChange={(e) => setEstablishmentData(prev => ({ ...prev, cidade: e.target.value }))}
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              required
+            />
           </label>
         </div>
+
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 mb-1 block">Bairro *</span>
+          <input 
+            type="text" 
+            value={establishmentData.bairro}
+            onChange={(e) => setEstablishmentData(prev => ({ ...prev, bairro: e.target.value }))}
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+            required
+          />
+        </label>
 
         <label className="block">
           <span className="text-sm font-medium text-slate-700 mb-1 block">Rua/Avenida *</span>

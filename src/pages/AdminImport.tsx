@@ -155,45 +155,30 @@ export default function AdminImport() {
     }
   };
 
-  const getPlaceDetails = async (name: string, address: string): Promise<{ photoUrl: string | null; rating: number | null; ratingsTotal: number | null }> => {
+  const getPlaceDetails = async (name: string, address: string, cidade: string, estado: string): Promise<{ photoUrl: string | null; rating: number | null; ratingsTotal: number | null }> => {
     try {
-      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-      const query = `${name}, ${address}`;
-      
-      // Search for place
-      const searchResponse = await fetch(
-        `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(query)}&inputtype=textquery&fields=place_id&key=${apiKey}`
-      );
-      const searchData = await searchResponse.json();
-
-      if (searchData.status === "OK" && searchData.candidates?.[0]?.place_id) {
-        const placeId = searchData.candidates[0].place_id;
-        
-        // Get place details
-        const detailsResponse = await fetch(
-          `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos,rating,user_ratings_total&key=${apiKey}`
-        );
-        const detailsData = await detailsResponse.json();
-
-        if (detailsData.status === "OK" && detailsData.result) {
-          const result = detailsData.result;
-          let photoUrl = null;
-
-          if (result.photos && result.photos.length > 0) {
-            const photoReference = result.photos[0].photo_reference;
-            photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${photoReference}&key=${apiKey}`;
-          }
-
-          return {
-            photoUrl,
-            rating: result.rating || null,
-            ratingsTotal: result.user_ratings_total || null,
-          };
+      const { data, error } = await supabase.functions.invoke('fetch-place-photo', {
+        body: {
+          nome: name,
+          endereco: address,
+          cidade: cidade,
+          estado: estado,
         }
+      });
+
+      if (error || !data?.success) {
+        console.log(`❌ Foto não encontrada para ${name}:`, data?.error || error);
+        return { photoUrl: null, rating: null, ratingsTotal: null };
       }
-      return { photoUrl: null, rating: null, ratingsTotal: null };
+
+      console.log(`✅ Foto encontrada para ${name}`);
+      return {
+        photoUrl: data.photo_url,
+        rating: data.rating,
+        ratingsTotal: data.user_ratings_total,
+      };
     } catch (error) {
-      console.error("Places API error:", error);
+      console.error("Edge function error:", error);
       return { photoUrl: null, rating: null, ratingsTotal: null };
     }
   };
@@ -295,7 +280,7 @@ export default function AdminImport() {
           // Google Places (foto e avaliação) - só tenta se tiver coordenadas
           let placeDetails = { photoUrl: null, rating: null, ratingsTotal: null };
           if (coordinates) {
-            placeDetails = await getPlaceDetails(row.EMPRESA, finalAddress);
+            placeDetails = await getPlaceDetails(row.EMPRESA, finalAddress, cidade, estado);
           }
 
           // Preparar dados para inserção
@@ -407,6 +392,9 @@ export default function AdminImport() {
 
         // Atualizar progresso
         setProgress(((Math.min(i + batchSize, total)) / total) * 100);
+        
+        // Delay para evitar rate limiting (300ms entre batches)
+        await new Promise(resolve => setTimeout(resolve, 300));
         }
 
         setStats(prev => ({

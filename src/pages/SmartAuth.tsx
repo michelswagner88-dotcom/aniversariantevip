@@ -79,6 +79,41 @@ const SmartAuth = () => {
   
   const isStep2Valid = isNameValid && isPhoneValid && isCpfValid && !cpfExists && !cpfChecking && isBirthDateValid && isCepValid;
 
+  // Função auxiliar para verificar rate limit
+  const checkRateLimit = async (identifier: string, action: 'login' | 'signup'): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('check-auth-rate-limit', {
+        body: { identifier, action }
+      });
+
+      if (error) {
+        console.error('Erro ao verificar rate limit:', error);
+        // Em caso de erro, permitir tentativa (fail open para não bloquear usuário legítimo)
+        return true;
+      }
+
+      if (!data.allowed) {
+        toast.error('Muitas tentativas', {
+          description: data.message || `Aguarde ${data.retryAfter} minutos e tente novamente.`,
+          duration: 6000,
+        });
+        return false;
+      }
+
+      if (data.remaining <= 1) {
+        toast.warning('Atenção', {
+          description: `Você tem apenas ${data.remaining} tentativa(s) restante(s).`,
+        });
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Erro ao verificar rate limit:', err);
+      // Em caso de erro, permitir tentativa
+      return true;
+    }
+  };
+
   // Validação de senha com regras específicas
   const isPasswordValid = () => {
     const hasMinLength = password.length >= 8;
@@ -348,13 +383,20 @@ const SmartAuth = () => {
     setShowCepSearch(false);
   };
 
-  // Login - COM VERIFICAÇÃO DE CADASTRO COMPLETO
+  // Login - COM VERIFICAÇÃO DE CADASTRO COMPLETO E RATE LIMITING
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     try {
+      // VERIFICAR RATE LIMIT ANTES DE TENTAR LOGIN
+      const rateLimitOk = await checkRateLimit(email, 'login');
+      if (!rateLimitOk) {
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -414,7 +456,7 @@ const SmartAuth = () => {
     }
   };
 
-  // Cadastro básico (Step 1) - APENAS VALIDA, NÃO CRIA CONTA
+  // Cadastro básico (Step 1) - APENAS VALIDA, NÃO CRIA CONTA, COM RATE LIMITING
   const handleBasicSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -427,6 +469,13 @@ const SmartAuth = () => {
 
       if (!isPasswordValid()) {
         throw new Error('A senha não atende aos requisitos mínimos');
+      }
+
+      // VERIFICAR RATE LIMIT ANTES DE VALIDAR CADASTRO
+      const rateLimitOk = await checkRateLimit(email, 'signup');
+      if (!rateLimitOk) {
+        setIsLoading(false);
+        return;
       }
 
       // Verificar se email já existe (sem criar conta)

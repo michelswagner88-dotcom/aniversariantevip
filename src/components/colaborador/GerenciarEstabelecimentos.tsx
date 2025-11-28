@@ -38,6 +38,8 @@ type Estabelecimento = {
   plan_status: string | null;
   ativo: boolean;
   created_at: string;
+  horario_funcionamento: string | null;
+  regras_utilizacao: string | null;
 };
 
 export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void }) {
@@ -113,7 +115,9 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
           periodo_validade_beneficio: estab.periodo_validade_beneficio,
           plan_status: estab.plan_status,
           ativo: estab.ativo,
-          created_at: estab.created_at || ''
+          created_at: estab.created_at || '',
+          horario_funcionamento: estab.horario_funcionamento || null,
+          regras_utilizacao: estab.regras_utilizacao || null
         };
       }) || [];
 

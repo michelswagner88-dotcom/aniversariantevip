@@ -183,8 +183,6 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
 
   const handleBulkFetchPhotos = async () => {
     try {
-      setBulkFetchingPhotos(true);
-      
       // Buscar estabelecimentos sem foto
       const { data: establishments, error } = await supabase
         .from('estabelecimentos')
@@ -194,18 +192,27 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
       if (error) throw error;
       if (!establishments || establishments.length === 0) {
         toast.info("Todos os estabelecimentos já possuem fotos!");
-        setBulkFetchingPhotos(false);
         return;
       }
 
+      const confirmar = window.confirm(
+        `Buscar fotos para ${establishments.length} estabelecimentos?\n\nIsso pode levar alguns minutos.`
+      );
+      
+      if (!confirmar) return;
+
+      setBulkFetchingPhotos(true);
       setPhotoProgress({ current: 0, total: establishments.length });
       let updated = 0;
+      let notFound = 0;
 
       for (let i = 0; i < establishments.length; i++) {
         const est = establishments[i];
         setPhotoProgress({ current: i + 1, total: establishments.length });
 
         try {
+          console.log(`🔍 Buscando foto para: ${est.nome_fantasia || est.razao_social}`);
+          
           // Usar Edge Function para buscar foto do Google Places
           const { data, error: fetchError } = await supabase.functions.invoke('fetch-place-photo', {
             body: {
@@ -216,30 +223,42 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
             }
           });
 
-          if (!fetchError && data?.success && data.photo_url) {
-            await supabase
+          if (fetchError) {
+            console.error(`❌ Erro na Edge Function para ${est.nome_fantasia}:`, fetchError);
+            notFound++;
+            continue;
+          }
+
+          if (data?.success && data.photo_url) {
+            const { error: updateError } = await supabase
               .from('estabelecimentos')
               .update({ 
                 logo_url: data.photo_url,
                 google_place_id: data.place_id,
-                rating: data.rating,
               })
               .eq('id', est.id);
             
-            updated++;
-            console.log(`✅ Foto atualizada para ${est.nome_fantasia || est.razao_social}`);
+            if (updateError) {
+              console.error(`❌ Erro ao atualizar ${est.nome_fantasia}:`, updateError);
+              notFound++;
+            } else {
+              console.log(`✅ Foto encontrada para: ${est.nome_fantasia || est.razao_social}`);
+              updated++;
+            }
           } else {
-            console.log(`❌ Foto não encontrada para ${est.nome_fantasia || est.razao_social}`);
+            console.log(`❌ Foto não encontrada para: ${est.nome_fantasia || est.razao_social}`);
+            notFound++;
           }
           
-          // Delay para não sobrecarregar a API
-          await new Promise(resolve => setTimeout(resolve, 300));
+          // Rate limiting - 500ms entre requisições
+          await new Promise(resolve => setTimeout(resolve, 500));
         } catch (err) {
-          console.error(`Erro ao buscar foto para ${est.nome_fantasia}:`, err);
+          console.error(`❌ Erro ao buscar foto para ${est.nome_fantasia}:`, err);
+          notFound++;
         }
       }
 
-      toast.success(`${updated} fotos atualizadas de ${establishments.length} estabelecimentos`);
+      toast.success(`Concluído!\n✅ ${updated} fotos encontradas\n❌ ${notFound} não encontradas`);
       await carregarEstabelecimentos();
     } catch (error: any) {
       console.error("Erro ao buscar fotos em massa:", error);
@@ -249,6 +268,76 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
       setPhotoProgress({ current: 0, total: 0 });
     }
   };
+
+  const handleBuscarFotoIndividual = async (est: Estabelecimento) => {
+    try {
+      toast.info(`Buscando foto para ${est.nome_fantasia || est.razao_social}...`);
+      
+      const { data, error } = await supabase.functions.invoke('fetch-place-photo', {
+        body: {
+          nome: est.nome_fantasia || est.razao_social,
+          endereco: est.endereco || '',
+          cidade: est.cidade || '',
+          estado: est.estado || '',
+        },
+      });
+
+      if (error || !data?.success) {
+        toast.error('Foto não encontrada no Google');
+        console.error('Erro:', error, data);
+        return;
+      }
+
+      await supabase
+        .from('estabelecimentos')
+        .update({ 
+          logo_url: data.photo_url,
+          google_place_id: data.place_id,
+        })
+        .eq('id', est.id);
+
+      toast.success('Foto atualizada!');
+      await carregarEstabelecimentos();
+
+    } catch (err) {
+      console.error('Erro:', err);
+      toast.error('Erro ao buscar foto');
+    }
+  };
+
+  const handleTestarEdgeFunction = async () => {
+    try {
+      console.log('🧪 Testando Edge Function fetch-place-photo...');
+      
+      const { data, error } = await supabase.functions.invoke('fetch-place-photo', {
+        body: {
+          nome: 'Restaurante Teste',
+          endereco: 'Rua Teste',
+          cidade: 'Florianópolis',
+          estado: 'SC',
+        },
+      });
+
+      console.log('📋 Resposta:', data);
+      console.log('❌ Erro:', error);
+      
+      if (error) {
+        toast.error(`Erro: ${error.message}`);
+      } else if (data?.success) {
+        toast.success(`Funcionou! URL: ${data.photo_url?.substring(0, 50)}...`);
+      } else {
+        toast.warning(`Resposta: ${JSON.stringify(data).substring(0, 100)}`);
+      }
+    } catch (err) {
+      console.error('Erro:', err);
+      toast.error('Erro ao testar Edge Function');
+    }
+  };
+
+  // Contar estabelecimentos sem foto
+  const estabelecimentosSemFoto = estabelecimentos.filter(
+    (e) => !e.logo_url || e.logo_url === '' || e.logo_url.includes('placeholder')
+  );
 
   // Aplicar filtros combinados
   const estabelecimentosFiltrados = estabelecimentos.filter(e => {
@@ -303,23 +392,33 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
                 Total de {estabelecimentos.length} estabelecimento(s) cadastrado(s)
               </CardDescription>
             </div>
-            <Button
-              onClick={handleBulkFetchPhotos}
-              disabled={bulkFetchingPhotos}
-              variant="outline"
-            >
-              {bulkFetchingPhotos ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Buscando Fotos...
-                </>
-              ) : (
-                <>
-                  <Camera className="mr-2 h-4 w-4" />
-                  🔄 Buscar Fotos Sem Imagem
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleTestarEdgeFunction}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                🧪 Testar Edge Function
+              </Button>
+              <Button
+                onClick={handleBulkFetchPhotos}
+                disabled={bulkFetchingPhotos || estabelecimentosSemFoto.length === 0}
+                variant="outline"
+              >
+                {bulkFetchingPhotos ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Buscando ({photoProgress.current}/{photoProgress.total})
+                  </>
+                ) : (
+                  <>
+                    <Camera className="mr-2 h-4 w-4" />
+                    Buscar Fotos do Google ({estabelecimentosSemFoto.length})
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
           {bulkFetchingPhotos && photoProgress.total > 0 && (
@@ -505,9 +604,22 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
                             setEditando(estab);
                             setModalOpen(true);
                           }}
+                          title="Editar estabelecimento"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
+                        
+                        {(!estab.logo_url || estab.logo_url === '' || estab.logo_url.includes('placeholder')) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleBuscarFotoIndividual(estab)}
+                            title="Buscar foto do Google"
+                            className="text-blue-500 hover:text-blue-600"
+                          >
+                            <Camera className="h-4 w-4" />
+                          </Button>
+                        )}
                         
                         <AlertDialog>
                           <AlertDialogTrigger asChild>

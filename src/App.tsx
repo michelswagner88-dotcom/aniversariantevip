@@ -10,6 +10,7 @@ import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { LazyRoute } from "@/components/LazyRoute";
+import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 
 // Lazy load das páginas principais
 const Index = lazy(() => import("./pages/Index"));
@@ -63,10 +64,11 @@ const App = () => (
         <Sonner />
         <ChatAssistant />
         <BrowserRouter>
-          <ErrorBoundary>
-            <PageTransition>
-              <BottomNav />
-              <Routes>
+          <AnalyticsProvider>
+            <ErrorBoundary>
+              <PageTransition>
+                <BottomNav />
+                <Routes>
                 <Route path="/" element={<LazyRoute><Index /></LazyRoute>} />
                 <Route path="/explorar" element={<LazyRoute><Explorar /></LazyRoute>} />
                 <Route path="/flash-deals" element={<LazyRoute><FlashDeals /></LazyRoute>} />
@@ -119,6 +121,7 @@ const App = () => (
             </PageTransition>
             <CookieConsent />
           </ErrorBoundary>
+          </AnalyticsProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>

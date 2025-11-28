@@ -530,9 +530,58 @@ const SmartAuth = () => {
       console.log('🔵 User ID:', userId);
       
       // Preparar dados formatados
-      const birthDateFormatted = birthDate.split('/').reverse().join('-'); // DD/MM/YYYY -> YYYY-MM-DD
       const cpfClean = cpf.replace(/\D/g, '');
       const telefoneClean = phone.replace(/\D/g, '');
+      
+      // VALIDAÇÃO 1: Verificar se CPF já existe (em outro usuário)
+      const { data: cpfExistente } = await supabase
+        .from('aniversariantes')
+        .select('id')
+        .eq('cpf', cpfClean)
+        .neq('id', userId)
+        .maybeSingle();
+      
+      if (cpfExistente) {
+        setError('Este CPF já está cadastrado em outra conta. Se você já tem uma conta, faça login com ela.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // VALIDAÇÃO 2: Verificar se telefone já existe (em outro usuário)
+      const { data: telefoneExistente } = await supabase
+        .from('aniversariantes')
+        .select('id')
+        .eq('telefone', telefoneClean)
+        .neq('id', userId)
+        .maybeSingle();
+      
+      if (telefoneExistente) {
+        setError('Este telefone já está cadastrado em outra conta. Se você já tem uma conta, faça login com ela.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // VALIDAÇÃO 3: Verificar se email já existe (em outro usuário)
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const currentEmail = currentUser?.email || email;
+      
+      if (currentEmail) {
+        const { data: emailExistente } = await supabase
+          .from('profiles')
+          .select('id')
+          .ilike('email', currentEmail.trim())
+          .neq('id', userId)
+          .maybeSingle();
+        
+        if (emailExistente) {
+          setError('Este email já está cadastrado em outra conta. Faça login com essa conta ou use outro email.');
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      // Se passou todas as validações, continuar com o salvamento
+      const birthDateFormatted = birthDate.split('/').reverse().join('-'); // DD/MM/YYYY -> YYYY-MM-DD
       const cepClean = cep.replace(/\D/g, '');
       
       console.log('🔵 Dados formatados:', {
@@ -586,6 +635,20 @@ const SmartAuth = () => {
 
       if (insertError) {
         console.error('❌ Erro ao inserir aniversariante:', insertError);
+        
+        // Tratar erros específicos do banco (fallback)
+        if (insertError.code === '23505') {
+          if (insertError.message.includes('cpf')) {
+            setError('Este CPF já está cadastrado em outra conta.');
+          } else if (insertError.message.includes('telefone')) {
+            setError('Este telefone já está cadastrado em outra conta.');
+          } else {
+            setError('Alguns dados já estão cadastrados em outra conta. Verifique CPF e telefone.');
+          }
+          setIsLoading(false);
+          return;
+        }
+        
         const friendlyMessage = getFriendlyErrorMessage(insertError);
         throw new Error(friendlyMessage);
       }

@@ -63,6 +63,8 @@ import { NavigationMetricsPanel } from '@/components/admin/NavigationMetricsPane
 import { GerenciarColaboradores } from '@/components/colaborador/GerenciarColaboradores';
 import { EditUserModal } from '@/components/admin/EditUserModal';
 import { EditEstablishmentModal } from '@/components/admin/EditEstablishmentModal';
+import { MapaEstabelecimentos } from '@/components/MapaEstabelecimentos';
+import { geocodificarEndereco } from '@/lib/geoUtils';
 
 const COLORS = ['#94a3b8', '#8b5cf6', '#ec4899'];
 
@@ -223,7 +225,7 @@ export default function AdminDashboard() {
             const cnpj = row.CNPJ?.toString().replace(/\D/g, '');
             const instagram = row.INSTAGRAM ? (row.INSTAGRAM.startsWith('@') ? row.INSTAGRAM : `@${row.INSTAGRAM}`) : null;
 
-            const estabelecimentoData = {
+            const estabelecimentoData: any = {
               cnpj: cnpj || '',
               nome_fantasia: row.NOME_ESTABELECIMENTO || '',
               razao_social: row.NOME_ESTABELECIMENTO || '',
@@ -244,6 +246,34 @@ export default function AdminDashboard() {
               ativo: true,
               plan_status: 'active',
             };
+
+            // Geocodificar endereço se houver cidade e estado
+            if (estabelecimentoData.cidade && estabelecimentoData.estado) {
+              const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+              if (GOOGLE_MAPS_API_KEY) {
+                try {
+                  const geoData = await geocodificarEndereco({
+                    rua: estabelecimentoData.logradouro,
+                    numero: estabelecimentoData.numero,
+                    bairro: estabelecimentoData.bairro,
+                    cidade: estabelecimentoData.cidade,
+                    estado: estabelecimentoData.estado,
+                  }, GOOGLE_MAPS_API_KEY);
+
+                  if (geoData) {
+                    estabelecimentoData.latitude = geoData.latitude;
+                    estabelecimentoData.longitude = geoData.longitude;
+                    estabelecimentoData.endereco_formatado = geoData.endereco_formatado;
+                  }
+
+                  // Rate limiting - esperar 200ms entre geocodificações
+                  await new Promise(resolve => setTimeout(resolve, 200));
+                } catch (geoError) {
+                  console.warn('Aviso: Falha ao geocodificar estabelecimento:', geoError);
+                  // Continuar importação mesmo se geocodificação falhar
+                }
+              }
+            }
 
             const { error } = await supabase
               .from('estabelecimentos')
@@ -1058,6 +1088,13 @@ export default function AdminDashboard() {
             <Building2 size={20} /> Estabelecimentos
           </button>
           <button 
+             onClick={() => { setActiveTab('mapa'); setMobileMenuOpen(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'mapa' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg' : 'hover:bg-white/5 text-slate-300'}`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+            Mapa
+          </button>
+          <button 
              onClick={() => { setActiveTab('colaboradores'); setMobileMenuOpen(false); }}
              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'colaboradores' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg' : 'hover:bg-white/5 text-slate-300'}`}
           >
@@ -1144,12 +1181,15 @@ export default function AdminDashboard() {
                 {activeTab === 'overview' && 'Visão Geral'}
                 {activeTab === 'users' && 'Usuários Cadastrados'}
                 {activeTab === 'establishments' && 'Parceiros & Empresas'}
+                {activeTab === 'mapa' && 'Mapa de Estabelecimentos'}
                 {activeTab === 'email-analytics' && 'Analytics de E-mails'}
                 {activeTab === 'navigation-metrics' && 'Métricas de Navegação B2B'}
               </h1>
               <p className="text-slate-400">
                 {activeTab === 'navigation-metrics' 
                   ? 'Dados de tráfego gerado para negociações com parceiros de transporte'
+                  : activeTab === 'mapa'
+                  ? 'Visualize todos os estabelecimentos no mapa com suas localizações'
                   : 'Bem-vindo ao painel de controle do sistema.'
                 }
               </p>
@@ -1158,6 +1198,17 @@ export default function AdminDashboard() {
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'users' && renderUsersTable()}
             {activeTab === 'establishments' && renderEstablishmentsTable()}
+            {activeTab === 'mapa' && (
+              <div className="bg-slate-900/80 backdrop-blur-xl rounded-xl border border-white/10 overflow-hidden">
+                <div className="h-[600px]">
+                  <MapaEstabelecimentos
+                    estabelecimentos={filteredEstablishments}
+                    showClusters={true}
+                    height="600px"
+                  />
+                </div>
+              </div>
+            )}
             {activeTab === 'colaboradores' && <GerenciarColaboradores />}
             {activeTab === 'email-analytics' && renderEmailAnalytics()}
             {activeTab === 'navigation-metrics' && <NavigationMetricsPanel />}

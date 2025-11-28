@@ -353,6 +353,7 @@ export type Database = {
           deleted_at: string | null
           descricao_beneficio: string | null
           endereco: string | null
+          endereco_formatado: string | null
           estado: string | null
           horario_funcionamento: string | null
           id: string
@@ -388,6 +389,7 @@ export type Database = {
           deleted_at?: string | null
           descricao_beneficio?: string | null
           endereco?: string | null
+          endereco_formatado?: string | null
           estado?: string | null
           horario_funcionamento?: string | null
           id?: string
@@ -423,6 +425,7 @@ export type Database = {
           deleted_at?: string | null
           descricao_beneficio?: string | null
           endereco?: string | null
+          endereco_formatado?: string | null
           estado?: string | null
           horario_funcionamento?: string | null
           id?: string

@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Garantir altura mínima para layout sticky footer */
+html, body, #root {
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height para mobile */
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */

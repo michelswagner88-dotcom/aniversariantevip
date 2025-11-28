@@ -309,10 +309,10 @@ export default function AdminImport() {
 
           // Preparar dados para inserção - TODOS os campos são opcionais
           const estabelecimentoData = {
-            razao_social: row.EMPRESA || null,
-            nome_fantasia: row.EMPRESA || null,
+            razao_social: row.EMPRESA || "Pendente de preenchimento",
+            nome_fantasia: row.EMPRESA || "Pendente de preenchimento",
             cnpj: cnpj,
-            categoria: row.CATEGORIA ? [mapCategory(row.CATEGORIA)] : null,
+            categoria: row.CATEGORIA ? [mapCategory(row.CATEGORIA)] : [],
             telefone: row.CONTATO ? cleanPhone(row.CONTATO) : null,
             whatsapp: row.CONTATO ? cleanPhone(row.CONTATO) : null,
             endereco: finalAddress,

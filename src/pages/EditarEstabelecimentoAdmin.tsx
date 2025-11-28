@@ -281,9 +281,34 @@ export default function EditarEstabelecimentoAdmin() {
   };
 
   const verifyCnpj = async () => {
+    const rawCnpj = establishmentData.cnpj.replace(/\D/g, '');
+
+    // Se estamos em modo edição (dados já carregados do banco), apenas validar formato
+    if (dataLoaded) {
+      console.log('Modo edição - apenas validando formato do CNPJ sem sobrescrever dados');
+      
+      if (rawCnpj.length !== 14) {
+        setError('CNPJ deve conter 14 dígitos.');
+        setCnpjVerified(false);
+        return;
+      }
+
+      if (!validateCNPJ(rawCnpj)) {
+        setError('CNPJ inválido. Verifique os dígitos verificadores.');
+        toast.error('CNPJ inválido. Verifique os dígitos verificadores.');
+        setCnpjVerified(false);
+        return;
+      }
+
+      // CNPJ válido em modo edição - não sobrescrever dados
+      setCnpjVerified(true);
+      setError('');
+      return;
+    }
+
+    // Modo cadastro novo - buscar dados da BrasilAPI
     setLoading(true);
     setError('');
-    const rawCnpj = establishmentData.cnpj.replace(/\D/g, '');
 
     if (rawCnpj.length !== 14) {
       setError('CNPJ deve conter 14 dígitos.');

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Search, Phone, Clock, ExternalLink, Heart, Sparkles, Instagram, Globe, Share2, Navigation, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { VoiceSearchButton } from "@/components/VoiceSearchButton";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -312,6 +313,17 @@ const Index = () => {
                     <X className="w-5 h-5" />
                   </Button>
                 )}
+
+                {/* Botão de busca por voz */}
+                <div className="px-2">
+                  <VoiceSearchButton 
+                    onResult={(text) => {
+                      // Tentar extrair cidade ou categoria da fala
+                      toast({ description: `Buscando: "${text}"` });
+                      navigate("/explorar");
+                    }} 
+                  />
+                </div>
 
                 <Button 
                   size="lg"

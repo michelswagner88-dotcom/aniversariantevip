@@ -39,7 +39,6 @@ const SetupAdmin = lazy(() => import("./pages/SetupAdmin"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminImport = lazy(() => import("./pages/AdminImport"));
-const EditarEstabelecimentoAdmin = lazy(() => import("./pages/EditarEstabelecimentoAdmin"));
 const LoginColaborador = lazy(() => import("./pages/LoginColaborador"));
 const AreaColaborador = lazy(() => import("./pages/AreaColaborador"));
 
@@ -125,7 +124,6 @@ const App = () => (
                 <Route path="/admin" element={<LazyRoute><AdminLogin /></LazyRoute>} />
                 <Route path="/admin/dashboard" element={<LazyRoute><AdminDashboard /></LazyRoute>} />
                 <Route path="/admin/import" element={<LazyRoute><AdminImport /></LazyRoute>} />
-                <Route path="/admin/estabelecimento/:id/editar" element={<LazyRoute><EditarEstabelecimentoAdmin /></LazyRoute>} />
                 <Route path="/afiliado" element={<LazyRoute><Afiliado /></LazyRoute>} />
                 <Route path="/selecionar-categoria" element={<LazyRoute><SelecionarCategoria /></LazyRoute>} />
                 

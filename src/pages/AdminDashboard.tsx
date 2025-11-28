@@ -381,8 +381,9 @@ export default function AdminDashboard() {
       });
       setEditUserModalOpen(true);
     } else {
-      // Navegar para página de edição completa
-      navigate(`/admin/estabelecimento/${item.id}/editar`);
+      // Usar modal de edição existente (NÃO navegar para página externa)
+      setSelectedEstab(item);
+      setEditEstabModalOpen(true);
     }
   };
 

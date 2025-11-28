@@ -200,6 +200,11 @@ export default function EstablishmentRegistration() {
       if (stepFromUrl === '2' && providerFromUrl === 'google') {
         setStep(2);
         setIsGoogleUser(true);
+        
+        // Limpar estados ao carregar
+        setError('');
+        setCnpjVerified(false);
+        setLoading(false);
 
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -223,15 +228,20 @@ export default function EstablishmentRegistration() {
   };
 
   const verifyCnpj = async () => {
-    setLoading(true);
-    setError('');
     const rawCnpj = establishmentData.cnpj.replace(/\D/g, '');
 
-    if (rawCnpj.length !== 14) {
-      setError('CNPJ deve conter 14 dígitos.');
-      setLoading(false);
+    // Early return - não fazer nada se CNPJ estiver vazio ou incompleto
+    if (rawCnpj.length === 0) {
+      return; // Silencioso, sem erro
+    }
+
+    if (rawCnpj.length < 14) {
+      setError('CNPJ deve conter 14 dígitos');
       return;
     }
+
+    setLoading(true);
+    setError('');
 
     // Validar dígitos verificadores primeiro
     if (!validateCNPJ(rawCnpj)) {
@@ -639,7 +649,6 @@ export default function EstablishmentRegistration() {
                 type="text" 
                 value={establishmentData.cnpj}
                 onChange={handleCnpjChange}
-                onBlur={verifyCnpj}
                 maxLength={18}
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
                 placeholder="00.000.000/0000-00"

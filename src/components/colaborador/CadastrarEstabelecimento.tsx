@@ -10,7 +10,7 @@ import { Building2, Loader2, Upload, Plus, Trash2 } from "lucide-react";
 import { z } from "zod";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { resizeImage } from "@/lib/imageUtils";
+import { processarImagemQuadrada, dataURLtoBlob } from "@/lib/imageUtils";
 import { cnpjSchema } from "@/lib/validation";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 
@@ -35,6 +35,7 @@ const estabelecimentoSchema = z.object({
 export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
   const [horariosFuncionamento, setHorariosFuncionamento] = useState<HorarioFuncionamento[]>([
@@ -113,23 +114,34 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error("Por favor, selecione uma imagem válida");
+      toast.error("Por favor, envie apenas imagens");
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("A imagem deve ter no máximo 5MB");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Imagem muito grande. Máximo 10MB.");
       return;
     }
 
     try {
-      const resizedBlob = await resizeImage(file, 500, 500);
-      const resizedFile = new File([resizedBlob], file.name, { type: file.type });
-      setLogoFile(resizedFile);
-      setLogoPreview(URL.createObjectURL(resizedFile));
-      toast.success("Logo carregada com sucesso!");
+      setIsProcessingImage(true);
+      toast.info("Processando imagem...");
+      
+      // Processar e recortar automaticamente para formato quadrado
+      const imagemProcessada = await processarImagemQuadrada(file, 400);
+      
+      // Converter base64 para blob
+      const blob = dataURLtoBlob(imagemProcessada);
+      const processedFile = new File([blob], file.name, { type: 'image/jpeg' });
+      
+      setLogoFile(processedFile);
+      setLogoPreview(imagemProcessada);
+      toast.success("Foto processada com sucesso!");
     } catch (error) {
-      toast.error("Erro ao processar imagem");
+      console.error("Erro ao processar imagem:", error);
+      toast.error("Erro ao processar imagem. Tente novamente.");
+    } finally {
+      setIsProcessingImage(false);
     }
   };
 
@@ -523,31 +535,84 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="logo">Logo</Label>
-              <div className="flex items-center gap-4">
-                <Input
+            <div className="space-y-4">
+              <Label>Foto do Estabelecimento</Label>
+              
+              <div className="flex items-start gap-6">
+                {/* Preview da foto */}
+                <div className="relative">
+                  <div 
+                    className={`w-32 h-32 rounded-xl overflow-hidden border-2 border-dashed 
+                      ${isProcessingImage ? 'border-violet-500' : 'border-white/20'} 
+                      bg-white/5 flex items-center justify-center cursor-pointer 
+                      hover:border-violet-500 transition-colors`}
+                    onClick={() => !isProcessingImage && document.getElementById('logo')?.click()}
+                  >
+                    {isProcessingImage ? (
+                      <div className="text-center">
+                        <Loader2 className="w-8 h-8 text-violet-500 mx-auto mb-2 animate-spin" />
+                        <span className="text-xs text-gray-400">Processando...</span>
+                      </div>
+                    ) : logoPreview ? (
+                      <img 
+                        src={logoPreview} 
+                        alt="Foto do estabelecimento" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-center p-2">
+                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <span className="text-xs text-gray-400">Toque para adicionar</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {logoPreview && !isProcessingImage && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLogoPreview('');
+                        setLogoFile(null);
+                      }}
+                    >
+                      ✕
+                    </Button>
+                  )}
+                </div>
+                
+                {/* Input file oculto */}
+                <input
                   id="logo"
                   type="file"
                   accept="image/*"
+                  capture="environment"
                   onChange={handleLogoChange}
                   className="hidden"
+                  disabled={isProcessingImage}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById('logo')?.click()}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Escolher Logo
-                </Button>
-                {logoPreview && (
-                  <img 
-                    src={logoPreview} 
-                    alt="Preview" 
-                    className="h-16 w-16 object-cover rounded"
-                  />
-                )}
+                
+                {/* Opções */}
+                <div className="flex-1 space-y-3">
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => document.getElementById('logo')?.click()}
+                    disabled={isProcessingImage}
+                    className="w-full"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Enviar Foto
+                  </Button>
+                  
+                  <p className="text-xs text-gray-400">
+                    📱 Envie qualquer foto - ajustamos automaticamente para formato quadrado!
+                  </p>
+                </div>
               </div>
             </div>
 

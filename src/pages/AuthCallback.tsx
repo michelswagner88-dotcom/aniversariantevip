@@ -29,6 +29,38 @@ const AuthCallback = () => {
         
         const user = session.user;
         console.log('✅ Login OK, usuário:', user.email);
+
+        // ========================================
+        // VERIFICAR SE É CADASTRO DE ESTABELECIMENTO
+        // ========================================
+        const authType = sessionStorage.getItem('authType');
+
+        if (authType === 'estabelecimento') {
+          console.log('📋 Cadastro de ESTABELECIMENTO via Google...');
+          sessionStorage.removeItem('authType');
+
+          // Verificar se já tem estabelecimento cadastrado
+          const { data: estabData } = await supabase
+            .from('estabelecimentos')
+            .select('id')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (estabData) {
+            // Já tem estabelecimento - vai para área do estabelecimento
+            toast.success('Login realizado!');
+            navigate('/area-estabelecimento', { replace: true });
+          } else {
+            // Novo - precisa completar cadastro
+            toast.success('Complete o cadastro do seu estabelecimento');
+            navigate('/cadastro/estabelecimento?step=2&provider=google', { replace: true });
+          }
+          return;
+        }
+
+        // ========================================
+        // FLUXO NORMAL PARA ANIVERSARIANTES
+        // ========================================
         
         // Verificar se tem role
         const { data: roleData } = await supabase

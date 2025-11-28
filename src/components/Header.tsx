@@ -59,7 +59,7 @@ export const Header = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo - Esquerda */}
           <Link to="/" className="flex-shrink-0">
-            <span className="font-display font-extrabold text-xl sm:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 tracking-tight">
+            <span className="font-display font-extrabold text-xl sm:text-2xl text-slate-300 hover:text-white tracking-tight transition-colors">
               ANIVERSARIANTE VIP
             </span>
           </Link>

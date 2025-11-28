@@ -23,6 +23,10 @@ const SmartAuth = () => {
   const [showCepSearch, setShowCepSearch] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
+  // Refs para controle de race condition
+  const isProcessingRef = useRef(false);
+  const hasProcessedRef = useRef(false);
+  
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -87,110 +91,145 @@ const SmartAuth = () => {
   // Verificar sessão inicial
   useEffect(() => {
     const checkSession = async () => {
-      // SEMPRE verificar forceStep2 PRIMEIRO
-      const forceStep2 = sessionStorage.getItem('forceStep2');
-      if (forceStep2 === 'true') {
-        console.log('🔵 forceStep2=true DETECTADO - BLOQUEANDO redirecionamento');
-        sessionStorage.removeItem('forceStep2');
-        
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          setUserId(session.user.id);
-          setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
-          setStep(2);
-        }
-        return; // PARA AQUI - não redireciona
+      // PROTEÇÃO 1: Se já está processando ou já foi para Step 2, ignorar
+      if (isProcessingRef.current) {
+        console.log('🔵 checkSession IGNORADO - já está processando');
+        return;
       }
       
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        console.log('🔵 Sessão encontrada:', session.user.email);
-        
-        // Verificar se precisa completar cadastro (vindo do AuthCallback)
+      if (hasProcessedRef.current && step === 2) {
+        console.log('🔵 checkSession IGNORADO - já processou para Step 2');
+        return;
+      }
+      
+      isProcessingRef.current = true;
+      
+      try {
+        // PROTEÇÃO 2: Verificar flags PRIMEIRO, antes de qualquer outra coisa
+        const forceStep2 = sessionStorage.getItem('forceStep2');
         const needsCompletion = sessionStorage.getItem('needsCompletion');
-        if (needsCompletion === 'true') {
-          console.log('🔵 needsCompletion=true, forçando Step 2');
-          sessionStorage.removeItem('needsCompletion');
-          setUserId(session.user.id);
-          setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
-          setStep(2);
-          return;
-        }
         
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        
-        if (!roleData) {
-          // Primeira vez logando (Google), criar profile e role
-          console.log('🔵 Primeira vez com Google, criando profile/role');
-          try {
-            await supabase.from('profiles').insert({
-              id: session.user.id,
-              email: session.user.email!,
-              nome: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
-            });
-
-            await supabase.from('user_roles').insert({
-              user_id: session.user.id,
-              role: 'aniversariante',
-            });
-
+        if (forceStep2 === 'true' || needsCompletion === 'true') {
+          console.log('🔵 FLAGS DETECTADAS - Forçando Step 2');
+          
+          // Remover flags SOMENTE depois de confirmar sessão
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            // AGORA sim remove as flags
+            sessionStorage.removeItem('forceStep2');
+            sessionStorage.removeItem('needsCompletion');
+            
             setUserId(session.user.id);
             setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
             setStep(2);
-            return;
-          } catch (error) {
-            console.error('Erro ao criar profile/role:', error);
+            hasProcessedRef.current = true; // Marca que já processou
+            
+            console.log('✅ Step 2 configurado com sucesso');
           }
+          return; // PARA AQUI - não faz mais nada
         }
         
-        if (roleData?.role === 'aniversariante') {
+        // Resto da lógica para usuários que NÃO vieram do callback
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('🔵 Sessão encontrada:', session.user.email);
+          
+          // Verificar se tem role
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          // Se não tem role, criar (primeira vez com Google)
+          if (!roleData) {
+            console.log('📝 Criando perfil e role para novo usuário Google...');
+            
+            try {
+              await supabase.from('profiles').insert({
+                id: session.user.id,
+                email: session.user.email!,
+                nome: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
+              });
+
+              await supabase.from('user_roles').insert({
+                user_id: session.user.id,
+                role: 'aniversariante',
+              });
+            } catch (err) {
+              console.error('Erro ao criar profile/role:', err);
+            }
+          }
+
+          // Verificar se precisa completar cadastro
           const { data: anivData } = await supabase
             .from('aniversariantes')
             .select('cpf, data_nascimento')
             .eq('id', session.user.id)
             .maybeSingle();
+
+          console.log('🔍 Dados aniversariante:', anivData);
           
+          // PROTEÇÃO 3: Nunca redirecionar para home se step === 2 ou userId está setado
+          if (step === 2 || userId) {
+            console.log('⛔ Bloqueando redirecionamento - usuário está completando cadastro');
+            return;
+          }
+
           if (!anivData?.cpf || !anivData?.data_nascimento) {
-            console.log('🔵 Dados incompletos, indo para Step 2');
+            console.log('📋 Precisa completar cadastro, mantendo no Step 2...');
             setUserId(session.user.id);
             setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
             setStep(2);
           } else {
-            console.log('✅ Cadastro completo, redirecionando');
-            // Verificar se há redirecionamento pendente
+            console.log('✅ Cadastro completo, redirecionando...');
             const redirectTo = sessionStorage.getItem('redirectAfterLogin');
+            sessionStorage.removeItem('redirectAfterLogin');
+            
             if (redirectTo) {
-              sessionStorage.removeItem('redirectAfterLogin');
               navigate(redirectTo, { replace: true });
             } else {
               navigate('/', { replace: true });
             }
           }
         }
+      } finally {
+        isProcessingRef.current = false;
       }
     };
+    
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // NÃO redirecionar se forceStep2 está ativo - deixa AuthCallback/checkSession inicial decidir
+      // PROTEÇÃO 4: Bloquear se flags estão ativas
       const forceStep2 = sessionStorage.getItem('forceStep2');
-      if (forceStep2 === 'true') {
-        console.log('🔵 onAuthStateChange BLOQUEADO por forceStep2');
+      const needsCompletion = sessionStorage.getItem('needsCompletion');
+      
+      if (forceStep2 === 'true' || needsCompletion === 'true') {
+        console.log('🔵 onAuthStateChange BLOQUEADO por flags');
+        return;
+      }
+      
+      // PROTEÇÃO 5: Bloquear se já está no Step 2
+      if (step === 2) {
+        console.log('🔵 onAuthStateChange BLOQUEADO - já no Step 2');
+        return;
+      }
+      
+      // PROTEÇÃO 6: Bloquear se já processou para Step 2
+      if (hasProcessedRef.current) {
+        console.log('🔵 onAuthStateChange BLOQUEADO - hasProcessedRef true');
         return;
       }
       
       if (event === 'SIGNED_IN' && session) {
-        console.log('🔵 onAuthStateChange: SIGNED_IN - verificando sessão');
+        console.log('🔵 onAuthStateChange: SIGNED_IN - chamando checkSession');
         checkSession();
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, step, userId]);
 
   // Limpar sessionStorage se usuário sair da página sem fazer login
   useEffect(() => {

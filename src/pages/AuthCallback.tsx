@@ -87,8 +87,8 @@ const AuthCallback = () => {
           sessionStorage.removeItem('redirectAfterLogin');
           toast.success('Conta criada! Complete seu cadastro.');
           
-          // Aguardar um pouco para garantir que sessionStorage foi salvo
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // Aguardar mais tempo para garantir que sessionStorage foi salvo
+          await new Promise(resolve => setTimeout(resolve, 200));
           
           navigate('/auth', { replace: true });
         } else if (redirectTo) {

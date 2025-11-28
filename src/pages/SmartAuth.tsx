@@ -87,6 +87,21 @@ const SmartAuth = () => {
   // Verificar sessão inicial
   useEffect(() => {
     const checkSession = async () => {
+      // SEMPRE verificar forceStep2 PRIMEIRO
+      const forceStep2 = sessionStorage.getItem('forceStep2');
+      if (forceStep2 === 'true') {
+        console.log('🔵 forceStep2=true DETECTADO - BLOQUEANDO redirecionamento');
+        sessionStorage.removeItem('forceStep2');
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setUserId(session.user.id);
+          setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
+          setStep(2);
+        }
+        return; // PARA AQUI - não redireciona
+      }
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         console.log('🔵 Sessão encontrada:', session.user.email);
@@ -161,7 +176,15 @@ const SmartAuth = () => {
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // NÃO redirecionar se forceStep2 está ativo - deixa AuthCallback/checkSession inicial decidir
+      const forceStep2 = sessionStorage.getItem('forceStep2');
+      if (forceStep2 === 'true') {
+        console.log('🔵 onAuthStateChange BLOQUEADO por forceStep2');
+        return;
+      }
+      
       if (event === 'SIGNED_IN' && session) {
+        console.log('🔵 onAuthStateChange: SIGNED_IN - verificando sessão');
         checkSession();
       }
     });

@@ -64,25 +64,44 @@ const AuthCallback = () => {
           .eq('id', user.id)
           .maybeSingle();
         
-        console.log('Dados aniversariante:', anivData);
+        console.log('🔍 Dados aniversariante:', anivData);
+        console.log('🔍 CPF:', anivData?.cpf);
+        console.log('🔍 Data nascimento:', anivData?.data_nascimento);
+        
+        // VERIFICAÇÃO RIGOROSA: só considera completo se TEM cpf E data_nascimento preenchidos
+        const cadastroCompleto = anivData && 
+                                 anivData.cpf && 
+                                 anivData.cpf.trim() !== '' && 
+                                 anivData.data_nascimento;
+        
+        console.log('🔍 Cadastro completo?', cadastroCompleto);
         
         // Pegar redirecionamento salvo
         const redirectTo = sessionStorage.getItem('redirectAfterLogin');
         
-        if (!anivData?.cpf || !anivData?.data_nascimento) {
-          console.log('📋 Precisa completar cadastro, redirecionando para /auth Step 2...');
-          // Marca que precisa completar para o SmartAuth detectar
+        if (!cadastroCompleto) {
+          console.log('📋 CADASTRO INCOMPLETO - Forçando Step 2...');
+          // MARCA FORTE: impede que onAuthStateChange redirecione
           sessionStorage.setItem('needsCompletion', 'true');
+          sessionStorage.setItem('forceStep2', 'true');
           sessionStorage.removeItem('redirectAfterLogin');
           toast.success('Conta criada! Complete seu cadastro.');
+          
+          // Aguardar um pouco para garantir que sessionStorage foi salvo
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           navigate('/auth', { replace: true });
         } else if (redirectTo) {
           console.log('🎯 Redirecionando para:', redirectTo);
           sessionStorage.removeItem('redirectAfterLogin');
+          sessionStorage.removeItem('needsCompletion');
+          sessionStorage.removeItem('forceStep2');
           toast.success('Login realizado!');
           navigate(redirectTo, { replace: true });
         } else {
           console.log('🏠 Redirecionando para home...');
+          sessionStorage.removeItem('needsCompletion');
+          sessionStorage.removeItem('forceStep2');
           toast.success('Login realizado!');
           navigate('/', { replace: true });
         }

@@ -206,32 +206,34 @@ export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void 
         setPhotoProgress({ current: i + 1, total: establishments.length });
 
         try {
-          const query = `${est.nome_fantasia || est.razao_social} ${est.endereco || est.cidade || ''}`;
-          
-          const findPlaceResponse = await fetch(
-            `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(query)}&inputtype=textquery&fields=place_id,photos&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
-          );
-          
-          const findPlaceData = await findPlaceResponse.json();
-          
-          if (findPlaceData.status === 'OK' && findPlaceData.candidates?.[0]) {
-            const place = findPlaceData.candidates[0];
-            
-            if (place.photos && place.photos.length > 0) {
-              const photoReference = place.photos[0].photo_reference;
-              const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoReference}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
-              
-              await supabase
-                .from('estabelecimentos')
-                .update({ logo_url: photoUrl })
-                .eq('id', est.id);
-              
-              updated++;
+          // Usar Edge Function para buscar foto do Google Places
+          const { data, error: fetchError } = await supabase.functions.invoke('fetch-place-photo', {
+            body: {
+              nome: est.nome_fantasia || est.razao_social,
+              endereco: est.endereco || '',
+              cidade: est.cidade || '',
+              estado: est.estado || '',
             }
+          });
+
+          if (!fetchError && data?.success && data.photo_url) {
+            await supabase
+              .from('estabelecimentos')
+              .update({ 
+                logo_url: data.photo_url,
+                google_place_id: data.place_id,
+                rating: data.rating,
+              })
+              .eq('id', est.id);
+            
+            updated++;
+            console.log(`✅ Foto atualizada para ${est.nome_fantasia || est.razao_social}`);
+          } else {
+            console.log(`❌ Foto não encontrada para ${est.nome_fantasia || est.razao_social}`);
           }
           
           // Delay para não sobrecarregar a API
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 300));
         } catch (err) {
           console.error(`Erro ao buscar foto para ${est.nome_fantasia}:`, err);
         }

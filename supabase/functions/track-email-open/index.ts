@@ -1,13 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validarOrigem, getCorsHeaders } from "../_shared/cors.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 // Pixel transparente 1x1 em base64
 const TRACKING_PIXEL = Uint8Array.from(atob(
@@ -15,8 +11,16 @@ const TRACKING_PIXEL = Uint8Array.from(atob(
 ), c => c.charCodeAt(0));
 
 const handler = async (req: Request): Promise<Response> => {
+  const corsHeaders = getCorsHeaders(req);
+  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Validar origem (tracking pixels podem vir de email clients)
+  // Mantemos permissivo para tracking, mas logamos a origem
+  if (!validarOrigem(req)) {
+    console.warn("Tracking pixel accessed from unauthorized origin:", req.headers.get("origin"));
   }
 
   try {

@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { processarImagemQuadrada, dataURLtoBlob } from '@/lib/imageUtils';
+import { validarArquivo, gerarNomeSeguro, mimeParaExtensao } from '@/lib/storageUtils';
 import {
   DndContext,
   closestCenter,
@@ -159,12 +160,20 @@ const GaleriaFotosUpload = ({
 
   // Upload para storage
   const uploadImagem = async (base64: string, index: number): Promise<string> => {
-    const fileName = `estabelecimento_${Date.now()}_${index}.jpg`;
     const blob = dataURLtoBlob(base64);
+    
+    // Gerar nome seguro
+    const { data: { user } } = await supabase.auth.getUser();
+    const safeUserId = user?.id || 'anonymous';
+    const extensao = mimeParaExtensao(blob.type);
+    const fileName = gerarNomeSeguro(safeUserId, 'estabelecimento', extensao);
     
     const { data, error } = await supabase.storage
       .from('estabelecimento-logos')
-      .upload(fileName, blob, { contentType: 'image/jpeg' });
+      .upload(fileName, blob, { 
+        contentType: blob.type,
+        cacheControl: '3600'
+      });
     
     if (error) throw error;
     
@@ -180,13 +189,10 @@ const GaleriaFotosUpload = ({
     const file = e.target.files?.[0];
     if (!file) return;
     
-    if (!file.type.startsWith('image/')) {
-      toast.error('Por favor, envie apenas imagens');
-      return;
-    }
-    
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Imagem muito grande. Máximo 10MB.');
+    // Validar arquivo
+    const validacao = validarArquivo(file);
+    if (!validacao.valido) {
+      toast.error(validacao.erro);
       return;
     }
     
@@ -226,13 +232,10 @@ const GaleriaFotosUpload = ({
       for (let i = 0; i < fotosParaAdicionar.length; i++) {
         const file = fotosParaAdicionar[i];
         
-        if (!file.type.startsWith('image/')) {
-          toast.error(`Arquivo ${file.name} não é uma imagem válida`);
-          continue;
-        }
-        
-        if (file.size > 10 * 1024 * 1024) {
-          toast.error(`${file.name} é muito grande. Máximo 10MB.`);
+        // Validar arquivo
+        const validacao = validarArquivo(file);
+        if (!validacao.valido) {
+          toast.error(`${file.name}: ${validacao.erro}`);
           continue;
         }
         

@@ -136,6 +136,7 @@ export default function AdminDashboard() {
   const [filterCity, setFilterCity] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [showDeleted, setShowDeleted] = useState<boolean>(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -176,7 +177,9 @@ export default function AdminDashboard() {
     try {
       const [usersRes, establishmentsRes, cuponsRes, emailAnalyticsRes] = await Promise.all([
         supabase.from('aniversariantes').select('*').is('deleted_at', null),
-        supabase.from('estabelecimentos').select('*').is('deleted_at', null),
+        showDeleted 
+          ? supabase.from('estabelecimentos').select('*')
+          : supabase.from('estabelecimentos').select('*').is('deleted_at', null),
         supabase.from('cupons').select('*').is('deleted_at', null),
         supabase.from('email_analytics').select('*').order('sent_at', { ascending: false })
       ]);
@@ -407,6 +410,49 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleRestaurarTodos = async () => {
+    const deletadosCount = establishments.filter(e => e.deleted_at).length;
+    if (deletadosCount === 0) {
+      toast.info('Nenhum estabelecimento deletado para restaurar');
+      return;
+    }
+
+    if (!confirm(`⚠️ Tem certeza que deseja restaurar ${deletadosCount} estabelecimento(s) deletado(s)?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('estabelecimentos')
+        .update({ deleted_at: null })
+        .not('deleted_at', 'is', null);
+
+      if (error) throw error;
+
+      toast.success(`✅ ${deletadosCount} estabelecimentos restaurados com sucesso!`);
+      loadData();
+    } catch (err) {
+      console.error('Erro ao restaurar:', err);
+      toast.error('Erro ao restaurar estabelecimentos');
+    }
+  };
+
+  const handleRestaurarUm = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('estabelecimentos')
+        .update({ deleted_at: null })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Estabelecimento restaurado!');
+      loadData();
+    } catch (err) {
+      toast.error('Erro ao restaurar');
+    }
+  };
+
   const filteredUsers = useMemo(() => {
     const searchSeguro = sanitizarInput(searchTerm, 100);
     return users.filter(user => 
@@ -438,6 +484,10 @@ export default function AdminDashboard() {
 
   const estabelecimentosSemFoto = useMemo(() => {
     return establishments.filter(e => !e.logo_url || e.logo_url === '');
+  }, [establishments]);
+
+  const estabelecimentosDeletados = useMemo(() => {
+    return establishments.filter(e => e.deleted_at !== null);
   }, [establishments]);
 
   const uniqueCities = useMemo(() => {
@@ -795,6 +845,38 @@ export default function AdminDashboard() {
             <option value="inactive">Inativos</option>
           </select>
         </div>
+
+        {/* Toggle para mostrar deletados + Botão restaurar */}
+        <div className="flex items-center gap-4 p-4 bg-slate-800/50 rounded-lg border border-white/10">
+          <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showDeleted}
+              onChange={(e) => {
+                setShowDeleted(e.target.checked);
+                loadData();
+              }}
+              className="rounded"
+            />
+            Mostrar estabelecimentos deletados
+          </label>
+          
+          {showDeleted && estabelecimentosDeletados.length > 0 && (
+            <button
+              onClick={handleRestaurarTodos}
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold flex items-center gap-2 transition-colors text-sm"
+            >
+              <AlertCircle className="w-4 h-4" />
+              Restaurar Todos ({estabelecimentosDeletados.length})
+            </button>
+          )}
+
+          {estabelecimentosDeletados.length > 0 && !showDeleted && (
+            <span className="text-sm text-amber-400">
+              ⚠️ {estabelecimentosDeletados.length} estabelecimento(s) deletado(s)
+            </span>
+          )}
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
@@ -809,15 +891,27 @@ export default function AdminDashboard() {
           </thead>
           <tbody className="divide-y divide-white/10">
             {filteredEstablishments.map(est => (
-              <tr key={est.id} className="hover:bg-white/5 transition-colors">
+              <tr 
+                key={est.id} 
+                className={`hover:bg-white/5 transition-colors ${est.deleted_at ? 'opacity-50 bg-red-500/10' : ''}`}
+              >
                 <td className="p-4">
-                  <div className="font-semibold text-white">{est.nome_fantasia || est.razao_social}</div>
-                  <div className="text-sm text-slate-400">
-                    {(() => {
-                      const cat = est.categoria?.[0];
-                      const found = CATEGORIAS_ESTABELECIMENTO.find(c => c.value === cat);
-                      return found ? `${found.icon} ${found.label}` : '🏪 Sem categoria';
-                    })()}
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <div className="font-semibold text-white">{est.nome_fantasia || est.razao_social}</div>
+                      <div className="text-sm text-slate-400">
+                        {(() => {
+                          const cat = est.categoria?.[0];
+                          const found = CATEGORIAS_ESTABELECIMENTO.find(c => c.value === cat);
+                          return found ? `${found.icon} ${found.label}` : '🏪 Sem categoria';
+                        })()}
+                      </div>
+                    </div>
+                    {est.deleted_at && (
+                      <span className="px-2 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-xs font-semibold">
+                        Deletado
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className="p-4 text-slate-300">{est.cnpj}</td>
@@ -827,6 +921,7 @@ export default function AdminDashboard() {
                     <Switch 
                       checked={est.ativo !== false}
                       onCheckedChange={() => handleToggleEstablishmentStatus(est.id, est.ativo !== false)}
+                      disabled={!!est.deleted_at}
                     />
                     <span className="text-sm text-slate-400">
                       {est.ativo !== false ? 'Ativo' : 'Inativo'}
@@ -834,29 +929,39 @@ export default function AdminDashboard() {
                   </div>
                 </td>
                 <td className="p-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
+                  {est.deleted_at ? (
                     <button 
-                      onClick={() => handleBuscarFotoIndividual(est)}
-                      className="p-2 text-slate-400 hover:text-fuchsia-400 hover:bg-fuchsia-500/10 rounded-lg transition-colors"
-                      title="Buscar foto"
+                      onClick={() => handleRestaurarUm(est.id)}
+                      className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold flex items-center gap-2 transition-colors ml-auto"
                     >
-                      <Camera size={18} />
+                      <AlertCircle size={16} />
+                      Restaurar
                     </button>
-                    <button 
-                      onClick={() => handleEditClick(est, 'establishment')}
-                      className="p-2 text-slate-400 hover:text-violet-400 hover:bg-violet-500/10 rounded-lg transition-colors"
-                      title="Editar"
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteClick(est, 'establishment')}
-                      className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                      title="Deletar"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
+                  ) : (
+                    <div className="flex items-center justify-end gap-2">
+                      <button 
+                        onClick={() => handleBuscarFotoIndividual(est)}
+                        className="p-2 text-slate-400 hover:text-fuchsia-400 hover:bg-fuchsia-500/10 rounded-lg transition-colors"
+                        title="Buscar foto"
+                      >
+                        <Camera size={18} />
+                      </button>
+                      <button 
+                        onClick={() => handleEditClick(est, 'establishment')}
+                        className="p-2 text-slate-400 hover:text-violet-400 hover:bg-violet-500/10 rounded-lg transition-colors"
+                        title="Editar"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteClick(est, 'establishment')}
+                        className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                        title="Deletar"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}

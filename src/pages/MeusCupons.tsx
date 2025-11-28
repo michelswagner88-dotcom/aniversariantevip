@@ -51,7 +51,7 @@ export default function MeusCupons() {
         description: "Você precisa estar logado para ver seus cupons",
         variant: "destructive",
       });
-      navigate("/login-aniversariante");
+      navigate("/auth");
       return;
     }
 

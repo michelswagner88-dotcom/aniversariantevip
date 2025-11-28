@@ -395,7 +395,7 @@ const SmartAuth = () => {
         sessionStorage.removeItem('redirectAfterLogin');
         navigate(redirectTo, { replace: true });
       } else {
-        navigate('/dashboard', { replace: true });
+        navigate('/', { replace: true });
       }
     } catch (err: any) {
       const friendlyMessage = getFriendlyErrorMessage(err);

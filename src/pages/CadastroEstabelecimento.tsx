@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Mail, 
   Lock, 
@@ -26,6 +27,7 @@ import { validateCNPJ, formatCNPJ, fetchCNPJData } from '@/lib/validators';
 import { useCepLookup } from '@/hooks/useCepLookup';
 import { getFriendlyErrorMessage } from '@/lib/errorTranslator';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 // Categorias disponíveis
 const AVAILABLE_CATEGORIES = [
@@ -155,8 +157,11 @@ const BenefitRulesSection = ({ rules, setRules }) => {
 // --- COMPONENTE PRINCIPAL ---
 
 export default function EstablishmentRegistration() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
   const [authData, setAuthData] = useState({ email: '', password: '' });
+  const [isGoogleUser, setIsGoogleUser] = useState(false);
   const [establishmentData, setEstablishmentData] = useState({
     cnpj: '',
     name: '',
@@ -185,6 +190,29 @@ export default function EstablishmentRegistration() {
   const [error, setError] = useState('');
   
   const { fetchCep: lookupCep } = useCepLookup();
+
+  // Detectar retorno do Google OAuth
+  useEffect(() => {
+    const checkGoogleReturn = async () => {
+      const stepFromUrl = searchParams.get('step');
+      const providerFromUrl = searchParams.get('provider');
+
+      if (stepFromUrl === '2' && providerFromUrl === 'google') {
+        setStep(2);
+        setIsGoogleUser(true);
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setAuthData(prev => ({
+            ...prev,
+            email: user.email || '',
+          }));
+        }
+      }
+    };
+
+    checkGoogleReturn();
+  }, [searchParams]);
 
   // --- LÓGICA DE APIs E VALIDAÇÃO ---
 
@@ -284,18 +312,39 @@ export default function EstablishmentRegistration() {
   
   // --- FLUXO DE SUBMISSÃO ---
 
-  const handleAuthSubmit = (e) => {
-    e.preventDefault();
-    if (authData.email && (authData.password || e.currentTarget.name === 'google')) {
-      // Aqui faria a autenticação real com Supabase Auth
-      console.log(`Autenticação de ${authData.email} bem-sucedida!`);
-      setStep(2);
-    } else {
-      setError('Preencha email e senha ou use o Google.');
+  const handleGoogleSignUp = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/cadastro/estabelecimento?step=2&provider=google`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        console.error('Erro Google OAuth:', error);
+        toast.error('Erro ao conectar com Google');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      toast.error('Erro ao conectar com Google');
     }
   };
 
-  const handleFinalSubmit = (e) => {
+  const handleAuthSubmit = (e) => {
+    e.preventDefault();
+    if (authData.email && authData.password) {
+      setStep(2);
+    } else {
+      setError('Preencha email e senha.');
+    }
+  };
+
+  const handleFinalSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -315,16 +364,171 @@ export default function EstablishmentRegistration() {
     }
     
     if (!isPhoneFilled) {
-        setError('Pelo menos um número de contato (Fixo ou WhatsApp) é obrigatório.');
-        return;
+      setError('Pelo menos um número de contato (Fixo ou WhatsApp) é obrigatório.');
+      return;
     }
 
-    toast.success('Cadastro de Estabelecimento finalizado com sucesso! Redirecionando para o pagamento...');
-    console.log({
-      establishment: establishmentData,
-      rules: rules,
+    if (!establishmentData.name || establishmentData.name.trim().length < 2) {
+      setError('Nome do estabelecimento obrigatório');
+      toast.error('Nome do estabelecimento obrigatório');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (isGoogleUser) {
+        // Usuário Google: já tem conta no Auth, só criar estabelecimento
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+          throw new Error('Sessão não encontrada');
+        }
+
+        // Verificar CNPJ duplicado
+        const { data: cnpjExistente } = await supabase
+          .from('estabelecimentos')
+          .select('cnpj')
+          .eq('cnpj', rawCnpj)
+          .maybeSingle();
+
+        if (cnpjExistente) {
+          toast.error('Este CNPJ já está cadastrado');
+          return;
+        }
+
+        // Criar estabelecimento
+        const { error: estabError } = await supabase
+          .from('estabelecimentos')
+          .insert({
+            cnpj: rawCnpj,
+            razao_social: establishmentData.name,
+            nome_fantasia: establishmentData.name,
+            telefone: establishmentData.phoneFixed?.replace(/\D/g, '') || null,
+            whatsapp: establishmentData.phoneWhatsapp?.replace(/\D/g, '') || null,
+            instagram: establishmentData.instagramUser || null,
+            site: establishmentData.siteLink || null,
+            cep: establishmentData.cep || null,
+            estado: establishmentData.estado || null,
+            cidade: establishmentData.cidade || null,
+            bairro: establishmentData.bairro || null,
+            logradouro: establishmentData.logradouro || null,
+            numero: establishmentData.numero || null,
+            complemento: establishmentData.complemento || null,
+            categoria: establishmentData.categories,
+            descricao_beneficio: rules.description || null,
+            periodo_validade_beneficio: rules.scope === 'Dia' ? 'dia_aniversario' : rules.scope === 'Semana' ? 'semana_aniversario' : 'mes_aniversario',
+            horario_funcionamento: establishmentData.hoursText || null,
+            logo_url: establishmentData.mainPhotoUrl !== 'https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)' ? establishmentData.mainPhotoUrl : null,
+            link_cardapio: establishmentData.menuLink || null,
+            ativo: false,
+          });
+
+        if (estabError) throw estabError;
+
+        // Criar role de estabelecimento
+        await supabase
+          .from('user_roles')
+          .upsert({ 
+            user_id: user.id, 
+            role: 'estabelecimento' 
+          }, { onConflict: 'user_id,role' });
+
+        toast.success('Estabelecimento cadastrado com sucesso!');
+        navigate('/area-estabelecimento');
+
+      } else {
+        // Usuário email/senha: criar conta completa
+        await criarContaEstabelecimentoCompleta();
+      }
+
+    } catch (error: any) {
+      console.error('Erro:', error);
+      const friendlyError = getFriendlyErrorMessage(error);
+      toast.error(friendlyError);
+      setError(friendlyError);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const criarContaEstabelecimentoCompleta = async () => {
+    const rawCnpj = establishmentData.cnpj.replace(/\D/g, '');
+
+    // Verificar CNPJ duplicado
+    const { data: cnpjExistente } = await supabase
+      .from('estabelecimentos')
+      .select('cnpj')
+      .eq('cnpj', rawCnpj)
+      .maybeSingle();
+
+    if (cnpjExistente) {
+      toast.error('Este CNPJ já está cadastrado');
+      throw new Error('CNPJ duplicado');
+    }
+
+    // 1. Criar usuário no Auth
+    const { data: signUpData, error: authError } = await supabase.auth.signUp({
+      email: authData.email,
+      password: authData.password,
+      options: {
+        data: {
+          tipo: 'estabelecimento',
+          nome_fantasia: establishmentData.name,
+        },
+      },
     });
-    // Aqui você enviaria os dados para o Supabase e redirecionaria para o Stripe Checkout
+
+    if (authError) {
+      if (authError.message.includes('already registered')) {
+        toast.error('Este email já está cadastrado');
+      }
+      throw authError;
+    }
+
+    if (!signUpData.user) {
+      throw new Error('Erro ao criar conta');
+    }
+
+    // 2. Criar estabelecimento
+    const { error: estabError } = await supabase
+      .from('estabelecimentos')
+      .insert({
+        cnpj: rawCnpj,
+        razao_social: establishmentData.name,
+        nome_fantasia: establishmentData.name,
+        telefone: establishmentData.phoneFixed?.replace(/\D/g, '') || null,
+        whatsapp: establishmentData.phoneWhatsapp?.replace(/\D/g, '') || null,
+        instagram: establishmentData.instagramUser || null,
+        site: establishmentData.siteLink || null,
+        cep: establishmentData.cep || null,
+        estado: establishmentData.estado || null,
+        cidade: establishmentData.cidade || null,
+        bairro: establishmentData.bairro || null,
+        logradouro: establishmentData.logradouro || null,
+        numero: establishmentData.numero || null,
+        complemento: establishmentData.complemento || null,
+        categoria: establishmentData.categories,
+        descricao_beneficio: rules.description || null,
+        periodo_validade_beneficio: rules.scope === 'Dia' ? 'dia_aniversario' : rules.scope === 'Semana' ? 'semana_aniversario' : 'mes_aniversario',
+        horario_funcionamento: establishmentData.hoursText || null,
+        logo_url: establishmentData.mainPhotoUrl !== 'https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)' ? establishmentData.mainPhotoUrl : null,
+        link_cardapio: establishmentData.menuLink || null,
+        ativo: false,
+      });
+
+    if (estabError) throw estabError;
+
+    // 3. Criar role
+    await supabase
+      .from('user_roles')
+      .insert({
+        user_id: signUpData.user.id,
+        role: 'estabelecimento',
+      });
+
+    toast.success('Estabelecimento cadastrado! Aguarde aprovação.');
+    navigate('/area-estabelecimento');
   };
 
   // --- RENDERIZAÇÃO POR ETAPA ---
@@ -337,8 +541,7 @@ export default function EstablishmentRegistration() {
       {/* Login Google */}
       <button 
         type="button"
-        name="google"
-        onClick={handleAuthSubmit}
+        onClick={handleGoogleSignUp}
         className="w-full py-3 bg-white/5 border border-white/10 text-white rounded-xl flex items-center justify-center gap-3 font-semibold hover:bg-white/10 transition-colors"
       >
         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/48px-Google_%22G%22_logo.svg.png" alt="Google Logo" className="w-5 h-5" />
@@ -402,6 +605,21 @@ export default function EstablishmentRegistration() {
         </button>
         <h2 className="text-2xl font-bold text-slate-800">Dados do Estabelecimento</h2>
       </div>
+
+      {/* Mensagem para usuário Google */}
+      {isGoogleUser && authData.email && (
+        <div className="bg-violet-500/10 border border-violet-500/30 rounded-lg p-4 space-y-2">
+          <p className="text-violet-700 text-sm font-medium">
+            ✓ Você está cadastrando com sua conta Google
+          </p>
+          <div className="space-y-1">
+            <label className="text-xs text-slate-600">Email (Google)</label>
+            <div className="bg-slate-200 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-700">
+              {authData.email}
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && <div className="p-3 bg-rose-50 text-rose-600 rounded-lg text-sm mb-4">{error}</div>}
 

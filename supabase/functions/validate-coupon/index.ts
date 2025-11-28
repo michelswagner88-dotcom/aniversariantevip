@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sanitizarCodigoCupom } from "../_shared/sanitize.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -48,12 +49,14 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Código do cupom é obrigatório");
     }
 
-    console.log(`Validando cupom: ${codigo} - Estabelecimento: ${user.id}`);
+    // Sanitizar código do cupom
+    const codigoSanitizado = sanitizarCodigoCupom(codigo);
+    console.log(`Validando cupom: ${codigoSanitizado} - Estabelecimento: ${user.id}`);
 
     // Chamar função do banco que faz validação com lock
     const { data: result, error: validateError } = await supabase
       .rpc('use_coupon', {
-        p_codigo: codigo.trim().toUpperCase(),
+        p_codigo: codigoSanitizado,
         p_estabelecimento_id: user.id
       });
 
@@ -81,7 +84,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log(`Cupom ${codigo} validado com sucesso`);
+    console.log(`Cupom ${codigoSanitizado} validado com sucesso`);
 
     // Registrar analytics (fire and forget - sem await para não bloquear)
     supabase

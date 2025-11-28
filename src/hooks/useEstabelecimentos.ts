@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryClient';
 import { Tables } from '@/integrations/supabase/types';
+import { sanitizarInput } from '@/lib/sanitize';
 
 type Estabelecimento = Tables<'estabelecimentos'>;
 
@@ -24,16 +25,19 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
 
       // Aplicar filtros
       if (filters.cidade) {
-        query = query.eq('cidade', filters.cidade);
+        query = query.eq('cidade', sanitizarInput(filters.cidade, 100));
       }
       if (filters.estado) {
-        query = query.eq('estado', filters.estado);
+        query = query.eq('estado', sanitizarInput(filters.estado, 2));
       }
       if (filters.categoria && filters.categoria.length > 0) {
-        query = query.overlaps('categoria', filters.categoria);
+        // Categorias são enums controlados, não precisam sanitização mas aplicamos por segurança
+        const categoriasSanitizadas = filters.categoria.map(c => sanitizarInput(c, 50));
+        query = query.overlaps('categoria', categoriasSanitizadas);
       }
       if (filters.search) {
-        query = query.or(`nome_fantasia.ilike.%${filters.search}%,razao_social.ilike.%${filters.search}%`);
+        const searchSanitizado = sanitizarInput(filters.search, 100);
+        query = query.or(`nome_fantasia.ilike.%${searchSanitizado}%,razao_social.ilike.%${searchSanitizado}%`);
       }
 
       const { data, error } = await query;

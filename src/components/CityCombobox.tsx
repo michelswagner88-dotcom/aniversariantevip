@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useCidadesAutocomplete } from '@/hooks/useCidadesAutocomplete';
+import { sanitizarInput } from '@/lib/sanitize';
 
 interface CityComboboxProps {
   value?: string;
@@ -25,7 +26,9 @@ export const CityCombobox: React.FC<CityComboboxProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  const { cidades, isLoading } = useCidadesAutocomplete(inputValue);
+  // Sanitizar input antes de buscar
+  const sanitizedInput = sanitizarInput(inputValue, 50);
+  const { cidades, isLoading } = useCidadesAutocomplete(sanitizedInput);
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {

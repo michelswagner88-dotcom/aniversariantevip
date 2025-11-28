@@ -40,6 +40,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 import * as XLSX from 'xlsx';
+import { sanitizarInput } from '@/lib/sanitize';
 import { 
   Dialog,
   DialogContent,
@@ -407,21 +408,26 @@ export default function AdminDashboard() {
   };
 
   const filteredUsers = useMemo(() => {
+    const searchSeguro = sanitizarInput(searchTerm, 100);
     return users.filter(user => 
-      user.cpf?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      user.telefone?.toLowerCase().includes(searchTerm.toLowerCase())
+      user.cpf?.toLowerCase().includes(searchSeguro.toLowerCase()) || 
+      user.telefone?.toLowerCase().includes(searchSeguro.toLowerCase())
     );
   }, [users, searchTerm]);
 
   const filteredEstablishments = useMemo(() => {
+    const searchSeguro = sanitizarInput(searchTerm, 100);
+    const citySeguro = sanitizarInput(filterCity, 100);
+    const categorySeguro = sanitizarInput(filterCategory, 50);
+    
     return establishments.filter(est => {
-      const matchesSearch = !searchTerm || 
-        est.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        est.cnpj?.includes(searchTerm) ||
-        est.cidade?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = !searchSeguro || 
+        est.nome_fantasia?.toLowerCase().includes(searchSeguro.toLowerCase()) ||
+        est.cnpj?.includes(searchSeguro) ||
+        est.cidade?.toLowerCase().includes(searchSeguro.toLowerCase());
       
-      const matchesCity = !filterCity || est.cidade === filterCity;
-      const matchesCategory = !filterCategory || est.categoria?.includes(filterCategory);
+      const matchesCity = !citySeguro || est.cidade === citySeguro;
+      const matchesCategory = !categorySeguro || est.categoria?.includes(categorySeguro);
       const matchesStatus = filterStatus === 'all' || 
         (filterStatus === 'active' && est.ativo) || 
         (filterStatus === 'inactive' && !est.ativo);

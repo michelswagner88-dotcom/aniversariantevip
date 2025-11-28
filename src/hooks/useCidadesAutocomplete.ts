@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizarInput } from '@/lib/sanitize';
 
 interface Cidade {
   nome: string;
@@ -108,9 +109,10 @@ export const useCidadesAutocomplete = (searchTerm: string) => {
       try {
         const data = await getCidadesBrasil();
         
-        // Normalizar termo de busca
-        const searchNormalizado = normalizeString(searchTerm);
-        console.log('Buscando por:', searchTerm, '(normalizado:', searchNormalizado + ')');
+        // Sanitizar e normalizar termo de busca
+        const searchSanitizado = sanitizarInput(searchTerm, 50);
+        const searchNormalizado = normalizeString(searchSanitizado);
+        console.log('Buscando por:', searchSanitizado, '(normalizado:', searchNormalizado + ')');
         
         // Filtrar pelo termo digitado (case insensitive e sem acentos)
         const filtradas = data

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { sanitizarInput, sanitizarEmail } from "../_shared/sanitize.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,10 +40,27 @@ serve(async (req) => {
     const establishmentData = await req.json();
     logStep("Received establishment data", { cnpj: establishmentData.cnpj });
 
+    // Sanitizar todos os campos de texto
+    const dadosSanitizados = {
+      ...establishmentData,
+      razao_social: sanitizarInput(establishmentData.razao_social, 200),
+      nome_fantasia: sanitizarInput(establishmentData.nome_fantasia, 200),
+      endereco: sanitizarInput(establishmentData.endereco, 300),
+      logradouro: establishmentData.logradouro ? sanitizarInput(establishmentData.logradouro, 200) : null,
+      complemento: establishmentData.complemento ? sanitizarInput(establishmentData.complemento, 100) : null,
+      bairro: establishmentData.bairro ? sanitizarInput(establishmentData.bairro, 100) : null,
+      cidade: sanitizarInput(establishmentData.cidade, 100),
+      estado: sanitizarInput(establishmentData.estado, 2),
+      descricao_beneficio: establishmentData.descricao_beneficio ? sanitizarInput(establishmentData.descricao_beneficio, 500) : null,
+      regras_utilizacao: establishmentData.regras_utilizacao ? sanitizarInput(establishmentData.regras_utilizacao, 500) : null,
+      instagram: establishmentData.instagram ? sanitizarInput(establishmentData.instagram, 100) : null,
+      site: establishmentData.site ? sanitizarInput(establishmentData.site, 200) : null,
+    };
+
     // Validar campos obrigatórios
     const requiredFields = ['cnpj', 'razao_social', 'nome_fantasia', 'endereco', 'cep', 'cidade', 'estado', 'categoria'];
     for (const field of requiredFields) {
-      if (!establishmentData[field]) {
+      if (!dadosSanitizados[field]) {
         throw new Error(`Campo obrigatório faltando: ${field}`);
       }
     }
@@ -51,7 +69,7 @@ serve(async (req) => {
     const { data: existingEstablishment } = await supabaseClient
       .from('estabelecimentos')
       .select('id')
-      .eq('cnpj', establishmentData.cnpj)
+      .eq('cnpj', dadosSanitizados.cnpj)
       .single();
 
     if (existingEstablishment) {
@@ -60,11 +78,11 @@ serve(async (req) => {
 
     // Processar referral se existir
     let referredByUserId = null;
-    if (establishmentData.referral_code) {
+    if (dadosSanitizados.referral_code) {
       const { data: referrer } = await supabaseClient
         .from('profiles')
         .select('id')
-        .eq('id', establishmentData.referral_code)
+        .eq('id', dadosSanitizados.referral_code)
         .single();
       
       if (referrer) {
@@ -78,29 +96,29 @@ serve(async (req) => {
       .from('estabelecimentos')
       .insert({
         id: user.id,
-        cnpj: establishmentData.cnpj,
-        razao_social: establishmentData.razao_social,
-        nome_fantasia: establishmentData.nome_fantasia,
-        telefone: establishmentData.phoneFixed || null,
-        whatsapp: establishmentData.phoneWhatsapp || null,
-        endereco: establishmentData.endereco,
-        logradouro: establishmentData.logradouro || null,
-        numero: establishmentData.numero || null,
-        complemento: establishmentData.complemento || null,
-        bairro: establishmentData.bairro || null,
-        cep: establishmentData.cep,
-        cidade: establishmentData.cidade,
-        estado: establishmentData.estado,
-        latitude: establishmentData.latitude || null,
-        longitude: establishmentData.longitude || null,
-        categoria: establishmentData.categoria,
-        descricao_beneficio: establishmentData.descricao_beneficio || null,
-        regras_utilizacao: establishmentData.regras_utilizacao || null,
-        periodo_validade_beneficio: establishmentData.periodo_validade_beneficio || 'mes_aniversario',
-        horario_funcionamento: establishmentData.horario_funcionamento || null,
-        instagram: establishmentData.instagram || null,
-        site: establishmentData.site || null,
-        logo_url: establishmentData.logo_url || null,
+        cnpj: dadosSanitizados.cnpj,
+        razao_social: dadosSanitizados.razao_social,
+        nome_fantasia: dadosSanitizados.nome_fantasia,
+        telefone: dadosSanitizados.phoneFixed || null,
+        whatsapp: dadosSanitizados.phoneWhatsapp || null,
+        endereco: dadosSanitizados.endereco,
+        logradouro: dadosSanitizados.logradouro || null,
+        numero: dadosSanitizados.numero || null,
+        complemento: dadosSanitizados.complemento || null,
+        bairro: dadosSanitizados.bairro || null,
+        cep: dadosSanitizados.cep,
+        cidade: dadosSanitizados.cidade,
+        estado: dadosSanitizados.estado,
+        latitude: dadosSanitizados.latitude || null,
+        longitude: dadosSanitizados.longitude || null,
+        categoria: dadosSanitizados.categoria,
+        descricao_beneficio: dadosSanitizados.descricao_beneficio || null,
+        regras_utilizacao: dadosSanitizados.regras_utilizacao || null,
+        periodo_validade_beneficio: dadosSanitizados.periodo_validade_beneficio || 'mes_aniversario',
+        horario_funcionamento: dadosSanitizados.horario_funcionamento || null,
+        instagram: dadosSanitizados.instagram || null,
+        site: dadosSanitizados.site || null,
+        logo_url: dadosSanitizados.logo_url || null,
         referred_by_user_id: referredByUserId,
         plan_status: 'pending',
         tem_conta_acesso: true,

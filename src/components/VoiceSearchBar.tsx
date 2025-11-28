@@ -7,6 +7,7 @@ import { useCepLookup } from '../hooks/useCepLookup';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { sanitizarInput } from '@/lib/sanitize';
 
 const VoiceSearchBar = () => {
   const navigate = useNavigate();
@@ -64,7 +65,8 @@ const VoiceSearchBar = () => {
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
-      navigate(`/explorar?q=${searchQuery}`);
+      const searchSeguro = sanitizarInput(searchQuery, 100);
+      navigate(`/explorar?q=${encodeURIComponent(searchSeguro)}`);
     }
   };
 

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit, getRequestIdentifier, rateLimitExceededResponse } from "../_shared/rateLimit.ts";
+import { sanitizarInput } from "../_shared/sanitize.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,6 +31,17 @@ serve(async (req) => {
 
   try {
     const { messages, includeContext = true } = await req.json();
+    
+    // Validar e sanitizar mensagens
+    if (!Array.isArray(messages) || messages.length === 0) {
+      throw new Error("Mensagens inválidas");
+    }
+    
+    // Sanitizar conteúdo das mensagens do usuário
+    const messagesSanitizadas = messages.map((msg: any) => ({
+      ...msg,
+      content: msg.role === 'user' ? sanitizarInput(msg.content, 2000) : msg.content
+    }));
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -197,7 +209,7 @@ Sempre use português impecável com acentuação correta. Enfatize que benefíc
     // Preparar mensagens
     const allMessages = [
       { role: "system", content: systemPrompt },
-      ...messages,
+      ...messagesSanitizadas,
     ];
 
     console.log("Enviando request para Lovable AI com", allMessages.length, "mensagens");

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, MapPin, Camera } from "lucide-react";
+import { processarImagemQuadrada, dataURLtoBlob } from "@/lib/imageUtils";
 import { CATEGORIAS_ESTABELECIMENTO, PERIODOS_VALIDADE } from "@/lib/constants";
 import { HorarioFuncionamentoEditor } from "./HorarioFuncionamentoEditor";
 import { Switch } from "@/components/ui/switch";
@@ -52,6 +53,7 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
   const [saving, setSaving] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
   const [fetchingPhoto, setFetchingPhoto] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [formData, setFormData] = useState<Establishment | null>(establishment);
 
   // Update formData when establishment changes
@@ -127,6 +129,60 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
       toast.error("Erro ao buscar foto no Google");
     } finally {
       setFetchingPhoto(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, envie apenas imagens');
+      return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Imagem muito grande. Máximo 10MB.');
+      return;
+    }
+    
+    try {
+      setIsProcessingImage(true);
+      toast.info('Processando imagem...');
+      
+      // Processar e recortar automaticamente para formato quadrado
+      const imagemProcessada = await processarImagemQuadrada(file, 400);
+      
+      // Fazer upload para o storage
+      const fileName = `estabelecimento_${Date.now()}.jpg`;
+      const blob = dataURLtoBlob(imagemProcessada);
+      
+      const { data, error } = await supabase.storage
+        .from('estabelecimento-logos')
+        .upload(fileName, blob, {
+          contentType: 'image/jpeg',
+        });
+      
+      if (error) throw error;
+      
+      // Obter URL pública
+      const { data: urlData } = supabase.storage
+        .from('estabelecimento-logos')
+        .getPublicUrl(fileName);
+      
+      if (formData) {
+        setFormData({
+          ...formData,
+          logo_url: urlData.publicUrl,
+        });
+      }
+      
+      toast.success('Foto adicionada com sucesso!');
+    } catch (err) {
+      console.error('Erro ao processar imagem:', err);
+      toast.error('Erro ao processar imagem. Tente novamente.');
+    } finally {
+      setIsProcessingImage(false);
     }
   };
 
@@ -461,61 +517,112 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
 
           {/* IMAGENS */}
           <TabsContent value="imagens" className="space-y-4">
-            {formData.logo_url && (
-              <div className="relative">
-                <img 
-                  src={formData.logo_url} 
-                  alt="Foto atual" 
-                  className="w-full h-48 object-cover rounded-lg border"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://via.placeholder.com/400x200?text=Erro+ao+carregar';
-                  }}
-                />
+            <div className="space-y-4">
+              <Label>Foto do Estabelecimento</Label>
+              
+              <div className="flex items-start gap-6">
+                {/* Preview da foto */}
+                <div className="relative">
+                  <div 
+                    className={`w-32 h-32 rounded-xl overflow-hidden border-2 border-dashed 
+                      ${isProcessingImage ? 'border-violet-500' : 'border-white/20'} 
+                      bg-white/5 flex items-center justify-center cursor-pointer 
+                      hover:border-violet-500 transition-colors`}
+                    onClick={() => !isProcessingImage && document.getElementById('fileUpload')?.click()}
+                  >
+                    {isProcessingImage ? (
+                      <div className="text-center">
+                        <Loader2 className="w-8 h-8 text-violet-500 mx-auto mb-2 animate-spin" />
+                        <span className="text-xs text-gray-400">Processando...</span>
+                      </div>
+                    ) : formData.logo_url ? (
+                      <img 
+                        src={formData.logo_url} 
+                        alt="Foto do estabelecimento" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://via.placeholder.com/400x400?text=Erro';
+                        }}
+                      />
+                    ) : (
+                      <div className="text-center p-2">
+                        <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <span className="text-xs text-gray-400">Toque para adicionar</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {formData.logo_url && !isProcessingImage && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFormData({ ...formData, logo_url: '' });
+                      }}
+                    >
+                      ✕
+                    </Button>
+                  )}
+                </div>
+                
+                {/* Opções */}
+                <div className="flex-1 space-y-3">
+                  <input
+                    id="fileUpload"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    disabled={isProcessingImage}
+                  />
+                  
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => document.getElementById('fileUpload')?.click()}
+                    disabled={isProcessingImage}
+                    className="w-full"
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Enviar Foto
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleFetchGooglePhoto}
+                    disabled={isProcessingImage || fetchingPhoto}
+                    className="w-full"
+                  >
+                    {fetchingPhoto ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Camera className="w-4 h-4 mr-2" />
+                    )}
+                    Buscar do Google
+                  </Button>
+                  
+                  <p className="text-xs text-gray-400">
+                    📱 Envie qualquer foto - ajustamos automaticamente!
+                  </p>
+                </div>
               </div>
-            )}
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleFetchGooglePhoto}
-              disabled={fetchingPhoto}
-              className="w-full"
-            >
-              {fetchingPhoto ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Buscando...
-                </>
-              ) : (
-                <>
-                  <Camera className="mr-2 h-4 w-4" />
-                  Buscar Foto do Google
-                </>
-              )}
-            </Button>
+            </div>
 
             <div>
-              <Label>URL da Imagem</Label>
+              <Label>Ou insira URL da Imagem</Label>
               <Input
                 value={formData.logo_url || ''}
                 onChange={(e) => setFormData({...formData, logo_url: e.target.value})}
                 placeholder="https://exemplo.com/foto.jpg"
+                disabled={isProcessingImage}
               />
-            </div>
-
-            <div>
-              <Label>Ou faça upload</Label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  
-                  toast.info('Upload de arquivo ainda não implementado. Use URL ou busca do Google.');
-                }}
-              />
-              <p className="text-xs text-slate-500 mt-1">Upload direto em desenvolvimento. Use URL ou Google por enquanto.</p>
             </div>
           </TabsContent>
 

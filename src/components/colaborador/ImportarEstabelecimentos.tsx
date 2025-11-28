@@ -11,6 +11,7 @@ interface ValidationResult {
   errors: string[];
   data: any;
   linha: number;
+  dadosOriginais?: any; // Armazena dados originais da planilha para relatório
 }
 
 // Função para buscar endereço pelo CEP via ViaCEP
@@ -118,6 +119,7 @@ export const ImportarEstabelecimentos = () => {
           errors: [`Nome do estabelecimento obrigatório`],
           data: null,
           linha: index + 2,
+          dadosOriginais: row,
         };
       }
 
@@ -127,6 +129,7 @@ export const ImportarEstabelecimentos = () => {
           errors: [`CEP obrigatório`],
           data: null,
           linha: index + 2,
+          dadosOriginais: row,
         };
       }
 
@@ -156,6 +159,7 @@ export const ImportarEstabelecimentos = () => {
             errors: [`CEP inválido ou não encontrado`],
             data: null,
             linha: index + 2,
+            dadosOriginais: row,
           };
         }
       }
@@ -203,6 +207,7 @@ export const ImportarEstabelecimentos = () => {
         errors: [],
         data: dadosMapeados,
         linha: index + 2,
+        dadosOriginais: row,
       };
     } catch (error) {
       console.error('Erro ao mapear linha:', error);
@@ -211,6 +216,7 @@ export const ImportarEstabelecimentos = () => {
         errors: [`Erro ao processar linha: ${error}`],
         data: null,
         linha: index + 2,
+        dadosOriginais: row,
       };
     }
   };
@@ -383,6 +389,85 @@ export const ImportarEstabelecimentos = () => {
     }
   };
 
+  const downloadRelatorioErros = () => {
+    const erros = validationResults.filter((r) => !r.valid);
+    
+    if (erros.length === 0) {
+      toast({
+        title: "Nenhum erro encontrado",
+        description: "Todos os registros estão válidos!",
+      });
+      return;
+    }
+
+    const relatorioData = erros.map((erro) => ({
+      Linha: erro.linha,
+      Nome_Estabelecimento: erro.dadosOriginais?.NOME_ESTABELECIMENTO || '-',
+      Erro: erro.errors.join(' | '),
+      CODIGO: erro.dadosOriginais?.CODIGO || '',
+      EMAIL: erro.dadosOriginais?.EMAIL || '',
+      SENHA: erro.dadosOriginais?.SENHA || '',
+      NOME_ESTABELECIMENTO: erro.dadosOriginais?.NOME_ESTABELECIMENTO || '',
+      HORARIO_FUNCIONAMENTO: erro.dadosOriginais?.HORARIO_FUNCIONAMENTO || '',
+      CNPJ: erro.dadosOriginais?.CNPJ || '',
+      CEP: erro.dadosOriginais?.CEP || '',
+      ESTADO: erro.dadosOriginais?.ESTADO || '',
+      CIDADE: erro.dadosOriginais?.CIDADE || '',
+      BAIRRO: erro.dadosOriginais?.BAIRRO || '',
+      RUA: erro.dadosOriginais?.RUA || '',
+      NUMERO: erro.dadosOriginais?.NUMERO || '',
+      COMPLEMENTO: erro.dadosOriginais?.COMPLEMENTO || '',
+      TELEFONE: erro.dadosOriginais?.TELEFONE || '',
+      WHATSAPP: erro.dadosOriginais?.WHATSAPP || '',
+      INSTAGRAM: erro.dadosOriginais?.INSTAGRAM || '',
+      SITE: erro.dadosOriginais?.SITE || '',
+      CATEGORIA: erro.dadosOriginais?.CATEGORIA || '',
+      BENEFICIO: erro.dadosOriginais?.BENEFICIO || '',
+      REGRAS: erro.dadosOriginais?.REGRAS || '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(relatorioData);
+    
+    // Ajustar largura das colunas
+    const colWidths = [
+      { wch: 8 },  // Linha
+      { wch: 30 }, // Nome_Estabelecimento
+      { wch: 50 }, // Erro
+      { wch: 10 }, // CODIGO
+      { wch: 25 }, // EMAIL
+      { wch: 12 }, // SENHA
+      { wch: 30 }, // NOME_ESTABELECIMENTO
+      { wch: 20 }, // HORARIO_FUNCIONAMENTO
+      { wch: 18 }, // CNPJ
+      { wch: 10 }, // CEP
+      { wch: 5 },  // ESTADO
+      { wch: 20 }, // CIDADE
+      { wch: 20 }, // BAIRRO
+      { wch: 30 }, // RUA
+      { wch: 8 },  // NUMERO
+      { wch: 15 }, // COMPLEMENTO
+      { wch: 15 }, // TELEFONE
+      { wch: 15 }, // WHATSAPP
+      { wch: 20 }, // INSTAGRAM
+      { wch: 30 }, // SITE
+      { wch: 15 }, // CATEGORIA
+      { wch: 50 }, // BENEFICIO
+      { wch: 10 }, // REGRAS
+    ];
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Erros de Importação");
+    
+    const dataHora = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    XLSX.writeFile(wb, `relatorio_erros_importacao_${dataHora}.xlsx`);
+
+    toast({
+      title: "✅ Relatório gerado!",
+      description: `${erros.length} erro(s) exportado(s) para Excel.`,
+    });
+  };
+
   const validCount = validationResults.filter((r) => r.valid).length;
   const invalidCount = validationResults.filter((r) => !r.valid).length;
 
@@ -464,21 +549,32 @@ export const ImportarEstabelecimentos = () => {
               </div>
 
               {invalidCount > 0 && (
-                <Card className="p-4 bg-amber-500/10 border-amber-500/20">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="w-5 h-5 text-amber-500 mt-1" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-amber-500 mb-2">Erros encontrados:</p>
-                      <ul className="text-xs text-slate-300 space-y-1 max-h-40 overflow-auto">
-                        {validationResults
-                          .filter((r) => !r.valid)
-                          .map((r, i) => (
-                            <li key={i}>• Linha {r.linha}: {r.errors.join(', ')}</li>
-                          ))}
-                      </ul>
+                <div className="space-y-3">
+                  <Card className="p-4 bg-amber-500/10 border-amber-500/20">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-5 h-5 text-amber-500 mt-1" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-amber-500 mb-2">Erros encontrados:</p>
+                        <ul className="text-xs text-slate-300 space-y-1 max-h-40 overflow-auto">
+                          {validationResults
+                            .filter((r) => !r.valid)
+                            .map((r, i) => (
+                              <li key={i}>• Linha {r.linha}: {r.errors.join(', ')}</li>
+                            ))}
+                        </ul>
+                      </div>
                     </div>
-                  </div>
-                </Card>
+                  </Card>
+                  
+                  <Button
+                    onClick={downloadRelatorioErros}
+                    variant="outline"
+                    className="w-full border-amber-500/30 hover:bg-amber-500/10"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Baixar Relatório de Erros (Excel)
+                  </Button>
+                </div>
               )}
 
               {validCount > 0 && (

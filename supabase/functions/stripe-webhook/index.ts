@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
+// Nota: Webhooks do Stripe não têm origin header pois vêm diretamente dos servidores Stripe
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "stripe-signature, content-type",
@@ -15,6 +16,8 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // NÃO validar origem aqui - webhooks vêm diretamente do Stripe, não do navegador
 
   try {
     logStep("Webhook received");

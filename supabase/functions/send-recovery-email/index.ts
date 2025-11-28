@@ -1,13 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { checkRateLimit, getRequestIdentifier, rateLimitExceededResponse } from "../_shared/rateLimit.ts";
+import { validarOrigem, getCorsHeaders } from "../_shared/cors.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 interface RecoveryEmailPayload {
   user: {
@@ -23,8 +19,22 @@ interface RecoveryEmailPayload {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  const corsHeaders = getCorsHeaders(req);
+  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Validar origem (para invocações diretas do Supabase Auth, permitir sem origin)
+  const origin = req.headers.get('origin');
+  if (origin && !validarOrigem(req)) {
+    return new Response(
+      JSON.stringify({ error: "Origem não autorizada" }),
+      { 
+        status: 403, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
+    );
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

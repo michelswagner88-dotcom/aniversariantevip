@@ -1,10 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.83.0';
 import { checkRateLimit, getRequestIdentifier, rateLimitExceededResponse } from "../_shared/rateLimit.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { validarOrigem, getCorsHeaders } from "../_shared/cors.ts";
 
 interface ActiveCity {
   cidade: string;
@@ -40,9 +36,22 @@ function calculateDistance(
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Validar origem
+  if (!validarOrigem(req)) {
+    return new Response(
+      JSON.stringify({ error: 'Origem não autorizada' }),
+      { 
+        status: 403, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

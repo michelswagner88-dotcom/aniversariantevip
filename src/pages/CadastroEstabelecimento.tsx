@@ -198,13 +198,16 @@ export default function EstablishmentRegistration() {
       const providerFromUrl = searchParams.get('provider');
 
       if (stepFromUrl === '2' && providerFromUrl === 'google') {
+        console.log('=== ETAPA 2 GOOGLE RETURN ===');
+        console.log('Iniciando etapa 2...');
+        
         setStep(2);
         setIsGoogleUser(true);
-        
-        // Limpar estados ao carregar
         setError('');
         setCnpjVerified(false);
-        setLoading(false);
+        setLoading(false); // GARANTIR FALSE
+        
+        console.log('Loading definido como FALSE');
 
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -212,7 +215,10 @@ export default function EstablishmentRegistration() {
             ...prev,
             email: user.email || '',
           }));
+          console.log('Email do usuário:', user.email);
         }
+        
+        console.log('Estado loading após setup:', loading);
       }
     };
 
@@ -606,7 +612,16 @@ export default function EstablishmentRegistration() {
     </form>
   );
 
-  const renderStep2 = () => (
+  const renderStep2 = () => {
+    // DEBUG TEMPORÁRIO
+    console.log('=== RENDERIZANDO ETAPA 2 ===');
+    console.log('loading:', loading);
+    console.log('step:', step);
+    console.log('isGoogleUser:', isGoogleUser);
+    console.log('error:', error);
+    console.log('establishmentData:', establishmentData);
+    
+    return (
     <form onSubmit={handleFinalSubmit} className="space-y-8">
       <div className="flex justify-between items-center border-b pb-4 mb-4">
         <button 
@@ -652,7 +667,6 @@ export default function EstablishmentRegistration() {
                 maxLength={18}
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
                 placeholder="00.000.000/0000-00"
-                disabled={loading}
                 required
               />
               {cnpjVerified && (
@@ -787,7 +801,6 @@ export default function EstablishmentRegistration() {
             maxLength={8}
             className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
             placeholder="00000000"
-            disabled={loading}
             required
           />
         </label>
@@ -992,7 +1005,8 @@ export default function EstablishmentRegistration() {
         Finalizar Cadastro e Assinar Plano <ChevronRight size={24} />
       </button>
     </form>
-  );
+    );
+  };
 
 
   // --- LAYOUT ---

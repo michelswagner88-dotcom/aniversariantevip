@@ -1,5 +1,9 @@
-import { Car, Navigation, Map } from 'lucide-react';
+import { Car, Navigation, Map as MapIcon } from 'lucide-react';
+import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import { supabase } from '@/integrations/supabase/client';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { calcularDistancia } from '@/lib/geoUtils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface NavigationButtonsProps {
   establishmentId: string;
@@ -7,9 +11,18 @@ interface NavigationButtonsProps {
   address: string;
   latitude: number;
   longitude: number;
+  cidade?: string;
+  estado?: string;
+  bairro?: string;
+  rua?: string;
+  numero?: string;
+  complemento?: string;
+  cep?: string;
 }
 
 type AppName = 'uber' | '99' | 'waze' | 'maps';
+
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
 export const NavigationButtons = ({
   establishmentId,
@@ -17,7 +30,15 @@ export const NavigationButtons = ({
   address,
   latitude,
   longitude,
+  cidade,
+  estado,
+  bairro,
+  rua,
+  numero,
+  complemento,
+  cep,
 }: NavigationButtonsProps) => {
+  const { location: userLocation } = useUserLocation();
   
   // Fire-and-forget: registra o clique sem bloquear o usuário
   const trackNavigation = async (appName: AppName) => {
@@ -56,7 +77,7 @@ export const NavigationButtons = ({
 
     return {
       uber: `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[latitude]=${lat}&dropoff[longitude]=${lng}&dropoff[nickname]=${encodedName}`,
-      '99': `https://99app.com/`, // Fallback web (deep link nnapp:// não funciona universal)
+      '99': `https://99app.com/deep-link?destination_lat=${lat}&destination_lng=${lng}&destination_title=${encodedName}`,
       waze: `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`,
       maps: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
     };
@@ -64,55 +85,119 @@ export const NavigationButtons = ({
 
   const links = getDeepLinks();
 
+  // Formatar endereço completo
+  const enderecoCompleto = [
+    rua && numero ? `${rua}, ${numero}` : null,
+    complemento,
+    bairro,
+    cidade && estado ? `${cidade}/${estado}` : null,
+  ].filter(Boolean).join(' - ');
+
+  // Calcular distância do usuário
+  const distancia = userLocation ? calcularDistancia(
+    userLocation.lat,
+    userLocation.lng,
+    latitude,
+    longitude
+  ) : null;
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Navigation className="w-5 h-5 text-violet-400" />
-        <h3 className="text-lg font-bold text-white">Como Chegar</h3>
-      </div>
+    <Card className="bg-slate-900/50 border-white/10">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-white">
+          <MapIcon className="w-5 h-5 text-violet-400" />
+          Localização
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Mapa */}
+        {GOOGLE_MAPS_API_KEY && (
+          <div className="rounded-lg overflow-hidden">
+            <LoadScript googleMapsApiKey={GOOGLE_MAPS_API_KEY}>
+              <GoogleMap
+                mapContainerStyle={{ width: '100%', height: '250px' }}
+                center={{ lat: latitude, lng: longitude }}
+                zoom={15}
+                options={{
+                  disableDefaultUI: true,
+                  zoomControl: true,
+                }}
+              >
+                <Marker position={{ lat: latitude, lng: longitude }} />
+              </GoogleMap>
+            </LoadScript>
+          </div>
+        )}
 
-      {/* Grid 2x2 otimizado para mobile */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Uber - Preto */}
-        <button
-          onClick={() => handleNavigation('uber', links.uber)}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-black border border-white/10 hover:border-white/30 transition-all active:scale-95 group"
-        >
-          <Car className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-semibold text-white">Uber</span>
-        </button>
+        {/* Endereço */}
+        <div className="space-y-1">
+          <p className="text-slate-300 text-sm leading-relaxed">
+            {enderecoCompleto || address}
+          </p>
+          {cep && (
+            <p className="text-slate-500 text-xs">
+              CEP: {cep}
+            </p>
+          )}
+        </div>
 
-        {/* 99 - Amarelo */}
-        <button
-          onClick={() => handleNavigation('99', links['99'])}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-amber-400 border border-amber-500 hover:border-amber-600 transition-all active:scale-95 group"
-        >
-          <Car className="w-6 h-6 text-black group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-semibold text-black">99</span>
-        </button>
+        {/* Distância do usuário */}
+        {distancia !== null && (
+          <div className="flex items-center gap-2 text-sm text-slate-400 pt-2 border-t border-white/10">
+            <Navigation className="w-4 h-4" />
+            <span>
+              {distancia < 1
+                ? `${Math.round(distancia * 1000)}m de você`
+                : `${distancia.toFixed(1)}km de você`
+              }
+            </span>
+          </div>
+        )}
 
-        {/* Waze - Azul Ciano */}
-        <button
-          onClick={() => handleNavigation('waze', links.waze)}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-cyan-500 border border-cyan-600 hover:border-cyan-700 transition-all active:scale-95 group"
-        >
-          <Navigation className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-semibold text-white">Waze</span>
-        </button>
+        {/* Botões de navegação */}
+        <div className="space-y-3 pt-2">
+          <p className="text-sm text-slate-400">Ir com:</p>
+          
+          {/* Grid 2x2 otimizado para mobile */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Google Maps */}
+            <button
+              onClick={() => handleNavigation('maps', links.maps)}
+              className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-emerald-600/20 border border-emerald-600/30 hover:bg-emerald-600/30 transition-all active:scale-95 group"
+            >
+              <MapIcon className="w-6 h-6 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-semibold text-emerald-400">Maps</span>
+            </button>
 
-        {/* Google Maps - Verde */}
-        <button
-          onClick={() => handleNavigation('maps', links.maps)}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-emerald-600 border border-emerald-700 hover:border-emerald-800 transition-all active:scale-95 group"
-        >
-          <Map className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-semibold text-white">Google Maps</span>
-        </button>
-      </div>
+            {/* Waze */}
+            <button
+              onClick={() => handleNavigation('waze', links.waze)}
+              className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-cyan-500/20 border border-cyan-500/30 hover:bg-cyan-500/30 transition-all active:scale-95 group"
+            >
+              <Navigation className="w-6 h-6 text-cyan-400 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-semibold text-cyan-400">Waze</span>
+            </button>
 
-      <p className="text-xs text-slate-500 text-center mt-3">
-        📍 {address}
-      </p>
-    </div>
+            {/* Uber */}
+            <button
+              onClick={() => handleNavigation('uber', links.uber)}
+              className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-slate-950 border border-white/20 hover:border-white/40 transition-all active:scale-95 group"
+            >
+              <Car className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-semibold text-white">Uber</span>
+            </button>
+
+            {/* 99 */}
+            <button
+              onClick={() => handleNavigation('99', links['99'])}
+              className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-amber-400/20 border border-amber-400/30 hover:bg-amber-400/30 transition-all active:scale-95 group"
+            >
+              <Car className="w-6 h-6 text-amber-400 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-semibold text-amber-400">99</span>
+            </button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

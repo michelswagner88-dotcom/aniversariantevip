@@ -30,6 +30,11 @@ interface Estabelecimento {
   endereco: string | null;
   cidade: string | null;
   estado: string | null;
+  bairro?: string | null;
+  rua?: string | null;
+  numero?: string | null;
+  complemento?: string | null;
+  cep?: string | null;
   telefone: string | null;
   whatsapp: string | null;
   instagram: string | null;
@@ -394,34 +399,19 @@ export default function EstabelecimentoDetalhes() {
 
           {/* Essential Information */}
           <Accordion type="single" collapsible className="space-y-3">
-            {/* Address */}
-            {estabelecimento.endereco && (
-              <AccordionItem value="endereco" className="rounded-xl bg-white/5 backdrop-blur-md border border-white/10 px-4">
-                <AccordionTrigger className="hover:no-underline">
-                  <div className="flex items-center gap-3 text-white">
-                    <MapPin className="w-5 h-5 text-violet-400" />
-                    <span className="font-semibold">Endereço</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="space-y-4 pt-4">
-                  <p className="text-slate-300 text-sm mb-4">
-                    {estabelecimento.endereco}
-                    {estabelecimento.cidade && `, ${estabelecimento.cidade}`}
-                    {estabelecimento.estado && ` - ${estabelecimento.estado}`}
-                  </p>
-                  
-                  {/* Botões de Navegação - Só aparecem se tiver coordenadas */}
-                  {estabelecimento.latitude && estabelecimento.longitude && (
-                    <NavigationButtons
-                      establishmentId={estabelecimento.id}
-                      establishmentName={estabelecimento.nome_fantasia}
-                      address={`${estabelecimento.endereco}, ${estabelecimento.cidade} - ${estabelecimento.estado}`}
-                      latitude={estabelecimento.latitude}
-                      longitude={estabelecimento.longitude}
-                    />
-                  )}
-                </AccordionContent>
-              </AccordionItem>
+            {/* Seção de Localização - Só aparece se tiver coordenadas */}
+            {estabelecimento.latitude && estabelecimento.longitude && (
+              <div className="my-6">
+                <NavigationButtons
+                  establishmentId={estabelecimento.id}
+                  establishmentName={estabelecimento.nome_fantasia}
+                  address={estabelecimento.endereco || ''}
+                  latitude={estabelecimento.latitude}
+                  longitude={estabelecimento.longitude}
+                  cidade={estabelecimento.cidade || undefined}
+                  estado={estabelecimento.estado || undefined}
+                />
+              </div>
             )}
 
             {/* Hours */}

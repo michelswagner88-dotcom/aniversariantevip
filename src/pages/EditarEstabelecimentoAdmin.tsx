@@ -197,13 +197,14 @@ export default function EditarEstabelecimentoAdmin() {
         .eq('id', id)
         .single();
 
+      console.log('=== RESPOSTA DO BANCO ===');
       console.log('Status:', status);
-      console.log('Data:', data);
+      console.log('Data completa:', JSON.stringify(data, null, 2));
       console.log('Error:', error);
 
       if (error) {
         console.error('Erro ao buscar:', error);
-        toast.error('Erro ao carregar estabelecimento');
+        toast.error(`Erro ao carregar: ${error.message}`);
         setLoading(false);
         return;
       }
@@ -215,42 +216,50 @@ export default function EditarEstabelecimentoAdmin() {
         return;
       }
 
-      if (data) {
-        setEstablishmentData({
-          cnpj: formatCNPJ(data.cnpj || ''),
-          name: data.nome_fantasia || '',
-          cep: data.cep || '',
-          logradouro: data.logradouro || '',
-          numero: data.numero || '',
-          semNumero: !data.numero,
-          complemento: data.complemento || '',
-          bairro: data.bairro || '',
-          cidade: data.cidade || '',
-          estado: data.estado || '',
-          isMall: false,
-          categories: data.categoria || [],
-          menuLink: data.link_cardapio || '',
-          siteLink: data.site || '',
-          instagramUser: data.instagram?.replace('@', '') || '',
-          phoneFixed: data.telefone || '',
-          phoneWhatsapp: data.whatsapp || '',
-          slogan: '',
-          mainPhotoUrl: data.logo_url || '',
-          hoursJson: data.horario_funcionamento || '',
-        });
+      // Preencher todos os campos do formulário
+      const novoEstablishmentData = {
+        cnpj: formatCNPJ(data.cnpj || ''),
+        name: data.nome_fantasia || '',
+        cep: data.cep || '',
+        logradouro: data.logradouro || '',
+        numero: data.numero || '',
+        semNumero: !data.numero,
+        complemento: data.complemento || '',
+        bairro: data.bairro || '',
+        cidade: data.cidade || '',
+        estado: data.estado || '',
+        isMall: false,
+        categories: data.categoria || [],
+        menuLink: data.link_cardapio || '',
+        siteLink: data.site || '',
+        instagramUser: data.instagram?.replace('@', '') || '',
+        phoneFixed: data.telefone || '',
+        phoneWhatsapp: data.whatsapp || '',
+        slogan: '',
+        mainPhotoUrl: data.logo_url || '',
+        hoursJson: data.horario_funcionamento || '',
+      };
 
-        setRules({
-          description: data.regras_utilizacao || '',
-          scope: data.periodo_validade_beneficio === 'semana_aniversario' ? 'Semana' 
-                 : data.periodo_validade_beneficio === 'mes_aniversario' ? 'Mês'
-                 : 'Dia'
-        });
+      console.log('=== DADOS MAPEADOS ===');
+      console.log('Nome:', novoEstablishmentData.name);
+      console.log('Cidade:', novoEstablishmentData.cidade);
+      console.log('Estado:', novoEstablishmentData.estado);
+      console.log('Bairro:', novoEstablishmentData.bairro);
+      console.log('Logradouro:', novoEstablishmentData.logradouro);
 
-        setCnpjVerified(true);
-        console.log('Campos preenchidos com sucesso!');
-      }
+      setEstablishmentData(novoEstablishmentData);
+
+      setRules({
+        description: data.regras_utilizacao || '',
+        scope: data.periodo_validade_beneficio === 'semana_aniversario' ? 'Semana' 
+               : data.periodo_validade_beneficio === 'mes_aniversario' ? 'Mês'
+               : 'Dia'
+      });
+
+      setCnpjVerified(true);
+      console.log('✅ Dados carregados e formulário preenchido com sucesso!');
     } catch (error: any) {
-      console.error('Erro ao carregar:', error);
+      console.error('❌ Exceção ao carregar:', error);
       toast.error('Erro ao carregar estabelecimento');
     } finally {
       setLoading(false);

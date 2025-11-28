@@ -10,7 +10,7 @@ export const Footer = () => {
           {/* Coluna 1 - Marca */}
           <div>
             <Link to="/" className="inline-block mb-4 group">
-              <h2 className="font-display font-extrabold text-xl md:text-2xl tracking-tight text-white transition-all duration-300 group-hover:scale-105">
+              <h2 className="font-display font-extrabold text-xl md:text-2xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 transition-all duration-300 group-hover:scale-105">
                 ANIVERSARIANTE VIP
               </h2>
             </Link>

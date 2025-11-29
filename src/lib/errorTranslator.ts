@@ -98,10 +98,28 @@ export const getFriendlyErrorMessage = (error: any): string => {
     return 'E-mail inválido. Verifique o formato.';
   }
 
+  // CNPJ errors
+  if (errorLower.includes('cnpj não encontrado') || errorLower.includes('cnpj not found')) {
+    return 'CNPJ não encontrado na Receita Federal. Verifique o número.';
+  }
+
+  if (errorLower.includes('cnpj já cadastrado') || errorLower.includes('cnpj already exists')) {
+    return 'Este CNPJ já está cadastrado na plataforma.';
+  }
+
+  if (errorLower.includes('cnpj inválido') || errorLower.includes('invalid cnpj')) {
+    return 'CNPJ inválido. Verifique os dígitos.';
+  }
+
+  if (errorLower.includes('situação cadastral') || errorLower.includes('empresa inativa')) {
+    return errorMessage; // Retorna a mensagem original que já é amigável
+  }
+
   // Limite de taxa (rate limit)
   if (errorLower.includes('rate limit') || 
-      errorLower.includes('too many requests')) {
-    return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+      errorLower.includes('too many requests') ||
+      errorLower.includes('429')) {
+    return 'Muitas consultas. Aguarde um momento e tente novamente.';
   }
 
   // Fallback: Erro genérico (nunca mostra erro técnico)

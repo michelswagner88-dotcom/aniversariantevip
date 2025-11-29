@@ -263,9 +263,6 @@ const EstabelecimentoDetalhe = () => {
             >
               <MapPin className="w-4 h-4 mt-1 flex-shrink-0 group-hover:text-violet-400" />
               <p className="text-sm">
-                {estabelecimento.logradouro}, {estabelecimento.numero}
-                {estabelecimento.complemento && ` - ${estabelecimento.complemento}`}
-                <br />
                 {estabelecimento.bairro} • {estabelecimento.cidade}/{estabelecimento.estado}
               </p>
               <ExternalLink className="w-3 h-3 mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />

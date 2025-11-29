@@ -31,6 +31,7 @@ import { BackButton } from '@/components/BackButton';
 import { TelaConfirmacaoEmail } from '@/components/TelaConfirmacaoEmail';
 import { validateCNPJ, formatCNPJ, fetchCNPJData } from '@/lib/validators';
 import { useCepLookup } from '@/hooks/useCepLookup';
+import { useLogradouroExtractor } from '@/hooks/useLogradouroExtractor';
 import { getFriendlyErrorMessage } from '@/lib/errorTranslator';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -266,6 +267,7 @@ const [horarioTemp, setHorarioTemp] = useState({
   const [error, setError] = useState('');
   
   const { fetchCep: lookupCep } = useCepLookup();
+  const { extractLogradouro, validateLogradouro } = useLogradouroExtractor();
 
   // Detectar retorno do Google OAuth
   useEffect(() => {
@@ -529,6 +531,10 @@ const [horarioTemp, setHorarioTemp] = useState({
         toast.warning(`Atenção: Este CNPJ está com situação "${data.descricao_situacao_cadastral}" na Receita Federal.`);
       }
 
+      // Extrair e validar logradouro automaticamente da BrasilAPI
+      const logradouroExtraido = extractLogradouro(data.logradouro || '');
+      const validacaoLogradouro = logradouroExtraido ? validateLogradouro(logradouroExtraido) : null;
+
       // Preencher campos automaticamente (apenas se estiverem vazios)
       setEstablishmentData(prev => ({
         ...prev,
@@ -538,10 +544,14 @@ const [horarioTemp, setHorarioTemp] = useState({
         estado: prev.estado || data.uf || '',
         cidade: prev.cidade || data.municipio || '',
         bairro: prev.bairro || data.bairro || '',
-        logradouro: prev.logradouro || data.logradouro || '',
+        logradouro: prev.logradouro || (validacaoLogradouro?.valid ? logradouroExtraido : data.logradouro) || '',
         numero: prev.numero || data.numero || '',
         complemento: prev.complemento || data.complemento || '',
       }));
+
+      if (validacaoLogradouro?.valid) {
+        console.log('✅ Logradouro extraído e validado via CNPJ:', logradouroExtraido);
+      }
 
       setCnpjVerified(true);
       toast.success('CNPJ verificado! Dados preenchidos automaticamente.');
@@ -574,13 +584,21 @@ const [horarioTemp, setHorarioTemp] = useState({
       const data = await lookupCep(rawCep);
       
       if (data) {
+        // Extrair e validar logradouro automaticamente
+        const logradouroExtraido = extractLogradouro(data.logradouro || '');
+        const validacao = logradouroExtraido ? validateLogradouro(logradouroExtraido) : null;
+
         setEstablishmentData(prev => ({
           ...prev,
-          logradouro: data.logradouro || '',
+          logradouro: validacao?.valid ? logradouroExtraido : (data.logradouro || ''),
           bairro: data.bairro || '',
           cidade: data.localidade || '',
           estado: data.uf || '',
         }));
+
+        if (validacao?.valid) {
+          console.log('✅ Logradouro validado e populado:', logradouroExtraido);
+        }
       }
     } catch (error) {
       console.error('Erro ao buscar CEP:', error);

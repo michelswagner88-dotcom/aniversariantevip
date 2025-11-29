@@ -665,7 +665,7 @@ export default function EstablishmentRegistration() {
                 value={establishmentData.cnpj}
                 onChange={handleCnpjChange}
                 maxLength={18}
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
                 placeholder="00.000.000/0000-00"
                 required
               />
@@ -696,7 +696,7 @@ export default function EstablishmentRegistration() {
             type="text" 
             value={establishmentData.name}
             onChange={(e) => setEstablishmentData(prev => ({ ...prev, name: e.target.value }))}
-            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
             placeholder="Nome do seu estabelecimento"
             required
           />
@@ -707,7 +707,7 @@ export default function EstablishmentRegistration() {
             type="text" 
             value={establishmentData.slogan}
             onChange={(e) => setEstablishmentData(prev => ({ ...prev, slogan: e.target.value.substring(0, 50) }))}
-            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
             placeholder="Ex: O melhor açaí da cidade!"
           />
         </label>
@@ -730,7 +730,7 @@ export default function EstablishmentRegistration() {
               value={formatPhone(establishmentData.phoneFixed)} 
               onChange={(e) => setEstablishmentData(prev => ({ ...prev, phoneFixed: e.target.value.replace(/\D/g, '') }))}
               maxLength={14}
-              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
               placeholder="(XX) XXXX-XXXX"
             />
           </div>
@@ -746,7 +746,7 @@ export default function EstablishmentRegistration() {
               value={formatPhone(establishmentData.phoneWhatsapp)} 
               onChange={(e) => setEstablishmentData(prev => ({ ...prev, phoneWhatsapp: e.target.value.replace(/\D/g, '') }))}
               maxLength={15}
-              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
               placeholder="(XX) 9XXXX-XXXX"
             />
           </div>
@@ -763,7 +763,7 @@ export default function EstablishmentRegistration() {
               type="url" 
               value={establishmentData.siteLink} 
               onChange={(e) => setEstablishmentData(prev => ({ ...prev, siteLink: e.target.value }))}
-              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
               placeholder="https://www.suaempresa.com.br"
             />
             <p className="mt-1 text-xs text-slate-500">Este link aparecerá na seção 'Informações' do Card.</p>
@@ -780,7 +780,7 @@ export default function EstablishmentRegistration() {
               type="text" 
               value={establishmentData.instagramUser} 
               onChange={(e) => setEstablishmentData(prev => ({ ...prev, instagramUser: e.target.value.replace('@', '') }))}
-              className="w-full pl-16 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              className="w-full pl-16 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
               placeholder="seuusuário"
             />
           </div>
@@ -799,7 +799,7 @@ export default function EstablishmentRegistration() {
             value={establishmentData.cep}
             onChange={(e) => fetchCep(e.target.value)}
             maxLength={8}
-            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
             placeholder="00000000"
             required
           />
@@ -813,7 +813,7 @@ export default function EstablishmentRegistration() {
               type="text" 
               value={establishmentData.estado}
               onChange={(e) => setEstablishmentData(prev => ({ ...prev, estado: e.target.value }))}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
               required
             />
           </label>
@@ -823,7 +823,7 @@ export default function EstablishmentRegistration() {
               type="text" 
               value={establishmentData.cidade}
               onChange={(e) => setEstablishmentData(prev => ({ ...prev, cidade: e.target.value }))}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
               required
             />
           </label>
@@ -835,7 +835,7 @@ export default function EstablishmentRegistration() {
             type="text" 
             value={establishmentData.bairro}
             onChange={(e) => setEstablishmentData(prev => ({ ...prev, bairro: e.target.value }))}
-            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
             required
           />
         </label>
@@ -846,7 +846,7 @@ export default function EstablishmentRegistration() {
             type="text" 
             value={establishmentData.logradouro} 
             onChange={(e) => setEstablishmentData(prev => ({ ...prev, logradouro: e.target.value }))}
-            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
             required
           />
         </label>
@@ -860,7 +860,7 @@ export default function EstablishmentRegistration() {
               value={establishmentData.numero} 
               onChange={(e) => setEstablishmentData(prev => ({ ...prev, numero: e.target.value.replace(/\D/g, '') }))}
               disabled={establishmentData.semNumero}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none disabled:bg-slate-100"
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none disabled:bg-slate-100 text-slate-900"
               required={!establishmentData.semNumero}
             />
           </label>
@@ -885,7 +885,7 @@ export default function EstablishmentRegistration() {
               type="text" 
               value={establishmentData.complemento} 
               onChange={(e) => setEstablishmentData(prev => ({ ...prev, complemento: e.target.value }))}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
             />
           </label>
           
@@ -942,7 +942,7 @@ export default function EstablishmentRegistration() {
               type="url" 
               value={establishmentData.menuLink} 
               onChange={(e) => setEstablishmentData(prev => ({ ...prev, menuLink: e.target.value }))}
-              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none"
+              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
               placeholder="https://linkdocardapio.com.br"
             />
              <p className="mt-1 text-xs text-slate-500">Este link é acessível diretamente pelo cliente no Card principal.</p>

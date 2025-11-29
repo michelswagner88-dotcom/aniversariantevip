@@ -15,6 +15,7 @@ import * as Sentry from "@sentry/react";
 import { Button } from "@/components/ui/button";
 import ProtectedEstabelecimentoRoute from "@/components/auth/ProtectedEstabelecimentoRoute";
 import ProtectedAniversarianteRoute from "@/components/auth/ProtectedAniversarianteRoute";
+import ProtectedAdminRoute from "@/components/auth/ProtectedAdminRoute";
 
 // Lazy load das páginas principais
 const Index = lazy(() => import("./pages/Index"));
@@ -152,8 +153,22 @@ const App = () => (
                 <Route path="/area-colaborador" element={<Navigate to="/admin/dashboard" replace />} />
                 <Route path="/setup-admin" element={<LazyRoute><SetupAdmin /></LazyRoute>} />
                 <Route path="/admin" element={<LazyRoute><AdminLogin /></LazyRoute>} />
-                <Route path="/admin/dashboard" element={<LazyRoute><AdminDashboard /></LazyRoute>} />
-                <Route path="/admin/import" element={<LazyRoute><AdminImport /></LazyRoute>} />
+                <Route 
+                  path="/admin/dashboard" 
+                  element={
+                    <ProtectedAdminRoute>
+                      <LazyRoute><AdminDashboard /></LazyRoute>
+                    </ProtectedAdminRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/import" 
+                  element={
+                    <ProtectedAdminRoute>
+                      <LazyRoute><AdminImport /></LazyRoute>
+                    </ProtectedAdminRoute>
+                  } 
+                />
                 <Route 
                   path="/afiliado" 
                   element={

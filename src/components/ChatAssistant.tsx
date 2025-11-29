@@ -37,16 +37,16 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
     }
   }, [messages]);
 
-  // IntersectionObserver para detectar footer
+  // IntersectionObserver para detectar footer e elevar chat
   useEffect(() => {
     const footer = document.querySelector('footer');
     if (!footer) return;
     
     const observer = new IntersectionObserver(
       ([entry]) => {
-        document.body.classList.toggle('footer-in-view', entry.isIntersecting);
+        document.body.classList.toggle('footer-visible', entry.isIntersecting);
       },
-      { threshold: 0.1, rootMargin: '0px 0px -80px 0px' }
+      { threshold: 0.1 }
     );
     
     observer.observe(footer);
@@ -141,14 +141,15 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
 
   return (
     <>
-      {/* Botão Flutuante - Posição Segura Acima de Tudo */}
+      {/* Botão Flutuante */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="chat-bubble-safe fixed right-5 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-premium-lg shadow-violet-500/30 transition-all duration-180 hover:scale-105 hover:shadow-violet-500/40 active:scale-95"
+          className="chat-bubble fixed flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 text-white shadow-lg transition-all duration-300 hover:scale-110"
           style={{ 
-            bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
-            zIndex: 45
+            bottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
+            right: '1.25rem',
+            zIndex: 50
           }}
           aria-label="Abrir chat assistente"
         >
@@ -160,13 +161,14 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
         </button>
       )}
 
-      {/* Janela do Chat - Posição Segura Acima de Tudo */}
+      {/* Janela do Chat */}
       {isOpen && (
         <div 
-          className="chat-bubble-safe fixed right-5 flex h-[600px] w-[380px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-premium-lg animate-in slide-in-from-bottom-10 fade-in"
+          className="chat-bubble fixed flex flex-col w-[380px] h-[600px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl"
           style={{ 
-            bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
-            zIndex: 45
+            bottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
+            right: '1.25rem',
+            zIndex: 50
           }}
         >
           

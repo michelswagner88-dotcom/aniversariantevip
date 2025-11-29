@@ -324,34 +324,69 @@ const [horarioTemp, setHorarioTemp] = useState({
     return telefone;
   };
 
-  // Processar imagem para formato quadrado 1:1
+  // Processar imagem de forma tolerante (aceita qualquer foto)
   const processImage = (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const img = new window.Image();
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
+      
       img.onload = () => {
-        // Tamanho quadrado com boa resolução
-        const size = 400;
-        canvas.width = size;
-        canvas.height = size;
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            // Se canvas não funcionar, retorna arquivo original
+            console.log('Canvas não disponível, usando imagem original');
+            resolve(file);
+            return;
+          }
 
-        // Calcular crop centralizado para ficar quadrado
-        const minDimension = Math.min(img.width, img.height);
-        const sx = (img.width - minDimension) / 2;
-        const sy = (img.height - minDimension) / 2;
+          // Tamanho quadrado 400x400 com boa qualidade
+          const size = 400;
+          canvas.width = size;
+          canvas.height = size;
 
-        // Desenhar imagem cortada e redimensionada
-        ctx?.drawImage(img, sx, sy, minDimension, minDimension, 0, 0, size, size);
+          // Fundo branco (para PNGs transparentes)
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, size, size);
 
-        canvas.toBlob((blob) => {
-          blob ? resolve(blob) : reject(new Error('Erro ao processar'));
-        }, 'image/jpeg', 0.9);
+          // Calcular crop centralizado para ficar quadrado
+          const minDimension = Math.min(img.width, img.height);
+          const sx = (img.width - minDimension) / 2;
+          const sy = (img.height - minDimension) / 2;
+
+          // Desenhar imagem redimensionada
+          ctx.drawImage(img, sx, sy, minDimension, minDimension, 0, 0, size, size);
+
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                // Fallback: retorna arquivo original
+                console.log('Erro ao gerar blob, usando original');
+                resolve(file);
+              }
+            },
+            'image/jpeg',
+            0.85
+          );
+        } catch (err) {
+          // Qualquer erro: retorna arquivo original
+          console.log('Erro no processamento, usando original:', err);
+          resolve(file);
+        }
       };
 
-      img.onerror = () => reject(new Error('Erro ao carregar imagem'));
-      img.src = URL.createObjectURL(file);
+      img.onerror = () => {
+        // Se não conseguir carregar, rejeita com mensagem amigável
+        console.log('Erro ao carregar imagem');
+        reject(new Error('Não foi possível carregar a imagem. Tente outra foto.'));
+      };
+
+      // Criar URL para a imagem
+      const objectUrl = URL.createObjectURL(file);
+      img.src = objectUrl;
     });
   };
 
@@ -359,24 +394,37 @@ const [horarioTemp, setHorarioTemp] = useState({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Selecione uma imagem válida');
+    // Aceitar QUALQUER arquivo de imagem
+    const isImage = file.type.startsWith('image/') || 
+                    /\.(jpg|jpeg|png|gif|webp|bmp|heic|heif|tiff|svg)$/i.test(file.name);
+    
+    if (!isImage) {
+      toast.error('Por favor, selecione um arquivo de imagem');
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Imagem muito grande. Máximo 10MB.');
+    // Limite generoso de 25MB
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error('Imagem muito grande. Máximo 25MB.');
       return;
     }
 
     setUploadingImage(true);
 
     try {
+      // Processar imagem
       const processedBlob = await processImage(file);
+      
+      // Criar preview
       const previewUrl = URL.createObjectURL(processedBlob);
       setImagePreview(previewUrl);
       
-      const processedFile = new File([processedBlob], `foto_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      // Criar arquivo processado
+      const processedFile = new File(
+        [processedBlob], 
+        `foto_${Date.now()}.jpg`, 
+        { type: 'image/jpeg' }
+      );
       setSelectedImage(processedFile);
       
       // Upload para Supabase Storage
@@ -388,17 +436,23 @@ const [horarioTemp, setHorarioTemp] = useState({
           upsert: false
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro no upload:', error);
+        toast.error('Erro ao enviar foto. Tente novamente.');
+        setUploadingImage(false);
+        return;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('establishment-photos')
         .getPublicUrl(fileName);
 
       setEstablishmentData(prev => ({ ...prev, mainPhotoUrl: publicUrl }));
-      toast.success('Foto enviada com sucesso!');
-    } catch (error) {
-      console.error('Erro ao processar foto:', error);
-      toast.error('Erro ao processar foto');
+      toast.success('Foto adicionada com sucesso!');
+
+    } catch (error: any) {
+      console.error('Erro ao processar imagem:', error);
+      toast.error(error.message || 'Erro ao processar foto. Tente outra imagem.');
     } finally {
       setUploadingImage(false);
     }
@@ -610,6 +664,13 @@ const [horarioTemp, setHorarioTemp] = useState({
 
     const rawCnpj = establishmentData.cnpj.replace(/\D/g, '');
     const isPhoneFilled = establishmentData.phoneFixed || establishmentData.phoneWhatsapp;
+
+    // Validar foto obrigatória
+    if (!selectedImage && !imagePreview && establishmentData.mainPhotoUrl === 'https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)') {
+      setError('Adicione uma foto do estabelecimento');
+      toast.error('Adicione uma foto do estabelecimento');
+      return;
+    }
 
     // Validar CNPJ verificado
     if (!cnpjVerified) {
@@ -1276,7 +1337,7 @@ const [horarioTemp, setHorarioTemp] = useState({
 
         {/* Foto Principal */}
         <div className="space-y-3">
-          <span className="text-sm font-medium text-slate-700 block">Foto do Estabelecimento</span>
+          <span className="text-sm font-medium text-slate-700 block">Foto do Estabelecimento *</span>
           
           <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
             {/* Preview da Foto */}
@@ -1284,7 +1345,7 @@ const [horarioTemp, setHorarioTemp] = useState({
               {uploadingImage ? (
                 <div className="text-center">
                   <Loader2 className="w-10 h-10 animate-spin text-violet-500 mx-auto mb-2" />
-                  <p className="text-sm text-slate-600">Enviando...</p>
+                  <p className="text-sm text-slate-600">Processando...</p>
                 </div>
               ) : imagePreview ? (
                 <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
@@ -1294,7 +1355,7 @@ const [horarioTemp, setHorarioTemp] = useState({
                 <div className="text-center p-6">
                   <Camera className="w-12 h-12 text-slate-400 mx-auto mb-3" />
                   <p className="text-slate-500 text-sm font-medium">Nenhuma foto selecionada</p>
-                  <p className="text-slate-400 text-xs mt-1">Adicione uma foto do seu estabelecimento</p>
+                  <p className="text-slate-400 text-xs mt-1">Clique abaixo para adicionar</p>
                 </div>
               )}
             </div>
@@ -1339,6 +1400,10 @@ const [horarioTemp, setHorarioTemp] = useState({
                 </button>
               )}
             </div>
+            
+            <p className="text-xs text-slate-500 text-center mt-2">
+              Aceita qualquer imagem (JPG, PNG, GIF, WEBP, etc) até 25MB
+            </p>
           </div>
         </div>
       </div>

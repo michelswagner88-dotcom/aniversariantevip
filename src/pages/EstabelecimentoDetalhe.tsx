@@ -8,6 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import CupomModal from '@/components/CupomModal';
+import LoginRequiredModal from '@/components/LoginRequiredModal';
 
 const EstabelecimentoDetalhe = () => {
   const { id } = useParams();
@@ -15,8 +16,25 @@ const EstabelecimentoDetalhe = () => {
   const [estabelecimento, setEstabelecimento] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showCupomModal, setShowCupomModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [isFavorito, setIsFavorito] = useState(false);
   const [beneficioAberto, setBeneficioAberto] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const fetchEstabelecimento = async () => {
@@ -41,6 +59,19 @@ const EstabelecimentoDetalhe = () => {
 
     fetchEstabelecimento();
   }, [id, navigate]);
+
+  const handleVerBeneficio = () => {
+    if (!isLoggedIn) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    setBeneficioAberto(true);
+    setTimeout(() => {
+      setShowCupomModal(true);
+      setBeneficioAberto(false);
+    }, 800);
+  };
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -130,7 +161,14 @@ const EstabelecimentoDetalhe = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setIsFavorito(!isFavorito)}
+              onClick={() => {
+                if (!isLoggedIn) {
+                  setShowLoginModal(true);
+                  return;
+                }
+                setIsFavorito(!isFavorito);
+                toast.success(isFavorito ? 'Removido dos favoritos' : 'Adicionado aos favoritos');
+              }}
               className="bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 rounded-full"
             >
               <Heart className={`w-5 h-5 ${isFavorito ? 'fill-red-500 text-red-500' : ''}`} />
@@ -279,13 +317,7 @@ const EstabelecimentoDetalhe = () => {
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent">
         <div className="max-w-2xl mx-auto">
           <Button
-            onClick={() => {
-              setBeneficioAberto(true);
-              setTimeout(() => {
-                setShowCupomModal(true);
-                setBeneficioAberto(false);
-              }, 800);
-            }}
+            onClick={handleVerBeneficio}
             disabled={beneficioAberto}
             className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-lg py-6 h-auto rounded-xl shadow-lg shadow-violet-500/25 relative overflow-hidden group"
           >
@@ -331,6 +363,12 @@ const EstabelecimentoDetalhe = () => {
         isOpen={showCupomModal}
         onClose={() => setShowCupomModal(false)}
         estabelecimento={estabelecimento}
+      />
+
+      <LoginRequiredModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        returnUrl={window.location.pathname}
       />
 
     </div>

@@ -125,14 +125,14 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
 
   return (
     <>
-      {/* Botão Flutuante Premium com Safe Area */}
+      {/* Botão Flutuante - Posição Segura Acima de Tudo */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-premium-lg shadow-violet-500/30 transition-all duration-180 hover:scale-105 hover:shadow-violet-500/40 active:scale-95"
+          className="fixed right-5 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-premium-lg shadow-violet-500/30 transition-all duration-180 hover:scale-105 hover:shadow-violet-500/40 active:scale-95"
           style={{ 
-            bottom: 'max(1.5rem, calc(1.5rem + env(safe-area-inset-bottom, 0px)))',
-            marginBottom: '80px'
+            bottom: 'calc(90px + env(safe-area-inset-bottom, 0px))',
+            zIndex: 45
           }}
           aria-label="Abrir chat assistente"
         >
@@ -144,13 +144,13 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
         </button>
       )}
 
-      {/* Janela do Chat Premium */}
+      {/* Janela do Chat - Posição Segura Acima de Tudo */}
       {isOpen && (
         <div 
-          className="fixed right-5 z-40 flex h-[600px] w-[380px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-premium-lg animate-in slide-in-from-bottom-10 fade-in"
+          className="fixed right-5 flex h-[600px] w-[380px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-premium-lg animate-in slide-in-from-bottom-10 fade-in"
           style={{ 
-            bottom: 'max(1.5rem, calc(1.5rem + env(safe-area-inset-bottom, 0px)))',
-            marginBottom: '80px'
+            bottom: 'calc(90px + env(safe-area-inset-bottom, 0px))',
+            zIndex: 45
           }}
         >
           

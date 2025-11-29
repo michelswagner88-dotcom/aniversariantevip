@@ -112,8 +112,11 @@ const BottomNav = () => {
 
   return (
     <div 
-      className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-xl border-t border-white/[0.08]"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      className="sm:hidden fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-white/[0.08]"
+      style={{ 
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        zIndex: 50
+      }}
     >
       <div className="flex items-center justify-around px-2 py-2.5">
         {navItems.map((item) => {

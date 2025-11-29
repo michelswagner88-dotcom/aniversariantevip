@@ -6,8 +6,7 @@ export const Footer = () => {
   return (
     <footer className="mt-auto bg-slate-950 border-t border-white/[0.08]">
       <div 
-        className="container mx-auto px-4 py-10 sm:py-12" 
-        style={{ paddingBottom: 'max(3rem, calc(180px + env(safe-area-inset-bottom, 0px)))' }}
+        className="container mx-auto px-4 py-10 sm:py-12 pb-24" 
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 gap-y-10">
           {/* Coluna 1 - Marca */}

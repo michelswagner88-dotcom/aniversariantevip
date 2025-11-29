@@ -4,8 +4,8 @@ import { CONTATOS } from "@/lib/constants";
 
 export const Footer = () => {
   return (
-    <footer className="mt-auto bg-slate-950 border-t border-white/[0.08]">
-      <div className="container mx-auto px-4 py-10 sm:py-12 pb-32 sm:pb-12">
+    <footer className="relative z-10 mt-auto bg-black/80 backdrop-blur-sm border-t border-white/10">
+      <div className="container mx-auto px-4 py-10 sm:py-12" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 gap-y-10">
           {/* Coluna 1 - Marca */}
           <div>
@@ -27,19 +27,19 @@ export const Footer = () => {
             <nav className="flex flex-col gap-2.5">
               <Link 
                 to="/como-funciona" 
-                className="text-sm text-slate-300 opacity-80 hover:text-violet-400 hover:opacity-100 transition-all duration-180 hover:translate-x-0.5"
+                className="text-sm text-white/70 hover:text-violet-400 transition-all duration-180 hover:translate-x-0.5"
               >
                 Como Funciona
               </Link>
               <Link 
                 to="/explorar" 
-                className="text-sm text-slate-300 opacity-80 hover:text-violet-400 hover:opacity-100 transition-all duration-180 hover:translate-x-0.5"
+                className="text-sm text-white/70 hover:text-violet-400 transition-all duration-180 hover:translate-x-0.5"
               >
                 Explorar
               </Link>
               <Link 
                 to="/faq" 
-                className="text-sm text-slate-300 opacity-80 hover:text-violet-400 hover:opacity-100 transition-all duration-180 hover:translate-x-0.5"
+                className="text-sm text-white/70 hover:text-violet-400 transition-all duration-180 hover:translate-x-0.5"
               >
                 FAQ
               </Link>
@@ -54,13 +54,13 @@ export const Footer = () => {
             <nav className="flex flex-col gap-2">
               <Link 
                 to="/seja-parceiro" 
-                className="text-sm text-slate-400 hover:text-violet-400 transition-all hover:translate-x-1"
+                className="text-sm text-white/70 hover:text-violet-400 transition-all hover:translate-x-1"
               >
                 Seja Parceiro
               </Link>
               <Link 
                 to="/login/estabelecimento" 
-                className="text-sm text-slate-400 hover:text-violet-400 transition-all hover:translate-x-1"
+                className="text-sm text-white/70 hover:text-violet-400 transition-all hover:translate-x-1"
               >
                 Área do Estabelecimento
               </Link>
@@ -75,13 +75,13 @@ export const Footer = () => {
             <nav className="flex flex-col gap-2">
               <Link 
                 to="/termos-uso" 
-                className="text-sm text-slate-400 hover:text-violet-400 transition-all hover:translate-x-1"
+                className="text-sm text-white/70 hover:text-violet-400 transition-all hover:translate-x-1"
               >
                 Termos de Uso
               </Link>
               <Link 
                 to="/politica-privacidade" 
-                className="text-sm text-slate-400 hover:text-violet-400 transition-all hover:translate-x-1"
+                className="text-sm text-white/70 hover:text-violet-400 transition-all hover:translate-x-1"
               >
                 Política de Privacidade
               </Link>
@@ -90,8 +90,8 @@ export const Footer = () => {
         </div>
 
         {/* Linha de Copyright Premium */}
-        <div className="border-t border-white/[0.06] mt-10 pt-8">
-          <p className="text-center text-sm text-slate-400 opacity-75">
+        <div className="border-t border-white/10 mt-10 pt-8">
+          <p className="text-center text-sm text-white/80">
             © {new Date().getFullYear()} Aniversariante VIP. Todos os direitos reservados.
           </p>
         </div>

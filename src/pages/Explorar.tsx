@@ -94,7 +94,7 @@ const PlaceCard = ({ place }: any) => {
         <h3 className="font-plus-jakarta text-lg sm:text-xl font-bold text-white leading-tight">{place.name}</h3>
         <div className="mt-1 sm:mt-1.5 flex items-center gap-1.5 text-xs sm:text-sm text-slate-300">
           <MapPin size={14} className="text-violet-400" /> 
-          <span>{place.neighborhood} • {place.distance}</span>
+          <span>{place.neighborhood}{place.distance && ` • ${place.distance}`}</span>
         </div>
         <div className="mt-3 sm:mt-4 inline-flex items-center gap-2 sm:gap-2.5 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 shadow-2xl shadow-violet-500/30">
           <span className="text-base sm:text-lg font-extrabold text-white">
@@ -188,11 +188,11 @@ const Explorar = () => {
     name: est.nome_fantasia || est.razao_social,
     category: est.categoria?.[0] || "Outros",
     neighborhood: est.bairro || est.cidade || "",
-    distance: est.distancia !== null && est.distancia !== undefined
-      ? est.distancia < 1 
-        ? `${Math.round(est.distancia * 1000)}m` 
-        : `${est.distancia.toFixed(1)}km`
-      : "N/A",
+          distance: est.distancia !== null && est.distancia !== undefined
+            ? est.distancia < 1 
+              ? `${Math.round(est.distancia * 1000)}m` 
+              : `${est.distancia.toFixed(1)}km`
+            : null,
     benefit: est.descricao_beneficio || "Ver benefício exclusivo",
     validDays: ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'],
     latitude: est.latitude ? Number(est.latitude) : null,

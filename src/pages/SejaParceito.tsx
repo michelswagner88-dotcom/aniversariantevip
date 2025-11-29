@@ -10,7 +10,7 @@ export default function SejaParceiro() {
   const vantagens = [
     {
       titulo: "Mais movimento",
-      descricao: "Aniversariante raramente comemora sozinho. Ele traz amigos, família, colegas de trabalho. Um único cupom pode representar uma mesa cheia de novos clientes.",
+      descricao: "Quem ganha um benefício no aniversário cria uma memória positiva com seu estabelecimento. Essa experiência gera indicações e clientes que voltam durante o ano todo.",
       icon: Users,
     },
     {
@@ -84,7 +84,7 @@ export default function SejaParceiro() {
                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                   <span className="text-3xl font-bold text-primary">3</span>
                 </div>
-                <h3 className="text-lg font-semibold mb-3">Escolha o seu plano</h3>
+                <h3 className="text-lg font-semibold mb-3">Ative seu perfil</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   Escolha um dos planos disponíveis para ativar sua oferta na plataforma.
                 </p>
@@ -98,7 +98,7 @@ export default function SejaParceiro() {
                 </div>
                 <h3 className="text-lg font-semibold mb-3">Receba os aniversariantes</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Os aniversariantes emitem cupons no seu estabelecimento e apresentam no momento de utilização.
+                  Os aniversariantes encontram seu estabelecimento na plataforma e visitam para aproveitar o benefício apresentando documento com foto.
                 </p>
               </CardContent>
             </Card>

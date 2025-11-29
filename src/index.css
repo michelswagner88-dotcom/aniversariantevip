@@ -288,6 +288,44 @@ All colors MUST be HSL.
   .pause {
     animation-play-state: paused !important;
   }
+  
+  /* Chat bubble safe positioning */
+  .chat-bubble-safe {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  body.footer-in-view .chat-bubble-safe {
+    transform: translateY(-100px);
+  }
+  
+  /* Premium inputs */
+  input:not([type="checkbox"]):not([type="radio"]), 
+  textarea, 
+  select {
+    @apply bg-white/10 border border-white/20 text-white;
+    @apply placeholder:text-white/60;
+    @apply transition-all duration-200;
+  }
+  
+  input:not([type="checkbox"]):not([type="radio"]):hover, 
+  textarea:hover, 
+  select:hover {
+    @apply bg-white/15 border-white/30;
+  }
+  
+  input:not([type="checkbox"]):not([type="radio"]):focus, 
+  textarea:focus, 
+  select:focus {
+    @apply bg-white/20 border-violet-500/50;
+    @apply ring-2 ring-violet-500/30;
+    @apply outline-none;
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.15);
+  }
+  
+  /* Texto secundário legível */
+  .text-muted {
+    @apply text-white/85;
+  }
 }
 
 @media print {

@@ -133,20 +133,24 @@ const VoiceSearchBar = () => {
           {hasSupport && (
             <button 
               onClick={startListening}
-              className={`group relative flex h-10 w-10 items-center justify-center rounded-full transition-all ${
+              className={`group relative flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-all ${
                 isListening 
-                  ? 'bg-red-500/20 text-red-400 scale-110' 
-                  : 'hover:bg-white/10 text-slate-400 hover:text-white'
+                  ? 'bg-red-500/20 text-red-400 scale-105' 
+                  : 'hover:bg-white/10 text-slate-400 hover:text-violet-400'
               }`}
               title="Pesquisar por voz"
             >
               {isListening ? (
                 <>
-                  <span className="absolute inset-0 animate-ping rounded-full bg-red-500/30"></span>
-                  <Loader2 size={20} className="animate-spin" />
+                  <span className="absolute inset-0 animate-ping rounded-lg bg-red-500/30"></span>
+                  <Loader2 size={20} className="animate-spin relative z-10" />
+                  <span className="text-[9px] font-medium relative z-10">Ouvindo</span>
                 </>
               ) : (
-                <Mic size={20} />
+                <>
+                  <Mic size={20} />
+                  <span className="text-[9px] font-medium">Voz</span>
+                </>
               )}
             </button>
           )}

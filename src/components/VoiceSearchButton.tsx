@@ -2,6 +2,7 @@ import { Mic } from 'lucide-react';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface VoiceSearchButtonProps {
   onResult: (text: string) => void;
@@ -30,28 +31,41 @@ export const VoiceSearchButton = ({ onResult }: VoiceSearchButtonProps) => {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={startListening}
-        disabled={isListening}
-        className={`
-          p-2 rounded-full transition-all
-          ${isListening 
-            ? 'bg-red-500 animate-pulse' 
-            : 'bg-white/10 hover:bg-white/20'
-          }
-        `}
-        title={isListening ? 'Ouvindo...' : 'Pesquisar por voz'}
-      >
-        {isListening ? (
-          <div className="relative">
-            <Mic className="w-5 h-5 text-white" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full animate-ping" />
-          </div>
-        ) : (
-          <Mic className="w-5 h-5 text-gray-400" />
-        )}
-      </button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={startListening}
+              disabled={isListening}
+              className={`
+                flex flex-col items-center gap-1 p-2 rounded-lg transition-all group
+                ${isListening 
+                  ? 'bg-red-500/20 animate-pulse' 
+                  : 'bg-white/10 hover:bg-white/20'
+                }
+              `}
+            >
+              {isListening ? (
+                <div className="relative">
+                  <Mic className="w-5 h-5 text-red-400" />
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                </div>
+              ) : (
+                <>
+                  <Mic className="w-5 h-5 text-gray-400 group-hover:text-violet-400" />
+                  <span className="text-[10px] text-gray-500 group-hover:text-violet-400 font-medium">
+                    Voz
+                  </span>
+                </>
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="bg-slate-800 border-slate-700">
+            <p className="text-sm">🎤 Buscar por voz</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {/* Modal/Overlay quando está ouvindo */}
       {isListening && (

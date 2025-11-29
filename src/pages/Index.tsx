@@ -265,67 +265,68 @@ const Index = () => {
               }}
             >
               {/* Desktop Layout */}
-              <div className="hidden sm:flex items-center gap-0">
-                {/* Cidade - Smart Combobox */}
-                <div className="flex items-center gap-3 px-4 flex-1 min-w-[300px]">
-                  <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                  <CityCombobox
-                    value={selectedCidade && selectedEstado ? `${selectedCidade}, ${selectedEstado}` : ""}
-                    onSelect={handleCitySelect}
-                    placeholder="Digite a cidade"
-                    className="border-none bg-transparent shadow-none h-auto p-0 hover:bg-transparent"
-                  />
-                </div>
+              <div className="hidden sm:flex items-center gap-3">
+                {/* Botão de busca por voz - FORA do card */}
+                <VoiceSearchButton 
+                  onResult={(text) => {
+                    toast({ description: `Buscando: "${text}"` });
+                    navigate("/explorar");
+                  }} 
+                />
 
-                {/* Separador Vertical (Cristal) */}
-                <div className="h-8 w-[1px] bg-white/10" />
+                {/* Card transparente com os campos */}
+                <div className="flex items-center gap-0 flex-1">
+                  {/* Cidade - Smart Combobox */}
+                  <div className="flex items-center gap-3 px-4 flex-1 min-w-[300px]">
+                    <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                    <CityCombobox
+                      value={selectedCidade && selectedEstado ? `${selectedCidade}, ${selectedEstado}` : ""}
+                      onSelect={handleCitySelect}
+                      placeholder="Digite a cidade"
+                      className="border-none bg-transparent shadow-none h-auto p-0 hover:bg-transparent"
+                    />
+                  </div>
 
-                {/* Categoria */}
-                <div className="flex items-center gap-3 px-4">
-                  <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                  <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-                    <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 [&>span]:!bg-transparent [&>span]:appearance-none">
-                      <SelectValue placeholder="Escolha a categoria" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-slate-700 z-50">
-                      <SelectItem value="todas" className="text-white font-semibold">
-                        🎉 Ver todas
-                      </SelectItem>
-                      {CATEGORIAS_ESTABELECIMENTO.map(cat => (
-                        <SelectItem key={cat.value} value={cat.value} className="text-white">
-                          {cat.icon} {cat.label}
+                  {/* Separador Vertical (Cristal) */}
+                  <div className="h-8 w-[1px] bg-white/10" />
+
+                  {/* Categoria */}
+                  <div className="flex items-center gap-3 px-4">
+                    <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                    <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
+                      <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 [&>span]:!bg-transparent [&>span]:appearance-none">
+                        <SelectValue placeholder="Escolha a categoria" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-700 z-50">
+                        <SelectItem value="todas" className="text-white font-semibold">
+                          🎉 Ver todas
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        {CATEGORIAS_ESTABELECIMENTO.map(cat => (
+                          <SelectItem key={cat.value} value={cat.value} className="text-white">
+                            {cat.icon} {cat.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Separador Vertical (Cristal) */}
+                  <div className="h-8 w-[1px] bg-white/10" />
+
+                  {/* Limpar */}
+                  {(selectedCidade || (selectedCategoria && selectedCategoria !== 'todas' && selectedCategoria !== '')) && (
+                    <Button 
+                      size="lg"
+                      variant="ghost"
+                      onClick={limparFiltros}
+                      className="text-slate-400 hover:text-white hover:bg-white/5 h-12 px-4 rounded-xl"
+                    >
+                      <X className="w-5 h-5" />
+                    </Button>
+                  )}
                 </div>
 
-                {/* Separador Vertical (Cristal) */}
-                <div className="h-8 w-[1px] bg-white/10" />
-
-                {/* Limpar e Buscar */}
-                {(selectedCidade || (selectedCategoria && selectedCategoria !== 'todas' && selectedCategoria !== '')) && (
-                  <Button 
-                    size="lg"
-                    variant="ghost"
-                    onClick={limparFiltros}
-                    className="text-slate-400 hover:text-white hover:bg-white/5 h-12 px-4 rounded-xl"
-                  >
-                    <X className="w-5 h-5" />
-                  </Button>
-                )}
-
-                {/* Botão de busca por voz */}
-                <div className="px-2">
-                  <VoiceSearchButton 
-                    onResult={(text) => {
-                      // Tentar extrair cidade ou categoria da fala
-                      toast({ description: `Buscando: "${text}"` });
-                      navigate("/explorar");
-                    }} 
-                  />
-                </div>
-
+                {/* Botão Buscar */}
                 <Button 
                   size="lg"
                   onClick={() => navigate("/explorar")}
@@ -336,67 +337,74 @@ const Index = () => {
               </div>
 
               {/* Mobile Layout */}
-              <div className="sm:hidden flex flex-col">
-                {/* Cidade */}
-                <div className="flex items-center gap-3 px-4 h-12 border-b border-white/10 relative">
-                  <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                  <div className="flex-1 flex items-center relative">
-                    <CityCombobox
-                      value={selectedCidade && selectedEstado ? `${selectedCidade}, ${selectedEstado}` : ""}
-                      onSelect={handleCitySelect}
-                      placeholder="Digite a cidade"
-                      className="border-none bg-transparent shadow-none h-auto p-0 hover:bg-transparent"
-                    />
-                  </div>
-                </div>
-
-                {/* Categoria com Botão de Voz */}
-                <div className="flex items-center gap-3 px-4 h-12 border-b border-white/10">
+              <div className="sm:hidden space-y-3">
+                {/* Botão de busca por voz - FORA do card */}
+                <div className="flex justify-start">
                   <VoiceSearchButton 
                     onResult={(text) => {
                       toast({ description: `Buscando: "${text}"` });
                       navigate("/explorar");
                     }} 
                   />
-                  <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                  <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
-                    <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 [&>span]:!bg-transparent">
-                      <SelectValue placeholder="Escolha a categoria" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-slate-700 z-50">
-                      <SelectItem value="todas" className="text-white font-semibold">
-                        🎉 Ver todas
-                      </SelectItem>
-                      {CATEGORIAS_ESTABELECIMENTO.map(cat => (
-                        <SelectItem key={cat.value} value={cat.value} className="text-white">
-                          {cat.icon} {cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
 
-                {/* Ações */}
-                <div className="p-3 space-y-2">
-                  {(selectedCidade || (selectedCategoria && selectedCategoria !== 'todas' && selectedCategoria !== '')) && (
+                {/* Card com campos */}
+                <div className="flex flex-col">
+                  {/* Cidade */}
+                  <div className="flex items-center gap-3 px-4 h-12 border-b border-white/10 relative">
+                    <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                    <div className="flex-1 flex items-center relative">
+                      <CityCombobox
+                        value={selectedCidade && selectedEstado ? `${selectedCidade}, ${selectedEstado}` : ""}
+                        onSelect={handleCitySelect}
+                        placeholder="Digite a cidade"
+                        className="border-none bg-transparent shadow-none h-auto p-0 hover:bg-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Categoria */}
+                  <div className="flex items-center gap-3 px-4 h-12 border-b border-white/10">
+                    <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                    <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
+                      <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 [&>span]:!bg-transparent">
+                        <SelectValue placeholder="Escolha a categoria" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-700 z-50">
+                        <SelectItem value="todas" className="text-white font-semibold">
+                          🎉 Ver todas
+                        </SelectItem>
+                        {CATEGORIAS_ESTABELECIMENTO.map(cat => (
+                          <SelectItem key={cat.value} value={cat.value} className="text-white">
+                            {cat.icon} {cat.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Ações */}
+                  <div className="p-3 space-y-2">
+                    {(selectedCidade || (selectedCategoria && selectedCategoria !== 'todas' && selectedCategoria !== '')) && (
+                      <Button 
+                        size="lg"
+                        variant="ghost"
+                        onClick={limparFiltros}
+                        className="text-slate-400 hover:text-white hover:bg-white/5 h-12 rounded-xl w-full"
+                      >
+                        <X className="w-5 h-5 mr-2" />
+                        Limpar filtros
+                      </Button>
+                    )}
+                    
                     <Button 
                       size="lg"
-                      variant="ghost"
-                      onClick={limparFiltros}
-                      className="text-slate-400 hover:text-white hover:bg-white/5 h-12 rounded-xl w-full"
+                      onClick={() => navigate("/explorar")}
+                      className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white h-12 rounded-xl font-semibold shadow-lg shadow-violet-500/25 w-full"
                     >
-                      <X className="w-5 h-5 mr-2" />
-                      Limpar filtros
+                      Buscar
                     </Button>
-                  )}
-                  
-                  <Button 
-                    size="lg"
-                    onClick={() => navigate("/explorar")}
-                    className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white h-12 rounded-xl font-semibold shadow-lg shadow-violet-500/25 w-full"
-                  >
-                    Buscar
-                  </Button>
+                  </div>
                 </div>
               </div>
             </div>

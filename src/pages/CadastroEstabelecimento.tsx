@@ -172,15 +172,15 @@ export default function EstablishmentRegistration() {
   });
   const [isGoogleUser, setIsGoogleUser] = useState(false);
   const [showHorarioModal, setShowHorarioModal] = useState(false);
-  const [horarioTemp, setHorarioTemp] = useState({
-    segunda: { aberto: true, inicio: '08:00', fim: '18:00' },
-    terca: { aberto: true, inicio: '08:00', fim: '18:00' },
-    quarta: { aberto: true, inicio: '08:00', fim: '18:00' },
-    quinta: { aberto: true, inicio: '08:00', fim: '18:00' },
-    sexta: { aberto: true, inicio: '08:00', fim: '18:00' },
-    sabado: { aberto: true, inicio: '09:00', fim: '14:00' },
-    domingo: { aberto: false, inicio: '', fim: '' },
-  });
+const [horarioTemp, setHorarioTemp] = useState({
+  segunda: { aberto: true, inicio: '00:00', fim: '00:00' },
+  terca: { aberto: true, inicio: '00:00', fim: '00:00' },
+  quarta: { aberto: true, inicio: '00:00', fim: '00:00' },
+  quinta: { aberto: true, inicio: '00:00', fim: '00:00' },
+  sexta: { aberto: true, inicio: '00:00', fim: '00:00' },
+  sabado: { aberto: true, inicio: '00:00', fim: '00:00' },
+  domingo: { aberto: false, inicio: '00:00', fim: '00:00' },
+});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -1310,7 +1310,7 @@ export default function EstablishmentRegistration() {
                           ...prev,
                           [key]: { ...prev[key], inicio: e.target.value }
                         }))}
-                        className="px-2 py-1 border border-slate-300 rounded-lg w-24 text-sm"
+                        className="px-2 py-1 border border-slate-300 rounded-lg w-24 text-sm text-slate-900 bg-white"
                       />
                       <span className="text-slate-500 text-sm">às</span>
                       <input
@@ -1320,7 +1320,7 @@ export default function EstablishmentRegistration() {
                           ...prev,
                           [key]: { ...prev[key], fim: e.target.value }
                         }))}
-                        className="px-2 py-1 border border-slate-300 rounded-lg w-24 text-sm"
+                        className="px-2 py-1 border border-slate-300 rounded-lg w-24 text-sm text-slate-900 bg-white"
                       />
                     </div>
                   ) : (

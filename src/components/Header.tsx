@@ -59,38 +59,38 @@ export const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo - Esquerda */}
           <Link to="/" className="flex-shrink-0">
-            <span className="font-display font-extrabold text-xl sm:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 tracking-tight">
+            <span className="font-display font-extrabold text-base lg:text-lg text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 tracking-tight">
               ANIVERSARIANTE VIP
             </span>
           </Link>
 
           {/* Links Centro - Desktop Premium */}
-          <div className="hidden lg:flex items-center justify-center flex-1 gap-1 min-w-0">
+          <div className="hidden lg:flex items-center justify-center flex-1 gap-0.5 min-w-0 mx-2">
             <NavLink 
               to="/" 
               end
-              className="text-xs font-medium text-slate-300 hover:text-white transition-all duration-180 px-3 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
+              className="text-[11px] font-medium text-slate-300 hover:text-white transition-all duration-180 px-2 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
               activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
             >
               Início
             </NavLink>
             <NavLink 
               to="/explorar" 
-              className="text-xs font-medium text-slate-300 hover:text-white transition-all duration-180 px-3 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
+              className="text-[11px] font-medium text-slate-300 hover:text-white transition-all duration-180 px-2 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
               activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
             >
               Explorar
             </NavLink>
             <NavLink 
               to="/feed" 
-              className="text-xs font-medium text-slate-300 hover:text-white transition-all duration-180 px-3 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
+              className="text-[11px] font-medium text-slate-300 hover:text-white transition-all duration-180 px-2 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
               activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
             >
               Feed
             </NavLink>
             <NavLink 
               to="/como-funciona" 
-              className="text-xs font-medium text-slate-300 hover:text-white transition-all duration-180 px-3 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
+              className="text-[11px] font-medium text-slate-300 hover:text-white transition-all duration-180 px-2 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
               activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
             >
               Como Funciona
@@ -98,25 +98,25 @@ export const Header = () => {
           </div>
 
           {/* Botões Direita - Desktop */}
-          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-1.5 flex-shrink-0">
             {userName ? (
               <>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => navigate(getAreaLink())}
-                  className="text-white hover:bg-white/10 whitespace-nowrap"
+                  className="text-white hover:bg-white/10 whitespace-nowrap text-xs px-2 h-8"
                 >
-                  <User className="w-4 h-4 mr-2" />
+                  <User className="w-3.5 h-3.5 mr-1.5" />
                   {userName}
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleLogout}
-                  className="text-white hover:bg-white/10 whitespace-nowrap"
+                  className="text-white hover:bg-white/10 whitespace-nowrap text-xs px-2 h-8"
                 >
-                  <LogOut className="w-4 h-4 mr-2" />
+                  <LogOut className="w-3.5 h-3.5 mr-1.5" />
                   Sair
                 </Button>
               </>
@@ -126,22 +126,22 @@ export const Header = () => {
                   variant="ghost"
                   size="sm"
                   asChild
-                  className="text-white hover:bg-white/10 whitespace-nowrap text-xs"
+                  className="text-white hover:bg-white/10 whitespace-nowrap text-[11px] px-2 h-8"
                 >
-                  <Link to="/seja-parceiro">Seja Parceiro</Link>
+                  <Link to="/seja-parceiro">Parceiro</Link>
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   asChild
-                  className="text-white hover:bg-white/10 whitespace-nowrap text-xs"
+                  className="text-white hover:bg-white/10 whitespace-nowrap text-[11px] px-2 h-8"
                 >
                   <Link to="/selecionar-perfil">Entrar</Link>
                 </Button>
                 <Button
                   size="sm"
                   asChild
-                  className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white rounded-full px-4 font-semibold whitespace-nowrap text-xs"
+                  className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white rounded-full px-3 h-8 font-semibold whitespace-nowrap text-[11px]"
                 >
                   <Link to="/auth">Cadastro Gratuito</Link>
                 </Button>

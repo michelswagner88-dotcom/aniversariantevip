@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   ArrowLeft, MapPin, Phone, Globe, Instagram, Clock, 
   Share2, Heart, Gift, MessageCircle, ExternalLink,
-  Navigation, FileText
+  Navigation, UtensilsCrossed
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -101,11 +101,19 @@ const EstabelecimentoDetalhe = () => {
   };
 
   const handleSite = () => {
-    if (!estabelecimento.site && !estabelecimento.link_cardapio) { 
+    if (!estabelecimento.site) { 
       toast.error('Site não disponível'); 
       return; 
     }
-    window.open(estabelecimento.link_cardapio || estabelecimento.site, '_blank');
+    window.open(estabelecimento.site, '_blank');
+  };
+
+  const handleCardapio = () => {
+    if (!estabelecimento.link_cardapio) { 
+      toast.error('Cardápio não disponível'); 
+      return; 
+    }
+    window.open(estabelecimento.link_cardapio, '_blank');
   };
 
   // URLs de navegação
@@ -167,7 +175,6 @@ const EstabelecimentoDetalhe = () => {
   if (!estabelecimento) return null;
 
   const categoria = estabelecimento.categoria?.[0] || 'Estabelecimento';
-  const temCardapio = estabelecimento.link_cardapio || (estabelecimento.site && categoria === 'Restaurante');
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -248,58 +255,67 @@ const EstabelecimentoDetalhe = () => {
               {estabelecimento.bairro} • {estabelecimento.cidade}/{estabelecimento.estado}
             </p>
 
-            {/* ========== BOTÕES DE AÇÃO (4 principais) ========== */}
-            <div className="grid grid-cols-4 gap-2">
+            {/* ========== BOTÕES DE AÇÃO (5 principais) ========== */}
+            <div className="grid grid-cols-5 gap-2">
               
               {/* WhatsApp */}
               <button
                 onClick={handleWhatsApp}
-                className="flex flex-col items-center gap-1.5 p-3 bg-gray-800/80 rounded-xl hover:bg-green-500/20 transition-all group"
+                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-green-500/20 transition-all group"
               >
-                <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center group-hover:bg-green-500/30">
-                  <MessageCircle className="w-5 h-5 text-green-400" />
+                <div className="w-9 h-9 bg-green-500/20 rounded-full flex items-center justify-center group-hover:bg-green-500/30">
+                  <MessageCircle className="w-4 h-4 text-green-400" />
                 </div>
-                <span className="text-[11px] text-gray-400 group-hover:text-green-400">WhatsApp</span>
+                <span className="text-[10px] text-gray-400 group-hover:text-green-400">WhatsApp</span>
               </button>
 
               {/* Instagram */}
               <button
                 onClick={handleInstagram}
-                className="flex flex-col items-center gap-1.5 p-3 bg-gray-800/80 rounded-xl hover:bg-pink-500/20 transition-all group"
+                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-pink-500/20 transition-all group"
               >
-                <div className="w-10 h-10 bg-pink-500/20 rounded-full flex items-center justify-center group-hover:bg-pink-500/30">
-                  <Instagram className="w-5 h-5 text-pink-400" />
+                <div className="w-9 h-9 bg-pink-500/20 rounded-full flex items-center justify-center group-hover:bg-pink-500/30">
+                  <Instagram className="w-4 h-4 text-pink-400" />
                 </div>
-                <span className="text-[11px] text-gray-400 group-hover:text-pink-400">Instagram</span>
+                <span className="text-[10px] text-gray-400 group-hover:text-pink-400">Instagram</span>
               </button>
 
               {/* Ligar */}
               <button
                 onClick={handleLigar}
-                className="flex flex-col items-center gap-1.5 p-3 bg-gray-800/80 rounded-xl hover:bg-blue-500/20 transition-all group"
+                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-blue-500/20 transition-all group"
               >
-                <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center group-hover:bg-blue-500/30">
-                  <Phone className="w-5 h-5 text-blue-400" />
+                <div className="w-9 h-9 bg-blue-500/20 rounded-full flex items-center justify-center group-hover:bg-blue-500/30">
+                  <Phone className="w-4 h-4 text-blue-400" />
                 </div>
-                <span className="text-[11px] text-gray-400 group-hover:text-blue-400">Ligar</span>
+                <span className="text-[10px] text-gray-400 group-hover:text-blue-400">Ligar</span>
               </button>
 
-              {/* Site ou Cardápio */}
-              <button
-                onClick={handleSite}
-                className="flex flex-col items-center gap-1.5 p-3 bg-gray-800/80 rounded-xl hover:bg-violet-500/20 transition-all group"
-              >
-                <div className="w-10 h-10 bg-violet-500/20 rounded-full flex items-center justify-center group-hover:bg-violet-500/30">
-                  {temCardapio ? (
-                    <FileText className="w-5 h-5 text-violet-400" />
-                  ) : (
-                    <Globe className="w-5 h-5 text-violet-400" />
-                  )}
-                </div>
-                <span className="text-[11px] text-gray-400 group-hover:text-violet-400">
-                  {temCardapio ? 'Cardápio' : 'Site'}
-                </span>
-              </button>
+              {/* Cardápio */}
+              {estabelecimento.link_cardapio && (
+                <button
+                  onClick={handleCardapio}
+                  className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-orange-500/20 transition-all group"
+                >
+                  <div className="w-9 h-9 bg-orange-500/20 rounded-full flex items-center justify-center group-hover:bg-orange-500/30">
+                    <UtensilsCrossed className="w-4 h-4 text-orange-400" />
+                  </div>
+                  <span className="text-[10px] text-gray-400 group-hover:text-orange-400">Cardápio</span>
+                </button>
+              )}
+
+              {/* Site */}
+              {estabelecimento.site && (
+                <button
+                  onClick={handleSite}
+                  className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-violet-500/20 transition-all group"
+                >
+                  <div className="w-9 h-9 bg-violet-500/20 rounded-full flex items-center justify-center group-hover:bg-violet-500/30">
+                    <Globe className="w-4 h-4 text-violet-400" />
+                  </div>
+                  <span className="text-[10px] text-gray-400 group-hover:text-violet-400">Site</span>
+                </button>
+              )}
 
             </div>
           </div>

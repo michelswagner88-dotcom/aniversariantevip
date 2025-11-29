@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense, useRef } from 'react';
-import { APIProvider, Map, AdvancedMarker, Pin, useMap } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
 import { MapPin, X, Navigation, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -24,18 +24,27 @@ interface GoogleMapViewProps {
   userLocation?: { lat: number; lng: number } | null;
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  restaurantes: '#8B5CF6',
-  bares_pubs: '#EC4899',
-  cafeterias: '#F59E0B',
-  entretenimento: '#10B981',
-  hospedagem: '#3B82F6',
-  default: '#6366F1'
+const CATEGORY_ICONS: Record<string, string> = {
+  'Restaurante': '🍽️',
+  'Bar': '🍺',
+  'Academia': '💪',
+  'Salão de Beleza': '💇',
+  'Barbearia': '✂️',
+  'Cafeteria': '☕',
+  'Casa Noturna': '🎉',
+  'Confeitaria': '🍰',
+  'Entretenimento': '🎬',
+  'Hospedagem': '🏨',
+  'Loja de Presentes': '🎁',
+  'Moda e Acessórios': '👗',
+  'Saúde e Suplementos': '💊',
+  'Serviços': '🔧',
+  'Outros Comércios': '🏪',
 };
 
-const getCategoryColor = (categories: string[]): string => {
-  if (!categories || categories.length === 0) return CATEGORY_COLORS.default;
-  return CATEGORY_COLORS[categories[0]] || CATEGORY_COLORS.default;
+const getCategoryIcon = (categories: string[]): string => {
+  if (!categories || categories.length === 0) return '📍';
+  return CATEGORY_ICONS[categories[0]] || '📍';
 };
 
 const BottomSheet: React.FC<{
@@ -211,6 +220,9 @@ const MapContent: React.FC<{
       {establishments.map(establishment => {
         if (!establishment.latitude || !establishment.longitude) return null;
 
+        const isSelected = selectedId === establishment.id;
+        const icon = getCategoryIcon(establishment.categoria);
+
         return (
           <AdvancedMarker
             key={establishment.id}
@@ -222,24 +234,63 @@ const MapContent: React.FC<{
               }
             }}
           >
-            <div className="relative cursor-pointer group transform transition-transform duration-200 hover:scale-110 active:scale-95">
+            <div 
+              className={`
+                relative cursor-pointer transition-all duration-200
+                ${isSelected ? 'z-50 scale-110' : 'z-10 hover:scale-105 hover:z-40'}
+              `}
+            >
               {/* Touch-friendly padding */}
               <div className="absolute inset-0 -m-4" />
               
-              <Pin
-                background={getCategoryColor(establishment.categoria)}
-                borderColor="#ffffff"
-                glyphColor="#ffffff"
-                scale={selectedId === establishment.id ? 1.4 : 1.1}
+              {/* Balão com nome */}
+              <div 
+                className={`
+                  px-3 py-2 rounded-xl shadow-lg
+                  flex items-center gap-2 whitespace-nowrap
+                  transition-all duration-200
+                  ${isSelected 
+                    ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white' 
+                    : 'bg-white text-gray-900 hover:bg-gray-50'
+                  }
+                `}
+                style={{
+                  boxShadow: isSelected 
+                    ? '0 4px 20px rgba(139, 92, 246, 0.5)' 
+                    : '0 2px 10px rgba(0,0,0,0.15)',
+                }}
+              >
+                {/* Ícone da categoria */}
+                <span className="text-base">{icon}</span>
+                
+                {/* Nome do estabelecimento */}
+                <span className="text-sm font-semibold max-w-[140px] truncate">
+                  {establishment.nome_fantasia || 'Estabelecimento'}
+                </span>
+              </div>
+              
+              {/* Seta apontando para baixo */}
+              <div 
+                className={`
+                  absolute left-1/2 -translate-x-1/2 -bottom-2
+                  w-0 h-0 
+                  border-l-[8px] border-l-transparent
+                  border-r-[8px] border-r-transparent
+                  border-t-[8px]
+                  transition-colors duration-200
+                  ${isSelected 
+                    ? 'border-t-fuchsia-600' 
+                    : 'border-t-white'
+                  }
+                `}
               />
               
-              {/* Glow effect on hover */}
-              <div className="absolute inset-0 -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div 
-                  className="w-full h-full rounded-full blur-xl" 
-                  style={{ backgroundColor: getCategoryColor(establishment.categoria) + '40' }}
-                />
-              </div>
+              {/* Glow effect quando selecionado */}
+              {isSelected && (
+                <div className="absolute inset-0 -z-10 animate-pulse">
+                  <div className="w-full h-full rounded-xl blur-xl bg-violet-500/30" />
+                </div>
+              )}
             </div>
           </AdvancedMarker>
         );

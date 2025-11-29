@@ -236,54 +236,107 @@ export default function EstablishmentRegistration() {
     setCnpjVerified(false); // Reset verificação ao alterar
   };
 
+  const formatarTelefone = (telefone: string): string => {
+    const numeros = telefone.replace(/\D/g, '');
+    
+    if (numeros.length === 10) {
+      return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 6)}-${numeros.slice(6)}`;
+    }
+    if (numeros.length === 11) {
+      return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7)}`;
+    }
+    
+    return telefone;
+  };
+
   const verifyCnpj = async () => {
     const rawCnpj = establishmentData.cnpj.replace(/\D/g, '');
 
-    // Early return - não fazer nada se CNPJ estiver vazio ou incompleto
+    // Early return se vazio
     if (rawCnpj.length === 0) {
-      toast.error('Digite o CNPJ');
       return;
     }
 
+    // Validar tamanho
     if (rawCnpj.length < 14) {
       toast.error('CNPJ deve ter 14 dígitos');
+      return;
+    }
+
+    // Validar dígitos verificadores
+    if (!validateCNPJ(rawCnpj)) {
+      toast.error('CNPJ inválido. Verifique os dígitos verificadores.');
       return;
     }
 
     setLoadingCnpj(true);
     setError('');
 
-    // Validar dígitos verificadores primeiro
-    if (!validateCNPJ(rawCnpj)) {
-      toast.error('CNPJ inválido. Verifique os dígitos verificadores.');
-      setLoadingCnpj(false);
-      setCnpjVerified(false);
-      return;
-    }
-
     try {
-      // Buscar dados na BrasilAPI
-      const data = await fetchCNPJData(rawCnpj);
-      
-      if (data) {
-        setEstablishmentData(prev => ({
-          ...prev,
-          name: data.nome_fantasia || data.razao_social,
-          cep: data.cep.replace(/\D/g, ''),
-          logradouro: data.logradouro,
-          numero: data.numero,
-          complemento: data.complemento,
-          bairro: data.bairro,
-          cidade: data.municipio,
-          estado: data.uf,
-        }));
-        
-        setCnpjVerified(true);
-        toast.success('✓ CNPJ verificado! Dados preenchidos automaticamente.');
+      // Verificar se CNPJ já existe no banco
+      const { data: cnpjExistente } = await supabase
+        .from('estabelecimentos')
+        .select('id, nome_fantasia')
+        .eq('cnpj', rawCnpj)
+        .maybeSingle();
+
+      if (cnpjExistente) {
+        toast.error('Este CNPJ já está cadastrado na plataforma.');
+        setLoadingCnpj(false);
+        setCnpjVerified(false);
+        return;
       }
+
+      // Buscar dados na BrasilAPI
+      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${rawCnpj}`);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          toast.error('CNPJ não encontrado na Receita Federal. Verifique o número.');
+        } else if (response.status === 429) {
+          toast.error('Muitas consultas. Aguarde um momento e tente novamente.');
+        } else {
+          toast.error('Erro ao consultar CNPJ. Tente novamente.');
+        }
+        setLoadingCnpj(false);
+        setCnpjVerified(false);
+        return;
+      }
+
+      const data = await response.json();
+
+      // Verificar situação cadastral
+      if (data.descricao_situacao_cadastral && data.descricao_situacao_cadastral !== 'ATIVA') {
+        toast.warning(`Atenção: Este CNPJ está com situação "${data.descricao_situacao_cadastral}" na Receita Federal.`);
+      }
+
+      // Preencher campos automaticamente (apenas se estiverem vazios)
+      setEstablishmentData(prev => ({
+        ...prev,
+        name: prev.name || data.nome_fantasia || data.razao_social || '',
+        phoneFixed: prev.phoneFixed || (data.ddd_telefone_1 ? formatarTelefone(data.ddd_telefone_1) : ''),
+        cep: prev.cep || (data.cep ? data.cep.replace(/\D/g, '') : ''),
+        estado: prev.estado || data.uf || '',
+        cidade: prev.cidade || data.municipio || '',
+        bairro: prev.bairro || data.bairro || '',
+        logradouro: prev.logradouro || data.logradouro || '',
+        numero: prev.numero || data.numero || '',
+        complemento: prev.complemento || data.complemento || '',
+      }));
+
+      setCnpjVerified(true);
+      toast.success('CNPJ verificado! Dados preenchidos automaticamente.');
+
     } catch (error: any) {
-      const friendlyError = getFriendlyErrorMessage(error);
-      toast.error(friendlyError);
+      console.error('Erro ao verificar CNPJ:', error);
+      
+      // Mostrar mensagem amigável
+      if (error.message && !error.message.includes('fetch') && !error.message.includes('network') && !error.message.includes('Failed')) {
+        toast.error(error.message);
+      } else {
+        toast.error('Erro de conexão. Verifique sua internet e tente novamente.');
+      }
+      
       setCnpjVerified(false);
     } finally {
       setLoadingCnpj(false);

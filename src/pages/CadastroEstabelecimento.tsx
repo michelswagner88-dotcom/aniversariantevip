@@ -41,10 +41,39 @@ const AVAILABLE_CATEGORIES = [
   'Outros Comércios', 'Serviços'
 ];
 
-const mockStandardizeText = (text) => {
-  // Simula a correção gramatical e padronização (ex: capitular, remover excesso de espaços)
-  if (!text) return '';
-  return text.trim().replace(/\s\s+/g, ' ').replace('nao', 'não');
+// Função para padronizar texto usando Lovable AI
+const standardizeTextWithAI = async (text: string): Promise<string> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('standardize-text', {
+      body: { text }
+    });
+
+    if (error) {
+      console.error('Erro ao padronizar texto:', error);
+      
+      // Tratamento específico para rate limit e payment
+      if (error.message?.includes('429')) {
+        toast.error('Limite de requisições excedido. Tente novamente em alguns segundos.');
+      } else if (error.message?.includes('402')) {
+        toast.error('Serviço temporariamente indisponível. Entre em contato com o suporte.');
+      } else {
+        toast.error('Erro ao corrigir texto. Tente novamente.');
+      }
+      
+      return text; // Retorna texto original em caso de erro
+    }
+
+    if (!data?.correctedText) {
+      toast.error('Resposta inválida da correção');
+      return text;
+    }
+
+    return data.correctedText;
+  } catch (error) {
+    console.error('Erro na chamada da API:', error);
+    toast.error('Erro ao conectar com o serviço de correção');
+    return text;
+  }
 };
 
 const formatPhone = (phone) => {
@@ -75,6 +104,7 @@ const Stepper = ({ currentStep, totalSteps }) => (
 
 const BenefitRulesSection = ({ rules, setRules }) => {
   const [showHelper, setShowHelper] = useState(false);
+  const [isStandardizing, setIsStandardizing] = useState(false);
   const MAX_CHARS = 200;
 
   const handleTextChange = (e) => {
@@ -82,9 +112,24 @@ const BenefitRulesSection = ({ rules, setRules }) => {
     setRules(prev => ({ ...prev, description: text }));
   };
 
-  const handleStandardize = () => {
-    const standardizedText = mockStandardizeText(rules.description);
-    setRules(prev => ({ ...prev, description: standardizedText }));
+  const handleStandardize = async () => {
+    if (!rules.description.trim()) {
+      toast.error('Digite um texto antes de corrigir');
+      return;
+    }
+
+    setIsStandardizing(true);
+    
+    try {
+      const correctedText = await standardizeTextWithAI(rules.description);
+      setRules(prev => ({ ...prev, description: correctedText }));
+      toast.success('Texto corrigido com sucesso!');
+    } catch (error) {
+      console.error('Erro ao padronizar:', error);
+      toast.error('Erro ao corrigir texto');
+    } finally {
+      setIsStandardizing(false);
+    }
   };
 
   const setScope = (scope) => {
@@ -114,9 +159,18 @@ const BenefitRulesSection = ({ rules, setRules }) => {
         <button 
           type="button"
           onClick={handleStandardize}
-          className="px-3 py-1 bg-violet-200 text-violet-700 rounded-full hover:bg-violet-300 transition-colors flex items-center gap-1 font-semibold"
+          disabled={isStandardizing || !rules.description.trim()}
+          className="px-3 py-1 bg-violet-200 text-violet-700 rounded-full hover:bg-violet-300 transition-colors flex items-center gap-1 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <CheckCircle size={14} /> Corrigir/Padronizar Texto
+          {isStandardizing ? (
+            <>
+              <Loader2 size={14} className="animate-spin" /> Corrigindo...
+            </>
+          ) : (
+            <>
+              <CheckCircle size={14} /> Corrigir/Padronizar Texto
+            </>
+          )}
         </button>
         <button 
           type="button"

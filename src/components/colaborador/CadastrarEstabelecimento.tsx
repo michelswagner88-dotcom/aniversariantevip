@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { cnpjSchema } from "@/lib/validation";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
+import { normalizarCidade } from "@/lib/utils";
 import GaleriaFotosUpload from "@/components/GaleriaFotosUpload";
 
 type HorarioFuncionamento = {
@@ -155,7 +156,7 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
           cnpj: validatedData.cnpj,
           telefone: validatedData.telefone,
           endereco: validatedData.endereco,
-          cidade: formData.cidade,
+          cidade: normalizarCidade(formData.cidade),
           estado: formData.estado,
           categoria: formData.categorias.length > 0 ? formData.categorias : null,
           descricao_beneficio: validatedData.descricaoBeneficio,

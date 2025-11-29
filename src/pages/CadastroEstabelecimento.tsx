@@ -35,6 +35,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
+import { normalizarCidade } from '@/lib/utils';
 
 // Função para padronizar texto usando Lovable AI
 const standardizeTextWithAI = async (text: string): Promise<string> => {
@@ -726,7 +727,7 @@ const [horarioTemp, setHorarioTemp] = useState({
             site: establishmentData.siteLink || null,
             cep: establishmentData.cep || null,
             estado: establishmentData.estado || null,
-            cidade: establishmentData.cidade || null,
+            cidade: normalizarCidade(establishmentData.cidade || ''),
             bairro: establishmentData.bairro || null,
             logradouro: establishmentData.logradouro || null,
             numero: establishmentData.numero || null,
@@ -820,7 +821,7 @@ const [horarioTemp, setHorarioTemp] = useState({
         site: establishmentData.siteLink || null,
         cep: establishmentData.cep || null,
         estado: establishmentData.estado || null,
-        cidade: establishmentData.cidade || null,
+        cidade: normalizarCidade(establishmentData.cidade || ''),
         bairro: establishmentData.bairro || null,
         logradouro: establishmentData.logradouro || null,
         numero: establishmentData.numero || null,

@@ -26,7 +26,7 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
 
       // Aplicar filtros
       if (filters.cidade) {
-        query = query.eq('cidade', sanitizarInput(filters.cidade, 100));
+        query = query.ilike('cidade', sanitizarInput(filters.cidade, 100));
       }
       if (filters.estado) {
         query = query.eq('estado', sanitizarInput(filters.estado, 2));

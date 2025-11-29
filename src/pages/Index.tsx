@@ -395,8 +395,8 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Social Proof - Enhanced Contrast */}
-          <p className="text-slate-400 opacity-75 text-sm mt-10 sm:mt-12 animate-fade-in" style={{ animationDelay: '0.32s' }}>
+          {/* Social Proof - Enhanced Contrast com Safe Space */}
+          <p className="text-slate-400 opacity-75 text-sm mt-10 sm:mt-12 mb-28 sm:mb-0 animate-fade-in" style={{ animationDelay: '0.32s' }}>
             Junte-se a mais de 50.000 aniversariantes que economizam todo mês.
           </p>
         </div>

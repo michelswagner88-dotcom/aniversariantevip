@@ -20,7 +20,9 @@ import {
   Phone,
   MessageSquare,
   Globe,
-  Instagram
+  Instagram,
+  Loader2,
+  Check
 } from 'lucide-react';
 import { BackButton } from '@/components/BackButton';
 import { validateCNPJ, formatCNPJ, fetchCNPJData } from '@/lib/validators';
@@ -186,6 +188,7 @@ export default function EstablishmentRegistration() {
   });
   const [rules, setRules] = useState({ description: '', scope: 'Dia' });
   const [loading, setLoading] = useState(false);
+  const [loadingCnpj, setLoadingCnpj] = useState(false);
   const [cnpjVerified, setCnpjVerified] = useState(false);
   const [error, setError] = useState('');
   
@@ -238,22 +241,23 @@ export default function EstablishmentRegistration() {
 
     // Early return - não fazer nada se CNPJ estiver vazio ou incompleto
     if (rawCnpj.length === 0) {
-      return; // Silencioso, sem erro
-    }
-
-    if (rawCnpj.length < 14) {
-      setError('CNPJ deve conter 14 dígitos');
+      toast.error('Digite o CNPJ');
       return;
     }
 
-    setLoading(true);
+    if (rawCnpj.length < 14) {
+      toast.error('CNPJ deve ter 14 dígitos');
+      return;
+    }
+
+    setLoadingCnpj(true);
     setError('');
 
     // Validar dígitos verificadores primeiro
     if (!validateCNPJ(rawCnpj)) {
-      setError('CNPJ inválido. Verifique os dígitos verificadores.');
       toast.error('CNPJ inválido. Verifique os dígitos verificadores.');
-      setLoading(false);
+      setLoadingCnpj(false);
+      setCnpjVerified(false);
       return;
     }
 
@@ -275,15 +279,14 @@ export default function EstablishmentRegistration() {
         }));
         
         setCnpjVerified(true);
-        toast.success('Dados carregados! Verifique e ajuste se necessário.');
+        toast.success('✓ CNPJ verificado! Dados preenchidos automaticamente.');
       }
     } catch (error: any) {
       const friendlyError = getFriendlyErrorMessage(error);
-      setError(friendlyError);
       toast.error(friendlyError);
       setCnpjVerified(false);
     } finally {
-      setLoading(false);
+      setLoadingCnpj(false);
     }
   };
 
@@ -676,10 +679,22 @@ export default function EstablishmentRegistration() {
             <button 
               type="button"
               onClick={verifyCnpj}
-              disabled={loading || establishmentData.cnpj.replace(/\D/g, '').length !== 14}
+              disabled={loadingCnpj || establishmentData.cnpj.replace(/\D/g, '').length !== 14}
               className="px-6 py-3 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 text-white rounded-xl font-semibold hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 disabled:opacity-50 transition-all flex items-center gap-2"
             >
-              {loading ? 'Verificando...' : 'Verificar'}
+              {loadingCnpj ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Verificando...
+                </>
+              ) : cnpjVerified ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Verificado
+                </>
+              ) : (
+                'Verificar'
+              )}
             </button>
           </div>
           {cnpjVerified && establishmentData.name && (

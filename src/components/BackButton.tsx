@@ -13,9 +13,14 @@ export const BackButton = ({ to, label = "Voltar", className = "" }: BackButtonP
 
   const handleBack = () => {
     if (to) {
+      // Se tem destino específico, vai pra lá
       navigate(to);
-    } else {
+    } else if (window.history.length > 1) {
+      // Se tem histórico, volta
       navigate(-1);
+    } else {
+      // Fallback: vai pra home se não tem histórico
+      navigate('/');
     }
   };
 

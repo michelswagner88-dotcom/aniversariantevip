@@ -229,13 +229,13 @@ const Index = () => {
         <div className="absolute top-1/2 right-10 w-[500px] h-[500px] bg-cyan-500/20 blur-[120px] rounded-full pointer-events-none" />
         
         <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
-          {/* Badge Clicável */}
+          {/* Badge Clicável - Mais Discreto */}
           <Link 
             to="/auth"
-            className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 backdrop-blur-sm mt-6 sm:mt-0 mb-6 sm:mb-8 animate-fade-in transition-all duration-300 hover:scale-105 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 backdrop-blur-sm mt-6 sm:mt-0 mb-6 sm:mb-8 animate-fade-in transition-all duration-200 cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-violet-400" />
-            <span className="text-sm font-medium text-white">Cadastro Gratuito Para Aniversariantes</span>
+            <Sparkles className="w-3 h-3 text-violet-400/70" />
+            <span className="text-xs font-medium text-slate-300">Cadastro Gratuito</span>
           </Link>
 
           {/* H1 - Título Principal (Tipografia de Impacto) */}
@@ -255,12 +255,12 @@ const Index = () => {
             Aqui seu aniversário vale muito mais. Encontre benefícios exclusivos para aproveitar no dia, na semana ou no mês inteiro.
           </h2>
 
-          {/* Barra de Busca Hyper-Glass */}
+          {/* Barra de Busca Premium */}
           <div className="w-full max-w-4xl animate-fade-in" style={{ animationDelay: '0.3s' }}>
             <div 
-              className="backdrop-blur-2xl bg-white/10 rounded-2xl p-4 sm:p-3 border border-white/20 shadow-xl"
+              className="backdrop-blur-2xl bg-white/10 rounded-2xl p-4 sm:p-3 border-2 border-white/30 shadow-2xl"
               style={{
-                boxShadow: '0 0 50px -12px rgba(139,92,246,0.3)'
+                boxShadow: '0 8px 32px -8px rgba(139,92,246,0.4), 0 0 0 1px rgba(255,255,255,0.1)'
               }}
             >
               {/* Desktop Layout */}

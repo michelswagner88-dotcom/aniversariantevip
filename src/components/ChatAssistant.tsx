@@ -125,11 +125,12 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
 
   return (
     <>
-      {/* Botão Flutuante */}
+      {/* Botão Flutuante com Safe Area */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-2xl shadow-violet-500/30 transition-all hover:scale-110 hover:shadow-violet-500/50 active:scale-95"
+          className="fixed bottom-6 right-6 sm:bottom-6 sm:right-6 bottom-24 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-2xl shadow-violet-500/30 transition-all hover:scale-110 hover:shadow-violet-500/50 active:scale-95"
+          style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
           aria-label="Abrir chat assistente"
         >
           <MessageCircle size={24} />
@@ -140,9 +141,12 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
         </button>
       )}
 
-      {/* Janela do Chat */}
+      {/* Janela do Chat com Safe Area */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 flex h-[600px] w-[400px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-2xl animate-in slide-in-from-bottom-10 fade-in duration-300">
+        <div 
+          className="fixed bottom-6 right-6 sm:bottom-6 sm:right-6 bottom-24 z-50 flex h-[600px] w-[400px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-2xl animate-in slide-in-from-bottom-10 fade-in duration-300"
+          style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        >
           
           {/* Header */}
           <div className="flex items-center justify-between border-b border-white/10 bg-gradient-to-r from-violet-600/20 to-pink-600/20 p-4 backdrop-blur-xl">

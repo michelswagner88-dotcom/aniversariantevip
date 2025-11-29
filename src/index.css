@@ -115,6 +115,23 @@ All colors MUST be HSL.
     overflow-x: hidden !important;
     max-width: 100vw !important;
     box-sizing: border-box;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  
+  /* Improved text contrast for secondary text */
+  .text-slate-400, .text-muted-foreground {
+    opacity: 0.85;
+  }
+  
+  .text-slate-500 {
+    opacity: 0.80;
+  }
+  
+  /* Clearer placeholders */
+  ::placeholder {
+    opacity: 0.65 !important;
+    color: hsl(var(--muted-foreground)) !important;
   }
   
   /* Noise Texture Overlay */

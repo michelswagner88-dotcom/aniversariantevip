@@ -65,32 +65,32 @@ export const Header = () => {
           </Link>
 
           {/* Links Centro - Desktop Premium */}
-          <div className="hidden lg:flex items-center justify-center flex-1 gap-1">
+          <div className="hidden lg:flex items-center justify-center flex-1 gap-1 min-w-0">
             <NavLink 
               to="/" 
               end
-              className="text-sm font-medium text-slate-300 hover:text-white transition-all duration-180 px-4 py-2 rounded-lg hover:bg-white/5"
+              className="text-xs font-medium text-slate-300 hover:text-white transition-all duration-180 px-3 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
               activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
             >
               Início
             </NavLink>
             <NavLink 
               to="/explorar" 
-              className="text-sm font-medium text-slate-300 hover:text-white transition-all duration-180 px-4 py-2 rounded-lg hover:bg-white/5"
+              className="text-xs font-medium text-slate-300 hover:text-white transition-all duration-180 px-3 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
               activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
             >
               Explorar
             </NavLink>
             <NavLink 
               to="/feed" 
-              className="text-sm font-medium text-slate-300 hover:text-white transition-all duration-180 px-4 py-2 rounded-lg hover:bg-white/5"
+              className="text-xs font-medium text-slate-300 hover:text-white transition-all duration-180 px-3 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
               activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
             >
               Feed
             </NavLink>
             <NavLink 
               to="/como-funciona" 
-              className="text-sm font-medium text-slate-300 hover:text-white transition-all duration-180 px-4 py-2 rounded-lg hover:bg-white/5"
+              className="text-xs font-medium text-slate-300 hover:text-white transition-all duration-180 px-3 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
               activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
             >
               Como Funciona
@@ -98,14 +98,14 @@ export const Header = () => {
           </div>
 
           {/* Botões Direita - Desktop */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
             {userName ? (
               <>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => navigate(getAreaLink())}
-                  className="text-white hover:bg-white/10"
+                  className="text-white hover:bg-white/10 whitespace-nowrap"
                 >
                   <User className="w-4 h-4 mr-2" />
                   {userName}
@@ -114,7 +114,7 @@ export const Header = () => {
                   variant="ghost"
                   size="sm"
                   onClick={handleLogout}
-                  className="text-white hover:bg-white/10"
+                  className="text-white hover:bg-white/10 whitespace-nowrap"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Sair
@@ -126,7 +126,7 @@ export const Header = () => {
                   variant="ghost"
                   size="sm"
                   asChild
-                  className="text-white hover:bg-white/10"
+                  className="text-white hover:bg-white/10 whitespace-nowrap text-xs"
                 >
                   <Link to="/seja-parceiro">Seja Parceiro</Link>
                 </Button>
@@ -134,14 +134,14 @@ export const Header = () => {
                   variant="ghost"
                   size="sm"
                   asChild
-                  className="text-white hover:bg-white/10"
+                  className="text-white hover:bg-white/10 whitespace-nowrap text-xs"
                 >
                   <Link to="/selecionar-perfil">Entrar</Link>
                 </Button>
                 <Button
                   size="sm"
                   asChild
-                  className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white rounded-full px-6 font-semibold"
+                  className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white rounded-full px-4 font-semibold whitespace-nowrap text-xs"
                 >
                   <Link to="/auth">Cadastro Gratuito</Link>
                 </Button>

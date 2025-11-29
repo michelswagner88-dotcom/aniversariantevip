@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useLocation } from 'react-router-dom';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -17,6 +18,7 @@ interface ChatAssistantProps {
 }
 
 const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -27,6 +29,7 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [bottomOffset, setBottomOffset] = useState('1.25rem');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -37,21 +40,58 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
     }
   }, [messages]);
 
-  // IntersectionObserver para detectar footer e elevar chat
+  // Ajustar posição baseado na rota e elementos na página
   useEffect(() => {
-    const footer = document.querySelector('footer');
-    if (!footer) return;
+    const adjustPosition = () => {
+      // Rotas que têm botões fixos no rodapé
+      const hasFixedButton = 
+        location.pathname.includes('/estabelecimento/') || // Página de detalhe
+        location.pathname.includes('/cadastro') ||         // Cadastros
+        location.pathname.includes('/emitir-cupom') ||     // Emitir cupom
+        location.pathname.includes('/auth');               // Auth
+
+      // Detectar botões fixos no rodapé dinamicamente
+      const fixedBottomElements = document.querySelectorAll(
+        'button[class*="fixed"][class*="bottom-"], a[class*="fixed"][class*="bottom-"]'
+      );
+      
+      let maxHeight = 0;
+      fixedBottomElements.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        const height = window.innerHeight - rect.top;
+        // Considerar apenas elementos visíveis e razoáveis (não o próprio chat)
+        if (height > maxHeight && height < 150 && !el.classList.contains('chat-bubble')) {
+          maxHeight = height;
+        }
+      });
+
+      // Se encontrou botão fixo OU está em rota conhecida, subir o chat
+      if (maxHeight > 60 || hasFixedButton) {
+        setBottomOffset('7rem'); // ~112px
+      } else {
+        setBottomOffset('1.25rem'); // ~20px
+      }
+    };
+
+    adjustPosition();
     
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        document.body.classList.toggle('footer-visible', entry.isIntersecting);
-      },
-      { threshold: 0.1 }
-    );
+    // Re-calcular quando a rota muda
+    const timer = setTimeout(adjustPosition, 100);
     
-    observer.observe(footer);
-    return () => observer.disconnect();
-  }, []);
+    // Observar mudanças no DOM
+    const observer = new MutationObserver(adjustPosition);
+    observer.observe(document.body, { 
+      childList: true, 
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style']
+    });
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [location.pathname]);
 
   // Focus no input quando abrir
   useEffect(() => {
@@ -145,9 +185,9 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="chat-bubble fixed flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 text-white shadow-lg transition-all duration-300 hover:scale-110 z-[9999]"
+          className="chat-bubble fixed flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 text-white shadow-lg transition-all duration-300 hover:scale-110 z-[9998]"
           style={{ 
-            bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
+            bottom: `calc(${bottomOffset} + env(safe-area-inset-bottom, 0px))`,
             right: '1.25rem'
           }}
           aria-label="Abrir chat assistente"
@@ -163,9 +203,9 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
       {/* Janela do Chat */}
       {isOpen && (
         <div 
-          className="chat-bubble fixed flex flex-col w-[380px] h-[600px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-8rem)] rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl z-[9999]"
+          className="chat-bubble fixed flex flex-col w-[380px] h-[600px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-8rem)] rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl z-[9998]"
           style={{ 
-            bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
+            bottom: `calc(${bottomOffset} + env(safe-area-inset-bottom, 0px))`,
             right: '1.25rem'
           }}
         >

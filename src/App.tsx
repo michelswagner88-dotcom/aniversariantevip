@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import ProtectedEstabelecimentoRoute from "@/components/auth/ProtectedEstabelecimentoRoute";
 import ProtectedAniversarianteRoute from "@/components/auth/ProtectedAniversarianteRoute";
 import ProtectedAdminRoute from "@/components/auth/ProtectedAdminRoute";
+import PasswordProtection from "@/components/auth/PasswordProtection";
 
 // Lazy load das páginas principais
 const Index = lazy(() => import("./pages/Index"));
@@ -62,11 +63,12 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 
 
 const App = () => (
-  <ThemeProvider defaultTheme="dark" storageKey="vip-theme">
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <Sentry.ErrorBoundary
+  <PasswordProtection>
+    <ThemeProvider defaultTheme="dark" storageKey="vip-theme">
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <Sentry.ErrorBoundary
         fallback={({ error, resetError }) => (
           <div className="min-h-screen flex items-center justify-center bg-background p-4">
             <div className="text-center max-w-md">
@@ -198,6 +200,7 @@ const App = () => (
       </Sentry.ErrorBoundary>
     </TooltipProvider>
   </ThemeProvider>
+  </PasswordProtection>
 );
 
 export default App;

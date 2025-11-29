@@ -4,8 +4,8 @@ import { CONTATOS } from "@/lib/constants";
 
 export const Footer = () => {
   return (
-    <footer className="mt-auto bg-slate-950 border-t border-slate-800">
-      <div className="container mx-auto px-4 py-8">
+    <footer className="mt-auto bg-slate-950 border-t border-slate-800 pb-safe">
+      <div className="container mx-auto px-4 py-8 pb-20 sm:pb-8" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 gap-y-10">
           {/* Coluna 1 - Marca */}
           <div>

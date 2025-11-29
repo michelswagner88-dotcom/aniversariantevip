@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTrackPostView, useTrackPostShare } from '@/hooks/usePostAnalytics';
 import { toast } from 'sonner';
+import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 
 const PostCard = ({ post, navigate }: { post: any; navigate: any }) => {
   const { likesCount, hasLiked, toggleLike, commentsCount, addComment, isTogglingLike } = usePostInteractions(post.id);
@@ -67,7 +68,15 @@ const PostCard = ({ post, navigate }: { post: any; navigate: any }) => {
         />
         <div className="flex-1">
           <button
-            onClick={() => navigate(`/estabelecimento/${post.establishment_id}`)}
+            onClick={() => {
+              const url = getEstabelecimentoUrl({
+                estado: post.estabelecimentos.estado,
+                cidade: post.estabelecimentos.cidade,
+                slug: post.estabelecimentos.slug,
+                id: post.establishment_id
+              });
+              navigate(url);
+            }}
             className="font-semibold hover:text-violet-400 transition-colors"
           >
             {post.estabelecimentos.nome_fantasia}

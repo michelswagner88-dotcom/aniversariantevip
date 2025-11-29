@@ -17,6 +17,7 @@ export interface FlashPromo {
     nome_fantasia: string | null;
     logo_url: string | null;
     categoria: string[] | null;
+    slug: string | null;
   };
 }
 
@@ -38,7 +39,7 @@ export const useFlashPromos = (options: UseFlashPromosOptions = {}) => {
         .from('flash_promos')
         .select(`
           *,
-          estabelecimentos(nome_fantasia, logo_url, categoria)
+          estabelecimentos(nome_fantasia, logo_url, categoria, slug, estado, cidade)
         `)
         .eq('status', 'ACTIVE')
         .gt('expires_at', now)

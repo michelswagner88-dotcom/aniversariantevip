@@ -22,6 +22,8 @@ import PasswordProtection from "@/components/auth/PasswordProtection";
 const Index = lazy(() => import("./pages/Index"));
 const Explorar = lazy(() => import("./pages/Explorar"));
 const EstabelecimentoDetalhe = lazy(() => import("./pages/EstabelecimentoDetalhe"));
+const EstabelecimentoDetalheBySlug = lazy(() => import("./pages/EstabelecimentoDetalheBySlug"));
+const EstabelecimentoRedirect = lazy(() => import("./pages/EstabelecimentoRedirect"));
 const SmartAuth = lazy(() => import("./pages/SmartAuth"));
 const Feed = lazy(() => import("./pages/Feed"));
 const FlashDeals = lazy(() => import("./pages/FlashDeals"));
@@ -99,7 +101,13 @@ const App = () => (
                 <Route path="/explorar" element={<LazyRoute><Explorar /></LazyRoute>} />
                 <Route path="/flash-deals" element={<LazyRoute><FlashDeals /></LazyRoute>} />
                 <Route path="/feed" element={<LazyRoute><Feed /></LazyRoute>} />
-                <Route path="/estabelecimento/:id" element={<LazyRoute><EstabelecimentoDetalhe /></LazyRoute>} />
+                
+                {/* URLs amigáveis - DEVEM VIR ANTES da rota antiga */}
+                <Route path="/:estado/:cidade/:slug" element={<LazyRoute><EstabelecimentoDetalheBySlug /></LazyRoute>} />
+                
+                {/* Rota antiga com redirect para nova URL */}
+                <Route path="/estabelecimento/:id" element={<LazyRoute><EstabelecimentoRedirect /></LazyRoute>} />
+                
                 <Route path="/como-funciona" element={<LazyRoute><ComoFunciona /></LazyRoute>} />
                 <Route path="/seja-parceiro" element={<LazyRoute><SejaParceito /></LazyRoute>} />
                 <Route path="/faq" element={<LazyRoute><FAQ /></LazyRoute>} />

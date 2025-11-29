@@ -18,8 +18,13 @@ import {
   SheetTitle 
 } from '@/components/ui/sheet';
 
-const EstabelecimentoDetalhe = () => {
-  const { id } = useParams();
+interface EstabelecimentoDetalheProps {
+  estabelecimentoIdProp?: string | null;
+}
+
+const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalheProps = {}) => {
+  const { id: idFromParams } = useParams();
+  const id = estabelecimentoIdProp || idFromParams;
   const navigate = useNavigate();
   const [estabelecimento, setEstabelecimento] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -77,6 +82,21 @@ const EstabelecimentoDetalhe = () => {
 
       setEstabelecimento(data);
       setLoading(false);
+      
+      // Meta tags para SEO
+      document.title = `${data.nome_fantasia} - Aniversariante VIP`;
+      
+      const metaDescription = document.querySelector('meta[name="description"]');
+      if (metaDescription) {
+        metaDescription.setAttribute('content', 
+          `${data.descricao_beneficio || 'Benefício exclusivo de aniversário'} - ${data.bairro}, ${data.cidade}`
+        );
+      }
+      
+      const canonical = document.querySelector('link[rel="canonical"]');
+      if (canonical) {
+        canonical.setAttribute('href', window.location.href);
+      }
     };
     fetchEstabelecimento();
   }, [id, navigate]);

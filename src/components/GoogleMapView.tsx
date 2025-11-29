@@ -16,11 +16,13 @@ interface Establishment {
   logo_url: string | null;
   descricao_beneficio: string;
   cidade: string;
+  estado: string;
+  slug: string | null;
 }
 
 interface GoogleMapViewProps {
   establishments: Establishment[];
-  onEstablishmentClick?: (id: string) => void;
+  onEstablishmentClick?: (establishment: Establishment) => void;
   userLocation?: { lat: number; lng: number } | null;
 }
 
@@ -331,7 +333,10 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
 
   const handleViewDetails = () => {
     if (selectedEstablishmentId && onEstablishmentClick) {
-      onEstablishmentClick(selectedEstablishmentId);
+      const establishment = establishments.find(est => est.id === selectedEstablishmentId);
+      if (establishment) {
+        onEstablishmentClick(establishment);
+      }
     }
   };
 

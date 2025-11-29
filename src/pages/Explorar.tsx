@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Search, SlidersHorizontal, Map as MapIconLucide, List, X, Check, Gift, Share2, Heart, CalendarDays, Navigation, Crosshair, Store } from 'lucide-react';
 import { toast } from "sonner";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
 import { SafeImage } from "@/components/SafeImage";
-import { MapaEstabelecimentos } from "@/components/MapaEstabelecimentos";
+import { GoogleMapView } from "@/components/GoogleMapView";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useCepLookup } from "@/hooks/useCepLookup";
 import { BackButton } from "@/components/BackButton";
@@ -201,6 +201,23 @@ const Explorar = () => {
     image: est.logo_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
     distancia: est.distancia,
   }));
+
+  // Transformar dados para o formato do GoogleMapView
+  const estabelecimentosFormatados = useMemo(() => {
+    return estabelecimentosComDistancia
+      .filter(est => est.latitude && est.longitude)
+      .map(est => ({
+        id: est.id,
+        nome_fantasia: est.nome_fantasia || est.razao_social || 'Estabelecimento',
+        categoria: est.categoria || [],
+        endereco: `${est.logradouro || ''}, ${est.numero || ''} - ${est.bairro || ''}, ${est.cidade || ''}`,
+        latitude: Number(est.latitude),
+        longitude: Number(est.longitude),
+        logo_url: est.logo_url || null,
+        descricao_beneficio: est.descricao_beneficio || '',
+        cidade: est.cidade || '',
+      }));
+  }, [estabelecimentosComDistancia]);
 
   const filteredPlaces = allPlaces.filter(place => {
     if (activeCategories.length > 0 && !activeCategories.includes(place.category)) return false;
@@ -430,14 +447,14 @@ const Explorar = () => {
                 ))}
               </div>
             ) : (
-              <div className="rounded-xl overflow-hidden border border-white/10">
-                <MapaEstabelecimentos
-                  estabelecimentos={estabelecimentosComDistancia}
-                  userLocation={userLocation}
-                  onMarkerClick={(est: any) => navigate(`/estabelecimento/${est.id}`)}
-                  height="600px"
-                />
-              </div>
+              <GoogleMapView
+                establishments={estabelecimentosFormatados}
+                onEstablishmentClick={(id) => navigate(`/estabelecimento/${id}`)}
+                userLocation={userLocation ? {
+                  lat: userLocation.lat,
+                  lng: userLocation.lng
+                } : null}
+              />
             )}
           </>
         )}

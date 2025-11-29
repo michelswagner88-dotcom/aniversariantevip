@@ -1,113 +1,383 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Crown, UserPlus, Gift, FileCheck, PartyPopper } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
-import { BackButton } from "@/components/BackButton";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Cake, Store, UserPlus, Search, FileText, Gift, 
+  Building, Settings, CreditCard, Users, TrendingUp, 
+  Target, DollarSign, Star, ArrowRight
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-export default function ComoFunciona() {
-  const passos = [
-    {
-      numero: 1,
-      icon: UserPlus,
-      titulo: "Crie Sua Conta",
-      descricao: "Crie sua conta com seus dados básicos para liberar os benefícios.",
-    },
-    {
-      numero: 2,
-      icon: Gift,
-      titulo: "Emita Seus Cupons",
-      descricao: "Navegue pelos estabelecimentos parceiros e emita cupons em quantos locais desejar.",
-    },
-    {
-      numero: 3,
-      icon: FileCheck,
-      titulo: "Leia as Regras",
-      descricao: "Antes de utilizar seu cupom, leia atentamente as regras de cada estabelecimento.",
-    },
-    {
-      numero: 4,
-      icon: PartyPopper,
-      titulo: "Aproveite o Seu Benefício",
-      descricao: "Apresente o cupom no estabelecimento e curta seus benefícios de aniversário.",
-    },
-  ];
+const ComoFunciona = () => {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'aniversariante' | 'estabelecimento'>('aniversariante');
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <div className="pt-16">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-primary/10 to-background py-20">
-        <div className="container mx-auto px-4">
-          <BackButton to="/" className="mb-6" />
-        </div>
-        <div className="container mx-auto px-4 text-center">
-          <Crown className="h-16 w-16 text-primary mx-auto mb-6 animate-fade-in drop-shadow-lg" />
-          <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 animate-fade-in uppercase tracking-tight">
+      
+      {/* Hero */}
+      <section className="py-16 md:py-24 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
             Como Funciona
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed">
-            Aproveite seu aniversário com vantagens exclusivas em diversos estabelecimentos
+          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto">
+            Benefícios exclusivos para aniversariantes. 
+            Novos clientes para estabelecimentos.
           </p>
         </div>
       </section>
 
-      {/* Passos */}
-      <section className="py-20 bg-gradient-to-b from-background to-primary/5">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {passos.map((passo, index) => (
-              <Card 
-                key={passo.numero}
-                className="hover-scale transition-all duration-300 animate-fade-in"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="p-6 text-center">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <passo.icon className="h-8 w-8 text-primary" />
+      {/* Toggle Tabs */}
+      <section className="px-4 pb-8">
+        <div className="max-w-md mx-auto">
+          <div className="bg-gray-900 p-1 rounded-2xl flex">
+            <button
+              onClick={() => setActiveTab('aniversariante')}
+              className={`flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-xl font-medium transition-all ${
+                activeTab === 'aniversariante'
+                  ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Cake className="w-5 h-5" />
+              Aniversariante
+            </button>
+            <button
+              onClick={() => setActiveTab('estabelecimento')}
+              className={`flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-xl font-medium transition-all ${
+                activeTab === 'estabelecimento'
+                  ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Store className="w-5 h-5" />
+              Estabelecimento
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Conteúdo Aniversariante */}
+      {activeTab === 'aniversariante' && (
+        <>
+          {/* Passos */}
+          <section className="py-12 px-4">
+            <div className="max-w-5xl mx-auto">
+              
+              <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-4">
+                Ganhe benefícios no seu aniversário
+              </h2>
+              <p className="text-gray-400 text-center mb-12 max-w-2xl mx-auto">
+                Em poucos passos você desbloqueia ofertas exclusivas nos melhores estabelecimentos da sua cidade
+              </p>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                {/* Passo 1 */}
+                <div className="relative group">
+                  <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-violet-500/50 transition-all h-full">
+                    <div className="w-12 h-12 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl flex items-center justify-center mb-4">
+                      <span className="text-white font-bold text-lg">1</span>
+                    </div>
+                    <div className="w-10 h-10 bg-violet-500/20 rounded-lg flex items-center justify-center mb-4">
+                      <UserPlus className="w-5 h-5 text-violet-400" />
+                    </div>
+                    <h3 className="font-semibold text-white text-lg mb-2">
+                      Cadastre-se Grátis
+                    </h3>
+                    <p className="text-gray-400 text-sm">
+                      Crie sua conta com seus dados básicos para liberar os benefícios exclusivos.
+                    </p>
                   </div>
-                  <div className="mb-3">
-                    <span className="text-3xl font-bold text-primary">
-                      {passo.numero}
-                    </span>
+                </div>
+
+                {/* Passo 2 */}
+                <div className="relative group">
+                  <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-fuchsia-500/50 transition-all h-full">
+                    <div className="w-12 h-12 bg-gradient-to-r from-fuchsia-600 to-pink-600 rounded-xl flex items-center justify-center mb-4">
+                      <span className="text-white font-bold text-lg">2</span>
+                    </div>
+                    <div className="w-10 h-10 bg-fuchsia-500/20 rounded-lg flex items-center justify-center mb-4">
+                      <Search className="w-5 h-5 text-fuchsia-400" />
+                    </div>
+                    <h3 className="font-semibold text-white text-lg mb-2">
+                      Escolha Seus Benefícios
+                    </h3>
+                    <p className="text-gray-400 text-sm">
+                      Navegue pelos estabelecimentos parceiros e emita cupons em quantos locais desejar.
+                    </p>
                   </div>
-                  <h3 className="text-lg font-semibold mb-3 uppercase">{passo.titulo}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    {passo.descricao}
+                </div>
+
+                {/* Passo 3 */}
+                <div className="relative group">
+                  <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-pink-500/50 transition-all h-full">
+                    <div className="w-12 h-12 bg-gradient-to-r from-pink-600 to-rose-600 rounded-xl flex items-center justify-center mb-4">
+                      <span className="text-white font-bold text-lg">3</span>
+                    </div>
+                    <div className="w-10 h-10 bg-pink-500/20 rounded-lg flex items-center justify-center mb-4">
+                      <FileText className="w-5 h-5 text-pink-400" />
+                    </div>
+                    <h3 className="font-semibold text-white text-lg mb-2">
+                      Confira as Condições
+                    </h3>
+                    <p className="text-gray-400 text-sm">
+                      Antes de utilizar, leia atentamente as regras de cada estabelecimento.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Passo 4 */}
+                <div className="relative group">
+                  <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-rose-500/50 transition-all h-full">
+                    <div className="w-12 h-12 bg-gradient-to-r from-rose-600 to-orange-600 rounded-xl flex items-center justify-center mb-4">
+                      <span className="text-white font-bold text-lg">4</span>
+                    </div>
+                    <div className="w-10 h-10 bg-rose-500/20 rounded-lg flex items-center justify-center mb-4">
+                      <Gift className="w-5 h-5 text-rose-400" />
+                    </div>
+                    <h3 className="font-semibold text-white text-lg mb-2">
+                      Aproveite o Benefício
+                    </h3>
+                    <p className="text-gray-400 text-sm">
+                      Apresente o cupom no estabelecimento e curta seu aniversário com vantagens exclusivas.
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </section>
+
+          {/* CTA Aniversariante */}
+          <section className="py-12 px-4">
+            <div className="max-w-2xl mx-auto text-center">
+              <div className="bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 border border-violet-500/30 rounded-2xl p-8">
+                <h3 className="text-2xl font-bold text-white mb-4">
+                  Pronto para ganhar benefícios?
+                </h3>
+                <p className="text-gray-400 mb-6">
+                  Cadastre-se gratuitamente e comece a aproveitar
+                </p>
+                <Button
+                  onClick={() => navigate('/auth?modo=cadastro')}
+                  className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-lg px-8 py-6 h-auto"
+                >
+                  Cadastrar Grátis
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* Conteúdo Estabelecimento */}
+      {activeTab === 'estabelecimento' && (
+        <>
+          {/* Header */}
+          <section className="py-8 px-4">
+            <div className="max-w-4xl mx-auto text-center">
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                Torne-se um Estabelecimento Parceiro
+              </h2>
+              <p className="text-gray-400 max-w-2xl mx-auto">
+                Atraia mais clientes e destaque seu negócio na maior plataforma de benefícios para aniversariantes do Brasil
+              </p>
+            </div>
+          </section>
+
+          {/* Passos */}
+          <section className="py-12 px-4">
+            <div className="max-w-5xl mx-auto">
+              
+              <h3 className="text-xl font-semibold text-white text-center mb-8">
+                Como Funciona
+              </h3>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                {/* Passo 1 */}
+                <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-violet-500/50 transition-all">
+                  <div className="w-12 h-12 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl flex items-center justify-center mb-4">
+                    <span className="text-white font-bold text-lg">1</span>
+                  </div>
+                  <div className="w-10 h-10 bg-violet-500/20 rounded-lg flex items-center justify-center mb-4">
+                    <Building className="w-5 h-5 text-violet-400" />
+                  </div>
+                  <h3 className="font-semibold text-white text-lg mb-2">
+                    Cadastre-se
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Preencha seus dados de acesso e informações do seu estabelecimento.
                   </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+                </div>
 
-      {/* CTA */}
-      <section className="py-20 bg-gradient-to-t from-primary/10 to-background">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 uppercase tracking-tight">Pronto Para Começar?</h2>
-          <p className="text-muted-foreground mb-10 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed">
-            Crie sua conta gratuita agora e comece a aproveitar benefícios exclusivos no seu aniversário
-          </p>
-          <div className="flex flex-wrap gap-6 justify-center">
-            <Link to="/auth">
-              <Button size="lg" className="text-lg px-10 py-6 uppercase font-semibold">
-                <Crown className="mr-2 h-6 w-6" />
-                Cadastre-Se Grátis
-              </Button>
-            </Link>
-            <Link to="/">
-              <Button size="lg" variant="outline" className="text-lg px-10 py-6 uppercase font-semibold">
-                Ver Estabelecimentos
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-      </div>
-      <Footer />
+                {/* Passo 2 */}
+                <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-fuchsia-500/50 transition-all">
+                  <div className="w-12 h-12 bg-gradient-to-r from-fuchsia-600 to-pink-600 rounded-xl flex items-center justify-center mb-4">
+                    <span className="text-white font-bold text-lg">2</span>
+                  </div>
+                  <div className="w-10 h-10 bg-fuchsia-500/20 rounded-lg flex items-center justify-center mb-4">
+                    <Settings className="w-5 h-5 text-fuchsia-400" />
+                  </div>
+                  <h3 className="font-semibold text-white text-lg mb-2">
+                    Defina Seus Benefícios
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Informe os benefícios para os aniversariantes e suas regras de utilização.
+                  </p>
+                </div>
+
+                {/* Passo 3 */}
+                <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-pink-500/50 transition-all">
+                  <div className="w-12 h-12 bg-gradient-to-r from-pink-600 to-rose-600 rounded-xl flex items-center justify-center mb-4">
+                    <span className="text-white font-bold text-lg">3</span>
+                  </div>
+                  <div className="w-10 h-10 bg-pink-500/20 rounded-lg flex items-center justify-center mb-4">
+                    <CreditCard className="w-5 h-5 text-pink-400" />
+                  </div>
+                  <h3 className="font-semibold text-white text-lg mb-2">
+                    Ative Seu Perfil
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Escolha um dos planos disponíveis para ativar sua oferta na plataforma.
+                  </p>
+                </div>
+
+                {/* Passo 4 */}
+                <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-rose-500/50 transition-all">
+                  <div className="w-12 h-12 bg-gradient-to-r from-rose-600 to-orange-600 rounded-xl flex items-center justify-center mb-4">
+                    <span className="text-white font-bold text-lg">4</span>
+                  </div>
+                  <div className="w-10 h-10 bg-rose-500/20 rounded-lg flex items-center justify-center mb-4">
+                    <Users className="w-5 h-5 text-rose-400" />
+                  </div>
+                  <h3 className="font-semibold text-white text-lg mb-2">
+                    Receba Aniversariantes
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Os aniversariantes emitem cupons e apresentam no momento da utilização.
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          </section>
+
+          {/* Vantagens */}
+          <section className="py-12 px-4 bg-white/5">
+            <div className="max-w-5xl mx-auto">
+              
+              <h3 className="text-2xl font-bold text-white text-center mb-4">
+                Vantagens de Ser Parceiro
+              </h3>
+              <p className="text-gray-400 text-center mb-12">
+                Descubra como a parceria pode transformar seu negócio
+              </p>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                
+                {/* Vantagem 1 */}
+                <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-violet-500/30 transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-violet-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <TrendingUp className="w-6 h-6 text-violet-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white text-lg mb-2">
+                        Mais Movimento
+                      </h4>
+                      <p className="text-gray-400 text-sm leading-relaxed">
+                        Aniversariante raramente comemora sozinho. Ele traz amigos, família, colegas de trabalho. Um único cupom pode representar uma mesa cheia de novos clientes.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vantagem 2 */}
+                <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-fuchsia-500/30 transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-fuchsia-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Star className="w-6 h-6 text-fuchsia-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white text-lg mb-2">
+                        Posicionamento Diferenciado
+                      </h4>
+                      <p className="text-gray-400 text-sm leading-relaxed">
+                        Seu estabelecimento se torna referência em celebrações, aparecendo em uma plataforma focada 100% em aniversários, destaque frente à concorrência.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vantagem 3 */}
+                <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-pink-500/30 transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Target className="w-6 h-6 text-pink-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white text-lg mb-2">
+                        Marketing Direcionado
+                      </h4>
+                      <p className="text-gray-400 text-sm leading-relaxed">
+                        Divulgação ativa e contínua para um público com alta intenção de consumo: pessoas que estão prestes a comemorar e já procuram onde ir.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vantagem 4 */}
+                <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-rose-500/30 transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-rose-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <DollarSign className="w-6 h-6 text-rose-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white text-lg mb-2">
+                        Baixo Custo, Alto Retorno
+                      </h4>
+                      <p className="text-gray-400 text-sm leading-relaxed">
+                        Investimento muito menor que mídia tradicional, com potencial de retorno mês após mês, enquanto sua empresa estiver na plataforma.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </section>
+
+          {/* CTA Estabelecimento */}
+          <section className="py-16 px-4">
+            <div className="max-w-2xl mx-auto text-center">
+              <div className="bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 border border-violet-500/30 rounded-2xl p-8">
+                <h3 className="text-2xl font-bold text-white mb-4">
+                  Pronto para atrair mais clientes?
+                </h3>
+                <p className="text-gray-400 mb-6">
+                  Cadastre seu estabelecimento e comece a receber aniversariantes
+                </p>
+                <Button
+                  onClick={() => navigate('/cadastro/estabelecimento')}
+                  className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-lg px-8 py-6 h-auto"
+                >
+                  Cadastrar Estabelecimento
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+                <p className="text-sm text-gray-500 mt-4">
+                  Já tem conta? <button onClick={() => navigate('/login/estabelecimento')} className="text-violet-400 hover:text-violet-300">Entrar</button>
+                </p>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
+
     </div>
   );
-}
+};
+
+export default ComoFunciona;

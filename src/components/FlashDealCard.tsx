@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { SafeImage } from "@/components/SafeImage";
 import { FlashPromo } from "@/hooks/useFlashPromos";
 import { useEffect, useState } from "react";
+import { getEstabelecimentoUrl } from "@/lib/slugUtils";
 
 interface FlashDealCardProps {
   promo: FlashPromo;
@@ -53,7 +54,13 @@ export const FlashDealCard = ({ promo }: FlashDealCardProps) => {
   }, [promo.expires_at]);
 
   const handleClaim = () => {
-    navigate(`/estabelecimento/${promo.estabelecimento_id}`);
+    const url = getEstabelecimentoUrl({
+      estado: promo.estado,
+      cidade: promo.cidade,
+      slug: promo.estabelecimentos?.slug,
+      id: promo.estabelecimento_id
+    });
+    navigate(url);
   };
 
   return (

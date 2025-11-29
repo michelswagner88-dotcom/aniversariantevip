@@ -372,6 +372,7 @@ export type Database = {
           referred_by_user_id: string | null
           regras_utilizacao: string | null
           site: string | null
+          slug: string | null
           stripe_customer_id: string | null
           telefone: string | null
           tem_conta_acesso: boolean | null
@@ -409,6 +410,7 @@ export type Database = {
           referred_by_user_id?: string | null
           regras_utilizacao?: string | null
           site?: string | null
+          slug?: string | null
           stripe_customer_id?: string | null
           telefone?: string | null
           tem_conta_acesso?: boolean | null
@@ -446,6 +448,7 @@ export type Database = {
           referred_by_user_id?: string | null
           regras_utilizacao?: string | null
           site?: string | null
+          slug?: string | null
           stripe_customer_id?: string | null
           telefone?: string | null
           tem_conta_acesso?: boolean | null
@@ -1069,6 +1072,7 @@ export type Database = {
           razao_social: string | null
           regras_utilizacao: string | null
           site: string | null
+          slug: string | null
           telefone: string | null
           whatsapp: string | null
         }
@@ -1098,6 +1102,7 @@ export type Database = {
           razao_social?: string | null
           regras_utilizacao?: string | null
           site?: string | null
+          slug?: string | null
           telefone?: string | null
           whatsapp?: string | null
         }
@@ -1127,6 +1132,7 @@ export type Database = {
           razao_social?: string | null
           regras_utilizacao?: string | null
           site?: string | null
+          slug?: string | null
           telefone?: string | null
           whatsapp?: string | null
         }
@@ -1161,6 +1167,8 @@ export type Database = {
           error_message: string
         }[]
       }
+      generate_city_slug: { Args: { cidade: string }; Returns: string }
+      generate_slug: { Args: { nome: string }; Returns: string }
       generate_unique_coupon_code: { Args: never; Returns: string }
       get_birthday_forecast: {
         Args: { p_cidade: string; p_estado: string }

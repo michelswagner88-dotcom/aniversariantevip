@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { sanitizarInput } from "@/lib/sanitize";
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
+import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick }: any) => (
@@ -63,7 +64,13 @@ const PlaceCard = ({ place }: any) => {
   };
 
   const handleCardClick = () => {
-    navigate(`/estabelecimento/${place.id}`);
+    const url = getEstabelecimentoUrl({
+      estado: place.estado,
+      cidade: place.cidade,
+      slug: place.slug,
+      id: place.id
+    });
+    navigate(url);
   };
 
   return (
@@ -216,6 +223,8 @@ const Explorar = () => {
         logo_url: est.logo_url || null,
         descricao_beneficio: est.descricao_beneficio || '',
         cidade: est.cidade || '',
+        estado: est.estado || '',
+        slug: est.slug || null,
       }));
   }, [estabelecimentosComDistancia]);
 
@@ -449,7 +458,15 @@ const Explorar = () => {
             ) : (
               <GoogleMapView
                 establishments={estabelecimentosFormatados}
-                onEstablishmentClick={(id) => navigate(`/estabelecimento/${id}`)}
+                onEstablishmentClick={(establishment) => {
+                  const url = getEstabelecimentoUrl({
+                    estado: establishment.estado,
+                    cidade: establishment.cidade,
+                    slug: establishment.slug,
+                    id: establishment.id
+                  });
+                  navigate(url);
+                }}
                 userLocation={userLocation ? {
                   lat: userLocation.lat,
                   lng: userLocation.lng

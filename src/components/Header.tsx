@@ -54,9 +54,9 @@ export const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/5">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/[0.08]">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-16">
           {/* Logo - Esquerda */}
           <Link to="/" className="flex-shrink-0">
             <span className="font-display font-extrabold text-xl sm:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 tracking-tight">
@@ -64,34 +64,34 @@ export const Header = () => {
             </span>
           </Link>
 
-          {/* Links Centro - Desktop */}
-          <div className="hidden lg:flex items-center justify-center flex-1 gap-8">
+          {/* Links Centro - Desktop Premium */}
+          <div className="hidden lg:flex items-center justify-center flex-1 gap-1">
             <NavLink 
               to="/" 
               end
-              className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
-              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
+              className="text-sm font-medium text-slate-300 hover:text-white transition-all duration-180 px-4 py-2 rounded-lg hover:bg-white/5"
+              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
             >
               Início
             </NavLink>
             <NavLink 
               to="/explorar" 
-              className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
-              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
+              className="text-sm font-medium text-slate-300 hover:text-white transition-all duration-180 px-4 py-2 rounded-lg hover:bg-white/5"
+              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
             >
               Explorar
             </NavLink>
             <NavLink 
               to="/feed" 
-              className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
-              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
+              className="text-sm font-medium text-slate-300 hover:text-white transition-all duration-180 px-4 py-2 rounded-lg hover:bg-white/5"
+              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
             >
               Feed
             </NavLink>
             <NavLink 
               to="/como-funciona" 
-              className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
-              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
+              className="text-sm font-medium text-slate-300 hover:text-white transition-all duration-180 px-4 py-2 rounded-lg hover:bg-white/5"
+              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
             >
               Como Funciona
             </NavLink>
@@ -141,49 +141,50 @@ export const Header = () => {
             )}
           </div>
 
-          {/* Menu Hambúrguer - Mobile */}
+          {/* Menu Hambúrguer - Mobile Premium (44px hit area) */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
+            className="lg:hidden p-2.5 -mr-2 text-white hover:bg-white/10 rounded-xl transition-all duration-180 active:scale-95"
+            style={{ minWidth: '44px', minHeight: '44px' }}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
 
-        {/* Menu Mobile */}
+        {/* Menu Mobile Premium */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-slate-900/95 backdrop-blur-xl rounded-2xl mt-2 p-4 animate-fade-in">
-            <div className="flex flex-col gap-2">
+          <div className="lg:hidden fixed inset-x-4 top-20 bg-slate-900/95 backdrop-blur-xl rounded-2xl p-3 shadow-premium-lg border border-white/10 animate-slide-in-right">
+            <div className="flex flex-col gap-1">
               <NavLink
                 to="/"
                 end
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
-                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
+                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-180 active:scale-98"
+                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
               >
                 Início
               </NavLink>
               <NavLink
                 to="/explorar"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
-                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
+                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-180 active:scale-98"
+                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
               >
                 Explorar
               </NavLink>
               <NavLink
                 to="/feed"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
-                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
+                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-180 active:scale-98"
+                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
               >
                 Feed
               </NavLink>
               <NavLink
                 to="/como-funciona"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/10 rounded-lg transition-colors"
-                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500"
+                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-180 active:scale-98"
+                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
               >
                 Como Funciona
               </NavLink>

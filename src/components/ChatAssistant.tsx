@@ -125,27 +125,33 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
 
   return (
     <>
-      {/* Botão Flutuante com Safe Area */}
+      {/* Botão Flutuante Premium com Safe Area */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 sm:bottom-6 sm:right-6 bottom-24 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-2xl shadow-violet-500/30 transition-all hover:scale-110 hover:shadow-violet-500/50 active:scale-95"
-          style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          className="fixed right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-premium-lg shadow-violet-500/30 transition-all duration-180 hover:scale-105 hover:shadow-violet-500/40 active:scale-95"
+          style={{ 
+            bottom: 'max(1.5rem, calc(1.5rem + env(safe-area-inset-bottom, 0px)))',
+            marginBottom: '80px'
+          }}
           aria-label="Abrir chat assistente"
         >
-          <MessageCircle size={24} />
-          <span className="absolute -top-1 -right-1 flex h-5 w-5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-pink-400 opacity-75"></span>
-            <span className="relative inline-flex h-5 w-5 rounded-full bg-pink-500"></span>
+          <MessageCircle size={22} strokeWidth={2.5} />
+          <span className="absolute -top-1 -right-1 flex h-4 w-4">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-fuchsia-400 opacity-75"></span>
+            <span className="relative inline-flex h-4 w-4 rounded-full bg-fuchsia-500"></span>
           </span>
         </button>
       )}
 
-      {/* Janela do Chat com Safe Area */}
+      {/* Janela do Chat Premium */}
       {isOpen && (
         <div 
-          className="fixed bottom-6 right-6 sm:bottom-6 sm:right-6 bottom-24 z-50 flex h-[600px] w-[400px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-2xl animate-in slide-in-from-bottom-10 fade-in duration-300"
-          style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          className="fixed right-5 z-40 flex h-[600px] w-[380px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-premium-lg animate-in slide-in-from-bottom-10 fade-in"
+          style={{ 
+            bottom: 'max(1.5rem, calc(1.5rem + env(safe-area-inset-bottom, 0px)))',
+            marginBottom: '80px'
+          }}
         >
           
           {/* Header */}

@@ -289,42 +289,46 @@ All colors MUST be HSL.
     animation-play-state: paused !important;
   }
   
-  /* Chat bubble safe positioning */
-  .chat-bubble-safe {
+  /* Chat bubble collision prevention */
+  .chat-bubble {
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
-  body.footer-in-view .chat-bubble-safe {
+  body.footer-visible .chat-bubble {
     transform: translateY(-100px);
   }
   
-  /* Premium inputs */
+  /* Premium input styles */
   input:not([type="checkbox"]):not([type="radio"]), 
   textarea, 
   select {
-    @apply bg-white/10 border border-white/20 text-white;
-    @apply placeholder:text-white/60;
-    @apply transition-all duration-200;
+    transition: all 0.2s ease;
   }
   
-  input:not([type="checkbox"]):not([type="radio"]):hover, 
-  textarea:hover, 
-  select:hover {
-    @apply bg-white/15 border-white/30;
+  input:not([type="checkbox"]):not([type="radio"])::placeholder,
+  textarea::placeholder,
+  select::placeholder {
+    color: rgb(255 255 255 / 0.65);
+    font-weight: 400;
+  }
+  
+  input:not([type="checkbox"]):not([type="radio"]):hover:not(:disabled), 
+  textarea:hover:not(:disabled), 
+  select:hover:not(:disabled) {
+    border-color: rgb(255 255 255 / 0.25);
   }
   
   input:not([type="checkbox"]):not([type="radio"]):focus, 
   textarea:focus, 
   select:focus {
-    @apply bg-white/20 border-violet-500/50;
-    @apply ring-2 ring-violet-500/30;
-    @apply outline-none;
-    box-shadow: 0 0 20px rgba(168, 85, 247, 0.15);
+    outline: none;
+    border-color: rgb(139 92 246 / 0.5);
+    box-shadow: 0 0 0 3px rgb(139 92 246 / 0.15), 0 0 20px rgb(139 92 246 / 0.1);
   }
   
-  /* Texto secundário legível */
+  /* Text muted - better readability */
   .text-muted {
-    @apply text-white/85;
+    color: rgb(255 255 255 / 0.85) !important;
   }
 }
 

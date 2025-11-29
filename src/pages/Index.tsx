@@ -213,8 +213,8 @@ const Index = () => {
     <div className="flex flex-col min-h-screen bg-slate-950">
       <Header />
 
-      {/* Hero Section - Premium World-Class */}
-      <section className="flex-1 relative flex items-center justify-center overflow-hidden pt-16 pb-12 sm:pt-32 sm:pb-40 px-6 min-h-[60vh] md:min-h-screen">
+      {/* Hero Section */}
+      <section className="relative min-h-[55vh] md:min-h-screen flex items-center justify-center px-4 overflow-hidden pt-12 pb-8 sm:pt-32 sm:pb-32">
         {/* Grid Pattern Background - Subtle */}
         <div 
           className="absolute inset-0 opacity-30"
@@ -395,8 +395,8 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Social Proof - Enhanced Contrast */}
-          <p className="text-white/85 text-sm mt-10 sm:mt-12 mb-0 animate-fade-in" style={{ animationDelay: '0.32s' }}>
+          {/* Social Proof */}
+          <p className="text-white/85 text-sm mt-8 sm:mt-10 mb-0 animate-fade-in" style={{ animationDelay: '0.32s' }}>
             Junte-se a mais de 50.000 aniversariantes que economizam todo mês.
           </p>
         </div>

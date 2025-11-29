@@ -42,7 +42,7 @@ const EstabelecimentoDetalhe = () => {
       if (!id) return;
 
       const { data, error } = await supabase
-        .from('estabelecimentos')
+        .from('public_estabelecimentos')
         .select('*')
         .eq('id', id)
         .eq('ativo', true)

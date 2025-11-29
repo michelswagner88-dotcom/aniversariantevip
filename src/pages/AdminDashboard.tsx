@@ -1328,7 +1328,6 @@ export default function AdminDashboard() {
                 <div className="h-[600px]">
                   <MapaEstabelecimentos
                     estabelecimentos={filteredEstablishments}
-                    showClusters={true}
                     height="600px"
                   />
                 </div>

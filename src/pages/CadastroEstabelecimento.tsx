@@ -103,7 +103,7 @@ const BenefitRulesSection = ({ rules, setRules }) => {
           onChange={handleTextChange}
           placeholder="Ex: 10% de desconto em qualquer produto, válido de segunda a sexta."
           rows={4}
-          className="w-full p-3 border border-violet-300 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none resize-none"
+          className="w-full p-3 border border-violet-300 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none resize-none text-slate-900 bg-white"
         />
         <div className="absolute bottom-2 right-3 text-xs text-slate-500">
           {rules.description.length} / {MAX_CHARS}

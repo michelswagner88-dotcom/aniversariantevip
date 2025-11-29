@@ -163,6 +163,11 @@ export default function EstablishmentRegistration() {
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
   const [authData, setAuthData] = useState({ email: '', password: '' });
+  const [passwordRequirements, setPasswordRequirements] = useState({
+    minLength: false,
+    hasUppercase: false,
+    hasSpecialChar: false,
+  });
   const [isGoogleUser, setIsGoogleUser] = useState(false);
   const [establishmentData, setEstablishmentData] = useState({
     cnpj: '',
@@ -410,13 +415,31 @@ export default function EstablishmentRegistration() {
     }
   };
 
+  const validatePassword = (password: string) => {
+    setPasswordRequirements({
+      minLength: password.length >= 8,
+      hasUppercase: /[A-Z]/.test(password),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    });
+  };
+
   const handleAuthSubmit = (e) => {
     e.preventDefault();
-    if (authData.email && authData.password) {
-      setStep(2);
-    } else {
+    const allRequirementsMet = passwordRequirements.minLength && 
+                                passwordRequirements.hasUppercase && 
+                                passwordRequirements.hasSpecialChar;
+    
+    if (!authData.email || !authData.password) {
       setError('Preencha email e senha.');
+      return;
     }
+    
+    if (!allRequirementsMet) {
+      setError('A senha não atende aos requisitos mínimos.');
+      return;
+    }
+    
+    setStep(2);
   };
 
   const handleFinalSubmit = async (e) => {
@@ -650,10 +673,51 @@ export default function EstablishmentRegistration() {
           <input 
             type="password" 
             value={authData.password}
-            onChange={(e) => setAuthData(prev => ({ ...prev, password: e.target.value }))}
+            onChange={(e) => {
+              const newPassword = e.target.value;
+              setAuthData(prev => ({ ...prev, password: newPassword }));
+              validatePassword(newPassword);
+            }}
             className="w-full pl-10 pr-4 py-3 border border-white/10 bg-white/5 text-white placeholder-slate-600 rounded-xl focus:ring-violet-500/50 focus:border-violet-500/50 outline-none transition-all"
             required
           />
+        </div>
+        
+        {/* Password Requirements */}
+        <div className="mt-3 space-y-2 text-sm">
+          <p className="text-slate-400 font-medium">A senha deve conter:</p>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              {passwordRequirements.minLength ? (
+                <CheckCircle size={16} className="text-emerald-400" />
+              ) : (
+                <div className="w-4 h-4 rounded-full border-2 border-slate-600" />
+              )}
+              <span className={passwordRequirements.minLength ? 'text-emerald-400' : 'text-slate-500'}>
+                Mínimo 8 caracteres
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {passwordRequirements.hasUppercase ? (
+                <CheckCircle size={16} className="text-emerald-400" />
+              ) : (
+                <div className="w-4 h-4 rounded-full border-2 border-slate-600" />
+              )}
+              <span className={passwordRequirements.hasUppercase ? 'text-emerald-400' : 'text-slate-500'}>
+                Uma letra maiúscula
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {passwordRequirements.hasSpecialChar ? (
+                <CheckCircle size={16} className="text-emerald-400" />
+              ) : (
+                <div className="w-4 h-4 rounded-full border-2 border-slate-600" />
+              )}
+              <span className={passwordRequirements.hasSpecialChar ? 'text-emerald-400' : 'text-slate-500'}>
+                Um caractere especial (!@#$%...)
+              </span>
+            </div>
+          </div>
         </div>
       </div>
       

@@ -4,13 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   ArrowLeft, MapPin, Phone, Globe, Instagram, Clock, 
   Share2, Heart, Gift, MessageCircle, ExternalLink,
-  Navigation, UtensilsCrossed
+  Navigation, UtensilsCrossed, Copy, Send, Linkedin, Facebook
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import CupomModal from '@/components/CupomModal';
 import LoginRequiredModal from '@/components/LoginRequiredModal';
 import { useFavoritos } from '@/hooks/useFavoritos';
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle 
+} from '@/components/ui/sheet';
 
 const EstabelecimentoDetalhe = () => {
   const { id } = useParams();
@@ -19,6 +25,7 @@ const EstabelecimentoDetalhe = () => {
   const [loading, setLoading] = useState(true);
   const [showCupomModal, setShowCupomModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
   const [beneficioAberto, setBeneficioAberto] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -95,15 +102,59 @@ const EstabelecimentoDetalhe = () => {
     await toggleFavorito(id);
   };
 
-  const handleShare = async () => {
-    const url = window.location.href;
-    const text = `Confira ${estabelecimento.nome_fantasia} no Aniversariante VIP!`;
-    if (navigator.share) {
-      try { await navigator.share({ title: estabelecimento.nome_fantasia, text, url }); } catch {}
-    } else {
-      navigator.clipboard.writeText(url);
-      toast.success('Link copiado!');
-    }
+  const handleShare = () => {
+    setShowShareSheet(true);
+  };
+
+  const getShareText = () => {
+    return `🎂 Confira ${estabelecimento.nome_fantasia} no Aniversariante VIP!\n\n📍 ${estabelecimento.bairro}, ${estabelecimento.cidade}`;
+  };
+
+  const getShareUrl = () => window.location.href;
+
+  const handleShareWhatsApp = () => {
+    const text = getShareText();
+    const url = getShareUrl();
+    window.open(`https://wa.me/?text=${encodeURIComponent(text + '\n\n' + url)}`, '_blank');
+    setShowShareSheet(false);
+  };
+
+  const handleShareInstagram = () => {
+    navigator.clipboard.writeText(getShareUrl());
+    toast.success('Link copiado! Cole no seu Stories ou Direct do Instagram 📸');
+    setShowShareSheet(false);
+  };
+
+  const handleShareFacebook = () => {
+    const url = getShareUrl();
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    setShowShareSheet(false);
+  };
+
+  const handleShareX = () => {
+    const text = getShareText();
+    const url = getShareUrl();
+    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+    setShowShareSheet(false);
+  };
+
+  const handleShareTelegram = () => {
+    const text = getShareText();
+    const url = getShareUrl();
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
+    setShowShareSheet(false);
+  };
+
+  const handleShareLinkedin = () => {
+    const url = getShareUrl();
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+    setShowShareSheet(false);
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(getShareUrl());
+    toast.success('Link copiado!');
+    setShowShareSheet(false);
   };
 
   const handleWhatsApp = () => {
@@ -494,6 +545,97 @@ const EstabelecimentoDetalhe = () => {
         onClose={() => setShowLoginModal(false)}
         returnUrl={window.location.pathname}
       />
+
+      {/* Share Sheet */}
+      <Sheet open={showShareSheet} onOpenChange={setShowShareSheet}>
+        <SheetContent side="bottom" className="bg-slate-900 border-slate-800">
+          <SheetHeader>
+            <SheetTitle className="text-white text-center">Compartilhar</SheetTitle>
+          </SheetHeader>
+          
+          <div className="grid grid-cols-3 gap-4 mt-6 mb-4">
+            
+            {/* WhatsApp */}
+            <button
+              onClick={handleShareWhatsApp}
+              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(37, 211, 102, 0.2)' }}>
+                <MessageCircle className="w-6 h-6" style={{ color: '#25D366' }} />
+              </div>
+              <span className="text-xs text-gray-300">WhatsApp</span>
+            </button>
+
+            {/* Instagram */}
+            <button
+              onClick={handleShareInstagram}
+              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ 
+                background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)' 
+              }}>
+                <Instagram className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-xs text-gray-300">Instagram</span>
+            </button>
+
+            {/* Facebook */}
+            <button
+              onClick={handleShareFacebook}
+              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(24, 119, 242, 0.2)' }}>
+                <Facebook className="w-6 h-6" style={{ color: '#1877F2' }} />
+              </div>
+              <span className="text-xs text-gray-300">Facebook</span>
+            </button>
+
+            {/* X (Twitter) */}
+            <button
+              onClick={handleShareX}
+              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </div>
+              <span className="text-xs text-gray-300">X</span>
+            </button>
+
+            {/* Telegram */}
+            <button
+              onClick={handleShareTelegram}
+              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 136, 204, 0.2)' }}>
+                <Send className="w-6 h-6" style={{ color: '#0088cc' }} />
+              </div>
+              <span className="text-xs text-gray-300">Telegram</span>
+            </button>
+
+            {/* LinkedIn */}
+            <button
+              onClick={handleShareLinkedin}
+              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(10, 102, 194, 0.2)' }}>
+                <Linkedin className="w-6 h-6" style={{ color: '#0A66C2' }} />
+              </div>
+              <span className="text-xs text-gray-300">LinkedIn</span>
+            </button>
+          </div>
+
+          {/* Copiar Link */}
+          <button
+            onClick={handleCopyLink}
+            className="w-full flex items-center justify-center gap-2 p-4 bg-violet-500/20 rounded-xl hover:bg-violet-500/30 transition-colors mt-2"
+          >
+            <Copy className="w-5 h-5 text-violet-400" />
+            <span className="text-white font-medium">Copiar Link</span>
+          </button>
+        </SheetContent>
+      </Sheet>
 
     </div>
   );

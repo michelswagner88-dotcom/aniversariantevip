@@ -987,11 +987,18 @@ const [horarioTemp, setHorarioTemp] = useState({
           <div className="relative">
             <Globe size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
-              type="url" 
+              type="text" 
               value={establishmentData.siteLink} 
               onChange={(e) => setEstablishmentData(prev => ({ ...prev, siteLink: e.target.value }))}
+              onBlur={(e) => {
+                // Adiciona https:// automaticamente se não tiver protocolo
+                const value = e.target.value.trim();
+                if (value && !value.startsWith('http://') && !value.startsWith('https://')) {
+                  setEstablishmentData(prev => ({ ...prev, siteLink: `https://${value}` }));
+                }
+              }}
               className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-              placeholder="https://www.suaempresa.com.br"
+              placeholder="www.suaempresa.com.br"
             />
             <p className="mt-1 text-xs text-slate-500">Este link aparecerá na seção 'Informações' do Card.</p>
           </div>

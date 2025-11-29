@@ -1054,12 +1054,14 @@ export type Database = {
           descricao_beneficio: string | null
           endereco: string | null
           estado: string | null
+          galeria_fotos: string[] | null
           horario_funcionamento: string | null
           id: string | null
           instagram: string | null
           latitude: number | null
           link_cardapio: string | null
           logo_url: string | null
+          logradouro: string | null
           longitude: number | null
           nome_fantasia: string | null
           numero: string | null
@@ -1081,12 +1083,14 @@ export type Database = {
           descricao_beneficio?: string | null
           endereco?: string | null
           estado?: string | null
+          galeria_fotos?: string[] | null
           horario_funcionamento?: string | null
           id?: string | null
           instagram?: string | null
           latitude?: number | null
           link_cardapio?: string | null
           logo_url?: string | null
+          logradouro?: string | null
           longitude?: number | null
           nome_fantasia?: string | null
           numero?: string | null
@@ -1108,12 +1112,14 @@ export type Database = {
           descricao_beneficio?: string | null
           endereco?: string | null
           estado?: string | null
+          galeria_fotos?: string[] | null
           horario_funcionamento?: string | null
           id?: string | null
           instagram?: string | null
           latitude?: number | null
           link_cardapio?: string | null
           logo_url?: string | null
+          logradouro?: string | null
           longitude?: number | null
           nome_fantasia?: string | null
           numero?: string | null

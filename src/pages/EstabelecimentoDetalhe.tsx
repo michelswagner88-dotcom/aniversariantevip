@@ -42,7 +42,7 @@ const EstabelecimentoDetalhe = () => {
       if (!id) return;
 
       const { data, error } = await supabase
-        .from('public_estabelecimentos')
+        .from('estabelecimentos')
         .select('*')
         .eq('id', id)
         .eq('ativo', true)
@@ -53,6 +53,17 @@ const EstabelecimentoDetalhe = () => {
         navigate('/explorar');
         return;
       }
+
+      // Debug: verificar dados do endereço
+      console.log('📍 Endereço do estabelecimento:', {
+        logradouro: data.logradouro,
+        numero: data.numero,
+        complemento: data.complemento,
+        bairro: data.bairro,
+        cidade: data.cidade,
+        estado: data.estado,
+        cep: data.cep
+      });
 
       setEstabelecimento(data);
       setLoading(false);
@@ -350,21 +361,12 @@ const EstabelecimentoDetalhe = () => {
 
             {/* Endereço completo */}
             <p className="text-gray-400 text-sm mb-4">
-              {estabelecimento.logradouro && estabelecimento.numero ? (
-                <>
-                  {estabelecimento.logradouro}, {estabelecimento.numero}
-                  {estabelecimento.complemento && ` - ${estabelecimento.complemento}`}
-                  <br />
-                  {estabelecimento.bairro} - {estabelecimento.cidade}/{estabelecimento.estado}
-                </>
-              ) : (
-                <>
-                  {estabelecimento.logradouro || estabelecimento.numero || 'Endereço não informado'}
-                  {estabelecimento.complemento && ` - ${estabelecimento.complemento}`}
-                  <br />
-                  {estabelecimento.bairro} - {estabelecimento.cidade}/{estabelecimento.estado}
-                </>
-              )}
+              {estabelecimento.logradouro && `${estabelecimento.logradouro}, `}
+              {estabelecimento.numero}
+              {estabelecimento.complemento && ` - ${estabelecimento.complemento}`}
+              <br />
+              {estabelecimento.bairro} - {estabelecimento.cidade}/{estabelecimento.estado}
+              {estabelecimento.cep && ` • CEP: ${estabelecimento.cep}`}
             </p>
 
             {/* Mini mapa clicável */}

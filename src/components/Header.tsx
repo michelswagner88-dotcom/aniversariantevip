@@ -131,11 +131,19 @@ export const Header = () => {
                   <Link to="/seja-parceiro">Seja Parceiro</Link>
                 </Button>
                 <Button
+                  variant="ghost"
                   size="sm"
                   asChild
-                  className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white rounded-full px-6"
+                  className="text-white hover:bg-white/10"
                 >
                   <Link to="/selecionar-perfil">Entrar</Link>
+                </Button>
+                <Button
+                  size="sm"
+                  asChild
+                  className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white rounded-full px-6 font-semibold"
+                >
+                  <Link to="/auth">Cadastro Gratuito</Link>
                 </Button>
               </>
             )}
@@ -227,11 +235,19 @@ export const Header = () => {
                     <Link to="/seja-parceiro">Seja Parceiro</Link>
                   </Button>
                   <Button
+                    variant="ghost"
                     asChild
                     onClick={() => setMobileMenuOpen(false)}
-                    className="justify-start bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 text-white"
+                    className="justify-start text-white hover:bg-white/10"
                   >
                     <Link to="/selecionar-perfil">Entrar</Link>
+                  </Button>
+                  <Button
+                    asChild
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="justify-start bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 text-white font-semibold"
+                  >
+                    <Link to="/auth">Cadastro Gratuito</Link>
                   </Button>
                 </>
               )}

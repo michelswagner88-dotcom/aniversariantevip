@@ -175,6 +175,7 @@ const EstabelecimentoDetalhe = () => {
   if (!estabelecimento) return null;
 
   const categoria = estabelecimento.categoria?.[0] || 'Estabelecimento';
+  const mostraCardapio = ['Bar', 'Restaurante'].includes(categoria);
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -295,16 +296,18 @@ const EstabelecimentoDetalhe = () => {
               </button>
 
               {/* Cardápio */}
-              <button
-                onClick={handleCardapio}
-                disabled={!estabelecimento.link_cardapio}
-                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-orange-500/20 transition-all group disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <div className="w-9 h-9 bg-orange-500/20 rounded-full flex items-center justify-center group-hover:bg-orange-500/30">
-                  <UtensilsCrossed className="w-4 h-4 text-orange-400" />
-                </div>
-                <span className="text-[10px] text-gray-400 group-hover:text-orange-400">Cardápio</span>
-              </button>
+              {mostraCardapio && (
+                <button
+                  onClick={handleCardapio}
+                  disabled={!estabelecimento.link_cardapio}
+                  className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-orange-500/20 transition-all group disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <div className="w-9 h-9 bg-orange-500/20 rounded-full flex items-center justify-center group-hover:bg-orange-500/30">
+                    <UtensilsCrossed className="w-4 h-4 text-orange-400" />
+                  </div>
+                  <span className="text-[10px] text-gray-400 group-hover:text-orange-400">Cardápio</span>
+                </button>
+              )}
 
               {/* Site */}
               <button

@@ -34,13 +34,7 @@ import { getFriendlyErrorMessage } from '@/lib/errorTranslator';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-// Categorias disponíveis
-const AVAILABLE_CATEGORIES = [
-  'Academia', 'Bar', 'Barbearia', 'Cafeteria', 'Casa Noturna', 
-  'Entretenimento', 'Hospedagem', 'Loja de Presentes', 'Moda e Acessórios', 
-  'Confeitaria', 'Restaurante', 'Salão de Beleza', 'Saúde e Suplementos', 
-  'Outros Comércios', 'Serviços'
-];
+import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 
 // Função para padronizar texto usando Lovable AI
 const standardizeTextWithAI = async (text: string): Promise<string> => {
@@ -1277,18 +1271,18 @@ const [horarioTemp, setHorarioTemp] = useState({
         <label className="block">
           <span className="text-sm font-medium text-slate-700 mb-1 block">Categoria (Selecione até 3) *</span>
           <div className="flex flex-wrap gap-2">
-            {AVAILABLE_CATEGORIES.map(category => (
+            {CATEGORIAS_ESTABELECIMENTO.map(cat => (
               <button
-                key={category}
+                key={cat.value}
                 type="button"
-                onClick={() => handleCategoryToggle(category)}
+                onClick={() => handleCategoryToggle(cat.value)}
                 className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-                  establishmentData.categories.includes(category) 
+                  establishmentData.categories.includes(cat.value)
                     ? 'bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 text-white shadow-md' 
                     : 'bg-slate-100 text-slate-700 hover:bg-violet-100'
                 }`}
               >
-                {category}
+                {cat.icon} {cat.label}
               </button>
             ))}
           </div>

@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Upload, CheckCircle, XCircle, Download, Loader2, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
+import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 
 interface ImportError {
   row: number;
@@ -69,27 +70,60 @@ export default function AdminImport() {
   };
 
   const mapCategory = (categoria: string): string => {
-    if (!categoria) return "Outros Comércios";
-    const first = categoria.split("/")[0].trim();
-    const normalized = first.toLowerCase().trim();
-    const categoryMap: Record<string, string> = {
-      "restaurante": "Restaurante",
-      "restaurantes": "Restaurante",
-      "pizzaria": "Restaurante",
-      "bar": "Bar",
-      "bares": "Bar",
-      "casa noturna": "Casa Noturna",
-      "balada": "Casa Noturna",
-      "cafeteria": "Cafeteria",
-      "café": "Cafeteria",
-      "loja": "Loja de Presentes",
-      "salão": "Salão de Beleza",
-      "barbearia": "Barbearia",
-      "academia": "Academia",
-      "entretenimento": "Entretenimento",
-      "hospedagem": "Hospedagem",
+    if (!categoria) return 'Outros Comércios';
+    
+    const normalized = categoria.trim().toLowerCase();
+    
+    // Procurar correspondência exata primeiro
+    const found = CATEGORIAS_ESTABELECIMENTO.find(cat => 
+      cat.value.toLowerCase() === normalized ||
+      cat.label.toLowerCase() === normalized
+    );
+    
+    if (found) return found.value;
+    
+    // Mapeamento de aliases/sinônimos
+    const aliases: Record<string, string> = {
+      'restaurante': 'Restaurante',
+      'restaurantes': 'Restaurante',
+      'pizzaria': 'Restaurante',
+      'bar': 'Bar',
+      'bares': 'Bar',
+      'academia': 'Academia',
+      'salao': 'Salão de Beleza',
+      'salão': 'Salão de Beleza',
+      'barbearia': 'Barbearia',
+      'cafeteria': 'Cafeteria',
+      'cafe': 'Cafeteria',
+      'café': 'Cafeteria',
+      'balada': 'Casa Noturna',
+      'casa noturna': 'Casa Noturna',
+      'boate': 'Casa Noturna',
+      'confeitaria': 'Confeitaria',
+      'doces': 'Confeitaria',
+      'hotel': 'Hospedagem',
+      'pousada': 'Hospedagem',
+      'hospedagem': 'Hospedagem',
+      'loja': 'Outros Comércios',
+      'cinema': 'Entretenimento',
+      'teatro': 'Entretenimento',
+      'parque': 'Entretenimento',
+      'presentes': 'Loja de Presentes',
+      'roupa': 'Moda e Acessórios',
+      'roupas': 'Moda e Acessórios',
+      'moda': 'Moda e Acessórios',
+      'farmacia': 'Saúde e Suplementos',
+      'farmácia': 'Saúde e Suplementos',
+      'suplementos': 'Saúde e Suplementos',
+      'saude': 'Saúde e Suplementos',
+      'saúde': 'Saúde e Suplementos',
+      'servico': 'Serviços',
+      'serviço': 'Serviços',
+      'servicos': 'Serviços',
+      'serviços': 'Serviços',
     };
-    return categoryMap[normalized] || first || "Outros Comércios";
+    
+    return aliases[normalized] || 'Outros Comércios';
   };
 
   const mapValidity = (validity: string): string => {

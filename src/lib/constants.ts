@@ -1,22 +1,32 @@
 // Constantes do sistema Aniversariante VIP
 
 export const CATEGORIAS_ESTABELECIMENTO = [
-  { value: "academia", label: "Academia", icon: "🏋️" },
-  { value: "bar", label: "Bar", icon: "🍺" },
-  { value: "barbearia", label: "Barbearia", icon: "✂️" },
-  { value: "cafeteria", label: "Cafeteria", icon: "☕" },
-  { value: "casa_noturna", label: "Casa Noturna", icon: "🎉" },
-  { value: "confeitaria", label: "Confeitaria", icon: "🧁" },
-  { value: "entretenimento", label: "Entretenimento", icon: "🎬" },
-  { value: "hospedagem", label: "Hospedagem", icon: "🏨" },
-  { value: "loja_presentes", label: "Loja de Presentes", icon: "🎁" },
-  { value: "moda_acessorios", label: "Moda e Acessórios", icon: "👗" },
-  { value: "restaurante", label: "Restaurante", icon: "🍽️" },
-  { value: "salao_beleza", label: "Salão de Beleza", icon: "💅" },
-  { value: "saude_suplementos", label: "Saúde e Suplementos", icon: "💪" },
-  { value: "outros_comercios", label: "Outros Comércios", icon: "🏪" },
-  { value: "servicos", label: "Serviços", icon: "🔧" },
+  { value: "Academia", label: "Academia", icon: "🏋️" },
+  { value: "Bar", label: "Bar", icon: "🍺" },
+  { value: "Barbearia", label: "Barbearia", icon: "✂️" },
+  { value: "Cafeteria", label: "Cafeteria", icon: "☕" },
+  { value: "Casa Noturna", label: "Casa Noturna", icon: "🎉" },
+  { value: "Confeitaria", label: "Confeitaria", icon: "🧁" },
+  { value: "Entretenimento", label: "Entretenimento", icon: "🎬" },
+  { value: "Hospedagem", label: "Hospedagem", icon: "🏨" },
+  { value: "Loja de Presentes", label: "Loja de Presentes", icon: "🎁" },
+  { value: "Moda e Acessórios", label: "Moda e Acessórios", icon: "👗" },
+  { value: "Restaurante", label: "Restaurante", icon: "🍽️" },
+  { value: "Salão de Beleza", label: "Salão de Beleza", icon: "💅" },
+  { value: "Saúde e Suplementos", label: "Saúde e Suplementos", icon: "💪" },
+  { value: "Outros Comércios", label: "Outros Comércios", icon: "🏪" },
+  { value: "Serviços", label: "Serviços", icon: "🔧" },
 ] as const;
+
+// Helper functions
+export const getCategoriaIcon = (categoria: string): string => {
+  const cat = CATEGORIAS_ESTABELECIMENTO.find(c => c.value === categoria);
+  return cat?.icon || '📍';
+};
+
+export const getCategoriasValues = (): string[] => {
+  return CATEGORIAS_ESTABELECIMENTO.map(c => c.value);
+};
 
 export const PERIODOS_VALIDADE = [
   { value: "dia_aniversario", label: "Dia do aniversário" },

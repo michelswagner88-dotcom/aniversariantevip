@@ -15,6 +15,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { sanitizarInput } from "@/lib/sanitize";
+import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick }: any) => (
@@ -306,21 +307,16 @@ const Explorar = () => {
               <SlidersHorizontal size={18} className="transition-transform duration-300" />
             </button>
             <div className="shrink-0"><CategoryPill icon="🚀" label="Todos" active={activeCategories.length === 0} onClick={() => handleCategoryToggle("Todos")} /></div>
-            <div className="shrink-0"><CategoryPill icon="🏋️" label="Academia" active={activeCategories.includes("Academia")} onClick={() => handleCategoryToggle("Academia")} /></div>
-            <div className="shrink-0"><CategoryPill icon="🍺" label="Bar" active={activeCategories.includes("Bar")} onClick={() => handleCategoryToggle("Bar")} /></div>
-            <div className="shrink-0"><CategoryPill icon="✂️" label="Barbearia" active={activeCategories.includes("Barbearia")} onClick={() => handleCategoryToggle("Barbearia")} /></div>
-            <div className="shrink-0"><CategoryPill icon="☕" label="Cafeteria" active={activeCategories.includes("Cafeteria")} onClick={() => handleCategoryToggle("Cafeteria")} /></div>
-            <div className="shrink-0"><CategoryPill icon="🎉" label="Casa Noturna" active={activeCategories.includes("Casa Noturna")} onClick={() => handleCategoryToggle("Casa Noturna")} /></div>
-            <div className="shrink-0"><CategoryPill icon="🧁" label="Confeitaria" active={activeCategories.includes("Confeitaria")} onClick={() => handleCategoryToggle("Confeitaria")} /></div>
-            <div className="shrink-0"><CategoryPill icon="🎬" label="Entretenimento" active={activeCategories.includes("Entretenimento")} onClick={() => handleCategoryToggle("Entretenimento")} /></div>
-            <div className="shrink-0"><CategoryPill icon="🏨" label="Hospedagem" active={activeCategories.includes("Hospedagem")} onClick={() => handleCategoryToggle("Hospedagem")} /></div>
-            <div className="shrink-0"><CategoryPill icon="🎁" label="Loja de Presentes" active={activeCategories.includes("Loja de Presentes")} onClick={() => handleCategoryToggle("Loja de Presentes")} /></div>
-            <div className="shrink-0"><CategoryPill icon="👗" label="Moda e Acessórios" active={activeCategories.includes("Moda e Acessórios")} onClick={() => handleCategoryToggle("Moda e Acessórios")} /></div>
-            <div className="shrink-0"><CategoryPill icon="🍽️" label="Restaurante" active={activeCategories.includes("Restaurante")} onClick={() => handleCategoryToggle("Restaurante")} /></div>
-            <div className="shrink-0"><CategoryPill icon="💅" label="Salão de Beleza" active={activeCategories.includes("Salão de Beleza")} onClick={() => handleCategoryToggle("Salão de Beleza")} /></div>
-            <div className="shrink-0"><CategoryPill icon="💪" label="Saúde e Suplementos" active={activeCategories.includes("Saúde e Suplementos")} onClick={() => handleCategoryToggle("Saúde e Suplementos")} /></div>
-            <div className="shrink-0"><CategoryPill icon="🏪" label="Outros Comércios" active={activeCategories.includes("Outros Comércios")} onClick={() => handleCategoryToggle("Outros Comércios")} /></div>
-            <div className="shrink-0"><CategoryPill icon="🔧" label="Serviços" active={activeCategories.includes("Serviços")} onClick={() => handleCategoryToggle("Serviços")} /></div>
+            {CATEGORIAS_ESTABELECIMENTO.map((cat) => (
+              <div key={cat.value} className="shrink-0">
+                <CategoryPill 
+                  icon={cat.icon} 
+                  label={cat.label} 
+                  active={activeCategories.includes(cat.value)} 
+                  onClick={() => handleCategoryToggle(cat.value)} 
+                />
+              </div>
+            ))}
             <div className="shrink-0 pr-16"></div>
           </div>
         </div>

@@ -66,7 +66,6 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <ChatAssistant />
       <Sentry.ErrorBoundary
         fallback={({ error, resetError }) => (
           <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -89,6 +88,7 @@ const App = () => (
       >
         <BrowserRouter>
           <AnalyticsProvider>
+            <ChatAssistant />
             <ErrorBoundary>
               <PageTransition>
                 <BottomNav />

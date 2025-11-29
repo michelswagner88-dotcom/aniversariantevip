@@ -13,6 +13,8 @@ import { LazyRoute } from "@/components/LazyRoute";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import * as Sentry from "@sentry/react";
 import { Button } from "@/components/ui/button";
+import ProtectedEstabelecimentoRoute from "@/components/auth/ProtectedEstabelecimentoRoute";
+import ProtectedAniversarianteRoute from "@/components/auth/ProtectedAniversarianteRoute";
 
 // Lazy load das páginas principais
 const Index = lazy(() => import("./pages/Index"));
@@ -103,7 +105,14 @@ const App = () => (
                 {/* <Route path="/emitir-cupom" element={<EmitirCupom />} /> */}
                 {/* <Route path="/planos-pagamento" element={<PlanosPagamento />} /> */}
                 {/* <Route path="/planos" element={<PlanosPagamento />} /> */}
-                <Route path="/meus-favoritos" element={<LazyRoute><MeusFavoritos /></LazyRoute>} />
+                <Route 
+                  path="/meus-favoritos" 
+                  element={
+                    <ProtectedAniversarianteRoute>
+                      <LazyRoute><MeusFavoritos /></LazyRoute>
+                    </ProtectedAniversarianteRoute>
+                  } 
+                />
                 <Route path="/politica-privacidade" element={<LazyRoute><PoliticaPrivacidade /></LazyRoute>} />
                 <Route path="/termos-uso" element={<LazyRoute><TermosUso /></LazyRoute>} />
                 <Route path="/forgot-password" element={<LazyRoute><ForgotPassword /></LazyRoute>} />
@@ -113,18 +122,46 @@ const App = () => (
                 <Route path="/selecionar-perfil" element={<LazyRoute><SelecionarPerfil /></LazyRoute>} />
                 <Route path="/cadastro/aniversariante" element={<LazyRoute><CadastroAniversariante /></LazyRoute>} />
                 <Route path="/login/aniversariante" element={<LazyRoute><LoginAniversariante /></LazyRoute>} />
-                <Route path="/area-aniversariante" element={<LazyRoute><AreaAniversariante /></LazyRoute>} />
+                <Route 
+                  path="/area-aniversariante" 
+                  element={
+                    <ProtectedAniversarianteRoute>
+                      <LazyRoute><AreaAniversariante /></LazyRoute>
+                    </ProtectedAniversarianteRoute>
+                  } 
+                />
                 <Route path="/cadastro/estabelecimento" element={<LazyRoute><CadastroEstabelecimento /></LazyRoute>} />
                 <Route path="/login/estabelecimento" element={<LazyRoute><LoginEstabelecimento /></LazyRoute>} />
-                <Route path="/area-estabelecimento" element={<LazyRoute><AreaEstabelecimento /></LazyRoute>} />
-                <Route path="/estabelecimento/dashboard" element={<LazyRoute><AreaEstabelecimento /></LazyRoute>} />
+                <Route 
+                  path="/area-estabelecimento" 
+                  element={
+                    <ProtectedEstabelecimentoRoute>
+                      <LazyRoute><AreaEstabelecimento /></LazyRoute>
+                    </ProtectedEstabelecimentoRoute>
+                  } 
+                />
+                <Route 
+                  path="/estabelecimento/dashboard" 
+                  element={
+                    <ProtectedEstabelecimentoRoute>
+                      <LazyRoute><AreaEstabelecimento /></LazyRoute>
+                    </ProtectedEstabelecimentoRoute>
+                  } 
+                />
                 <Route path="/login/colaborador" element={<LazyRoute><LoginColaborador /></LazyRoute>} />
                 <Route path="/area-colaborador" element={<Navigate to="/admin/dashboard" replace />} />
                 <Route path="/setup-admin" element={<LazyRoute><SetupAdmin /></LazyRoute>} />
                 <Route path="/admin" element={<LazyRoute><AdminLogin /></LazyRoute>} />
                 <Route path="/admin/dashboard" element={<LazyRoute><AdminDashboard /></LazyRoute>} />
                 <Route path="/admin/import" element={<LazyRoute><AdminImport /></LazyRoute>} />
-                <Route path="/afiliado" element={<LazyRoute><Afiliado /></LazyRoute>} />
+                <Route 
+                  path="/afiliado" 
+                  element={
+                    <ProtectedAniversarianteRoute>
+                      <LazyRoute><Afiliado /></LazyRoute>
+                    </ProtectedAniversarianteRoute>
+                  } 
+                />
                 <Route path="/selecionar-categoria" element={<LazyRoute><SelecionarCategoria /></LazyRoute>} />
                 
                 {/* Redirects para rotas legadas */}

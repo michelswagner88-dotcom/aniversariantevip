@@ -350,8 +350,14 @@ const Index = () => {
                   </div>
                 </div>
 
-                {/* Categoria */}
+                {/* Categoria com Botão de Voz */}
                 <div className="flex items-center gap-3 px-4 h-12 border-b border-white/10">
+                  <VoiceSearchButton 
+                    onResult={(text) => {
+                      toast({ description: `Buscando: "${text}"` });
+                      navigate("/explorar");
+                    }} 
+                  />
                   <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
                     <SelectTrigger className="border-none bg-transparent text-white placeholder:text-slate-300 h-12 focus:ring-0 [&>span]:!bg-transparent">
@@ -372,16 +378,6 @@ const Index = () => {
 
                 {/* Ações */}
                 <div className="p-3 space-y-2">
-                  {/* Botão de busca por voz - Mobile */}
-                  <div className="flex justify-center pb-2">
-                    <VoiceSearchButton 
-                      onResult={(text) => {
-                        toast({ description: `Buscando: "${text}"` });
-                        navigate("/explorar");
-                      }} 
-                    />
-                  </div>
-                  
                   {(selectedCidade || (selectedCategoria && selectedCategoria !== 'todas' && selectedCategoria !== '')) && (
                     <Button 
                       size="lg"

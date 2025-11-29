@@ -176,6 +176,7 @@ const EstabelecimentoDetalhe = () => {
 
   const categoria = estabelecimento.categoria?.[0] || 'Estabelecimento';
   const mostraCardapio = ['Bar', 'Restaurante'].includes(categoria);
+  const gridCols = mostraCardapio ? 'grid-cols-5' : 'grid-cols-4';
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -256,8 +257,8 @@ const EstabelecimentoDetalhe = () => {
               {estabelecimento.bairro} • {estabelecimento.cidade}/{estabelecimento.estado}
             </p>
 
-            {/* ========== BOTÕES DE AÇÃO (5 principais) ========== */}
-            <div className="grid grid-cols-5 gap-2">
+            {/* ========== BOTÕES DE AÇÃO ========== */}
+            <div className={`grid ${gridCols} gap-2`}>
               
               {/* WhatsApp */}
               <button

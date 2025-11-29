@@ -203,10 +203,10 @@ const ComoFunciona = () => {
                       <Search className="w-5 h-5 text-fuchsia-400" />
                     </div>
                     <h3 className="font-semibold text-white text-lg mb-2">
-                      Escolha Seus Benefícios
+                      Encontre Estabelecimentos
                     </h3>
                     <p className="text-gray-400 text-sm">
-                      Navegue pelos estabelecimentos parceiros e emita cupons em quantos locais desejar.
+                      Navegue pelos estabelecimentos parceiros e descubra os benefícios disponíveis na sua cidade.
                     </p>
                   </div>
                 </div>
@@ -242,7 +242,7 @@ const ComoFunciona = () => {
                       Aproveite o Benefício
                     </h3>
                     <p className="text-gray-400 text-sm">
-                      Apresente o cupom no estabelecimento e curta seu aniversário com vantagens exclusivas.
+                      Apresente seu documento no estabelecimento e aproveite sua vantagem de aniversário.
                     </p>
                   </div>
                 </div>
@@ -359,7 +359,7 @@ const ComoFunciona = () => {
                     Receba Aniversariantes
                   </h3>
                   <p className="text-gray-400 text-sm">
-                    Os aniversariantes emitem cupons e apresentam no momento da utilização.
+                    Os aniversariantes encontram seu estabelecimento na plataforma e visitam para aproveitar o benefício.
                   </p>
                 </div>
 

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 interface BackButtonProps {
   to?: string;
@@ -10,29 +11,46 @@ interface BackButtonProps {
 
 export const BackButton = ({ to, label = "Voltar", className = "" }: BackButtonProps) => {
   const navigate = useNavigate();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const handleBack = () => {
-    if (to) {
-      // Se tem destino específico, vai pra lá
-      navigate(to);
-    } else if (window.history.length > 1) {
-      // Se tem histórico, volta
-      navigate(-1);
-    } else {
-      // Fallback: vai pra home se não tem histórico
-      navigate('/');
-    }
+    // Adiciona classe de fade antes de navegar
+    setIsNavigating(true);
+    
+    // Aguarda animação antes de navegar
+    setTimeout(() => {
+      if (to) {
+        // Se tem destino específico, vai pra lá
+        navigate(to);
+      } else if (window.history.length > 1) {
+        // Se tem histórico, volta
+        navigate(-1);
+      } else {
+        // Fallback: vai pra home se não tem histórico
+        navigate('/');
+      }
+    }, 150);
   };
 
   return (
     <Button
       onClick={handleBack}
+      disabled={isNavigating}
       variant="ghost"
       size="sm"
-      className={`group flex items-center gap-2 text-slate-300 hover:text-white hover:bg-white/10 transition-all ${className}`}
+      className={`group flex items-center gap-2 text-slate-300 hover:text-white hover:bg-white/10 transition-all duration-200 active:scale-95 ${className}`}
     >
-      <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
-      {label}
+      <ArrowLeft 
+        size={16} 
+        className={`transition-all duration-200 ${
+          isNavigating 
+            ? 'opacity-0 -translate-x-2' 
+            : 'group-hover:-translate-x-1'
+        }`} 
+      />
+      <span className={`transition-opacity duration-150 ${isNavigating ? 'opacity-0' : 'opacity-100'}`}>
+        {label}
+      </span>
     </Button>
   );
 };

@@ -28,6 +28,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { BackButton } from '@/components/BackButton';
+import { TelaConfirmacaoEmail } from '@/components/TelaConfirmacaoEmail';
 import { validateCNPJ, formatCNPJ, fetchCNPJData } from '@/lib/validators';
 import { useCepLookup } from '@/hooks/useCepLookup';
 import { getFriendlyErrorMessage } from '@/lib/errorTranslator';
@@ -221,6 +222,8 @@ export default function EstablishmentRegistration() {
     hasSpecialChar: false,
   });
   const [isGoogleUser, setIsGoogleUser] = useState(false);
+  const [mostrarTelaConfirmacao, setMostrarTelaConfirmacao] = useState(false);
+  const [emailParaConfirmar, setEmailParaConfirmar] = useState('');
   const [showHorarioModal, setShowHorarioModal] = useState(false);
 const [horarioTemp, setHorarioTemp] = useState({
   segunda: { aberto: true, inicio: '00:00', fim: '00:00' },
@@ -761,6 +764,12 @@ const [horarioTemp, setHorarioTemp] = useState({
 
     } catch (error: any) {
       console.error('Erro:', error);
+      
+      // Não mostrar erro se é apenas requisição de confirmação de email
+      if (error.message === 'CONFIRMATION_REQUIRED') {
+        return;
+      }
+      
       const friendlyError = getFriendlyErrorMessage(error);
       toast.error(friendlyError);
       setError(friendlyError);
@@ -784,11 +793,12 @@ const [horarioTemp, setHorarioTemp] = useState({
       throw new Error('CNPJ duplicado');
     }
 
-    // 1. Criar usuário no Auth
+    // 1. Criar usuário no Auth com confirmação de email
     const { data: signUpData, error: authError } = await supabase.auth.signUp({
       email: authData.email,
       password: authData.password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
           tipo: 'estabelecimento',
           nome_fantasia: establishmentData.name,
@@ -807,6 +817,16 @@ const [horarioTemp, setHorarioTemp] = useState({
       throw new Error('Erro ao criar conta');
     }
 
+    // Se não tem sessão, precisa confirmar email
+    if (signUpData.user && !signUpData.session) {
+      toast.success('Cadastro iniciado!');
+      setEmailParaConfirmar(authData.email);
+      setMostrarTelaConfirmacao(true);
+      setLoading(false);
+      throw new Error('CONFIRMATION_REQUIRED'); // Interromper fluxo para mostrar tela
+    }
+
+    // Se tem sessão (auto-confirmação ativa), continua o cadastro
     // 2. Criar estabelecimento
     const { error: estabError } = await supabase
       .from('estabelecimentos')
@@ -1429,6 +1449,21 @@ const [horarioTemp, setHorarioTemp] = useState({
 
 
   // --- LAYOUT ---
+  
+  // Se está mostrando tela de confirmação de email, exibir componente dedicado
+  if (mostrarTelaConfirmacao) {
+    return (
+      <TelaConfirmacaoEmail 
+        email={emailParaConfirmar}
+        onVoltar={() => {
+          setMostrarTelaConfirmacao(false);
+          setEmailParaConfirmar('');
+          setStep(1);
+        }}
+      />
+    );
+  }
+  
   return (
     <div className="min-h-screen bg-slate-950 p-4 sm:p-8 font-sans">
       <div className="max-w-3xl mx-auto bg-white/5 backdrop-blur-xl border border-white/10 p-6 sm:p-10 rounded-3xl shadow-xl">

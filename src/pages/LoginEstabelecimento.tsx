@@ -49,7 +49,19 @@ export default function LoginEstabelecimento() {
         password: formData.senha,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Detectar email não confirmado
+        if (error.message.includes('Email not confirmed')) {
+          toast({
+            variant: "destructive",
+            title: "Email não confirmado",
+            description: "Confirme seu email antes de fazer login. Verifique sua caixa de entrada.",
+          });
+          setLoading(false);
+          return;
+        }
+        throw error;
+      }
 
       const { data: roles } = await supabase
         .from("user_roles")

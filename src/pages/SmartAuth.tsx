@@ -9,6 +9,7 @@ import MaskedInput from '@/components/MaskedInput';
 import BuscaCepPorEndereco from '@/components/BuscaCepPorEndereco';
 import { BackButton } from '@/components/BackButton';
 import ChatAssistant from '@/components/ChatAssistant';
+import { TelaConfirmacaoEmail } from '@/components/TelaConfirmacaoEmail';
 import { useInputMask } from '@/hooks/useInputMask';
 import { useCheckCpfExists } from '@/hooks/useCheckCpfExists';
 import { useCepLookup } from '@/hooks/useCepLookup';
@@ -23,6 +24,8 @@ const SmartAuth = () => {
   const [showCepSearch, setShowCepSearch] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleUser, setIsGoogleUser] = useState(false); // Flag para usuário Google
+  const [mostrarTelaConfirmacao, setMostrarTelaConfirmacao] = useState(false);
+  const [emailParaConfirmar, setEmailParaConfirmar] = useState('');
   
   // Refs para controle de race condition
   const isProcessingRef = useRef(false);
@@ -408,7 +411,15 @@ const SmartAuth = () => {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Detectar email não confirmado
+        if (error.message.includes('Email not confirmed')) {
+          toast.error('Confirme seu email antes de fazer login. Verifique sua caixa de entrada.');
+          setIsLoading(false);
+          return;
+        }
+        throw error;
+      }
 
       // Verificar role
       const { data: roleData } = await supabase
@@ -495,10 +506,32 @@ const SmartAuth = () => {
         throw new Error('Este email já está cadastrado. Faça login ou use outro email.');
       }
 
-      // NÃO CRIA CONTA - apenas avança para Step 2
-      // Dados ficam salvos no estado local (email, password)
-      setStep(2);
-      toast.success('Dados validados! Complete seu cadastro.');
+      // Criar conta no Supabase Auth com confirmação de email
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (signUpError) throw signUpError;
+
+      // Se não tem sessão, precisa confirmar email
+      if (signUpData.user && !signUpData.session) {
+        toast.success('Cadastro iniciado!');
+        setEmailParaConfirmar(email);
+        setMostrarTelaConfirmacao(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // Se tem sessão (auto-confirmação ativa), avança para Step 2
+      if (signUpData.session) {
+        setUserId(signUpData.user.id);
+        setStep(2);
+        toast.success('Dados validados! Complete seu cadastro.');
+      }
     } catch (err: any) {
       const friendlyMessage = getFriendlyErrorMessage(err);
       setError(friendlyMessage);
@@ -707,6 +740,20 @@ const SmartAuth = () => {
       setIsLoading(false);
     }
   };
+
+  // Se está mostrando tela de confirmação de email, exibir componente dedicado
+  if (mostrarTelaConfirmacao) {
+    return (
+      <TelaConfirmacaoEmail 
+        email={emailParaConfirmar}
+        onVoltar={() => {
+          setMostrarTelaConfirmacao(false);
+          setEmailParaConfirmar('');
+          setIsLogin(true);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 relative overflow-hidden">

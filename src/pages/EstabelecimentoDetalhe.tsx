@@ -331,9 +331,7 @@ const EstabelecimentoDetalhe = () => {
             <p className="text-gray-400 text-sm mb-4">
               {estabelecimento.logradouro}, {estabelecimento.numero}
               {estabelecimento.complemento && ` - ${estabelecimento.complemento}`}
-              <br />
-              {estabelecimento.bairro}, {estabelecimento.cidade}/{estabelecimento.estado}
-              {estabelecimento.cep && ` - CEP: ${estabelecimento.cep}`}
+              {' - '}{estabelecimento.bairro}, {estabelecimento.cidade}/{estabelecimento.estado}
             </p>
 
             {/* Mini mapa clicável */}

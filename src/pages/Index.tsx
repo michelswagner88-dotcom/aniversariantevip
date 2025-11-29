@@ -372,6 +372,16 @@ const Index = () => {
 
                 {/* Ações */}
                 <div className="p-3 space-y-2">
+                  {/* Botão de busca por voz - Mobile */}
+                  <div className="flex justify-center pb-2">
+                    <VoiceSearchButton 
+                      onResult={(text) => {
+                        toast({ description: `Buscando: "${text}"` });
+                        navigate("/explorar");
+                      }} 
+                    />
+                  </div>
+                  
                   {(selectedCidade || (selectedCategoria && selectedCategoria !== 'todas' && selectedCategoria !== '')) && (
                     <Button 
                       size="lg"

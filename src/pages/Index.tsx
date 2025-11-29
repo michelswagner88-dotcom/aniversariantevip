@@ -232,7 +232,7 @@ const Index = () => {
           {/* Badge Clicável */}
           <Link 
             to="/auth"
-            className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 backdrop-blur-sm mb-6 sm:mb-8 animate-fade-in transition-all duration-300 hover:scale-105 cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 backdrop-blur-sm mt-6 sm:mt-0 mb-6 sm:mb-8 animate-fade-in transition-all duration-300 hover:scale-105 cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-violet-400" />
             <span className="text-sm font-medium text-white">Cadastro Gratuito Para Aniversariantes</span>

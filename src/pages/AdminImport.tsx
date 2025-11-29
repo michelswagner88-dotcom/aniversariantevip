@@ -9,6 +9,7 @@ import { ArrowLeft, Upload, CheckCircle, XCircle, Download, Loader2, Trash2 } fr
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
+import { normalizarCidade } from '@/lib/utils';
 
 interface ImportError {
   row: number;
@@ -306,6 +307,7 @@ export default function AdminImport() {
 
           // PASSO 1: Extrair dados - prioridade CEP, fallback campos diretos da planilha
           let cidade = addressData?.city || row.CIDADE || null;
+          if (cidade) cidade = normalizarCidade(cidade);
           let estado = addressData?.state || row.ESTADO || null;
           let logradouro = addressData?.street || row.RUA || null;
           let bairro = addressData?.neighborhood || row.BAIRRO || null;

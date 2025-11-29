@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Cake, Store, UserPlus, Search, FileText, Gift, 
   Building, Settings, CreditCard, Users, TrendingUp, 
-  Target, DollarSign, Star, ArrowRight
+  Target, DollarSign, Star, ArrowRight,
+  Smartphone, Zap, LayoutGrid, MapPin, Shield, Heart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -24,6 +25,107 @@ const ComoFunciona = () => {
             Benefícios exclusivos para aniversariantes. 
             Novos clientes para estabelecimentos.
           </p>
+        </div>
+      </section>
+
+      {/* Por que o Aniversariante VIP */}
+      <section className="py-16 px-4 bg-white/5">
+        <div className="max-w-6xl mx-auto">
+          
+          <div className="text-center mb-12">
+            <span className="text-violet-400 text-sm font-medium uppercase tracking-wider">
+              A Plataforma
+            </span>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mt-2 mb-4">
+              Por que o Aniversariante VIP?
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Tecnologia de ponta para a melhor experiência em benefícios de aniversário
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            {/* Diferencial 1 */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-violet-500/30 transition-all group">
+              <div className="w-14 h-14 bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Smartphone className="w-7 h-7 text-violet-400" />
+              </div>
+              <h3 className="font-semibold text-white text-lg mb-2">
+                Design Moderno
+              </h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Interface elegante e intuitiva, pensada para proporcionar a melhor experiência em qualquer dispositivo.
+              </p>
+            </div>
+
+            {/* Diferencial 2 */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-fuchsia-500/30 transition-all group">
+              <div className="w-14 h-14 bg-gradient-to-r from-fuchsia-600/20 to-pink-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Zap className="w-7 h-7 text-fuchsia-400" />
+              </div>
+              <h3 className="font-semibold text-white text-lg mb-2">
+                Tecnologia de Ponta
+              </h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Plataforma rápida, segura e sempre atualizada com as melhores práticas do mercado.
+              </p>
+            </div>
+
+            {/* Diferencial 3 */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-pink-500/30 transition-all group">
+              <div className="w-14 h-14 bg-gradient-to-r from-pink-600/20 to-rose-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <LayoutGrid className="w-7 h-7 text-pink-400" />
+              </div>
+              <h3 className="font-semibold text-white text-lg mb-2">
+                Cards Completos
+              </h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Visualize foto, categoria, benefício, localização e avaliações de cada estabelecimento em cards informativos.
+              </p>
+            </div>
+
+            {/* Diferencial 4 */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-rose-500/30 transition-all group">
+              <div className="w-14 h-14 bg-gradient-to-r from-rose-600/20 to-orange-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <MapPin className="w-7 h-7 text-rose-400" />
+              </div>
+              <h3 className="font-semibold text-white text-lg mb-2">
+                Busca Inteligente
+              </h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Encontre estabelecimentos por cidade, categoria ou proximidade com filtros avançados e mapa interativo.
+              </p>
+            </div>
+
+            {/* Diferencial 5 */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-orange-500/30 transition-all group">
+              <div className="w-14 h-14 bg-gradient-to-r from-orange-600/20 to-amber-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Shield className="w-7 h-7 text-orange-400" />
+              </div>
+              <h3 className="font-semibold text-white text-lg mb-2">
+                100% Seguro
+              </h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Seus dados protegidos com criptografia de ponta. Privacidade e segurança são nossa prioridade.
+              </p>
+            </div>
+
+            {/* Diferencial 6 */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-amber-500/30 transition-all group">
+              <div className="w-14 h-14 bg-gradient-to-r from-amber-600/20 to-yellow-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Heart className="w-7 h-7 text-amber-400" />
+              </div>
+              <h3 className="font-semibold text-white text-lg mb-2">
+                Feito com Carinho
+              </h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Cada detalhe pensado para tornar seu aniversário ainda mais especial. Do Brasil, para brasileiros.
+              </p>
+            </div>
+
+          </div>
+
         </div>
       </section>
 

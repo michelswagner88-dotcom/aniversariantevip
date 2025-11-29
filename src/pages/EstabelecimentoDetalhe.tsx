@@ -261,7 +261,8 @@ const EstabelecimentoDetalhe = () => {
               {/* WhatsApp */}
               <button
                 onClick={handleWhatsApp}
-                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-green-500/20 transition-all group"
+                disabled={!estabelecimento.whatsapp && !estabelecimento.telefone}
+                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-green-500/20 transition-all group disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <div className="w-9 h-9 bg-green-500/20 rounded-full flex items-center justify-center group-hover:bg-green-500/30">
                   <MessageCircle className="w-4 h-4 text-green-400" />
@@ -272,7 +273,8 @@ const EstabelecimentoDetalhe = () => {
               {/* Instagram */}
               <button
                 onClick={handleInstagram}
-                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-pink-500/20 transition-all group"
+                disabled={!estabelecimento.instagram}
+                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-pink-500/20 transition-all group disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <div className="w-9 h-9 bg-pink-500/20 rounded-full flex items-center justify-center group-hover:bg-pink-500/30">
                   <Instagram className="w-4 h-4 text-pink-400" />
@@ -283,7 +285,8 @@ const EstabelecimentoDetalhe = () => {
               {/* Ligar */}
               <button
                 onClick={handleLigar}
-                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-blue-500/20 transition-all group"
+                disabled={!estabelecimento.telefone}
+                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-blue-500/20 transition-all group disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <div className="w-9 h-9 bg-blue-500/20 rounded-full flex items-center justify-center group-hover:bg-blue-500/30">
                   <Phone className="w-4 h-4 text-blue-400" />
@@ -292,30 +295,28 @@ const EstabelecimentoDetalhe = () => {
               </button>
 
               {/* Cardápio */}
-              {estabelecimento.link_cardapio && (
-                <button
-                  onClick={handleCardapio}
-                  className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-orange-500/20 transition-all group"
-                >
-                  <div className="w-9 h-9 bg-orange-500/20 rounded-full flex items-center justify-center group-hover:bg-orange-500/30">
-                    <UtensilsCrossed className="w-4 h-4 text-orange-400" />
-                  </div>
-                  <span className="text-[10px] text-gray-400 group-hover:text-orange-400">Cardápio</span>
-                </button>
-              )}
+              <button
+                onClick={handleCardapio}
+                disabled={!estabelecimento.link_cardapio}
+                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-orange-500/20 transition-all group disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <div className="w-9 h-9 bg-orange-500/20 rounded-full flex items-center justify-center group-hover:bg-orange-500/30">
+                  <UtensilsCrossed className="w-4 h-4 text-orange-400" />
+                </div>
+                <span className="text-[10px] text-gray-400 group-hover:text-orange-400">Cardápio</span>
+              </button>
 
               {/* Site */}
-              {estabelecimento.site && (
-                <button
-                  onClick={handleSite}
-                  className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-violet-500/20 transition-all group"
-                >
-                  <div className="w-9 h-9 bg-violet-500/20 rounded-full flex items-center justify-center group-hover:bg-violet-500/30">
-                    <Globe className="w-4 h-4 text-violet-400" />
-                  </div>
-                  <span className="text-[10px] text-gray-400 group-hover:text-violet-400">Site</span>
-                </button>
-              )}
+              <button
+                onClick={handleSite}
+                disabled={!estabelecimento.site}
+                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-violet-500/20 transition-all group disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <div className="w-9 h-9 bg-violet-500/20 rounded-full flex items-center justify-center group-hover:bg-violet-500/30">
+                  <Globe className="w-4 h-4 text-violet-400" />
+                </div>
+                <span className="text-[10px] text-gray-400 group-hover:text-violet-400">Site</span>
+              </button>
 
             </div>
           </div>

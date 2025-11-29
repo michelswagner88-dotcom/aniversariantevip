@@ -16,6 +16,7 @@ const EstabelecimentoDetalhe = () => {
   const [loading, setLoading] = useState(true);
   const [showCupomModal, setShowCupomModal] = useState(false);
   const [isFavorito, setIsFavorito] = useState(false);
+  const [beneficioAberto, setBeneficioAberto] = useState(false);
 
   useEffect(() => {
     const fetchEstabelecimento = async () => {
@@ -278,11 +279,49 @@ const EstabelecimentoDetalhe = () => {
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent">
         <div className="max-w-2xl mx-auto">
           <Button
-            onClick={() => setShowCupomModal(true)}
-            className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-lg py-6 h-auto rounded-xl shadow-lg shadow-violet-500/25"
+            onClick={() => {
+              setBeneficioAberto(true);
+              setTimeout(() => {
+                setShowCupomModal(true);
+                setBeneficioAberto(false);
+              }, 800);
+            }}
+            disabled={beneficioAberto}
+            className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-lg py-6 h-auto rounded-xl shadow-lg shadow-violet-500/25 relative overflow-hidden group"
           >
-            <Gift className="w-5 h-5 mr-2" />
-            Ver Benefício de Aniversário
+            {/* Efeito de brilho no hover */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+            
+            {/* Ícone com animação */}
+            <div className={`relative transition-all duration-500 ${beneficioAberto ? 'scale-125' : ''}`}>
+              {beneficioAberto ? (
+                <div className="relative">
+                  {/* Tampa do presente subindo */}
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 animate-bounce">
+                    <svg className="w-6 h-6 text-white animate-ping" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </div>
+                  <Gift className="w-6 h-6 animate-pulse" />
+                  {/* Confetes */}
+                  <div className="absolute -top-4 left-0 w-2 h-2 bg-yellow-400 rounded-full animate-ping" style={{ animationDelay: '0.1s' }} />
+                  <div className="absolute -top-3 right-0 w-2 h-2 bg-pink-400 rounded-full animate-ping" style={{ animationDelay: '0.2s' }} />
+                  <div className="absolute -top-4 left-1/2 w-2 h-2 bg-cyan-400 rounded-full animate-ping" style={{ animationDelay: '0.3s' }} />
+                </div>
+              ) : (
+                <Gift className="w-5 h-5" />
+              )}
+            </div>
+            
+            <span className={`ml-2 transition-all duration-300 ${beneficioAberto ? 'opacity-0' : 'opacity-100'}`}>
+              Ver Benefício de Aniversário
+            </span>
+            
+            {beneficioAberto && (
+              <span className="ml-2 animate-pulse">
+                Abrindo...
+              </span>
+            )}
           </Button>
         </div>
       </div>

@@ -111,8 +111,11 @@ const BottomNav = () => {
   ];
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-xl border-t border-white/10">
-      <div className="flex items-center justify-around px-2 py-3 safe-area-inset-bottom">
+    <div 
+      className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-xl border-t border-white/[0.08]"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
+      <div className="flex items-center justify-around px-2 py-2.5">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -122,34 +125,36 @@ const BottomNav = () => {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-lg transition-all duration-300 active:scale-95",
-                isActive && "scale-105"
+                "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all duration-180 active:scale-95",
+                isActive && "scale-[1.02]"
               )}
+              style={{ minWidth: '44px', minHeight: '44px' }}
             >
               <div className={cn(
-                "relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300",
+                "relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-180",
                 isActive 
                   ? item.highlight 
-                    ? "bg-gradient-to-br from-orange-500/20 to-violet-500/20 shadow-lg shadow-orange-500/20" 
-                    : "bg-violet-500/20 shadow-lg shadow-violet-500/20"
+                    ? "bg-gradient-to-br from-orange-500/15 to-violet-500/15 shadow-premium-sm shadow-orange-500/20" 
+                    : "bg-violet-500/15 shadow-premium-sm shadow-violet-500/20"
                   : "bg-transparent"
               )}>
                 <Icon 
                   className={cn(
-                    "w-5 h-5 transition-all duration-300",
+                    "w-5 h-5 transition-all duration-180",
                     isActive 
                       ? item.highlight
                         ? "text-orange-400"
                         : "text-violet-400"
                       : "text-slate-400"
                   )}
+                  strokeWidth={isActive ? 2.5 : 2}
                 />
                 {item.highlight && isActive && (
-                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+                  <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse" />
                 )}
               </div>
               <span className={cn(
-                "text-[10px] font-medium transition-colors duration-300",
+                "text-[10px] font-medium transition-all duration-180 tracking-tight",
                 isActive 
                   ? item.highlight
                     ? "text-orange-400 font-bold"

@@ -213,33 +213,33 @@ const Index = () => {
     <div className="flex flex-col min-h-screen bg-slate-950">
       <Header />
 
-      {/* Hero Section - State of the Art */}
-      <section className="flex-1 relative flex items-center justify-center overflow-hidden pt-20 pb-16 sm:pt-28 sm:pb-32 px-6">
-        {/* Grid Pattern Background (Camada 1) */}
+      {/* Hero Section - Premium World-Class */}
+      <section className="flex-1 relative flex items-center justify-center overflow-hidden pt-24 pb-20 sm:pt-32 sm:pb-40 px-6">
+        {/* Grid Pattern Background - Subtle */}
         <div 
-          className="absolute inset-0 opacity-50"
+          className="absolute inset-0 opacity-30"
           style={{
-            backgroundImage: 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
-            backgroundSize: '24px 24px'
+            backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)',
+            backgroundSize: '32px 32px'
           }}
         />
         
-        {/* Glow Orbs (Camada 2) - Aurora Boreal Effect */}
-        <div className="absolute top-20 left-10 w-[600px] h-[600px] bg-violet-600/30 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute top-1/2 right-10 w-[500px] h-[500px] bg-cyan-500/20 blur-[120px] rounded-full pointer-events-none" />
+        {/* Refined Glow Orbs - Controlled */}
+        <div className="absolute top-32 left-10 w-[500px] h-[500px] bg-violet-600/20 blur-[140px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/2 right-10 w-[400px] h-[400px] bg-fuchsia-500/15 blur-[140px] rounded-full pointer-events-none" />
         
         <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
-          {/* Badge Clicável - Mais Discreto */}
+          {/* Badge Discreto - Premium Subtle */}
           <Link 
             to="/auth"
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 backdrop-blur-sm mt-6 sm:mt-0 mb-6 sm:mb-8 animate-fade-in transition-all duration-200 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06] backdrop-blur-sm mb-8 sm:mb-10 animate-fade-in transition-all duration-180 cursor-pointer"
           >
-            <Sparkles className="w-3 h-3 text-violet-400/70" />
-            <span className="text-xs font-medium text-slate-300">Cadastro Gratuito</span>
+            <Sparkles className="w-3 h-3 text-violet-400/50" />
+            <span className="text-[11px] font-medium text-slate-400/80 tracking-wide">CADASTRO GRATUITO</span>
           </Link>
 
-          {/* H1 - Título Principal (Tipografia de Impacto) */}
-          <h1 className="font-display font-extrabold text-3xl sm:text-5xl md:text-6xl mb-4 sm:mb-6 tracking-tight leading-[1.1] animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          {/* H1 - Premium Typography */}
+          <h1 className="font-display font-extrabold text-4xl sm:text-6xl md:text-7xl mb-6 sm:mb-8 tracking-tight leading-[1.05] animate-fade-in" style={{ animationDelay: '0.08s' }}>
             <span className="text-white">
               O Maior Guia de Benefícios
               <br />
@@ -250,17 +250,17 @@ const Index = () => {
             </span>
           </h1>
 
-          {/* H2 - Subtítulo */}
-          <h2 className="text-base sm:text-xl md:text-2xl text-slate-400 max-w-3xl mb-8 sm:mb-12 leading-relaxed animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          {/* H2 - Enhanced Legibility */}
+          <h2 className="text-base sm:text-xl md:text-2xl text-slate-300 opacity-85 max-w-2xl mb-10 sm:mb-14 leading-relaxed animate-fade-in" style={{ animationDelay: '0.16s' }}>
             Aqui seu aniversário vale muito mais. Encontre benefícios exclusivos para aproveitar no dia, na semana ou no mês inteiro.
           </h2>
 
-          {/* Barra de Busca Premium */}
-          <div className="w-full max-w-4xl animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          {/* Premium Search Card - World-Class */}
+          <div className="w-full max-w-4xl animate-fade-in" style={{ animationDelay: '0.24s' }}>
             <div 
-              className="backdrop-blur-2xl bg-white/10 rounded-2xl p-4 sm:p-3 border-2 border-white/30 shadow-2xl"
+              className="backdrop-blur-xl bg-white/[0.08] rounded-2xl p-5 sm:p-4 border border-white/20 shadow-premium-lg"
               style={{
-                boxShadow: '0 8px 32px -8px rgba(139,92,246,0.4), 0 0 0 1px rgba(255,255,255,0.1)'
+                boxShadow: '0 8px 32px -8px rgba(139,92,246,0.35), 0 4px 16px -4px rgba(0,0,0,0.4), inset 0 1px 0 0 rgba(255,255,255,0.1)'
               }}
             >
               {/* Desktop Layout */}
@@ -395,8 +395,8 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Social Proof Footer */}
-          <p className="text-slate-500 text-sm mt-8 pr-20 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          {/* Social Proof - Enhanced Contrast */}
+          <p className="text-slate-400 opacity-75 text-sm mt-10 sm:mt-12 animate-fade-in" style={{ animationDelay: '0.32s' }}>
             Junte-se a mais de 50.000 aniversariantes que economizam todo mês.
           </p>
         </div>

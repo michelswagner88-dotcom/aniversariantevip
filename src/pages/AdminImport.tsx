@@ -135,6 +135,28 @@ export default function AdminImport() {
     return "dia_aniversario";
   };
 
+  // Função para extrair valores de colunas com múltiplas variações (case-insensitive)
+  const getColumnValue = (row: any, ...possibleNames: string[]): string | null => {
+    if (!row) return null;
+    
+    const rowKeys = Object.keys(row);
+    
+    for (const name of possibleNames) {
+      // Tentar nome exato
+      if (row[name] !== undefined && row[name] !== null && row[name] !== '') {
+        return String(row[name]).trim();
+      }
+      
+      // Buscar case-insensitive
+      const found = rowKeys.find(k => k.toLowerCase().trim() === name.toLowerCase().trim());
+      if (found && row[found] !== undefined && row[found] !== null && row[found] !== '') {
+        return String(row[found]).trim();
+      }
+    }
+    
+    return null;
+  };
+
   const fetchAddressByCep = async (cep: string): Promise<{ street: string; neighborhood: string; city: string; state: string; lat?: number; lng?: number } | null> => {
     try {
       const cleanedCep = cep.replace(/\D/g, "");
@@ -291,28 +313,137 @@ export default function AdminImport() {
     const results = await Promise.all(
       batch.map(async (row, batchIdx) => {
         const rowNumber = startIndex + batchIdx + 2;
+        let nome: string | null = null; // Declarar fora do try para usar no catch
         
         try {
-          // NENHUMA VALIDAÇÃO OBRIGATÓRIA - Admin pode importar qualquer dado
-          // CNPJ: Se vazio, gera placeholder único
-          const cnpj = row.CNPJ 
-            ? cleanCNPJ(row.CNPJ)
+          // === EXTRAÇÃO DE DADOS COM MAPEAMENTO FLEXÍVEL ===
+          
+          // Nome do estabelecimento - aceita várias variações
+          nome = getColumnValue(row,
+            'EMPRESA', 'NOME_ESTABELECIMENTO', 'NOME', 'Nome Fantasia', 'Nome', 
+            'nome_fantasia', 'RAZAO_SOCIAL', 'Razao Social', 'razao_social',
+            'NOME_EMPRESA', 'Nome Empresa', 'ESTABELECIMENTO', 'Estabelecimento'
+          );
+
+          // CNPJ
+          const cnpjRaw = getColumnValue(row, 'CNPJ', 'cnpj', 'Cnpj');
+          const cnpj = cnpjRaw 
+            ? cleanCNPJ(cnpjRaw)
             : `PENDENTE_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+          // Telefone
+          const telefone = getColumnValue(row, 
+            'TELEFONE', 'Telefone', 'telefone', 'CONTATO', 'Contato', 'contato',
+            'PHONE', 'Phone', 'TEL', 'Tel'
+          );
+
+          // WhatsApp (fallback para telefone se não tiver)
+          const whatsappRaw = getColumnValue(row, 
+            'WHATSAPP', 'WhatsApp', 'whatsapp', 'Whatsapp', 'ZAPP', 'Zap', 'ZAP'
+          );
+          const whatsapp = whatsappRaw || telefone;
+
+          // Email
+          const email = getColumnValue(row, 
+            'EMAIL', 'Email', 'email', 'E-MAIL', 'E-mail', 'e-mail'
+          );
+
+          // CEP
+          const cepRaw = getColumnValue(row, 'CEP', 'cep', 'Cep', 'CODIGO_POSTAL');
+          const cep = cepRaw ? cepRaw.replace(/\D/g, '') : null;
+
+          // Cidade (da planilha)
+          const cidadeRaw = getColumnValue(row, 
+            'CIDADE', 'Cidade', 'cidade', 'CITY', 'City', 'MUNICIPIO', 'Municipio'
+          );
+
+          // Estado (da planilha)
+          const estadoRaw = getColumnValue(row, 
+            'ESTADO', 'Estado', 'estado', 'UF', 'Uf', 'uf', 'STATE', 'State'
+          );
+
+          // Bairro (da planilha)
+          const bairroRaw = getColumnValue(row, 
+            'BAIRRO', 'Bairro', 'bairro', 'NEIGHBORHOOD', 'Neighborhood'
+          );
+
+          // Logradouro/Rua (da planilha)
+          const logradouroRaw = getColumnValue(row, 
+            'RUA', 'Rua', 'rua', 'LOGRADOURO', 'Logradouro', 'logradouro',
+            'ENDERECO', 'Endereco', 'endereco', 'ENDEREÇO', 'Endereço', 'ADDRESS'
+          );
+
+          // Número
+          const numeroRaw = getColumnValue(row, 
+            'NUMERO', 'Numero', 'numero', 'NÚMERO', 'Número', 'NUM', 'Num', 'N'
+          );
+
+          // Complemento
+          const complementoRaw = getColumnValue(row, 
+            'COMPLEMENTO', 'Complemento', 'complemento', 'COMP', 'Comp'
+          );
+
+          // Instagram
+          const instagramRaw = getColumnValue(row, 
+            'INSTAGRAM', 'Instagram', 'instagram', 'INSTA', 'Insta', 'IG', 'ig'
+          );
+
+          // Site
+          const site = getColumnValue(row, 
+            'SITE', 'Site', 'site', 'WEBSITE', 'Website', 'website', 'URL', 'Url'
+          );
+
+          // Categoria
+          const categoriaRaw = getColumnValue(row, 
+            'CATEGORIA', 'Categoria', 'categoria', 'CATEGORY', 'Category', 'TIPO', 'Tipo'
+          );
+
+          // Benefício
+          const beneficio = getColumnValue(row, 
+            'BENEFICIO', 'Beneficio', 'beneficio', 'BENEFÍCIO', 'Benefício',
+            'BENEFICIO E REGRAS', 'Beneficio e Regras', 'DESCRICAO', 'Descricao',
+            'DESCRICAO_BENEFICIO', 'OFERTA', 'Oferta'
+          );
+
+          // Regras / Validade
+          const validade = getColumnValue(row, 
+            'VALIDADE', 'Validade', 'validade', 'DIA/SEMANA/MÊS', 'PERIODO',
+            'Periodo', 'REGRAS', 'Regras', 'regras'
+          );
+
+          // Horário de funcionamento
+          const horario = getColumnValue(row, 
+            'HORARIO', 'Horario', 'horario', 'HORÁRIO', 'Horário',
+            'HORARIO_FUNCIONAMENTO', 'Horario Funcionamento', 'FUNCIONAMENTO'
+          );
+
+          // Debug log
+          console.log(`[Row ${rowNumber}] Dados extraídos:`, {
+            nome,
+            cnpj,
+            telefone,
+            whatsapp,
+            email,
+            cep,
+            cidade: cidadeRaw,
+            estado: estadoRaw,
+            categoria: categoriaRaw,
+          });
+
           // NOVO FLUXO: Buscar endereço pelo CEP (só se tiver CEP)
-          const addressData = row.CEP ? await fetchAddressByCep(row.CEP) : null;
+          const addressData = cep ? await fetchAddressByCep(cep) : null;
           
           let finalAddress: string | null = null;
           let coordinates: { lat: number; lng: number } | null = null;
 
-          // PASSO 1: Extrair dados - prioridade CEP, fallback campos diretos da planilha
-          let cidade = addressData?.city || row.CIDADE || null;
+          // PASSO 1: Priorizar dados do CEP, fallback para dados da planilha
+          let cidade = addressData?.city || cidadeRaw || null;
           if (cidade) cidade = normalizarCidade(cidade);
-          let estado = addressData?.state || row.ESTADO || null;
-          let logradouro = addressData?.street || row.RUA || null;
-          let bairro = addressData?.neighborhood || row.BAIRRO || null;
-          const numero = row.NUMERO || "S/N";
-          const complemento = row.COMPLEMENTO ? `, ${row.COMPLEMENTO}` : "";
+          let estado = addressData?.state || estadoRaw || null;
+          let logradouro = addressData?.street || logradouroRaw || null;
+          let bairro = addressData?.neighborhood || bairroRaw || null;
+          const numero = numeroRaw || "S/N";
+          const complemento = complementoRaw ? `, ${complementoRaw}` : "";
 
           // PASSO 2: Montar endereço formatado se tiver dados mínimos (cidade + estado)
           if (cidade && estado) {
@@ -340,30 +471,32 @@ export default function AdminImport() {
 
           // Google Places (foto e avaliação) - só tenta se tiver nome E endereço
           let placeDetails = { photoUrl: null, rating: null, ratingsTotal: null };
-          if (row.EMPRESA && finalAddress && coordinates) {
-            placeDetails = await getPlaceDetails(row.EMPRESA, finalAddress, cidade || "Florianópolis", estado || "SC");
+          if (nome && finalAddress && coordinates) {
+            placeDetails = await getPlaceDetails(nome, finalAddress, cidade || "Florianópolis", estado || "SC");
           }
 
           // Preparar dados para inserção - TODOS os campos são opcionais
           const estabelecimentoData = {
-            razao_social: row.EMPRESA || "Pendente de preenchimento",
-            nome_fantasia: row.EMPRESA || "Pendente de preenchimento",
+            razao_social: nome || "Pendente de preenchimento",
+            nome_fantasia: nome || "Pendente de preenchimento",
             cnpj: cnpj,
-            categoria: row.CATEGORIA ? [mapCategory(row.CATEGORIA)] : [],
-            telefone: row.CONTATO ? cleanPhone(row.CONTATO) : null,
-            whatsapp: row.CONTATO ? cleanPhone(row.CONTATO) : null,
+            categoria: categoriaRaw ? [mapCategory(categoriaRaw)] : [],
+            telefone: telefone ? cleanPhone(telefone) : null,
+            whatsapp: whatsapp ? cleanPhone(whatsapp) : null,
+            email: email || null,
             endereco: finalAddress,
-            cep: row.CEP ? row.CEP.replace(/\D/g, "") : null,
+            cep: cep || null,
             logradouro: logradouro,
-            numero: row.NUMERO || null,
-            complemento: row.COMPLEMENTO || null,
+            numero: numeroRaw || null,
+            complemento: complementoRaw || null,
             bairro: bairro,
             latitude: coordinates?.lat || null,
             longitude: coordinates?.lng || null,
-            instagram: row.INSTAGRAM ? cleanInstagram(row.INSTAGRAM) : null,
-            site: row.SITE || null,
-            descricao_beneficio: row.BENEFICIO || row["BENEFICIO E REGRAS"] || null,
-            periodo_validade_beneficio: row.VALIDADE || row["DIA/SEMANA/MÊS"] ? mapValidity(row.VALIDADE || row["DIA/SEMANA/MÊS"]) : "dia_aniversario",
+            instagram: instagramRaw ? cleanInstagram(instagramRaw) : null,
+            site: site || null,
+            descricao_beneficio: beneficio || null,
+            periodo_validade_beneficio: validade ? mapValidity(validade) : "dia_aniversario",
+            horario_funcionamento: horario || null,
             logo_url: placeDetails.photoUrl || null,
             ativo: true,
             plan_status: "active",
@@ -371,6 +504,8 @@ export default function AdminImport() {
             estado: estado,
             deleted_at: null, // IMPORTANTE: Garantir que nunca seja marcado como deletado na importação
           };
+
+          console.log(`[Row ${rowNumber}] Dados finais para INSERT:`, estabelecimentoData);
 
           // Inserir/Atualizar no Supabase usando RPC (ignora RLS)
           const { data: rpcResult, error: insertError } = await supabase
@@ -382,7 +517,7 @@ export default function AdminImport() {
             return {
               success: false,
               rowNumber,
-              empresa: row.EMPRESA,
+              empresa: nome || 'N/A',
               error: `Erro ao salvar: ${insertError?.message || result?.error || 'Erro desconhecido'}`,
               hasGeocode: false,
               hasPhoto: false,
@@ -392,7 +527,7 @@ export default function AdminImport() {
           return {
             success: true,
             rowNumber,
-            empresa: row.EMPRESA,
+            empresa: nome || 'N/A',
             hasGeocode: !!coordinates,
             hasPhoto: !!placeDetails.photoUrl,
           };
@@ -400,7 +535,7 @@ export default function AdminImport() {
           return {
             success: false,
             rowNumber,
-            empresa: row.EMPRESA || "N/A",
+            empresa: nome || "N/A",
             error: error.message || "Erro desconhecido",
             hasGeocode: false,
             hasPhoto: false,

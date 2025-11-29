@@ -594,6 +594,7 @@ const [horarioTemp, setHorarioTemp] = useState({
         const { error: estabError } = await supabase
           .from('estabelecimentos')
           .insert({
+            id: user.id, // Vincular estabelecimento ao usuário autenticado
             cnpj: rawCnpj,
             razao_social: establishmentData.name,
             nome_fantasia: establishmentData.name,
@@ -687,6 +688,7 @@ const [horarioTemp, setHorarioTemp] = useState({
     const { error: estabError } = await supabase
       .from('estabelecimentos')
       .insert({
+        id: signUpData.user.id, // Vincular estabelecimento ao usuário autenticado
         cnpj: rawCnpj,
         razao_social: establishmentData.name,
         nome_fantasia: establishmentData.name,
@@ -1253,9 +1255,19 @@ const [horarioTemp, setHorarioTemp] = useState({
       {/* Botão Final */}
       <button 
         type="submit" 
-        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xl shadow-lg shadow-emerald-200"
+        disabled={loading}
+        className="w-full bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 hover:from-violet-500 hover:via-fuchsia-500 hover:to-cyan-500 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Finalizar Cadastro e Assinar Plano <ChevronRight size={24} />
+        {loading ? (
+          <>
+            <Loader2 className="w-6 h-6 animate-spin" />
+            Finalizando...
+          </>
+        ) : (
+          <>
+            Finalizar Cadastro <ChevronRight size={24} />
+          </>
+        )}
       </button>
     </form>
     );

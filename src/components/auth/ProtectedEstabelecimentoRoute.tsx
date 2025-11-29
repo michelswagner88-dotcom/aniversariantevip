@@ -30,7 +30,7 @@ export const ProtectedEstabelecimentoRoute = ({ children }: Props) => {
           return;
         }
 
-        // Verificar se tem estabelecimento cadastrado
+        // Verificar se tem estabelecimento cadastrado (id do estabelecimento = id do usuário)
         const { data: estabelecimento, error: estabError } = await supabase
           .from('estabelecimentos')
           .select('id, ativo')

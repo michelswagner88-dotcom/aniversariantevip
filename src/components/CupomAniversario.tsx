@@ -1,4 +1,4 @@
-import { Wallet, Download } from "lucide-react";
+import { Wallet, Download, Gift, FileText, Calendar, AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -57,52 +57,105 @@ export const CupomAniversario = ({
         {/* Conteúdo Principal */}
         <div className="p-8 space-y-6">
           
-          {/* Dados do Benefício */}
-          <div className="space-y-4 border-b border-white/10 pb-6">
-            {/* Nome do Estabelecimento */}
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
-                Local
-              </p>
-              <p className="text-xl font-bold text-white">
-                {estabelecimentoNome}
-              </p>
-            </div>
-
-            {/* Cliente */}
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
-                Cliente
-              </p>
-              <p className="text-base text-slate-300">
-                {aniversarianteNome}
-              </p>
-              <p className="text-sm text-slate-500">
-                Emitido em {format(new Date(dataEmissao), "dd/MM/yyyy", { locale: ptBR })}
-              </p>
-            </div>
-
-            {/* Benefício */}
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
-                Benefício
-              </p>
-              <p className="text-base text-slate-300 leading-relaxed">
-                {descricaoBeneficio}
-              </p>
-            </div>
-
-            {/* Regras */}
-            {regrasUtilizacao && (
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
-                  Regras
-                </p>
-                <p className="text-sm text-slate-400 leading-relaxed">
-                  {regrasUtilizacao}
-                </p>
+          {/* Nome do Estabelecimento com Logo */}
+          <div className="text-center pb-4 border-b border-white/10">
+            {estabelecimentoLogo && (
+              <div className="w-16 h-16 mx-auto mb-3 rounded-xl overflow-hidden border-2 border-white/30">
+                <img 
+                  src={estabelecimentoLogo} 
+                  alt={estabelecimentoNome}
+                  className="w-full h-full object-cover"
+                />
               </div>
             )}
+            <h4 className="text-white text-lg font-bold">
+              {estabelecimentoNome}
+            </h4>
+          </div>
+
+          {/* Cliente */}
+          <div className="bg-white/5 rounded-lg p-3">
+            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
+              Aniversariante
+            </p>
+            <p className="text-base text-white font-medium">
+              {aniversarianteNome}
+            </p>
+            <p className="text-sm text-slate-400 mt-1">
+              Emitido em {format(new Date(dataEmissao), "dd/MM/yyyy", { locale: ptBR })}
+            </p>
+          </div>
+
+          {/* BENEFÍCIO */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Gift className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white/60 text-xs uppercase tracking-wider mb-1">
+                  Benefício
+                </p>
+                <p className="text-white font-medium leading-relaxed">
+                  {descricaoBeneficio}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* REGRAS DO ESTABELECIMENTO */}
+          {regrasUtilizacao && (
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-white/60 text-xs uppercase tracking-wider mb-1">
+                    Regras do Estabelecimento
+                  </p>
+                  <p className="text-white/90 text-sm leading-relaxed">
+                    {regrasUtilizacao}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Validade */}
+          {periodoValidade && (
+            <div className="flex items-center justify-center gap-2 text-white/80 text-sm bg-white/10 rounded-lg py-2 px-4">
+              <Calendar className="w-4 h-4" />
+              <span>Válido: {periodoValidade}</span>
+            </div>
+          )}
+
+          {/* REGRAS GERAIS - FIXO EM TODOS OS CUPONS */}
+          <div className="bg-black/20 rounded-xl p-4 border border-amber-500/20">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-4 h-4 text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white/60 text-xs uppercase tracking-wider mb-2">
+                  Regras Gerais
+                </p>
+                <ul className="text-white/70 text-xs space-y-1.5">
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-400 mt-0.5">•</span>
+                    <span>Obrigatório apresentação de documento com foto.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-400 mt-0.5">•</span>
+                    <span>Cortesia válida quando há consumo no local.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-400 mt-0.5">•</span>
+                    <span>Informações podem sofrer alteração sem aviso prévio, confirme com o estabelecimento.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
 
           {/* Área de Validação (QR Code + Código) */}
@@ -132,10 +185,13 @@ export const CupomAniversario = ({
             </div>
           </div>
 
-          {/* Aviso Legal */}
-          <div className="bg-slate-900/50 border border-white/5 rounded-lg p-4">
-            <p className="text-xs text-slate-400 leading-relaxed text-center">
-              Benefício sujeito a alterações. Recomendamos confirmar com o estabelecimento antes de ir.
+          {/* Rodapé */}
+          <div className="text-center pt-4 border-t border-white/20">
+            <p className="text-white/40 text-xs">
+              Apresente este cupom no estabelecimento
+            </p>
+            <p className="text-white/30 text-[10px] mt-1">
+              aniversariantevip.com.br
             </p>
           </div>
 

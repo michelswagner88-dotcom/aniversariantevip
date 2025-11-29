@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import CupomModal from '@/components/CupomModal';
 import LoginRequiredModal from '@/components/LoginRequiredModal';
+import { useFavoritos } from '@/hooks/useFavoritos';
 
 const EstabelecimentoDetalhe = () => {
   const { id } = useParams();
@@ -18,20 +19,22 @@ const EstabelecimentoDetalhe = () => {
   const [loading, setLoading] = useState(true);
   const [showCupomModal, setShowCupomModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [isFavorito, setIsFavorito] = useState(false);
   const [beneficioAberto, setBeneficioAberto] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Hook de favoritos
+  const { isFavorito, toggleFavorito } = useFavoritos(userId);
 
   // Verificar autenticação
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setIsLoggedIn(!!session);
+      setUserId(session?.user?.id || null);
     };
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsLoggedIn(!!session);
+      setUserId(session?.user?.id || null);
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -73,7 +76,7 @@ const EstabelecimentoDetalhe = () => {
 
   // Handlers
   const handleVerBeneficio = () => {
-    if (!isLoggedIn) {
+    if (!userId) {
       setShowLoginModal(true);
       return;
     }
@@ -82,6 +85,14 @@ const EstabelecimentoDetalhe = () => {
       setShowCupomModal(true);
       setBeneficioAberto(false);
     }, 800);
+  };
+
+  const handleFavorito = async () => {
+    if (!userId || !id) {
+      setShowLoginModal(true);
+      return;
+    }
+    await toggleFavorito(id);
   };
 
   const handleShare = async () => {
@@ -224,14 +235,10 @@ const EstabelecimentoDetalhe = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => {
-                if (!isLoggedIn) { setShowLoginModal(true); return; }
-                setIsFavorito(!isFavorito);
-                toast.success(isFavorito ? 'Removido dos favoritos' : 'Salvo nos favoritos');
-              }}
+              onClick={handleFavorito}
               className="w-10 h-10 bg-black/50 backdrop-blur-md text-white hover:bg-black/70 rounded-full"
             >
-              <Heart className={`w-5 h-5 ${isFavorito ? 'fill-red-500 text-red-500' : ''}`} />
+              <Heart className={`w-5 h-5 transition-colors ${id && isFavorito(id) ? 'fill-red-500 text-red-500' : ''}`} />
             </Button>
             <Button
               variant="ghost"

@@ -232,9 +232,10 @@ const Index = () => {
           {/* Badge Discreto - Premium Subtle */}
           <Link 
             to="/auth"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-sm mb-8 sm:mb-10 animate-fade-in transition-all duration-200 cursor-pointer shadow-lg"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-sm mb-8 sm:mb-10 transition-all duration-200 cursor-pointer shadow-lg animate-fade-in opacity-0"
+            style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}
           >
-            <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+            <Sparkles className="w-3.5 h-3.5 text-violet-400 animate-pulse" />
             <span className="text-xs font-semibold text-slate-300 tracking-wide">CADASTRO GRATUITO</span>
           </Link>
 

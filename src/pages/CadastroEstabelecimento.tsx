@@ -22,7 +22,9 @@ import {
   Globe,
   Instagram,
   Loader2,
-  Check
+  Check,
+  X,
+  Camera
 } from 'lucide-react';
 import { BackButton } from '@/components/BackButton';
 import { validateCNPJ, formatCNPJ, fetchCNPJData } from '@/lib/validators';
@@ -169,6 +171,19 @@ export default function EstablishmentRegistration() {
     hasSpecialChar: false,
   });
   const [isGoogleUser, setIsGoogleUser] = useState(false);
+  const [showHorarioModal, setShowHorarioModal] = useState(false);
+  const [horarioTemp, setHorarioTemp] = useState({
+    segunda: { aberto: true, inicio: '08:00', fim: '18:00' },
+    terca: { aberto: true, inicio: '08:00', fim: '18:00' },
+    quarta: { aberto: true, inicio: '08:00', fim: '18:00' },
+    quinta: { aberto: true, inicio: '08:00', fim: '18:00' },
+    sexta: { aberto: true, inicio: '08:00', fim: '18:00' },
+    sabado: { aberto: true, inicio: '09:00', fim: '14:00' },
+    domingo: { aberto: false, inicio: '', fim: '' },
+  });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [establishmentData, setEstablishmentData] = useState({
     cnpj: '',
     name: '',
@@ -252,6 +267,86 @@ export default function EstablishmentRegistration() {
     }
     
     return telefone;
+  };
+
+  // Processar imagem para formato quadrado 1:1
+  const processImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      img.onload = () => {
+        // Tamanho quadrado com boa resolução
+        const size = 400;
+        canvas.width = size;
+        canvas.height = size;
+
+        // Calcular crop centralizado para ficar quadrado
+        const minDimension = Math.min(img.width, img.height);
+        const sx = (img.width - minDimension) / 2;
+        const sy = (img.height - minDimension) / 2;
+
+        // Desenhar imagem cortada e redimensionada
+        ctx?.drawImage(img, sx, sy, minDimension, minDimension, 0, 0, size, size);
+
+        canvas.toBlob((blob) => {
+          blob ? resolve(blob) : reject(new Error('Erro ao processar'));
+        }, 'image/jpeg', 0.9);
+      };
+
+      img.onerror = () => reject(new Error('Erro ao carregar imagem'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Selecione uma imagem válida');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Imagem muito grande. Máximo 10MB.');
+      return;
+    }
+
+    setUploadingImage(true);
+
+    try {
+      const processedBlob = await processImage(file);
+      const previewUrl = URL.createObjectURL(processedBlob);
+      setImagePreview(previewUrl);
+      
+      const processedFile = new File([processedBlob], `foto_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      setSelectedImage(processedFile);
+      
+      // Upload para Supabase Storage
+      const fileName = `estabelecimento_${Date.now()}.jpg`;
+      const { data, error } = await supabase.storage
+        .from('establishment-photos')
+        .upload(fileName, processedFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('establishment-photos')
+        .getPublicUrl(fileName);
+
+      setEstablishmentData(prev => ({ ...prev, mainPhotoUrl: publicUrl }));
+      toast.success('Foto enviada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao processar foto:', error);
+      toast.error('Erro ao processar foto');
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const verifyCnpj = async () => {
@@ -1088,14 +1183,14 @@ export default function EstablishmentRegistration() {
         
         {/* Horário de Funcionamento */}
         <label className="block">
-          <span className="text-sm font-medium text-slate-700 mb-1 block">Horário de Funcionamento (Puxado do Google/Opção de Correção)</span>
+          <span className="text-sm font-medium text-slate-700 mb-1 block">Horário de Funcionamento</span>
           <div className="flex items-center gap-2">
             <div className="flex-1 px-4 py-3 border border-slate-200 bg-slate-50 rounded-xl text-slate-600 font-medium flex items-center gap-2">
                <Clock size={18} /> {establishmentData.hoursText}
             </div>
             <button 
               type="button"
-              onClick={() => alert('Abrir modal para edição manual do horário de funcionamento.')}
+              onClick={() => setShowHorarioModal(true)}
               className="px-4 py-3 bg-slate-100 text-violet-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center gap-2"
             >
               <RefreshCw size={18} /> Editar
@@ -1104,26 +1199,45 @@ export default function EstablishmentRegistration() {
         </label>
 
         {/* Foto Principal */}
-        <label className="block">
-          <span className="text-sm font-medium text-slate-700 mb-1 block">Foto Principal (Padrão 16:9 - Melhor Qualidade para o Card)</span>
-          <div className="relative border-4 border-dashed border-violet-200 rounded-xl overflow-hidden h-40 flex items-center justify-center bg-slate-50">
-            <img 
-              src={establishmentData.mainPhotoUrl} 
-              alt="Foto Principal" 
-              className="absolute inset-0 w-full h-full object-cover opacity-80" 
+        <div className="space-y-2">
+          <span className="text-sm font-medium text-slate-700 block">Foto do Estabelecimento</span>
+          
+          <div 
+            className="w-48 h-48 bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center border-2 border-dashed border-slate-300 hover:border-violet-500 transition-colors cursor-pointer relative mx-auto"
+            onClick={() => document.getElementById('foto-input')?.click()}
+          >
+            {uploadingImage ? (
+              <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+            ) : imagePreview ? (
+              <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+            ) : establishmentData.mainPhotoUrl !== 'https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)' ? (
+              <img src={establishmentData.mainPhotoUrl} alt="Foto atual" className="w-full h-full object-cover" />
+            ) : (
+              <div className="text-center p-4">
+                <Camera className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+                <p className="text-slate-500 text-sm">Clique para adicionar foto</p>
+              </div>
+            )}
+            
+            <input
+              id="foto-input"
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
             />
-            <button
-              type="button"
-              onClick={() => alert('Abrir uploader de imagens com crop para 16:9.')}
-              className="relative z-10 bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 text-white px-4 py-2 rounded-lg font-semibold shadow-lg backdrop-blur-sm flex items-center gap-2"
-            >
-              <Image size={20} /> Trocar Foto
-            </button>
+            
+            {(imagePreview || establishmentData.mainPhotoUrl !== 'https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)') && (
+              <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                <span className="text-white text-sm font-medium">Trocar foto</span>
+              </div>
+            )}
           </div>
-          <p className="mt-2 text-xs text-slate-500 flex items-center gap-1">
-             <Info size={14} /> Utilize imagens nítidas, paisagens (horizontal) no formato 16:9 para um Card bonito.
+          
+          <p className="text-xs text-slate-500 text-center">
+            Envie uma foto do seu estabelecimento
           </p>
-        </label>
+        </div>
       </div>
       
       {/* 6. Regras de Benefício */}
@@ -1152,6 +1266,97 @@ export default function EstablishmentRegistration() {
         
         {step === 1 ? renderStep1() : renderStep2()}
       </div>
+
+      {/* Modal de Horário de Funcionamento */}
+      {showHorarioModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg border border-slate-200 max-h-[90vh] overflow-y-auto">
+            
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-slate-900">Horário de Funcionamento</h2>
+              <button onClick={() => setShowHorarioModal(false)} className="text-slate-400 hover:text-slate-900">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                { key: 'segunda', label: 'Segunda' },
+                { key: 'terca', label: 'Terça' },
+                { key: 'quarta', label: 'Quarta' },
+                { key: 'quinta', label: 'Quinta' },
+                { key: 'sexta', label: 'Sexta' },
+                { key: 'sabado', label: 'Sábado' },
+                { key: 'domingo', label: 'Domingo' },
+              ].map(({ key, label }) => (
+                <div key={key} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                  <input
+                    type="checkbox"
+                    checked={horarioTemp[key].aberto}
+                    onChange={(e) => setHorarioTemp(prev => ({
+                      ...prev,
+                      [key]: { ...prev[key], aberto: e.target.checked }
+                    }))}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-slate-900 text-sm w-20 font-medium">{label}</span>
+                  
+                  {horarioTemp[key].aberto ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <input
+                        type="time"
+                        value={horarioTemp[key].inicio}
+                        onChange={(e) => setHorarioTemp(prev => ({
+                          ...prev,
+                          [key]: { ...prev[key], inicio: e.target.value }
+                        }))}
+                        className="px-2 py-1 border border-slate-300 rounded-lg w-24 text-sm"
+                      />
+                      <span className="text-slate-500 text-sm">às</span>
+                      <input
+                        type="time"
+                        value={horarioTemp[key].fim}
+                        onChange={(e) => setHorarioTemp(prev => ({
+                          ...prev,
+                          [key]: { ...prev[key], fim: e.target.value }
+                        }))}
+                        className="px-2 py-1 border border-slate-300 rounded-lg w-24 text-sm"
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-slate-400 text-sm">Fechado</span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button 
+                onClick={() => setShowHorarioModal(false)} 
+                className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  const formatado = Object.entries(horarioTemp)
+                    .map(([dia, info]) => {
+                      const abrev = { segunda: 'Seg', terca: 'Ter', quarta: 'Qua', quinta: 'Qui', sexta: 'Sex', sabado: 'Sáb', domingo: 'Dom' }[dia];
+                      return info.aberto ? `${abrev}: ${info.inicio}-${info.fim}` : `${abrev}: Fechado`;
+                    })
+                    .join(', ');
+                  setEstablishmentData(prev => ({ ...prev, hoursText: formatado }));
+                  setShowHorarioModal(false);
+                  toast.success('Horário salvo!');
+                }}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-xl font-semibold hover:from-violet-700 hover:to-fuchsia-700 transition-colors"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

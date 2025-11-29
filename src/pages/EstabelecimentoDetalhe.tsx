@@ -329,9 +329,14 @@ const EstabelecimentoDetalhe = () => {
 
             {/* Endereço completo */}
             <p className="text-gray-400 text-sm mb-4">
-              {estabelecimento.logradouro}, {estabelecimento.numero}
-              {estabelecimento.complemento && ` - ${estabelecimento.complemento}`}
-              {' - '}{estabelecimento.bairro}, {estabelecimento.cidade}/{estabelecimento.estado}
+              {[
+                estabelecimento.logradouro && estabelecimento.numero 
+                  ? `${estabelecimento.logradouro}, ${estabelecimento.numero}` 
+                  : estabelecimento.logradouro || estabelecimento.numero,
+                estabelecimento.complemento,
+                estabelecimento.bairro,
+                `${estabelecimento.cidade}/${estabelecimento.estado}`
+              ].filter(Boolean).join(' - ')}
             </p>
 
             {/* Mini mapa clicável */}

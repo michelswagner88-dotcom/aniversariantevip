@@ -24,7 +24,8 @@ import {
   Loader2,
   Check,
   X,
-  Camera
+  Camera,
+  Trash2
 } from 'lucide-react';
 import { BackButton } from '@/components/BackButton';
 import { validateCNPJ, formatCNPJ, fetchCNPJData } from '@/lib/validators';
@@ -401,6 +402,18 @@ const [horarioTemp, setHorarioTemp] = useState({
     } finally {
       setUploadingImage(false);
     }
+  };
+
+  const handleRemovePhoto = () => {
+    setImagePreview(null);
+    setSelectedImage(null);
+    setEstablishmentData(prev => ({ 
+      ...prev, 
+      mainPhotoUrl: 'https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)' 
+    }));
+    const input = document.getElementById('foto-input') as HTMLInputElement;
+    if (input) input.value = '';
+    toast.success('Foto removida');
   };
 
   const verifyCnpj = async () => {
@@ -1262,25 +1275,29 @@ const [horarioTemp, setHorarioTemp] = useState({
         </label>
 
         {/* Foto Principal */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <span className="text-sm font-medium text-slate-700 block">Foto do Estabelecimento</span>
           
-          <div 
-            className="w-48 h-48 bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center border-2 border-dashed border-slate-300 hover:border-violet-500 transition-colors cursor-pointer relative mx-auto"
-            onClick={() => document.getElementById('foto-input')?.click()}
-          >
-            {uploadingImage ? (
-              <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
-            ) : imagePreview ? (
-              <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-            ) : establishmentData.mainPhotoUrl !== 'https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)' ? (
-              <img src={establishmentData.mainPhotoUrl} alt="Foto atual" className="w-full h-full object-cover" />
-            ) : (
-              <div className="text-center p-4">
-                <Camera className="w-10 h-10 text-slate-400 mx-auto mb-2" />
-                <p className="text-slate-500 text-sm">Clique para adicionar foto</p>
-              </div>
-            )}
+          <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
+            {/* Preview da Foto */}
+            <div className="w-full aspect-video bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center border-2 border-dashed border-slate-300 mb-3">
+              {uploadingImage ? (
+                <div className="text-center">
+                  <Loader2 className="w-10 h-10 animate-spin text-violet-500 mx-auto mb-2" />
+                  <p className="text-sm text-slate-600">Enviando...</p>
+                </div>
+              ) : imagePreview ? (
+                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+              ) : establishmentData.mainPhotoUrl !== 'https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)' ? (
+                <img src={establishmentData.mainPhotoUrl} alt="Foto atual" className="w-full h-full object-cover" />
+              ) : (
+                <div className="text-center p-6">
+                  <Camera className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                  <p className="text-slate-500 text-sm font-medium">Nenhuma foto selecionada</p>
+                  <p className="text-slate-400 text-xs mt-1">Adicione uma foto do seu estabelecimento</p>
+                </div>
+              )}
+            </div>
             
             <input
               id="foto-input"
@@ -1290,16 +1307,39 @@ const [horarioTemp, setHorarioTemp] = useState({
               className="hidden"
             />
             
-            {(imagePreview || establishmentData.mainPhotoUrl !== 'https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)') && (
-              <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                <span className="text-white text-sm font-medium">Trocar foto</span>
-              </div>
-            )}
+            {/* Botões de Ação */}
+            <div className="flex gap-2">
+              {(imagePreview || establishmentData.mainPhotoUrl !== 'https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)') ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('foto-input')?.click()}
+                    disabled={uploadingImage}
+                    className="flex-1 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <RefreshCw size={18} /> Alterar Foto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRemovePhoto}
+                    disabled={uploadingImage}
+                    className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <Trash2 size={18} /> Excluir Foto
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('foto-input')?.click()}
+                  disabled={uploadingImage}
+                  className="w-full px-4 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <Camera size={18} /> Adicionar Foto
+                </button>
+              )}
+            </div>
           </div>
-          
-          <p className="text-xs text-slate-500 text-center">
-            Envie uma foto do seu estabelecimento
-          </p>
         </div>
       </div>
       

@@ -145,11 +145,10 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="chat-bubble fixed flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 text-white shadow-lg transition-all duration-300 hover:scale-110"
+          className="chat-bubble fixed flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 text-white shadow-lg transition-all duration-300 hover:scale-110 z-[9999]"
           style={{ 
-            bottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
-            right: '1.25rem',
-            zIndex: 50
+            bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
+            right: '1.25rem'
           }}
           aria-label="Abrir chat assistente"
         >
@@ -164,11 +163,10 @@ const ChatAssistant = ({ onMount }: ChatAssistantProps = {}) => {
       {/* Janela do Chat */}
       {isOpen && (
         <div 
-          className="chat-bubble fixed flex flex-col w-[380px] h-[600px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl"
+          className="chat-bubble fixed flex flex-col w-[380px] h-[600px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-8rem)] rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl z-[9999]"
           style={{ 
-            bottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
-            right: '1.25rem',
-            zIndex: 50
+            bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
+            right: '1.25rem'
           }}
         >
           

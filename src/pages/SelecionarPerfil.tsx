@@ -60,7 +60,7 @@ export default function SelecionarPerfil() {
           <RoleCard
             icon={Users}
             title="Entrar como Aniversariante"
-            description="Acesse benefícios exclusivos, emita cupons e aproveite descontos especiais no seu aniversário."
+            description="Encontre estabelecimentos com benefícios exclusivos para celebrar seu aniversário."
             onClick={handleAniversarianteClick}
             gradientClass="from-violet-600 via-fuchsia-500 to-pink-500"
           />

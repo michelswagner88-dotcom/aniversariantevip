@@ -443,6 +443,36 @@ export type Database = {
           },
         ]
       }
+      especialidades: {
+        Row: {
+          ativo: boolean | null
+          categoria: string
+          created_at: string | null
+          icone: string | null
+          id: string
+          nome: string
+          ordem: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria: string
+          created_at?: string | null
+          icone?: string | null
+          id?: string
+          nome: string
+          ordem?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string
+          created_at?: string | null
+          icone?: string | null
+          id?: string
+          nome?: string
+          ordem?: number | null
+        }
+        Relationships: []
+      }
       estabelecimento_analytics: {
         Row: {
           data_evento: string
@@ -514,6 +544,7 @@ export type Database = {
           descricao_beneficio: string | null
           endereco: string | null
           endereco_formatado: string | null
+          especialidades: string[] | null
           estado: string | null
           galeria_fotos: string[] | null
           horario_funcionamento: string | null
@@ -553,6 +584,7 @@ export type Database = {
           descricao_beneficio?: string | null
           endereco?: string | null
           endereco_formatado?: string | null
+          especialidades?: string[] | null
           estado?: string | null
           galeria_fotos?: string[] | null
           horario_funcionamento?: string | null
@@ -592,6 +624,7 @@ export type Database = {
           descricao_beneficio?: string | null
           endereco?: string | null
           endereco_formatado?: string | null
+          especialidades?: string[] | null
           estado?: string | null
           galeria_fotos?: string[] | null
           horario_funcionamento?: string | null

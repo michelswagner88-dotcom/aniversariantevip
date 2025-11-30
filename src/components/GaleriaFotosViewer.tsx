@@ -36,23 +36,24 @@ const GaleriaFotosViewer = ({ fotoPrincipal, galeriaFotos }: GaleriaFotosViewerP
               setFullscreenIndex(index);
               setFullscreenOpen(true);
             }}
-            className="relative aspect-square rounded-lg overflow-hidden bg-muted hover:ring-2 hover:ring-violet-500 transition-all group cursor-pointer"
+            className="relative aspect-square rounded-lg overflow-hidden bg-muted hover:ring-2 hover:ring-violet-500 transition-all duration-300 group cursor-pointer"
           >
             <img 
               src={foto} 
               alt={`Foto ${index + 1} do estabelecimento`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              loading="lazy"
             />
             
             {/* Overlay "+X" na última foto se houver mais */}
             {index === maxVisivel - 1 && fotosExtras > 0 && (
-              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center transition-colors duration-300 group-hover:bg-black/70">
                 <span className="text-white text-lg font-bold">+{fotosExtras}</span>
               </div>
             )}
             
             {/* Hover effect */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
           </button>
         ))}
       </div>

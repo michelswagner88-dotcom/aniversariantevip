@@ -64,12 +64,22 @@ const PlaceCard = ({ place }: any) => {
   };
 
   const handleCardClick = () => {
+    console.log('🎯 Clicou no card:', {
+      name: place.name,
+      estado: place.estado,
+      cidade: place.cidade,
+      slug: place.slug,
+      id: place.id
+    });
+    
     const url = getEstabelecimentoUrl({
       estado: place.estado,
       cidade: place.cidade,
       slug: place.slug,
       id: place.id
     });
+    
+    console.log('🔗 URL gerada:', url);
     navigate(url);
   };
 
@@ -207,6 +217,10 @@ const Explorar = () => {
     longitude: est.longitude ? Number(est.longitude) : null,
     image: est.logo_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
     distancia: est.distancia,
+    // Dados necessários para URL amigável
+    estado: est.estado,
+    cidade: est.cidade,
+    slug: est.slug,
   }));
 
   // Transformar dados para o formato do GoogleMapView

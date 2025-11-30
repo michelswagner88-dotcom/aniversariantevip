@@ -5,12 +5,17 @@ import { Menu, X, User, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PersonalGreeting } from "@/components/PersonalGreeting";
+import { BirthdayBanner } from "@/components/BirthdayBanner";
+import { useBirthdayTheme } from "@/hooks/useBirthdayTheme";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [dataNascimento, setDataNascimento] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { isBirthday } = useBirthdayTheme(dataNascimento);
 
   useEffect(() => {
     checkUser();
@@ -34,9 +39,23 @@ export const Header = () => {
         .eq('user_id', session.user.id);
       setUserName(profile?.nome || session.user.email?.split('@')[0] || 'Usuário');
       setUserRole(roles?.[0]?.role || null);
+      
+      // Buscar data de nascimento para banner de aniversário
+      if (roles?.[0]?.role === 'aniversariante') {
+        const { data: aniversarianteData } = await supabase
+          .from('aniversariantes')
+          .select('data_nascimento')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        
+        if (aniversarianteData?.data_nascimento) {
+          setDataNascimento(aniversarianteData.data_nascimento);
+        }
+      }
     } else {
       setUserName(null);
       setUserRole(null);
+      setDataNascimento(null);
     }
   };
 
@@ -54,8 +73,14 @@ export const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/[0.08]">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      {/* Banner de aniversário */}
+      {isBirthday && userName && (
+        <BirthdayBanner firstName={userName.split(' ')[0]} />
+      )}
+      
+      <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/[0.08]" style={{ top: isBirthday && userName ? '48px' : '0' }}>
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo - Esquerda */}
           <Link to="/" className="flex-shrink-0">
@@ -98,26 +123,39 @@ export const Header = () => {
           </div>
 
           {/* Botões Direita - Desktop */}
-          <div className="hidden lg:flex items-center gap-1.5 flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
             {userName ? (
               <>
+                {/* Greeting - apenas desktop grande */}
+                <div className="hidden xl:block">
+                  <PersonalGreeting userName={userName} />
+                </div>
+                
+                {/* Avatar + Nome */}
                 <Button
                   variant="ghost"
-                  size="sm"
                   onClick={() => navigate(getAreaLink())}
-                  className="text-white hover:bg-white/10 whitespace-nowrap text-xs px-2 h-8"
+                  className="flex items-center gap-2 px-2 h-10 hover:bg-white/10"
                 >
-                  <User className="w-3.5 h-3.5 mr-1.5" />
-                  {userName}
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 p-0.5">
+                    <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center">
+                      <span className="text-xs font-bold text-white">
+                        {userName.slice(0, 2).toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-white text-sm hidden sm:block">
+                    {userName.split(' ')[0]}
+                  </span>
                 </Button>
+                
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleLogout}
-                  className="text-white hover:bg-white/10 whitespace-nowrap text-xs px-2 h-8"
+                  className="text-white hover:bg-white/10 h-8"
                 >
-                  <LogOut className="w-3.5 h-3.5 mr-1.5" />
-                  Sair
+                  <LogOut className="w-3.5 h-3.5" />
                 </Button>
               </>
             ) : (
@@ -256,5 +294,6 @@ export const Header = () => {
         )}
       </nav>
     </header>
+    </>
   );
 };

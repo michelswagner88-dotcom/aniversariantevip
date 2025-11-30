@@ -88,6 +88,15 @@ export const TiltCard = ({
           <div className="holographic-overlay" />
           {/* Reflexo de luz deslizante */}
           <div className="holographic-shine" />
+          {/* Partículas brilhantes (sparkles) */}
+          <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="sparkle-particle" style={{ left: '20%', top: '15%', animationDelay: '0s' }} />
+            <div className="sparkle-particle" style={{ left: '80%', top: '25%', animationDelay: '0.3s' }} />
+            <div className="sparkle-particle" style={{ left: '40%', top: '60%', animationDelay: '0.6s' }} />
+            <div className="sparkle-particle" style={{ left: '70%', top: '70%', animationDelay: '0.9s' }} />
+            <div className="sparkle-particle" style={{ left: '15%', top: '80%', animationDelay: '1.2s' }} />
+            <div className="sparkle-particle" style={{ left: '90%', top: '50%', animationDelay: '1.5s' }} />
+          </div>
         </>
       )}
       {children}

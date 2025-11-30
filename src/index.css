@@ -486,6 +486,35 @@ All colors MUST be HSL.
   opacity: 1;
 }
 
+/* Partículas brilhantes (sparkles) */
+@keyframes sparkle-float {
+  0%, 100% { 
+    transform: translateY(0) scale(1); 
+    opacity: 0; 
+  }
+  10% { 
+    opacity: 1; 
+  }
+  90% { 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translateY(-30px) scale(0.5); 
+    opacity: 0; 
+  }
+}
+
+.sparkle-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: sparkle-float 2s ease-in-out infinite;
+  box-shadow: 0 0 6px 2px rgba(139, 92, 246, 0.8);
+}
+
 /* Desabilitar efeitos holográficos em dispositivos touch/mobile */
 @media (hover: none) {
   .holographic-overlay,

@@ -125,13 +125,37 @@ const AuthCallback = () => {
           sessionStorage.removeItem('redirectAfterLogin');
           sessionStorage.removeItem('needsCompletion');
           sessionStorage.removeItem('forceStep2');
-          toast.success('Login realizado!');
+          
+          // Toast de boas-vindas personalizado
+          const hour = new Date().getHours();
+          let greeting = 'Olá';
+          if (hour >= 5 && hour < 12) greeting = 'Bom dia';
+          else if (hour >= 12 && hour < 18) greeting = 'Boa tarde';
+          else greeting = 'Boa noite';
+          
+          const firstName = user.user_metadata?.full_name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || 'Aniversariante';
+          toast.success(`${greeting}, ${firstName}! 🎉`, {
+            description: 'Bem-vindo de volta ao Aniversariante VIP!',
+          });
+          
           navigate(redirectTo, { replace: true });
         } else {
           console.log('🏠 Redirecionando para home...');
           sessionStorage.removeItem('needsCompletion');
           sessionStorage.removeItem('forceStep2');
-          toast.success('Login realizado!');
+          
+          // Toast de boas-vindas personalizado
+          const hour = new Date().getHours();
+          let greeting = 'Olá';
+          if (hour >= 5 && hour < 12) greeting = 'Bom dia';
+          else if (hour >= 12 && hour < 18) greeting = 'Boa tarde';
+          else greeting = 'Boa noite';
+          
+          const firstName = user.user_metadata?.full_name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || 'Aniversariante';
+          toast.success(`${greeting}, ${firstName}! 🎉`, {
+            description: 'Bem-vindo de volta ao Aniversariante VIP!',
+          });
+          
           navigate('/', { replace: true });
         }
       } catch (err) {

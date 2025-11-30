@@ -6,6 +6,8 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Loader2 } from "lucide-react";
 import { CupomAniversario } from "@/components/CupomAniversario";
+import { ConfettiCelebration } from "@/components/ConfettiCelebration";
+import { useConfetti } from "@/hooks/useConfetti";
 
 interface CupomData {
   codigo: string;
@@ -30,6 +32,7 @@ const EmitirCupom = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [cupomData, setCupomData] = useState<CupomData | null>(null);
+  const { isActive: confettiActive, fireConfetti } = useConfetti();
   const estabelecimentoId = searchParams.get("estabelecimento");
 
   useEffect(() => {
@@ -139,6 +142,9 @@ const EmitirCupom = () => {
         },
       });
 
+      // Disparar confetti
+      fireConfetti();
+
       toast({
         title: "Cupom Emitido!",
         description: "Seu cupom foi gerado com sucesso",
@@ -172,25 +178,28 @@ const EmitirCupom = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
-      
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <CupomAniversario
-          estabelecimentoNome={cupomData.estabelecimento.nome_fantasia}
-          estabelecimentoLogo={cupomData.estabelecimento.logo_url || undefined}
-          aniversarianteNome={cupomData.aniversariante.nome}
-          dataNascimento={cupomData.aniversariante.data_nascimento}
-          descricaoBeneficio={cupomData.estabelecimento.descricao_beneficio}
-          regrasUtilizacao={cupomData.estabelecimento.regras_utilizacao || undefined}
-          codigoCupom={cupomData.codigo}
-          dataEmissao={cupomData.data_emissao}
-          periodoValidade={cupomData.estabelecimento.periodo_validade_beneficio}
-        />
-      </main>
+    <>
+      <ConfettiCelebration isActive={confettiActive} />
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <CupomAniversario
+            estabelecimentoNome={cupomData.estabelecimento.nome_fantasia}
+            estabelecimentoLogo={cupomData.estabelecimento.logo_url || undefined}
+            aniversarianteNome={cupomData.aniversariante.nome}
+            dataNascimento={cupomData.aniversariante.data_nascimento}
+            descricaoBeneficio={cupomData.estabelecimento.descricao_beneficio}
+            regrasUtilizacao={cupomData.estabelecimento.regras_utilizacao || undefined}
+            codigoCupom={cupomData.codigo}
+            dataEmissao={cupomData.data_emissao}
+            periodoValidade={cupomData.estabelecimento.periodo_validade_beneficio}
+          />
+        </main>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </>
   );
 };
 

@@ -39,7 +39,7 @@ export const useFlashPromos = (options: UseFlashPromosOptions = {}) => {
         .from('flash_promos')
         .select(`
           *,
-          estabelecimentos(nome_fantasia, logo_url, categoria, slug, estado, cidade)
+          estabelecimentos!fk_flash_promos_estabelecimento(nome_fantasia, logo_url, categoria, slug, estado, cidade)
         `)
         .eq('status', 'ACTIVE')
         .gt('expires_at', now)

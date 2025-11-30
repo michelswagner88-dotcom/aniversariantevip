@@ -18,7 +18,8 @@ import {
   Upload,
   UserCog,
   Camera,
-  Clock
+  Clock,
+  ShieldAlert
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -66,6 +67,7 @@ import { GerenciarColaboradores } from '@/components/colaborador/GerenciarColabo
 import { EditUserModal } from '@/components/admin/EditUserModal';
 import { EditEstablishmentModal } from '@/components/admin/EditEstablishmentModal';
 import { MapaEstabelecimentos } from '@/components/MapaEstabelecimentos';
+import { SecurityDashboard } from '@/components/admin/SecurityDashboard';
 import { geocodificarEndereco } from '@/lib/geoUtils';
 
 const COLORS = ['#94a3b8', '#8b5cf6', '#ec4899'];
@@ -1297,6 +1299,12 @@ export default function AdminDashboard() {
           >
             <TrendingUp size={20} /> Navegação B2B
           </button>
+          <button 
+             onClick={() => { setActiveTab('security'); setMobileMenuOpen(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'security' ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg' : 'hover:bg-white/5 text-slate-300'}`}
+          >
+            <ShieldAlert size={20} /> Segurança
+          </button>
         </nav>
 
         <div className="p-4 border-t border-white/10">
@@ -1389,6 +1397,7 @@ export default function AdminDashboard() {
             {activeTab === 'colaboradores' && <GerenciarColaboradores />}
             {activeTab === 'email-analytics' && renderEmailAnalytics()}
             {activeTab === 'navigation-metrics' && <NavigationMetricsPanel />}
+            {activeTab === 'security' && <SecurityDashboard />}
           </div>
         </div>
       </main>

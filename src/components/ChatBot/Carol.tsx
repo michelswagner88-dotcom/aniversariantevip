@@ -125,7 +125,8 @@ const Carol = () => {
       { pattern: /vou te levar.*explorar|vamos.*explorar|acesse.*explorar/i, route: '/explorar' },
       { pattern: /vou te levar.*favoritos|vamos.*favoritos|acesse.*favoritos/i, route: '/meus-favoritos' },
       { pattern: /vou te levar.*como funciona|vamos.*como funciona/i, route: '/como-funciona' },
-      { pattern: /vou te levar.*empresas|vamos.*empresas|acesse.*para-empresas/i, route: '/para-empresas' },
+      { pattern: /vou te levar.*empresas|vamos.*empresas|acesse.*para-empresas|vou te levar.*para empresas|página de cadastro de estabelecimento/i, route: '/para-empresas' },
+      { pattern: /vou te levar.*cadastro.*estabelecimento|cadastrar.*empresa|cadastrar.*estabelecimento/i, route: '/cadastro/estabelecimento' },
     ];
 
     for (const { pattern, route } of navigationPatterns) {

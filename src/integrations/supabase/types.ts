@@ -99,6 +99,7 @@ export type Database = {
       aniversariantes: {
         Row: {
           bairro: string
+          cadastro_completo: boolean
           cep: string
           cidade: string
           complemento: string | null
@@ -117,6 +118,7 @@ export type Database = {
         }
         Insert: {
           bairro: string
+          cadastro_completo?: boolean
           cep: string
           cidade: string
           complemento?: string | null
@@ -135,6 +137,7 @@ export type Database = {
         }
         Update: {
           bairro?: string
+          cadastro_completo?: boolean
           cep?: string
           cidade?: string
           complemento?: string | null
@@ -344,6 +347,7 @@ export type Database = {
         Row: {
           ativo: boolean
           bairro: string | null
+          cadastro_completo: boolean
           categoria: string[] | null
           cep: string | null
           cidade: string | null
@@ -382,6 +386,7 @@ export type Database = {
         Insert: {
           ativo?: boolean
           bairro?: string | null
+          cadastro_completo?: boolean
           categoria?: string[] | null
           cep?: string | null
           cidade?: string | null
@@ -420,6 +425,7 @@ export type Database = {
         Update: {
           ativo?: boolean
           bairro?: string | null
+          cadastro_completo?: boolean
           categoria?: string[] | null
           cep?: string | null
           cidade?: string | null

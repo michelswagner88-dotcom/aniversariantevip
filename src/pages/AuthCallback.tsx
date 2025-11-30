@@ -69,9 +69,9 @@ const AuthCallback = () => {
           .eq('user_id', user.id)
           .maybeSingle();
         
-        // Se não tem role, criar (primeira vez com Google)
+        // Se não tem role, criar APENAS o profile (role será criado APÓS completar cadastro)
         if (!roleData) {
-          console.log('📝 Criando perfil e role para novo usuário Google...');
+          console.log('📝 Criando perfil para novo usuário Google (SEM ROLE ainda)...');
           
           try {
             await supabase.from('profiles').insert({
@@ -79,13 +79,10 @@ const AuthCallback = () => {
               email: user.email!,
               nome: user.user_metadata?.full_name || user.user_metadata?.name || '',
             });
-
-            await supabase.from('user_roles').insert({
-              user_id: user.id,
-              role: 'aniversariante',
-            });
+            
+            console.log('✅ Profile criado. Role será criado APÓS completar cadastro.');
           } catch (err) {
-            console.error('Erro ao criar profile/role:', err);
+            console.error('Erro ao criar profile:', err);
           }
         }
         

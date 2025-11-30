@@ -14,6 +14,7 @@ import { cnpjSchema } from "@/lib/validation";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 import { normalizarCidade } from "@/lib/utils";
 import GaleriaFotosUpload from "@/components/GaleriaFotosUpload";
+import EspecialidadesSelector from "@/components/EspecialidadesSelector";
 
 type HorarioFuncionamento = {
   id: string;
@@ -51,6 +52,7 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
     telefone: "",
     endereco: "",
     categorias: [] as string[],
+    especialidades: [] as string[],
     cidade: "",
     estado: "",
     descricaoBeneficio: "",
@@ -159,6 +161,7 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
           cidade: normalizarCidade(formData.cidade),
           estado: formData.estado,
           categoria: formData.categorias.length > 0 ? formData.categorias : null,
+          especialidades: formData.especialidades.length > 0 ? formData.especialidades : null,
           descricao_beneficio: validatedData.descricaoBeneficio,
           logo_url: logoPreview || null,
           galeria_fotos: galeriaFotos,
@@ -192,6 +195,7 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
         telefone: "",
         endereco: "",
         categorias: [],
+        especialidades: [],
         cidade: "",
         estado: "",
         descricaoBeneficio: "",
@@ -347,6 +351,15 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
               {formData.categorias.length === 0 && (
                 <p className="text-sm text-muted-foreground">Selecione pelo menos uma categoria</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <EspecialidadesSelector
+                categoria={formData.categorias[0] || ''}
+                selected={formData.especialidades}
+                onChange={(especialidades) => setFormData({ ...formData, especialidades })}
+                maxSelection={3}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

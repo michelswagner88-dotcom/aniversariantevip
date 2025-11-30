@@ -38,6 +38,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 import { normalizarCidade } from '@/lib/utils';
+import EspecialidadesSelector from '@/components/EspecialidadesSelector';
 
 // Função para padronizar texto usando Lovable AI
 const standardizeTextWithAI = async (text: string): Promise<string> => {
@@ -251,6 +252,7 @@ const [horarioTemp, setHorarioTemp] = useState({
     estado: '',
     isMall: false,
     categories: [],
+    especialidades: [] as string[],
     menuLink: '',
     siteLink: '', 
     instagramUser: '', 
@@ -865,6 +867,7 @@ const [horarioTemp, setHorarioTemp] = useState({
         numero: establishmentData.numero || null,
         complemento: establishmentData.complemento || null,
         categoria: establishmentData.categories,
+        especialidades: establishmentData.especialidades.length > 0 ? establishmentData.especialidades : null,
         descricao_beneficio: rules.description || null,
         periodo_validade_beneficio: rules.scope === 'Dia' ? 'dia_aniversario' : rules.scope === 'Semana' ? 'semana_aniversario' : 'mes_aniversario',
         horario_funcionamento: establishmentData.hoursText || null,
@@ -1329,6 +1332,16 @@ const [horarioTemp, setHorarioTemp] = useState({
              <p className="mt-2 text-xs text-slate-500">Máximo de 3 categorias selecionadas.</p>
           )}
         </label>
+
+        {/* Especialidades */}
+        <div className="space-y-2">
+          <EspecialidadesSelector
+            categoria={establishmentData.categories[0] || ''}
+            selected={establishmentData.especialidades}
+            onChange={(especialidades) => setEstablishmentData(prev => ({ ...prev, especialidades }))}
+            maxSelection={3}
+          />
+        </div>
 
         {/* Link Cardápio Digital */}
         <label className="block">

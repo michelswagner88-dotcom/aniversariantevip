@@ -118,6 +118,18 @@ const PlaceCard = ({ place }: any) => {
           <MapPin size={14} className="text-violet-400" /> 
           <span>{place.neighborhood}{place.distance && ` • ${place.distance}`}</span>
         </div>
+        {place.especialidades && place.especialidades.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {place.especialidades.slice(0, 3).map((esp: string, idx: number) => (
+              <span 
+                key={idx}
+                className="text-xs px-2 py-0.5 bg-violet-500/30 text-violet-200 rounded-full border border-violet-400/30"
+              >
+                {esp}
+              </span>
+            ))}
+          </div>
+        )}
         <div className="mt-3 sm:mt-4 inline-flex items-center gap-2 sm:gap-2.5 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 shadow-2xl shadow-violet-500/30">
           <Store size={18} className="text-white" />
           <span className="text-base sm:text-lg font-extrabold text-white">
@@ -224,6 +236,7 @@ const Explorar = () => {
     id: est.id,
     name: est.nome_fantasia || est.razao_social,
     category: est.categoria?.[0] || "Outros",
+    especialidades: est.especialidades || [],
     neighborhood: est.bairro || est.cidade || "",
           distance: est.distancia !== null && est.distancia !== undefined
             ? est.distancia < 1 

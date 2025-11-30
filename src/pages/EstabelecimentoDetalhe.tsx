@@ -35,7 +35,6 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [beneficioAberto, setBeneficioAberto] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [googlePhotos, setGooglePhotos] = useState<string[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
 
   // Hook de favoritos
@@ -55,37 +54,41 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
     return () => subscription.unsubscribe();
   }, []);
 
-  // Buscar fotos do Google Places como fallback
+  // Buscar fotos do Google Places como fallback (COM CACHE)
   const fetchGooglePlacesPhotos = async (
+    establishmentId: string,
     establishmentName: string,
     address: string
-  ): Promise<string[]> => {
+  ) => {
     try {
       setLoadingPhotos(true);
 
-      // Chamar edge function para buscar fotos (evita problemas de CORS)
+      // Chamar edge function para buscar fotos (com cache automático)
       const { data, error } = await supabase.functions.invoke('fetch-google-photos', {
-        body: { establishmentName, address }
+        body: { establishmentId, establishmentName, address }
       });
 
       if (error) {
         console.error('Erro ao chamar edge function:', error);
-        return [];
+        return;
       }
 
-      const photos = data?.photos || [];
-      
-      if (photos.length > 0) {
-        console.log(`✅ ${photos.length} fotos carregadas do Google Places`);
-      } else {
-        console.warn('Nenhuma foto encontrada no Google Places');
+      if (data?.photos && data.photos.length > 0) {
+        // Atualizar o estado local com as fotos cacheadas
+        setEstabelecimento((prev: any) => ({
+          ...prev,
+          galeria_fotos: data.photos
+        }));
+        
+        if (data.cached) {
+          console.log('✅ Fotos carregadas do cache');
+        } else {
+          console.log(`📸 ${data.photos.length} fotos baixadas e salvas no cache`);
+        }
       }
-
-      return photos;
 
     } catch (error) {
       console.error('Erro ao buscar fotos do Google Places:', error);
-      return [];
     } finally {
       setLoadingPhotos(false);
     }
@@ -123,17 +126,11 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
       setEstabelecimento(data);
       setLoading(false);
 
-      // Buscar fotos do Google Places se não houver galeria
+      // Buscar fotos do Google Places se não houver galeria (com cache automático)
       if (!data.galeria_fotos || data.galeria_fotos.length === 0) {
         console.log('🔍 Galeria vazia, buscando fotos do Google Places...');
         const endereco = `${data.logradouro}, ${data.numero} - ${data.bairro}, ${data.cidade}, ${data.estado}`;
-        const photos = await fetchGooglePlacesPhotos(data.nome_fantasia, endereco);
-        if (photos.length > 0) {
-          setGooglePhotos(photos);
-          console.log(`📸 ${photos.length} fotos do Google Places carregadas`);
-        } else {
-          console.log('ℹ️ Nenhuma foto encontrada no Google Places');
-        }
+        await fetchGooglePlacesPhotos(data.id, data.nome_fantasia, endereco);
       }
       
       // Meta tags para SEO
@@ -324,10 +321,8 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   const mostraCardapio = ['Bar', 'Restaurante'].includes(categoria);
   const gridCols = mostraCardapio ? 'grid-cols-5' : 'grid-cols-4';
 
-  // Determinar fotos a exibir: galeria cadastrada ou fotos do Google Places
-  const fotosParaExibir = estabelecimento.galeria_fotos && estabelecimento.galeria_fotos.length > 0
-    ? estabelecimento.galeria_fotos
-    : googlePhotos;
+  // Determinar fotos a exibir
+  const fotosParaExibir = estabelecimento?.galeria_fotos || [];
   
   // Usar logo_url como foto principal apenas se não houver galeria
   const fotoPrincipal = fotosParaExibir.length > 0 ? null : estabelecimento.logo_url;
@@ -486,11 +481,8 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                 {loadingPhotos && (
                   <div className="flex items-center gap-2 text-xs text-gray-400">
                     <div className="w-3 h-3 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-                    <span>Buscando fotos...</span>
+                    <span>Carregando fotos...</span>
                   </div>
-                )}
-                {googlePhotos.length > 0 && !loadingPhotos && (
-                  <span className="text-xs text-gray-400">via Google Places</span>
                 )}
               </div>
               <GaleriaFotosViewer 

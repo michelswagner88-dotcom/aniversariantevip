@@ -417,6 +417,20 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               {estabelecimento.nome_fantasia || estabelecimento.razao_social}
             </h1>
 
+            {/* Especialidades */}
+            {estabelecimento.especialidades && estabelecimento.especialidades.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {estabelecimento.especialidades.map((esp: string, index: number) => (
+                  <span 
+                    key={index}
+                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-violet-500/20 text-violet-300 rounded-full border border-violet-400/30"
+                  >
+                    {esp}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {/* Endereço curto */}
             <p className="text-gray-400 text-sm mb-5">
               {estabelecimento.bairro} • {estabelecimento.cidade}/{estabelecimento.estado}

@@ -273,7 +273,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   const gridCols = mostraCardapio ? 'grid-cols-5' : 'grid-cols-4';
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="min-h-screen bg-background pb-8">
       
       {/* ========== HEADER COM FOTO ========== */}
       <div className="relative">
@@ -449,7 +449,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
             </p>
 
             {/* Mini mapa clicável */}
-            {estabelecimento.latitude && estabelecimento.longitude && (
+            {estabelecimento.latitude && estabelecimento.longitude ? (
               <div 
                 onClick={handleGoogleMaps}
                 className="h-32 bg-gray-800 rounded-xl overflow-hidden mb-4 cursor-pointer relative group"
@@ -457,7 +457,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                 <SafeImage
                   src={`https://maps.googleapis.com/maps/api/staticmap?center=${estabelecimento.latitude},${estabelecimento.longitude}&zoom=15&size=600x200&maptype=roadmap&markers=color:purple%7C${estabelecimento.latitude},${estabelecimento.longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&style=feature:all|element:geometry|color:0xf5f5f5&style=feature:poi|visibility:off`}
                   alt="Mapa"
-                  fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='200' viewBox='0 0 600 200'%3E%3Crect fill='%231e293b' width='600' height='200'/%3E%3Cg transform='translate(300,100)'%3E%3Ccircle fill='%238b5cf6' r='30'/%3E%3Cpath d='M0,-20 L10,15 L-10,15 Z' fill='white'/%3E%3C/g%3E%3Ctext x='300' y='160' font-family='Arial' font-size='12' fill='%2394a3b8' text-anchor='middle'%3EMapa não disponível%3C/text%3E%3C/svg%3E"
+                  fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='200' viewBox='0 0 600 200'%3E%3Crect fill='%231e293b' width='600' height='200'/%3E%3Cg transform='translate(300,100)'%3E%3Ccircle fill='%238b5cf6' r='30'/%3E%3Cpath d='M0,-20 L10,15 L-10,15 Z' fill='white'/%3E%3C/g%3E%3C/svg%3E"
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
@@ -467,10 +467,17 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                   </span>
                 </div>
               </div>
+            ) : (
+              <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                <p className="text-amber-400 text-xs flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Mapa não disponível. Use os botões abaixo para navegar.
+                </p>
+              </div>
             )}
 
             {/* Botões de navegação */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-2 mb-24">
               
               {/* Google Maps */}
               <button
@@ -528,31 +535,29 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
             </div>
           </div>
 
-        </div>
-      </div>
+          {/* ========== BOTÃO VER BENEFÍCIO ========== */}
+          <div className="bg-gray-900/90 backdrop-blur-lg border border-white/10 rounded-2xl p-4">
+            <Button
+              onClick={handleVerBeneficio}
+              disabled={beneficioAberto}
+              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-base py-3 h-auto rounded-xl shadow-lg shadow-violet-500/30 relative overflow-hidden group"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              
+              {beneficioAberto ? (
+                <>
+                  <Gift className="w-5 h-5 animate-bounce mr-2" />
+                  <span className="animate-pulse">Abrindo...</span>
+                </>
+              ) : (
+                <>
+                  <Gift className="w-5 h-5 mr-2" />
+                  Ver Benefício
+                </>
+              )}
+            </Button>
+          </div>
 
-      {/* ========== BOTÃO FIXO - VER BENEFÍCIO ========== */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent z-30">
-        <div className="max-w-2xl mx-auto">
-          <Button
-            onClick={handleVerBeneficio}
-            disabled={beneficioAberto}
-            className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-lg py-6 h-auto rounded-xl shadow-lg shadow-violet-500/30 relative overflow-hidden group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-            
-            {beneficioAberto ? (
-              <>
-                <Gift className="w-5 h-5 animate-bounce mr-2" />
-                <span className="animate-pulse">Abrindo...</span>
-              </>
-            ) : (
-              <>
-                <Gift className="w-5 h-5 mr-2" />
-                Ver Benefício de Aniversário
-              </>
-            )}
-          </Button>
         </div>
       </div>
 

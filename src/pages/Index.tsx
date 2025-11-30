@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Search, Phone, Clock, ExternalLink, Heart, Sparkles, Instagram, Globe, Share2, Navigation, X } from "lucide-react";
+import { MapPin, Search, Phone, Clock, ExternalLink, Heart, Sparkles, Instagram, Globe, Share2, Navigation, X, TrendingUp, Users, MapPinned, Shield, Zap, Gift } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { VoiceSearchButton } from "@/components/VoiceSearchButton";
@@ -16,6 +16,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { CityCombobox } from "@/components/CityCombobox";
 import { useQuery } from "@tanstack/react-query";
 import { sanitizarInput } from "@/lib/sanitize";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
+import { GlowText } from "@/components/ui/glow-text";
+import { RevealOnScroll } from "@/components/ui/reveal-on-scroll";
 
 interface Estabelecimento {
   id: string;
@@ -45,6 +48,29 @@ const Index = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
   const { favoritos, toggleFavorito, isFavorito, loading: favoritosLoading } = useFavoritos(currentUser?.id || null);
+
+  // Buscar estatísticas reais do banco
+  const { data: stats } = useQuery({
+    queryKey: ['platform-stats'],
+    queryFn: async () => {
+      const [estabelecimentosCount, cidadesCount, aniversariantesCount] = await Promise.all([
+        supabase.from('estabelecimentos').select('id', { count: 'exact', head: true }),
+        supabase.from('estabelecimentos').select('cidade, estado').eq('ativo', true),
+        supabase.from('aniversariantes').select('id', { count: 'exact', head: true })
+      ]);
+
+      const cidadesUnicas = new Set(
+        (cidadesCount.data || []).map(e => `${e.cidade}-${e.estado}`)
+      ).size;
+
+      return {
+        estabelecimentos: estabelecimentosCount.count || 0,
+        cidades: cidadesUnicas || 0,
+        aniversariantes: aniversariantesCount.count || 0,
+      };
+    },
+    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+  });
 
   useEffect(() => {
     // Listener que reage a mudanças de autenticação
@@ -239,16 +265,16 @@ const Index = () => {
             <span className="text-xs font-semibold text-slate-300 tracking-wide">CADASTRO GRATUITO</span>
           </Link>
 
-          {/* H1 - Premium Typography */}
+          {/* H1 - Premium Typography com Glow */}
           <h1 className="font-display font-extrabold text-4xl sm:text-6xl md:text-7xl mb-6 sm:mb-8 tracking-tight leading-[1.05] animate-fade-in" style={{ animationDelay: '0.08s' }}>
             <span className="text-white">
               O Maior Guia de Benefícios
               <br />
               para Aniversariantes do{" "}
             </span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400">
+            <GlowText className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400">
               Brasil
-            </span>
+            </GlowText>
           </h1>
 
           {/* H2 - Enhanced Legibility */}
@@ -410,10 +436,130 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Social Proof */}
-          <p className="text-white/85 text-sm mt-8 sm:mt-10 mb-0 animate-fade-in" style={{ animationDelay: '0.32s' }}>
-            Junte-se a mais de 50.000 aniversariantes que economizam todo mês.
-          </p>
+          {/* Stats Animados - World Class */}
+          <RevealOnScroll delay={0.3} className="mt-16 sm:mt-20">
+            <div className="grid grid-cols-3 gap-6 sm:gap-8 max-w-3xl mx-auto">
+              {/* Estabelecimentos */}
+              <div className="text-center">
+                <div className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400 mb-2">
+                  +<AnimatedCounter value={stats?.estabelecimentos || 150} delay={0.5} />
+                </div>
+                <div className="text-xs sm:text-sm text-slate-400 font-medium">Estabelecimentos</div>
+              </div>
+
+              {/* Cidades */}
+              <div className="text-center">
+                <div className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-pink-400 mb-2">
+                  +<AnimatedCounter value={stats?.cidades || 15} delay={0.7} />
+                </div>
+                <div className="text-xs sm:text-sm text-slate-400 font-medium">Cidades</div>
+              </div>
+
+              {/* Aniversariantes */}
+              <div className="text-center">
+                <div className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-cyan-400 mb-2">
+                  +<AnimatedCounter value={stats?.aniversariantes || 500} delay={0.9} />
+                </div>
+                <div className="text-xs sm:text-sm text-slate-400 font-medium">Aniversariantes</div>
+              </div>
+            </div>
+          </RevealOnScroll>
+        </div>
+      </section>
+
+      {/* Bento Grid de Features - Premium Section */}
+      <section className="relative py-16 sm:py-24 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/50 to-slate-950" />
+        
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <RevealOnScroll>
+            <h2 className="text-3xl sm:text-4xl font-bold text-center text-white mb-4">
+              Por que o <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">Aniversariante VIP</span>?
+            </h2>
+            <p className="text-center text-slate-400 mb-12 sm:mb-16 max-w-2xl mx-auto">
+              A plataforma mais moderna e completa para você aproveitar ao máximo seu aniversário
+            </p>
+          </RevealOnScroll>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {/* Benefícios Exclusivos */}
+            <RevealOnScroll delay={0.1} className="group">
+              <div className="h-full p-6 sm:p-8 rounded-2xl border border-white/10 bg-gradient-to-br from-violet-500/10 to-transparent hover:border-violet-500/50 transition-all duration-300 hover:scale-105">
+                <div className="w-12 h-12 rounded-xl bg-violet-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Gift className="w-6 h-6 text-violet-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Benefícios Exclusivos</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Centenas de estabelecimentos parceiros com descontos e vantagens especiais para você
+                </p>
+              </div>
+            </RevealOnScroll>
+
+            {/* 100% Gratuito */}
+            <RevealOnScroll delay={0.2} className="group">
+              <div className="h-full p-6 sm:p-8 rounded-2xl border border-white/10 bg-gradient-to-br from-fuchsia-500/10 to-transparent hover:border-fuchsia-500/50 transition-all duration-300 hover:scale-105">
+                <div className="w-12 h-12 rounded-xl bg-fuchsia-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Sparkles className="w-6 h-6 text-fuchsia-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">100% Gratuito</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Sem taxas escondidas, sem mensalidades. Aproveite todos os benefícios de forma totalmente gratuita
+                </p>
+              </div>
+            </RevealOnScroll>
+
+            {/* Dados Protegidos */}
+            <RevealOnScroll delay={0.3} className="group">
+              <div className="h-full p-6 sm:p-8 rounded-2xl border border-white/10 bg-gradient-to-br from-pink-500/10 to-transparent hover:border-pink-500/50 transition-all duration-300 hover:scale-105">
+                <div className="w-12 h-12 rounded-xl bg-pink-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Shield className="w-6 h-6 text-pink-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Dados Seguros</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Conformidade total com a LGPD. Seus dados protegidos com criptografia de ponta
+                </p>
+              </div>
+            </RevealOnScroll>
+
+            {/* Encontre Estabelecimentos */}
+            <RevealOnScroll delay={0.4} className="group">
+              <div className="h-full p-6 sm:p-8 rounded-2xl border border-white/10 bg-gradient-to-br from-cyan-500/10 to-transparent hover:border-cyan-500/50 transition-all duration-300 hover:scale-105">
+                <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <MapPinned className="w-6 h-6 text-cyan-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Busca Inteligente</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Encontre estabelecimentos por categoria, localização e distância com mapas interativos
+                </p>
+              </div>
+            </RevealOnScroll>
+
+            {/* Flash Deals */}
+            <RevealOnScroll delay={0.5} className="group">
+              <div className="h-full p-6 sm:p-8 rounded-2xl border border-white/10 bg-gradient-to-br from-orange-500/10 to-transparent hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
+                <div className="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Zap className="w-6 h-6 text-orange-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Ofertas Relâmpago</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Promoções exclusivas e por tempo limitado para você aproveitar ainda mais
+                </p>
+              </div>
+            </RevealOnScroll>
+
+            {/* Comunidade */}
+            <RevealOnScroll delay={0.6} className="group">
+              <div className="h-full p-6 sm:p-8 rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/10 to-transparent hover:border-emerald-500/50 transition-all duration-300 hover:scale-105">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Users className="w-6 h-6 text-emerald-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Comunidade Ativa</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Milhares de aniversariantes economizando e compartilhando experiências todos os dias
+                </p>
+              </div>
+            </RevealOnScroll>
+          </div>
         </div>
       </section>
 

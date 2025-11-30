@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -19,6 +19,9 @@ import {
   SheetHeader, 
   SheetTitle 
 } from '@/components/ui/sheet';
+import { RevealOnScroll } from '@/components/ui/reveal-on-scroll';
+import { ShimmerButton } from '@/components/ui/shimmer-button';
+import { motion, useScroll, useTransform } from 'framer-motion';
 
 interface EstabelecimentoDetalheProps {
   estabelecimentoIdProp?: string | null;
@@ -36,9 +39,19 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   const [beneficioAberto, setBeneficioAberto] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Hook de favoritos
   const { isFavorito, toggleFavorito } = useFavoritos(userId);
+
+  // Parallax effect para o header
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end start"]
+  });
+  
+  const headerY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+  const headerOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0.3]);
 
   // Verificar autenticação
   useEffect(() => {
@@ -168,6 +181,11 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
     if (!userId || !id) {
       setShowLoginModal(true);
       return;
+    }
+    const button = document.getElementById('favorito-btn');
+    if (button) {
+      button.classList.add('animate-heartbeat');
+      setTimeout(() => button.classList.remove('animate-heartbeat'), 1200);
     }
     await toggleFavorito(id);
   };
@@ -329,16 +347,19 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   const temFotos = fotosParaExibir.length > 0 || estabelecimento.logo_url;
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div ref={containerRef} className="min-h-screen bg-background pb-8">
       
-      {/* ========== HEADER COM FOTO ========== */}
+      {/* ========== HEADER COM FOTO E PARALLAX ========== */}
       <div className="relative">
-        <div className="h-64 md:h-80 relative overflow-hidden">
+        <motion.div 
+          className="h-64 md:h-80 relative overflow-hidden"
+          style={{ y: headerY, opacity: headerOpacity }}
+        >
           {fotosParaExibir[0] || estabelecimento.logo_url ? (
             <img 
               src={fotosParaExibir[0] || estabelecimento.logo_url} 
               alt={estabelecimento.nome_fantasia}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover scale-110"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 flex items-center justify-center">
@@ -346,7 +367,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-        </div>
+        </motion.div>
 
         {/* Botões topo */}
         <div className="absolute top-4 left-4 right-4 flex justify-between z-20">
@@ -361,6 +382,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
           
           <div className="flex gap-2">
             <Button
+              id="favorito-btn"
               variant="ghost"
               size="icon"
               onClick={handleFavorito}
@@ -385,7 +407,8 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
         <div className="max-w-2xl mx-auto space-y-4">
           
           {/* ========== CARD PRINCIPAL ========== */}
-          <div className="bg-gray-900/90 backdrop-blur-lg border border-white/10 rounded-2xl p-5">
+          <RevealOnScroll delay={0.1}>
+            <div className="bg-gray-900/90 backdrop-blur-lg border border-white/10 rounded-2xl p-5">
             
             {/* Categoria */}
             <div className="flex items-center gap-2 mb-2">
@@ -470,9 +493,55 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
 
             </div>
           </div>
+          </RevealOnScroll>
+
+          {/* ========== BENEFÍCIO DE ANIVERSÁRIO ========== */}
+          <RevealOnScroll delay={0.2}>
+          <div className="bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 backdrop-blur-lg border border-violet-500/20 rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Gift className="w-5 h-5 text-violet-400" />
+              <h3 className="text-white font-semibold">Benefício de Aniversário</h3>
+            </div>
+            
+            {estabelecimento.descricao_beneficio && (
+              <p className="text-gray-300 mb-4 leading-relaxed">
+                {estabelecimento.descricao_beneficio}
+              </p>
+            )}
+
+            {estabelecimento.periodo_validade_beneficio && (
+              <div className="flex items-start gap-2 mb-3">
+                <span className="text-violet-400 text-xs">📅</span>
+                <p className="text-gray-400 text-xs">
+                  <span className="text-white font-medium">Período:</span> {estabelecimento.periodo_validade_beneficio}
+                </p>
+              </div>
+            )}
+
+            {estabelecimento.regras_utilizacao && (
+              <div className="flex items-start gap-2 mb-4">
+                <span className="text-violet-400 text-xs">ℹ️</span>
+                <p className="text-gray-400 text-xs">
+                  <span className="text-white font-medium">Regras:</span> {estabelecimento.regras_utilizacao}
+                </p>
+              </div>
+            )}
+
+            {/* Botão CTA Premium com Shimmer */}
+            <ShimmerButton
+              onClick={handleVerBeneficio}
+              className="w-full h-14 text-lg rounded-xl"
+              background="linear-gradient(90deg, #8b5cf6, #d946ef, #ec4899)"
+            >
+              <Gift className="w-5 h-5 mr-2" />
+              Ver Benefício de Aniversário
+            </ShimmerButton>
+          </div>
+          </RevealOnScroll>
 
           {/* ========== GALERIA DE FOTOS ========== */}
           {temFotos && (
+            <RevealOnScroll delay={0.3}>
             <div className="bg-gray-900/90 backdrop-blur-lg border border-white/10 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-white font-semibold flex items-center gap-2">
@@ -490,10 +559,12 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                 galeriaFotos={fotosParaExibir}
               />
             </div>
+            </RevealOnScroll>
           )}
 
           {/* ========== HORÁRIO DE FUNCIONAMENTO ========== */}
           {estabelecimento.horario_funcionamento && (
+            <RevealOnScroll delay={0.4}>
             <div className="bg-gray-900/90 backdrop-blur-lg border border-white/10 rounded-2xl p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
@@ -505,9 +576,11 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                 </div>
               </div>
             </div>
+            </RevealOnScroll>
           )}
 
           {/* ========== COMO CHEGAR ========== */}
+          <RevealOnScroll delay={0.5}>
           <div className="bg-gray-900/90 backdrop-blur-lg border border-white/10 rounded-2xl p-4">
             
             <div className="flex items-center gap-2 mb-4">
@@ -623,6 +696,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
 
             </div>
           </div>
+          </RevealOnScroll>
 
           {/* ========== BOTÃO VER BENEFÍCIO ========== */}
           <div className="bg-gray-900/90 backdrop-blur-lg border border-white/10 rounded-2xl p-4">

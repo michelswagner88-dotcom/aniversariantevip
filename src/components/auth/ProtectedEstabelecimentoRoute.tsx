@@ -18,7 +18,7 @@ export const ProtectedEstabelecimentoRoute = ({ children }: Props) => {
 
     const checkAuth = async () => {
       try {
-        // Verificar sessão
+        // 1. Verificar sessão
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError || !session) {
@@ -30,15 +30,15 @@ export const ProtectedEstabelecimentoRoute = ({ children }: Props) => {
           return;
         }
 
-        // Verificar se tem estabelecimento cadastrado (id do estabelecimento = id do usuário)
-        const { data: estabelecimento, error: estabError } = await supabase
-          .from('estabelecimentos')
-          .select('id, ativo')
-          .eq('id', session.user.id)
+        // 2. Verificar role do usuário
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
           .maybeSingle();
 
-        if (estabError || !estabelecimento) {
-          console.log('ProtectedEstabelecimento: Usuário não tem estabelecimento');
+        if (!roleData || roleData.role !== 'estabelecimento') {
+          console.log('ProtectedEstabelecimento: Usuário não é estabelecimento');
           if (mounted) {
             setIsAuthorized(false);
             setLoading(false);
@@ -46,7 +46,33 @@ export const ProtectedEstabelecimentoRoute = ({ children }: Props) => {
           return;
         }
 
-        // Tudo OK
+        // 3. CRÍTICO: Verificar se estabelecimento existe E cadastro está completo
+        const { data: estabelecimento, error: estabError } = await supabase
+          .from('estabelecimentos')
+          .select('id, ativo, cadastro_completo, cnpj, nome_fantasia')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (estabError || !estabelecimento) {
+          console.log('ProtectedEstabelecimento: Estabelecimento não encontrado');
+          if (mounted) {
+            setIsAuthorized(false);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // 4. Verificar campos obrigatórios
+        if (!estabelecimento.cadastro_completo || !estabelecimento.cnpj || !estabelecimento.nome_fantasia) {
+          console.log('ProtectedEstabelecimento: Cadastro incompleto');
+          if (mounted) {
+            setIsAuthorized(false);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // 5. Tudo OK
         console.log('ProtectedEstabelecimento: Autorizado');
         if (mounted) {
           setIsAuthorized(true);

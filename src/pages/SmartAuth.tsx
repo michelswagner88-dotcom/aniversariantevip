@@ -182,9 +182,9 @@ const SmartAuth = () => {
             .eq('user_id', session.user.id)
             .maybeSingle();
 
-          // Se não tem role, criar (primeira vez com Google)
+          // Se não tem role, criar APENAS o profile (role será criado APÓS completar cadastro)
           if (!roleData) {
-            console.log('📝 Criando perfil e role para novo usuário Google...');
+            console.log('📝 Criando perfil para novo usuário Google (SEM ROLE ainda)...');
             
             try {
               await supabase.from('profiles').insert({
@@ -192,13 +192,10 @@ const SmartAuth = () => {
                 email: session.user.email!,
                 nome: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
               });
-
-              await supabase.from('user_roles').insert({
-                user_id: session.user.id,
-                role: 'aniversariante',
-              });
+              
+              console.log('✅ Profile criado. Role será criado APÓS completar cadastro.');
             } catch (err) {
-              console.error('Erro ao criar profile/role:', err);
+              console.error('Erro ao criar profile:', err);
             }
           }
 
@@ -681,7 +678,7 @@ const SmartAuth = () => {
       const [day, month, year] = birthDate.split('/');
       const formattedDate = `${year}-${month}-${day}`;
 
-      // Inserir ou atualizar dados completos do aniversariante
+      // TRANSAÇÃO ATÔMICA: Inserir dados completos do aniversariante COM cadastro_completo = true
       const { error: insertError } = await supabase
         .from('aniversariantes')
         .upsert({
@@ -697,6 +694,7 @@ const SmartAuth = () => {
           numero: numero || 'S/N',
           latitude,
           longitude,
+          cadastro_completo: true, // MARCAR COMO COMPLETO
         });
 
       if (insertError) {
@@ -713,6 +711,30 @@ const SmartAuth = () => {
 
         if (profileError) {
           console.error('Erro ao atualizar perfil:', profileError);
+        }
+      }
+      
+      // AGORA SIM: Criar role SOMENTE APÓS cadastro estar COMPLETO
+      // Verificar se role já existe (pode já existir para usuários antigos)
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', currentUserId)
+        .eq('role', 'aniversariante')
+        .maybeSingle();
+      
+      if (!existingRole) {
+        console.log('🔐 Criando role de aniversariante APÓS cadastro completo...');
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: currentUserId,
+            role: 'aniversariante',
+          });
+        
+        if (roleError) {
+          console.error('Erro ao criar role:', roleError);
+          throw new Error('Erro ao finalizar cadastro. Tente novamente.');
         }
       }
 

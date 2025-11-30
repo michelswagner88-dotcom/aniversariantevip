@@ -79,7 +79,7 @@ const LoginRequiredModal = ({ isOpen, onClose, returnUrl }: LoginRequiredModalPr
               </li>
               <li className="flex items-center gap-2 text-sm text-gray-300">
                 <span className="text-green-400">✓</span>
-                Compartilhar cupons
+                Ver benefícios exclusivos
               </li>
               <li className="flex items-center gap-2 text-sm text-gray-300">
                 <span className="text-green-400">✓</span>

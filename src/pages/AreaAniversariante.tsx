@@ -497,12 +497,7 @@ const AreaAniversariante = () => {
             onClick={() => navigate('/meus-favoritos')} 
           />
           
-          <MenuOption 
-            icon={Gift} 
-            title="Meus Cupons" 
-            subtitle="Ver cupons ativos e histórico"
-            onClick={() => navigate('/meus-cupons')} 
-          />
+          {/* MenuOption de Meus Cupons removido - funcionalidade descontinuada */}
 
           <div className="mt-6 border-t border-white/5 pt-6">
             <MenuOption 
@@ -532,13 +527,7 @@ const AreaAniversariante = () => {
              <span className="text-[10px] font-medium">Explorar</span>
            </button>
            
-           <button 
-             onClick={() => navigate('/meus-cupons')}
-             className="flex flex-col items-center gap-1 p-2 text-slate-500 hover:text-white transition-colors"
-           >
-             <Gift size={22} />
-             <span className="text-[10px] font-medium">Cupons</span>
-           </button>
+           {/* Botão Cupons removido - funcionalidade descontinuada */}
 
            <button className="flex flex-col items-center gap-1 p-2 text-violet-400">
              <User size={22} />

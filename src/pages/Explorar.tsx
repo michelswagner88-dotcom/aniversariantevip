@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { sanitizarInput } from "@/lib/sanitize";
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
+import { TiltCard } from '@/components/ui/tilt-card';
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick }: any) => (
@@ -84,12 +85,14 @@ const PlaceCard = ({ place }: any) => {
   };
 
   return (
-    <div 
-      onClick={handleCardClick}
+    <TiltCard 
       className="group relative h-72 sm:aspect-[4/5] w-full overflow-hidden rounded-2xl bg-slate-800 shadow-lg border border-white/5 cursor-pointer hover:border-violet-500/50 transition-all animate-fade-in"
+      tiltAmount={8}
+      shadowAmount={15}
     >
-      <SafeImage src={place.image} alt={place.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
+      <div onClick={handleCardClick} className="h-full w-full">
+        <SafeImage src={place.image} alt={place.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
       
       <div className="absolute left-0 right-0 top-0 flex items-start justify-between p-3 sm:p-4">
         <div className="flex flex-col gap-2">
@@ -120,7 +123,8 @@ const PlaceCard = ({ place }: any) => {
           </span>
         </div>
       </div>
-    </div>
+      </div>
+    </TiltCard>
   );
 };
 

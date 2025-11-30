@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -39,16 +39,12 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   const [beneficioAberto, setBeneficioAberto] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // Hook de favoritos
   const { isFavorito, toggleFavorito } = useFavoritos(userId);
 
   // Parallax effect para o header
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end start"]
-  });
+  const { scrollYProgress } = useScroll();
   
   const headerY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
   const headerOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0.3]);
@@ -347,7 +343,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   const temFotos = fotosParaExibir.length > 0 || estabelecimento.logo_url;
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-8">
       
       {/* ========== HEADER COM FOTO E PARALLAX ========== */}
       <div className="relative">

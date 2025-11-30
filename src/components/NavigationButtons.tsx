@@ -77,7 +77,7 @@ export const NavigationButtons = ({
 
     return {
       uber: `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[latitude]=${lat}&dropoff[longitude]=${lng}&dropoff[nickname]=${encodedName}`,
-      '99': `https://99app.com/deep-link?destination_lat=${lat}&destination_lng=${lng}&destination_title=${encodedName}`,
+      '99': `https://99app.com/`,
       waze: `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`,
       maps: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
     };

@@ -17,6 +17,7 @@ import ProtectedEstabelecimentoRoute from "@/components/auth/ProtectedEstabeleci
 import ProtectedAniversarianteRoute from "@/components/auth/ProtectedAniversarianteRoute";
 import ProtectedAdminRoute from "@/components/auth/ProtectedAdminRoute";
 import PasswordProtection from "@/components/auth/PasswordProtection";
+import Carol from "@/components/ChatBot/Carol";
 
 // Lazy load das páginas principais
 const Index = lazy(() => import("./pages/Index"));
@@ -93,6 +94,7 @@ const App = () => (
         <BrowserRouter>
           <AnalyticsProvider>
             <ChatAssistant />
+            <Carol />
             <ErrorBoundary>
               <PageTransition>
                 <BottomNav />

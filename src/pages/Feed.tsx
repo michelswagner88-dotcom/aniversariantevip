@@ -14,6 +14,8 @@ import { Input } from '@/components/ui/input';
 import { useTrackPostView, useTrackPostShare } from '@/hooks/usePostAnalytics';
 import { toast } from 'sonner';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
+import { PostCardSkeleton } from '@/components/skeletons/PostCardSkeleton';
+import { EmptyState } from '@/components/EmptyState';
 
 const PostCard = ({ post, navigate }: { post: any; navigate: any }) => {
   const { likesCount, hasLiked, toggleLike, commentsCount, addComment, isTogglingLike } = usePostInteractions(post.id);
@@ -201,10 +203,26 @@ export default function Feed() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
-          <p className="text-slate-400 text-sm">Carregando seu feed...</p>
+      <div className="min-h-screen bg-slate-950 pb-24">
+        {/* Header real enquanto carrega */}
+        <div className="sticky top-0 z-40 border-b border-white/5 bg-slate-950/90 backdrop-blur-xl py-4">
+          <div className="container mx-auto px-6">
+            <BackButton to="/" />
+            <h1 className="text-2xl font-plus-jakarta font-extrabold mt-3 flex items-center gap-2">
+              <Sparkles className="text-violet-400" size={24} />
+              Novidades VIP
+            </h1>
+            <p className="text-sm text-slate-400 mt-1">
+              Fique por dentro das promoções dos seus lugares favoritos
+            </p>
+          </div>
+        </div>
+        
+        {/* Skeletons dos posts */}
+        <div className="container mx-auto px-6 py-6 space-y-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <PostCardSkeleton key={i} />
+          ))}
         </div>
       </div>
     );

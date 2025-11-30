@@ -281,7 +281,7 @@ All colors MUST be HSL.
   }
   
   .animate-shimmer-slide {
-    animation: shimmer-slide 2.5s infinite;
+    animation: shimmer-slide 1.5s ease-in-out infinite;
   }
   
   @keyframes glow-pulse {

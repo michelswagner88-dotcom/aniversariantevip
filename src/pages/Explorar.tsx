@@ -18,6 +18,7 @@ import { sanitizarInput } from "@/lib/sanitize";
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { TiltCard } from '@/components/ui/tilt-card';
+import { EstabelecimentoCardSkeleton } from '@/components/skeletons/EstabelecimentoCardSkeleton';
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick }: any) => (
@@ -374,9 +375,10 @@ const Explorar = () => {
 
       <div className="px-4 pt-6">
         {loadingEstabelecimentos && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-12 h-12 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin mb-4" />
-            <p className="text-slate-400 text-sm">Carregando estabelecimentos...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <EstabelecimentoCardSkeleton key={i} />
+            ))}
           </div>
         )}
 

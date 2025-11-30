@@ -335,30 +335,34 @@ const Explorar = () => {
           </div>
         )}
 
-        <div className="relative container mx-auto px-6 mt-4">
-          <div className="absolute left-0 top-0 bottom-2 w-16 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none z-10"></div>
-          <div className="absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none z-10"></div>
-          
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory px-16 -mx-16">
-            <div className="shrink-0 pl-16"></div>
+        <div className="container mx-auto px-6 mt-4">
+          <div className="flex items-center gap-3">
+            {/* Botão de filtro FIXO à esquerda */}
             <button 
               onClick={() => setShowFilters(true)} 
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all duration-300 active:scale-95 ${filterDay !== 'any' || filterDistance ? 'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:scale-105'}`}
             >
               <SlidersHorizontal size={18} className="transition-transform duration-300" />
             </button>
-            <div className="shrink-0"><CategoryPill icon="🚀" label="Todos" active={activeCategories.length === 0} onClick={() => handleCategoryToggle("Todos")} /></div>
-            {CATEGORIAS_ESTABELECIMENTO.map((cat) => (
-              <div key={cat.value} className="shrink-0">
-                <CategoryPill 
-                  icon={cat.icon} 
-                  label={cat.label} 
-                  active={activeCategories.includes(cat.value)} 
-                  onClick={() => handleCategoryToggle(cat.value)} 
-                />
+            
+            {/* Categorias em scroll horizontal */}
+            <div className="flex-1 overflow-x-auto scrollbar-hide relative">
+              <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none z-10"></div>
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none z-10"></div>
+              
+              <div className="flex gap-3 pb-2">
+                <CategoryPill icon="🚀" label="Todos" active={activeCategories.length === 0} onClick={() => handleCategoryToggle("Todos")} />
+                {CATEGORIAS_ESTABELECIMENTO.map((cat) => (
+                  <CategoryPill 
+                    key={cat.value}
+                    icon={cat.icon} 
+                    label={cat.label} 
+                    active={activeCategories.includes(cat.value)} 
+                    onClick={() => handleCategoryToggle(cat.value)} 
+                  />
+                ))}
               </div>
-            ))}
-            <div className="shrink-0 pr-16"></div>
+            </div>
           </div>
         </div>
       </div>

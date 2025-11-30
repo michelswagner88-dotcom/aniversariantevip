@@ -7,10 +7,14 @@ interface Props {
   children: React.ReactNode;
 }
 
-// Verificar se usuário é admin usando APENAS o banco de dados
-const checkIsAdmin = async (userId: string): Promise<boolean> => {
+// Verificar se usuário é admin usando banco de dados (role + tabela admins)
+const checkIsAdmin = async (userId: string): Promise<{ 
+  isAdmin: boolean; 
+  nivel?: string;
+  adminId?: string;
+}> => {
   try {
-    // Verificar na tabela user_roles (única fonte de verdade)
+    // 1. Verificar na tabela user_roles
     const { data: roleData, error: roleError } = await supabase
       .from('user_roles')
       .select('role')
@@ -20,13 +24,38 @@ const checkIsAdmin = async (userId: string): Promise<boolean> => {
 
     if (roleError) {
       console.error('Erro ao verificar role:', roleError);
-      return false;
+      return { isAdmin: false };
     }
 
-    return !!roleData;
+    if (!roleData) {
+      return { isAdmin: false };
+    }
+
+    // 2. Verificar na tabela admins
+    const { data: adminData, error: adminError } = await supabase
+      .from('admins')
+      .select('id, nivel, ativo')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (adminError) {
+      console.error('Erro ao verificar admins:', adminError);
+      return { isAdmin: false };
+    }
+
+    // Admin deve estar na tabela admins E estar ativo
+    if (!adminData || !adminData.ativo) {
+      return { isAdmin: false };
+    }
+
+    return { 
+      isAdmin: true, 
+      nivel: adminData.nivel,
+      adminId: adminData.id
+    };
   } catch (error) {
     console.error('Erro ao verificar admin:', error);
-    return false;
+    return { isAdmin: false };
   }
 };
 
@@ -51,41 +80,10 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
 
         const user = session.user;
 
-        // Verificar se é admin (apenas via banco de dados)
-        const isAdmin = await checkIsAdmin(user.id);
+        // Verificar se é admin (role + tabela admins)
+        const adminCheck = await checkIsAdmin(user.id);
         
-        // FASE 3: Verificação periódica de role a cada 5 minutos
-        const roleCheckInterval = setInterval(async () => {
-          const stillAdmin = await checkIsAdmin(user.id);
-          
-          if (!stillAdmin) {
-            console.warn('Admin: Role removida, forçando logout');
-            
-            // Log role removida
-            try {
-              await supabase.from('admin_access_logs').insert({
-                user_id: user.id,
-                email: user.email || '',
-                action: 'role_revoked',
-                endpoint: location.pathname,
-                authorized: false,
-                metadata: { reason: 'role_removed_during_session' }
-              });
-            } catch (logError) {
-              console.error('Erro ao logar revogação de role:', logError);
-            }
-            
-            // Forçar logout
-            await supabase.auth.signOut();
-            setIsAuthorized(false);
-            setError('Suas permissões foram removidas. Faça login novamente.');
-          }
-        }, 5 * 60 * 1000); // 5 minutos
-
-        // Cleanup do interval quando componente desmontar
-        return () => clearInterval(roleCheckInterval);
-
-        if (!isAdmin) {
+        if (!adminCheck.isAdmin) {
           console.warn(`Admin: Acesso negado para ${user.email}`);
           
           // Log de tentativa de acesso não autorizado - usar tabela dedicada
@@ -111,7 +109,16 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
           return;
         }
 
-        // Log de acesso autorizado - usar tabela dedicada
+        // 3. Atualizar último acesso
+        try {
+          await supabase.rpc('update_admin_last_access', { 
+            admin_user_id: user.id 
+          });
+        } catch (accessError) {
+          console.error('Erro ao atualizar último acesso:', accessError);
+        }
+
+        // 4. Log de acesso autorizado
         try {
           await supabase.from('admin_access_logs').insert({
             user_id: user.id,
@@ -120,6 +127,8 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
             endpoint: location.pathname,
             authorized: true,
             metadata: {
+              nivel: adminCheck.nivel,
+              adminId: adminCheck.adminId,
               timestamp: new Date().toISOString(),
             }
           });
@@ -127,8 +136,39 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
           console.error('Erro ao logar acesso autorizado:', logError);
         }
 
-        console.log(`Admin: Acesso autorizado para ${user.email}`);
+        console.log(`Admin: Acesso autorizado para ${user.email} (${adminCheck.nivel})`);
         setIsAuthorized(true);
+
+        // 5. Verificação periódica de role a cada 5 minutos
+        const roleCheckInterval = setInterval(async () => {
+          const stillAdmin = await checkIsAdmin(user.id);
+          
+          if (!stillAdmin.isAdmin) {
+            console.warn('Admin: Permissões removidas, forçando logout');
+            
+            // Log role removida
+            try {
+              await supabase.from('admin_access_logs').insert({
+                user_id: user.id,
+                email: user.email || '',
+                action: 'role_revoked',
+                endpoint: location.pathname,
+                authorized: false,
+                metadata: { reason: 'permissions_removed_during_session' }
+              });
+            } catch (logError) {
+              console.error('Erro ao logar revogação de permissões:', logError);
+            }
+            
+            // Forçar logout
+            await supabase.auth.signOut();
+            setIsAuthorized(false);
+            setError('Suas permissões foram removidas. Faça login novamente.');
+          }
+        }, 5 * 60 * 1000); // 5 minutos
+
+        // Cleanup do interval quando componente desmontar
+        return () => clearInterval(roleCheckInterval);
 
       } catch (err) {
         console.error('Admin: Erro na verificação', err);

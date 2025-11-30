@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import MaskedInput from '@/components/MaskedInput';
 import BuscaCepPorEndereco from '@/components/BuscaCepPorEndereco';
 import { BackButton } from '@/components/BackButton';
-import ChatAssistant from '@/components/ChatAssistant';
 import { TelaConfirmacaoEmail } from '@/components/TelaConfirmacaoEmail';
 import { useInputMask } from '@/hooks/useInputMask';
 import { useCheckCpfExists } from '@/hooks/useCheckCpfExists';
@@ -1106,8 +1105,6 @@ const SmartAuth = () => {
           </div>
         </div>
       </div>
-      
-      <ChatAssistant />
     </div>
   );
 };

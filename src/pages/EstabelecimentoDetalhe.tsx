@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import CupomModal from '@/components/CupomModal';
 import LoginRequiredModal from '@/components/LoginRequiredModal';
 import { useFavoritos } from '@/hooks/useFavoritos';
+import { SafeImage } from '@/components/SafeImage';
 import { 
   Sheet, 
   SheetContent, 
@@ -453,9 +454,10 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                 onClick={handleGoogleMaps}
                 className="h-32 bg-gray-800 rounded-xl overflow-hidden mb-4 cursor-pointer relative group"
               >
-                <img 
+                <SafeImage
                   src={`https://maps.googleapis.com/maps/api/staticmap?center=${estabelecimento.latitude},${estabelecimento.longitude}&zoom=15&size=600x200&maptype=roadmap&markers=color:purple%7C${estabelecimento.latitude},${estabelecimento.longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&style=feature:all|element:geometry|color:0xf5f5f5&style=feature:poi|visibility:off`}
                   alt="Mapa"
+                  fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='200' viewBox='0 0 600 200'%3E%3Crect fill='%231e293b' width='600' height='200'/%3E%3Cg transform='translate(300,100)'%3E%3Ccircle fill='%238b5cf6' r='30'/%3E%3Cpath d='M0,-20 L10,15 L-10,15 Z' fill='white'/%3E%3C/g%3E%3Ctext x='300' y='160' font-family='Arial' font-size='12' fill='%2394a3b8' text-anchor='middle'%3EMapa não disponível%3C/text%3E%3C/svg%3E"
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
@@ -491,11 +493,12 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                 className="flex flex-col items-center gap-1.5 p-3 bg-gray-800/80 rounded-xl hover:bg-gray-700 transition-all"
               >
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                  <img 
-                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Waze_logo.svg/2048px-Waze_logo.svg.png" 
-                    alt="Waze"
-                    className="w-6 h-6"
-                  />
+                  <svg className="w-6 h-6" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M120 10C68.5786 10 27 51.5786 27 103C27 154.421 68.5786 196 120 196C171.421 196 213 154.421 213 103C213 51.5786 171.421 10 120 10Z" fill="#33CCFF"/>
+                    <circle cx="90" cy="95" r="12" fill="white"/>
+                    <circle cx="150" cy="95" r="12" fill="white"/>
+                    <path d="M85 130C85 130 95 145 120 145C145 145 155 130 155 130" stroke="white" strokeWidth="8" strokeLinecap="round"/>
+                  </svg>
                 </div>
                 <span className="text-[10px] text-gray-400">Waze</span>
               </button>

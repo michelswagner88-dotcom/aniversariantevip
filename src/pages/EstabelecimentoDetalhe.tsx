@@ -577,33 +577,34 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               {estabelecimento.cep && ` • CEP: ${estabelecimento.cep}`}
             </p>
 
-            {/* Mini mapa clicável */}
-            {estabelecimento.latitude && estabelecimento.longitude ? (
-              <div 
-                onClick={handleGoogleMaps}
-                className="h-32 bg-gray-800 rounded-xl overflow-hidden mb-4 cursor-pointer relative group"
-              >
-                <SafeImage
-                  src={`https://maps.googleapis.com/maps/api/staticmap?center=${estabelecimento.latitude},${estabelecimento.longitude}&zoom=15&size=600x200&maptype=roadmap&markers=color:purple%7C${estabelecimento.latitude},${estabelecimento.longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&style=feature:all|element:geometry|color:0xf5f5f5&style=feature:poi|visibility:off`}
-                  alt="Mapa"
-                  fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='200' viewBox='0 0 600 200'%3E%3Crect fill='%231e293b' width='600' height='200'/%3E%3Cg transform='translate(300,100)'%3E%3Ccircle fill='%238b5cf6' r='30'/%3E%3Cpath d='M0,-20 L10,15 L-10,15 Z' fill='white'/%3E%3C/g%3E%3C/svg%3E"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                  <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium flex items-center gap-2 transition-opacity">
-                    <ExternalLink className="w-4 h-4" />
-                    Abrir no Maps
-                  </span>
+            {/* Mini mapa decorativo clicável - sempre visível */}
+            <div 
+              onClick={handleGoogleMaps}
+              className="h-32 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl overflow-hidden mb-4 cursor-pointer relative group border border-white/10"
+            >
+              {/* Fundo decorativo tipo mapa */}
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(139,92,246,0.1) 10px, rgba(139,92,246,0.1) 11px),
+                                    repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(139,92,246,0.1) 10px, rgba(139,92,246,0.1) 11px)`
+                }} />
+              </div>
+              
+              {/* Pin central */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-12 h-12 bg-violet-500 rounded-full flex items-center justify-center shadow-lg shadow-violet-500/50 animate-pulse">
+                  <MapPin className="w-6 h-6 text-white" />
                 </div>
               </div>
-            ) : (
-              <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                <p className="text-amber-400 text-xs flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Mapa não disponível. Use os botões abaixo para navegar.
-                </p>
+              
+              {/* Overlay hover */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium flex items-center gap-2 transition-opacity">
+                  <ExternalLink className="w-4 h-4" />
+                  Abrir no Google Maps
+                </span>
               </div>
-            )}
+            </div>
 
             {/* Botões de navegação */}
             <div className="grid grid-cols-4 gap-2 mb-24">

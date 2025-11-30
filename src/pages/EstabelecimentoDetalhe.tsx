@@ -493,6 +493,12 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
             <div className="mt-6 flex justify-center">
               <ShimmerButton
                 onClick={(e) => {
+                  // Vibração háptica no mobile
+                  if (navigator.vibrate) {
+                    // Padrão: vibra 50ms, pausa 50ms, vibra 100ms (simula abertura do presente)
+                    navigator.vibrate([50, 50, 100]);
+                  }
+                  
                   // Adiciona animação ao ícone antes de executar a ação
                   const icon = e.currentTarget.querySelector('.gift-icon');
                   if (icon) {

@@ -155,11 +155,24 @@ const Explorar = () => {
   const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
   const { location: userLocation, requestLocation, loading: userLocationLoading } = useUserLocation();
   
-  // Buscar estabelecimentos reais do banco de dados
-  const { data: estabelecimentos = [], isLoading: loadingEstabelecimentos } = useEstabelecimentos({
+  // Buscar estabelecimentos da cidade do usuário
+  const { data: estabelecimentosCidade = [], isLoading: loadingCidade } = useEstabelecimentos({
     cidade: location?.cidade,
     estado: location?.estado,
   });
+
+  // Se não houver estabelecimentos na cidade, busca todos
+  const { data: todosEstabelecimentos = [], isLoading: loadingTodos } = useEstabelecimentos({
+    showAll: true,
+  });
+
+  // Prioriza estabelecimentos da cidade, senão mostra todos
+  const estabelecimentos = estabelecimentosCidade.length > 0 
+    ? estabelecimentosCidade 
+    : todosEstabelecimentos;
+
+  const mostrandoOutrasCidades = estabelecimentosCidade.length === 0 && todosEstabelecimentos.length > 0;
+  const loadingEstabelecimentos = loadingCidade || loadingTodos;
 
   // --- ESTADOS DOS FILTROS ---
   const [filterDay, setFilterDay] = useState("any");
@@ -388,8 +401,26 @@ const Explorar = () => {
 
         {!loadingEstabelecimentos && estabelecimentos.length > 0 && (
           <>
+            {/* Banner informativo quando mostra outras cidades */}
+            {mostrandoOutrasCidades && (
+              <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <MapPin className="text-violet-400 shrink-0 mt-0.5" size={20} />
+                  <div>
+                    <h4 className="font-bold text-white text-sm">
+                      Ainda não chegamos em {location?.cidade} 😔
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Mas olha só os lugares incríveis que já estão no Aniversariante VIP! 
+                      Em breve estaremos na sua cidade também! 🚀
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Banner para ativar localização */}
-            {!userLocation && (
+            {!userLocation && !mostrandoOutrasCidades && (
               <div className="bg-violet-500/10 border border-violet-500/30 rounded-lg p-4 mb-4 flex items-center justify-between">
                 <div>
                   <p className="text-white font-medium">Ative sua localização</p>

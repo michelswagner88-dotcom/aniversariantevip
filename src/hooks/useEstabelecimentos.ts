@@ -11,6 +11,7 @@ interface EstabelecimentoFilters {
   estado?: string;
   categoria?: string[];
   search?: string;
+  showAll?: boolean;
 }
 
 // Hook otimizado para listar estabelecimentos com cache e filtros
@@ -24,11 +25,11 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
         .eq('ativo', true) // Apenas estabelecimentos ativos
         .order('created_at', { ascending: false });
 
-      // Aplicar filtros
-      if (filters.cidade) {
+      // Aplicar filtros (ignora cidade/estado se showAll está ativo)
+      if (filters.cidade && !filters.showAll) {
         query = query.ilike('cidade', sanitizarInput(filters.cidade, 100));
       }
-      if (filters.estado) {
+      if (filters.estado && !filters.showAll) {
         query = query.eq('estado', sanitizarInput(filters.estado, 2));
       }
       if (filters.categoria && filters.categoria.length > 0) {

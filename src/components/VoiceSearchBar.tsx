@@ -71,6 +71,39 @@ const VoiceSearchBar = () => {
   const handleVoiceSearch = async (texto: string) => {
     const textoLower = texto.toLowerCase().trim();
     
+    // Detectar comandos de proximidade
+    const comandosProximidade = [
+      'perto de mim',
+      'próximo',
+      'proximo',
+      'aqui perto',
+      'por aqui',
+      'na minha região',
+      'na região',
+      'ao redor'
+    ];
+    
+    const isComandoProximidade = comandosProximidade.some(cmd => textoLower.includes(cmd));
+    
+    if (isComandoProximidade) {
+      // Se não tem localização, solicitar
+      if (!location && !locationText) {
+        toast.info('Detectando sua localização...');
+        try {
+          await requestLocation();
+          // Aguardar um momento para a localização ser detectada
+          setTimeout(() => {
+            handleVoiceSearch(texto); // Reprocessar após obter localização
+          }, 2000);
+          return;
+        } catch (error) {
+          toast.error('Não conseguimos detectar sua localização. Por favor, digite a cidade.');
+          setShowCepDialog(true);
+          return;
+        }
+      }
+    }
+    
     // Mapeamento de categorias com sinônimos
     const categoriasMap: Record<string, string> = {
       'restaurante': 'Restaurante',
@@ -164,17 +197,38 @@ const VoiceSearchBar = () => {
 
     // Montar URL de navegação
     const params = new URLSearchParams();
-    if (categoriaEncontrada) {
-      params.set('categoria', categoriaEncontrada);
-      toast.success(`Buscando ${categoriaEncontrada}${cidadeEncontrada ? ` em ${cidadeEncontrada}` : ''}`);
-    }
-    if (cidadeEncontrada) {
-      params.set('cidade', cidadeEncontrada);
-    }
-    if (!categoriaEncontrada && !cidadeEncontrada) {
-      // Busca genérica
-      params.set('q', textoLower);
-      toast.info('Buscando por: ' + texto);
+    
+    // Se é comando de proximidade, usar cidade atual ou geolocalização
+    if (isComandoProximidade) {
+      if (location?.cidade) {
+        params.set('cidade', location.cidade);
+        cidadeEncontrada = location.cidade;
+      } else if (locationText) {
+        const [cidade] = locationText.split(',');
+        params.set('cidade', cidade.trim());
+        cidadeEncontrada = cidade.trim();
+      }
+      
+      if (categoriaEncontrada) {
+        params.set('categoria', categoriaEncontrada);
+        toast.success(`Buscando ${categoriaEncontrada} perto de você em ${cidadeEncontrada || 'sua região'}`);
+      } else {
+        toast.success(`Buscando estabelecimentos perto de você em ${cidadeEncontrada || 'sua região'}`);
+      }
+    } else {
+      // Fluxo normal
+      if (categoriaEncontrada) {
+        params.set('categoria', categoriaEncontrada);
+        toast.success(`Buscando ${categoriaEncontrada}${cidadeEncontrada ? ` em ${cidadeEncontrada}` : ''}`);
+      }
+      if (cidadeEncontrada) {
+        params.set('cidade', cidadeEncontrada);
+      }
+      if (!categoriaEncontrada && !cidadeEncontrada) {
+        // Busca genérica
+        params.set('q', textoLower);
+        toast.info('Buscando por: ' + texto);
+      }
     }
 
     navigate(`/explorar?${params.toString()}`);

@@ -61,12 +61,11 @@ export default function Afiliado() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      // Buscar estatísticas
+      // Buscar estatísticas do afiliado (view já filtra automaticamente por auth.uid())
       const { data: statsData } = await supabase
         .from('affiliate_stats')
         .select('*')
-        .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
 
       if (statsData) {
         setStats({

@@ -13,28 +13,61 @@ const EstabelecimentoDetalheBySlug = () => {
   useEffect(() => {
     const fetchEstabelecimento = async () => {
       if (!estado || !cidade || !slug) {
+        console.log('❌ Parâmetros faltando:', { estado, cidade, slug });
         setNotFound(true);
         setLoading(false);
         return;
       }
 
-      // Converter cidade slug de volta (florianopolis -> Florianópolis)
+      console.log('🔍 Buscando estabelecimento:', { 
+        estado: estado.toUpperCase(), 
+        cidade, 
+        slug,
+        url: window.location.pathname 
+      });
+
+      // Normalizar cidade: remover hífens e converter para formato do banco
+      const cidadeNormalizada = cidade.replace(/-/g, ' ');
+      
       const { data, error } = await supabase
         .from('public_estabelecimentos')
-        .select('id')
+        .select('id, nome_fantasia, cidade, estado, slug')
         .eq('slug', slug)
         .eq('estado', estado.toUpperCase())
-        .ilike('cidade', cidade.replace(/-/g, ' ') + '%')
         .eq('ativo', true)
         .maybeSingle();
 
-      if (error || !data) {
-        console.log('Estabelecimento não encontrado:', { estado, cidade, slug });
+      console.log('📊 Resultado da busca:', { data, error });
+
+      if (error) {
+        console.error('❌ Erro na query:', error);
         setNotFound(true);
         setLoading(false);
         return;
       }
 
+      if (!data) {
+        console.log('❌ Estabelecimento não encontrado com os filtros:', { 
+          slug, 
+          estado: estado.toUpperCase() 
+        });
+        
+        // Tentar buscar sem filtro de cidade para debug
+        const { data: debugData } = await supabase
+          .from('public_estabelecimentos')
+          .select('id, nome_fantasia, cidade, estado, slug')
+          .eq('slug', slug)
+          .eq('ativo', true)
+          .maybeSingle();
+        
+        console.log('🔍 Debug - Estabelecimento existe com esse slug?', debugData);
+        
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      console.log('✅ Estabelecimento encontrado:', data);
       setEstabelecimentoId(data.id);
       setLoading(false);
     };

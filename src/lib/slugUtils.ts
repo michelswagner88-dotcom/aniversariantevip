@@ -25,14 +25,20 @@ export const getEstabelecimentoUrl = (estabelecimento: {
 }): string => {
   const { estado, cidade, slug, id } = estabelecimento;
   
+  console.log('🔗 getEstabelecimentoUrl chamado:', { estado, cidade, slug, id });
+  
   if (estado && cidade && slug) {
     const estadoSlug = estado.toLowerCase();
     const cidadeSlug = generateSlug(cidade);
-    return `/${estadoSlug}/${cidadeSlug}/${slug}`;
+    const url = `/${estadoSlug}/${cidadeSlug}/${slug}`;
+    console.log('✅ URL amigável gerada:', url);
+    return url;
   }
   
   // Fallback para URL antiga se não tiver slug
-  return `/estabelecimento/${id}`;
+  const fallbackUrl = `/estabelecimento/${id}`;
+  console.log('⚠️ Usando fallback URL (sem slug):', fallbackUrl);
+  return fallbackUrl;
 };
 
 /**

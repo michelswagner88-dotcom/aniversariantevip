@@ -95,6 +95,11 @@ All colors MUST be HSL.
     --radius-lg: 1rem;
     --radius-xl: 1.25rem;
     --radius-2xl: 1.5rem;
+    
+    /* Holographic effect custom properties */
+    --mouse-x: 50%;
+    --mouse-y: 50%;
+    --border-angle: 0deg;
   }
 
   .dark {
@@ -384,6 +389,113 @@ All colors MUST be HSL.
   /* Text muted - better readability */
   .text-muted {
     color: rgb(255 255 255 / 0.85) !important;
+  }
+}
+
+/* ============================================ */
+/* Holographic Card Effects - Premium Rainbow */
+/* ============================================ */
+
+/* Borda iridescente animada */
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.holographic-border {
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  
+  background: linear-gradient(
+    var(--border-angle),
+    hsl(328, 86%, 70%),
+    hsl(271, 81%, 56%),
+    hsl(180, 100%, 50%),
+    hsl(60, 100%, 50%),
+    hsl(328, 86%, 70%)
+  );
+  
+  animation: holographic-rotate 4s linear infinite;
+}
+
+.holographic-card:hover .holographic-border {
+  opacity: 0.6;
+}
+
+@keyframes holographic-rotate {
+  to { 
+    --border-angle: 360deg; 
+  }
+}
+
+/* Overlay rainbow radial que segue o cursor */
+.holographic-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0;
+  border-radius: inherit;
+  transition: opacity 0.3s ease;
+  
+  background: radial-gradient(
+    circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    hsla(328, 86%, 70%, 0.4) 0%,
+    hsla(271, 81%, 56%, 0.3) 25%,
+    hsla(180, 100%, 50%, 0.25) 50%,
+    hsla(330, 81%, 60%, 0.2) 75%,
+    transparent 100%
+  );
+  
+  mix-blend-mode: screen;
+}
+
+.holographic-card:hover .holographic-overlay {
+  opacity: 1;
+}
+
+/* Reflexo de luz deslizante (shine) */
+.holographic-shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 11;
+  opacity: 0;
+  border-radius: inherit;
+  transition: opacity 0.3s ease;
+  
+  background: linear-gradient(
+    110deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.1) 45%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0.1) 55%,
+    transparent 70%
+  );
+  
+  transform: translateX(calc((var(--mouse-x, 50) - 50) * 2%));
+  transition: transform 0.1s ease-out;
+}
+
+.holographic-card:hover .holographic-shine {
+  opacity: 1;
+}
+
+/* Desabilitar efeitos holográficos em dispositivos touch/mobile */
+@media (hover: none) {
+  .holographic-overlay,
+  .holographic-shine {
+    display: none;
+  }
+  
+  /* Manter apenas a borda iridescente animada no mobile */
+  .holographic-card .holographic-border {
+    opacity: 0.4;
   }
 }
 

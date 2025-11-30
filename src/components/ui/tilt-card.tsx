@@ -7,19 +7,22 @@ interface TiltCardProps {
   className?: string;
   tiltAmount?: number;
   shadowAmount?: number;
+  enableHolographic?: boolean;
 }
 
 export const TiltCard = ({ 
   children, 
   className = '', 
   tiltAmount = 10,
-  shadowAmount = 20
+  shadowAmount = 20,
+  enableHolographic = false
 }: TiltCardProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const [rotateX, setRotateX] = useState(0);
   const [rotateY, setRotateY] = useState(0);
   const [shadowX, setShadowX] = useState(0);
   const [shadowY, setShadowY] = useState(0);
+  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!ref.current) return;
@@ -37,10 +40,15 @@ export const TiltCard = ({
     const shadowXValue = ((x - centerX) / centerX) * shadowAmount;
     const shadowYValue = ((y - centerY) / centerY) * shadowAmount;
     
+    // Posição do mouse em percentual para efeitos holográficos
+    const mouseXPercent = (x / rect.width) * 100;
+    const mouseYPercent = (y / rect.height) * 100;
+    
     setRotateX(rotateXValue);
     setRotateY(rotateYValue);
     setShadowX(shadowXValue);
     setShadowY(shadowYValue);
+    setMousePosition({ x: mouseXPercent, y: mouseYPercent });
   };
 
   const handleMouseLeave = () => {
@@ -63,9 +71,25 @@ export const TiltCard = ({
       style={{
         transformStyle: 'preserve-3d',
         boxShadow: `${shadowX}px ${shadowY}px 40px rgba(139, 92, 246, 0.3)`,
-      }}
-      className={cn('transition-shadow duration-200', className)}
+        '--mouse-x': `${mousePosition.x}%`,
+        '--mouse-y': `${mousePosition.y}%`,
+      } as React.CSSProperties}
+      className={cn(
+        'transition-shadow duration-200',
+        enableHolographic && 'holographic-card',
+        className
+      )}
     >
+      {enableHolographic && (
+        <>
+          {/* Borda iridescente animada */}
+          <div className="holographic-border" />
+          {/* Overlay rainbow que segue o cursor */}
+          <div className="holographic-overlay" />
+          {/* Reflexo de luz deslizante */}
+          <div className="holographic-shine" />
+        </>
+      )}
       {children}
     </motion.div>
   );

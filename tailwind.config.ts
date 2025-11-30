@@ -139,6 +139,15 @@ export default {
             opacity: "1"
           }
         },
+        "gift-open": {
+          "0%": { transform: "scale(1) rotate(0deg)" },
+          "15%": { transform: "scale(1.2) rotate(-12deg)" },
+          "30%": { transform: "scale(1.2) rotate(12deg)" },
+          "45%": { transform: "scale(1.1) rotate(-8deg)" },
+          "60%": { transform: "scale(1.1) rotate(8deg)" },
+          "75%": { transform: "scale(1.05) rotate(-4deg)" },
+          "100%": { transform: "scale(1) rotate(0deg)" }
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -148,6 +157,7 @@ export default {
         "marquee": "marquee 20s linear infinite",
         "slide-in-bottom": "slide-in-bottom 0.24s cubic-bezier(0.4, 0, 0.2, 1)",
         "slide-in-right": "slide-in-right 0.24s cubic-bezier(0.4, 0, 0.2, 1)",
+        "gift-open": "gift-open 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97)",
       },
     },
   },

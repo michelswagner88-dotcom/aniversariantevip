@@ -199,10 +199,18 @@ const Carol = () => {
 
   // Calcular posição do botão
   const getButtonPosition = () => {
-    const pagesWithFooterButton = ['/estabelecimento/', '/cadastro/'];
-    const hasFooterButton = pagesWithFooterButton.some(p => location.pathname.includes(p)) ||
+    // Páginas de estabelecimento têm os botões de navegação embaixo
+    const isEstabelecimentoPage = 
+      location.pathname.includes('/estabelecimento/') ||
       location.pathname.match(/^\/[a-z]{2}\/[^/]+\/[^/]+$/);
     
+    // Na página de estabelecimento, subir mais (acima do grid de navegação)
+    if (isEstabelecimentoPage) {
+      return 'bottom-36'; // 144px - acima dos 4 botões de navegação
+    }
+    
+    // Outras páginas com botão fixo no footer
+    const hasFooterButton = location.pathname.includes('/cadastro/');
     return hasFooterButton ? 'bottom-28' : 'bottom-6';
   };
 

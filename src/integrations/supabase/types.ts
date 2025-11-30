@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_access_logs: {
+        Row: {
+          action: string
+          authorized: boolean
+          created_at: string | null
+          email: string
+          endpoint: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          authorized: boolean
+          created_at?: string | null
+          email: string
+          endpoint?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          authorized?: boolean
+          created_at?: string | null
+          email?: string
+          endpoint?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       agenda_events: {
         Row: {
           created_at: string

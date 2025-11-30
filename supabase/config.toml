@@ -70,3 +70,9 @@ verify_jwt = false
 
 [functions.carol-chat]
 verify_jwt = false
+
+[functions.fetch-business-hours]
+verify_jwt = false
+
+[functions.update-all-business-hours]
+verify_jwt = false

@@ -17,7 +17,8 @@ import {
   Send,
   Upload,
   UserCog,
-  Camera
+  Camera,
+  Clock
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -131,6 +132,7 @@ export default function AdminDashboard() {
   const [photoProgress, setPhotoProgress] = useState({ current: 0, total: 0 });
   const [importingCSV, setImportingCSV] = useState(false);
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
+  const [buscandoHorarios, setBuscandoHorarios] = useState(false);
   
   // Filtros avançados
   const [filterCity, setFilterCity] = useState<string>('');
@@ -451,6 +453,36 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleBuscarHorariosGoogle = async () => {
+    setBuscandoHorarios(true);
+    toast.info('🔍 Buscando horários no Google Places... Isso pode demorar alguns minutos.');
+
+    try {
+      const { data, error } = await supabase.functions.invoke('update-all-business-hours');
+
+      if (error) throw error;
+
+      const atualizados = data.resultados.filter((r: any) => r.status === 'atualizado').length;
+      const naoEncontrados = data.resultados.filter((r: any) => r.status === 'nao_encontrado').length;
+      const semHorario = data.resultados.filter((r: any) => r.status === 'sem_horario_google').length;
+      const erros = data.resultados.filter((r: any) => r.status === 'erro').length;
+
+      toast.success(
+        `✅ Concluído! ${atualizados} atualizados, ${naoEncontrados} não encontrados, ${semHorario} sem horário no Google, ${erros} erros`,
+        { duration: 8000 }
+      );
+
+      // Recarregar lista de estabelecimentos
+      loadData();
+
+    } catch (error: any) {
+      console.error('Erro ao buscar horários:', error);
+      toast.error('❌ Erro ao buscar horários: ' + error.message);
+    } finally {
+      setBuscandoHorarios(false);
+    }
+  };
+
   const handleRestaurarUm = async (id: string) => {
     try {
       const { error } = await supabase
@@ -498,6 +530,10 @@ export default function AdminDashboard() {
 
   const estabelecimentosSemFoto = useMemo(() => {
     return establishments.filter(e => !e.logo_url || e.logo_url === '');
+  }, [establishments]);
+
+  const estabelecimentosSemHorario = useMemo(() => {
+    return establishments.filter(e => !e.horario_funcionamento || e.horario_funcionamento === '');
   }, [establishments]);
 
   const estabelecimentosDeletados = useMemo(() => {
@@ -755,8 +791,25 @@ export default function AdminDashboard() {
                       className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
                     >
                       <Trash2 size={18} />
-                    </button>
-                  </div>
+            </button>
+            <button
+              onClick={handleBuscarHorariosGoogle}
+              disabled={buscandoHorarios || estabelecimentosSemHorario.length === 0}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-semibold flex items-center gap-2 transition-colors"
+            >
+              {buscandoHorarios ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Buscando...
+                </>
+              ) : (
+                <>
+                  <Clock className="w-4 h-4" />
+                  Buscar Horários ({estabelecimentosSemHorario.length})
+                </>
+              )}
+            </button>
+          </div>
                 </td>
               </tr>
             ))}

@@ -12,6 +12,7 @@ import CupomModal from '@/components/CupomModal';
 import LoginRequiredModal from '@/components/LoginRequiredModal';
 import { useFavoritos } from '@/hooks/useFavoritos';
 import { SafeImage } from '@/components/SafeImage';
+import GaleriaFotosViewer from '@/components/GaleriaFotosViewer';
 import { 
   Sheet, 
   SheetContent, 
@@ -278,9 +279,9 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
       {/* ========== HEADER COM FOTO ========== */}
       <div className="relative">
         <div className="h-64 md:h-80 relative overflow-hidden">
-          {estabelecimento.logo_url ? (
+          {estabelecimento.galeria_fotos?.[0] || estabelecimento.logo_url ? (
             <img 
-              src={estabelecimento.logo_url} 
+              src={estabelecimento.galeria_fotos?.[0] || estabelecimento.logo_url} 
               alt={estabelecimento.nome_fantasia}
               className="w-full h-full object-cover"
             />
@@ -414,6 +415,19 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
 
             </div>
           </div>
+
+          {/* ========== GALERIA DE FOTOS ========== */}
+          {((estabelecimento.galeria_fotos && estabelecimento.galeria_fotos.length > 0) || estabelecimento.logo_url) && (
+            <div className="bg-gray-900/90 backdrop-blur-lg border border-white/10 rounded-2xl p-4">
+              <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                📸 Fotos
+              </h3>
+              <GaleriaFotosViewer 
+                fotoPrincipal={estabelecimento.logo_url}
+                galeriaFotos={estabelecimento.galeria_fotos || []}
+              />
+            </div>
+          )}
 
           {/* ========== HORÁRIO DE FUNCIONAMENTO ========== */}
           {estabelecimento.horario_funcionamento && (

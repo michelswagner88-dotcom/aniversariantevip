@@ -61,7 +61,7 @@ const LoginRequiredModal = ({ isOpen, onClose, returnUrl }: LoginRequiredModalPr
           </h2>
           
           <p className="text-gray-400 mb-6">
-            Cadastre-se gratuitamente para desbloquear benefícios exclusivos de aniversário!
+            Crie sua conta grátis e aproveite vantagens exclusivas no seu aniversário!
           </p>
 
           <div className="bg-gray-800/50 rounded-xl p-4 mb-6 text-left">
@@ -71,7 +71,7 @@ const LoginRequiredModal = ({ isOpen, onClose, returnUrl }: LoginRequiredModalPr
             <ul className="space-y-2">
               <li className="flex items-center gap-2 text-sm text-gray-300">
                 <span className="text-green-400">✓</span>
-                Ver benefícios exclusivos
+                Desbloquear benefícios de aniversário
               </li>
               <li className="flex items-center gap-2 text-sm text-gray-300">
                 <span className="text-green-400">✓</span>
@@ -79,7 +79,7 @@ const LoginRequiredModal = ({ isOpen, onClose, returnUrl }: LoginRequiredModalPr
               </li>
               <li className="flex items-center gap-2 text-sm text-gray-300">
                 <span className="text-green-400">✓</span>
-                Ver benefícios exclusivos
+                Receber alertas de novos parceiros
               </li>
               <li className="flex items-center gap-2 text-sm text-gray-300">
                 <span className="text-green-400">✓</span>
@@ -94,7 +94,7 @@ const LoginRequiredModal = ({ isOpen, onClose, returnUrl }: LoginRequiredModalPr
               className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 py-6 text-lg h-auto"
             >
               <UserPlus className="w-5 h-5 mr-2" />
-              Cadastrar Grátis
+              Criar Conta Grátis
             </Button>
             
             <Button
@@ -108,7 +108,7 @@ const LoginRequiredModal = ({ isOpen, onClose, returnUrl }: LoginRequiredModalPr
           </div>
 
           <p className="text-xs text-gray-500 mt-4">
-            Leva menos de 1 minuto para cadastrar
+            Leva menos de 1 minuto
           </p>
         </div>
 

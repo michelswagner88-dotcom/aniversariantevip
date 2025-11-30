@@ -16,7 +16,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { CityCombobox } from "@/components/CityCombobox";
 import { useQuery } from "@tanstack/react-query";
 import { sanitizarInput } from "@/lib/sanitize";
-import { AnimatedCounter } from "@/components/ui/animated-counter";
+
 import { GlowText } from "@/components/ui/glow-text";
 import { RevealOnScroll } from "@/components/ui/reveal-on-scroll";
 
@@ -436,34 +436,6 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Stats Animados - World Class */}
-          <RevealOnScroll delay={0.3} className="mt-16 sm:mt-20">
-            <div className="grid grid-cols-3 gap-6 sm:gap-8 max-w-3xl mx-auto">
-              {/* Estabelecimentos */}
-              <div className="text-center">
-                <div className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400 mb-2">
-                  +<AnimatedCounter value={stats?.estabelecimentos || 150} delay={0.5} />
-                </div>
-                <div className="text-xs sm:text-sm text-slate-400 font-medium">Estabelecimentos</div>
-              </div>
-
-              {/* Cidades */}
-              <div className="text-center">
-                <div className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-pink-400 mb-2">
-                  +<AnimatedCounter value={stats?.cidades || 15} delay={0.7} />
-                </div>
-                <div className="text-xs sm:text-sm text-slate-400 font-medium">Cidades</div>
-              </div>
-
-              {/* Aniversariantes */}
-              <div className="text-center">
-                <div className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-cyan-400 mb-2">
-                  +<AnimatedCounter value={stats?.aniversariantes || 500} delay={0.9} />
-                </div>
-                <div className="text-xs sm:text-sm text-slate-400 font-medium">Aniversariantes</div>
-              </div>
-            </div>
-          </RevealOnScroll>
         </div>
       </section>
 
@@ -474,7 +446,7 @@ const Index = () => {
         <div className="relative z-10 max-w-6xl mx-auto">
           <RevealOnScroll>
             <h2 className="text-3xl sm:text-4xl font-bold text-center text-white mb-4">
-              Por que o <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">Aniversariante VIP</span>?
+              Por que o <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400">Aniversariante VIP</span>?
             </h2>
             <p className="text-center text-slate-400 mb-12 sm:mb-16 max-w-2xl mx-auto">
               A plataforma mais moderna e completa para você aproveitar ao máximo seu aniversário

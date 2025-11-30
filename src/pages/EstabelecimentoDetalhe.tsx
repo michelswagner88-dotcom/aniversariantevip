@@ -488,50 +488,18 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               </button>
 
             </div>
-          </div>
-          </RevealOnScroll>
 
-          {/* ========== BENEFÍCIO DE ANIVERSÁRIO ========== */}
-          <RevealOnScroll delay={0.2}>
-          <div className="bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 backdrop-blur-lg border border-violet-500/20 rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Gift className="w-5 h-5 text-violet-400" />
-              <h3 className="text-white font-semibold">Benefício de Aniversário</h3>
+            {/* ========== BOTÃO VER BENEFÍCIO - Abaixo dos ícones ========== */}
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <ShimmerButton
+                onClick={handleVerBeneficio}
+                className="w-full h-12 text-base rounded-xl"
+                background="linear-gradient(90deg, #8b5cf6, #d946ef, #ec4899)"
+              >
+                <Gift className="w-5 h-5 mr-2" />
+                🎂 Ver Meu Benefício de Aniversário
+              </ShimmerButton>
             </div>
-            
-            {estabelecimento.descricao_beneficio && (
-              <p className="text-gray-300 mb-4 leading-relaxed">
-                {estabelecimento.descricao_beneficio}
-              </p>
-            )}
-
-            {estabelecimento.periodo_validade_beneficio && (
-              <div className="flex items-start gap-2 mb-3">
-                <span className="text-violet-400 text-xs">📅</span>
-                <p className="text-gray-400 text-xs">
-                  <span className="text-white font-medium">Período:</span> {estabelecimento.periodo_validade_beneficio}
-                </p>
-              </div>
-            )}
-
-            {estabelecimento.regras_utilizacao && (
-              <div className="flex items-start gap-2 mb-4">
-                <span className="text-violet-400 text-xs">ℹ️</span>
-                <p className="text-gray-400 text-xs">
-                  <span className="text-white font-medium">Regras:</span> {estabelecimento.regras_utilizacao}
-                </p>
-              </div>
-            )}
-
-            {/* Botão CTA Premium com Shimmer */}
-            <ShimmerButton
-              onClick={handleVerBeneficio}
-              className="w-full h-14 text-lg rounded-xl"
-              background="linear-gradient(90deg, #8b5cf6, #d946ef, #ec4899)"
-            >
-              <Gift className="w-5 h-5 mr-2" />
-              Ver Benefício de Aniversário
-            </ShimmerButton>
           </div>
           </RevealOnScroll>
 
@@ -694,28 +662,6 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
           </div>
           </RevealOnScroll>
 
-          {/* ========== BOTÃO VER BENEFÍCIO ========== */}
-          <div className="bg-gray-900/90 backdrop-blur-lg border border-white/10 rounded-2xl p-4">
-            <Button
-              onClick={handleVerBeneficio}
-              disabled={beneficioAberto}
-              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-base py-3 h-auto rounded-xl shadow-lg shadow-violet-500/30 relative overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              
-              {beneficioAberto ? (
-                <>
-                  <Gift className="w-5 h-5 animate-bounce mr-2" />
-                  <span className="animate-pulse">Abrindo...</span>
-                </>
-              ) : (
-                <>
-                  <Gift className="w-5 h-5 mr-2" />
-                  Ver Benefício
-                </>
-              )}
-            </Button>
-          </div>
 
         </div>
       </div>

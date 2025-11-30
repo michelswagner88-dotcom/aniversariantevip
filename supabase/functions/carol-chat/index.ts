@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { validarOrigem, getCorsHeaders } from "../_shared/cors.ts";
 
 const CAROL_SYSTEM_PROMPT = `Você é a Carol, assistente virtual do Aniversariante VIP - o maior guia de benefícios para aniversariantes do Brasil.
 
@@ -78,8 +74,18 @@ Restaurante, Bar, Academia, Salão de Beleza, Barbearia, Cafeteria, Casa Noturna
 Responda a mensagem do usuário de forma natural e humana.`;
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Validar origem
+  if (!validarOrigem(req)) {
+    return new Response(
+      JSON.stringify({ error: 'Origem não autorizada' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {

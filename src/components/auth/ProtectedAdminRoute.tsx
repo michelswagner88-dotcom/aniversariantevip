@@ -7,32 +7,23 @@ interface Props {
   children: React.ReactNode;
 }
 
-// Lista de emails autorizados como admin (ALTERAR PARA SEUS EMAILS)
-const ADMIN_EMAILS = [
-  'wagnermichels@hotmail.com',
-  // Adicione os emails dos administradores aqui
-];
-
-// Verificar se usuário é admin usando múltiplas camadas de segurança
-const checkIsAdmin = async (userId: string, email: string): Promise<boolean> => {
+// Verificar se usuário é admin usando APENAS o banco de dados
+const checkIsAdmin = async (userId: string): Promise<boolean> => {
   try {
-    // Opção 1: Verificar por email na lista branca
-    if (ADMIN_EMAILS.includes(email.toLowerCase())) {
-      return true;
-    }
-
-    // Opção 2: Verificar na tabela user_roles
+    // Verificar na tabela user_roles (única fonte de verdade)
     const { data: roleData, error: roleError } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
+      .in('role', ['admin', 'colaborador'])
       .maybeSingle();
 
-    if (!roleError && roleData && (roleData.role === 'admin' || roleData.role === 'colaborador')) {
-      return true;
+    if (roleError) {
+      console.error('Erro ao verificar role:', roleError);
+      return false;
     }
 
-    return false;
+    return !!roleData;
   } catch (error) {
     console.error('Erro ao verificar admin:', error);
     return false;
@@ -48,7 +39,6 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // 1. Verificar se tem sessão
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError || !session) {
@@ -61,8 +51,8 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
 
         const user = session.user;
 
-        // 2. Verificar se é admin
-        const isAdmin = await checkIsAdmin(user.id, user.email || '');
+        // Verificar se é admin (apenas via banco de dados)
+        const isAdmin = await checkIsAdmin(user.id);
 
         if (!isAdmin) {
           console.warn(`Admin: Acesso negado para ${user.email}`);
@@ -88,7 +78,7 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
           return;
         }
 
-        // 3. Log de acesso autorizado
+        // Log de acesso autorizado
         try {
           await supabase.from('analytics').insert({
             event_type: 'admin_access_authorized',
@@ -117,7 +107,6 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
 
     checkAuth();
 
-    // Listener para mudanças de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
         setIsAuthorized(false);
@@ -140,7 +129,7 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
     );
   }
 
-  // Não autorizado - Tela de acesso negado
+  // Não autorizado
   if (!isAuthorized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -148,33 +137,22 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
           <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <ShieldAlert className="w-10 h-10 text-red-500" />
           </div>
-          
-          <h1 className="text-2xl font-bold text-white mb-2">
-            Acesso Restrito
-          </h1>
-          
-          <p className="text-gray-400 mb-6">
-            {error || 'Você não tem permissão para acessar esta área.'}
+          <h1 className="text-2xl font-bold text-white mb-2">Acesso Restrito</h1>
+          <p className="text-gray-400 mb-6">{error || 'Você não tem permissão para acessar esta área.'}</p>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="w-full px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            Voltar ao Início
+          </button>
+          <p className="text-xs text-gray-500 mt-3">
+            Se você deveria ter acesso, entre em contato com o administrador.
           </p>
-          
-          <div className="space-y-3">
-            <button
-              onClick={() => window.location.href = '/'}
-              className="w-full px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Voltar ao Início
-            </button>
-            
-            <p className="text-xs text-gray-500">
-              Se você deveria ter acesso, entre em contato com o administrador.
-            </p>
-          </div>
         </div>
       </div>
     );
   }
 
-  // Autorizado
   return <>{children}</>;
 };
 

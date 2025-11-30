@@ -24,12 +24,52 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
+    // Extrair e validar token JWT
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Token de autenticação obrigatório' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Criar cliente com token do usuário para verificar identidade
+    const supabaseAuth = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: { headers: { Authorization: `Bearer ${token}` } }
     });
+    
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Usuário não autenticado' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Verificar se é ADMIN usando service role
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
+    
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+    
+    if (roleError || !roleData) {
+      console.warn(`⚠️ Tentativa de cleanup por usuário não-admin: ${user.email}`);
+      return new Response(
+        JSON.stringify({ error: 'Apenas administradores podem executar esta ação' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log(`✅ Admin ${user.email} iniciando cleanup...`);
 
     console.log('Limpando tabelas públicas primeiro...');
     
@@ -53,19 +93,25 @@ serve(async (req) => {
 
     console.log(`Encontrados ${users.users.length} usuários para remover do Auth`);
 
-    // Remover cada usuário do Auth
+    // Remover cada usuário do Auth (exceto o admin que está executando)
     let deletedCount = 0;
-    for (const user of users.users) {
+    for (const authUser of users.users) {
+      // Não deletar o próprio admin que está executando
+      if (authUser.id === user.id) {
+        console.log(`⏭️ Pulando admin ${authUser.email} (usuário atual)`);
+        continue;
+      }
+      
       try {
-        const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
+        const { error: deleteError } = await supabase.auth.admin.deleteUser(authUser.id);
         if (!deleteError) {
           deletedCount++;
-          console.log(`✓ Usuário ${user.email} removido do Auth`);
+          console.log(`✓ Usuário ${authUser.email} removido do Auth`);
         } else {
-          console.error(`✗ Erro ao remover ${user.email}:`, deleteError.message);
+          console.error(`✗ Erro ao remover ${authUser.email}:`, deleteError.message);
         }
       } catch (err) {
-        console.error(`✗ Exceção ao remover ${user.email}:`, err);
+        console.error(`✗ Exceção ao remover ${authUser.email}:`, err);
       }
     }
 
@@ -73,7 +119,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true,
         message: `${deletedCount} usuários removidos com sucesso`,
-        total: users.users.length
+        total: users.users.length,
+        executedBy: user.email
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

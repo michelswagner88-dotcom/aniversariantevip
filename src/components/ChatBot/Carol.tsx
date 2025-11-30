@@ -235,7 +235,7 @@ const Carol = () => {
                 <h3 className="text-white font-semibold">Carol</h3>
                 <p className="text-white/70 text-xs flex items-center gap-1">
                   <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                  Assistente Virtual
+                  Assistente VIP
                 </p>
               </div>
             </div>

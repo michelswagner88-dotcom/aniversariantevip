@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
-import { X, Download, Share2, Gift, Calendar, FileText, Smartphone, AlertTriangle } from 'lucide-react';
+import { X, Download, Share2, Gift, Calendar, FileText, Wallet, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 
@@ -65,7 +66,7 @@ const CupomModal = ({ isOpen, onClose, estabelecimento }: CupomModalProps) => {
   };
 
   const handleAddToWallet = () => {
-    toast.info('Em breve: Adicionar à Carteira Apple/Google');
+    toast.info('Google Wallet em breve!');
   };
 
   return (
@@ -90,188 +91,164 @@ const CupomModal = ({ isOpen, onClose, estabelecimento }: CupomModalProps) => {
           </button>
         </div>
 
-        {/* Cupom Visual */}
+        {/* Cupom Visual Premium */}
         <div className="p-4">
           <div 
             ref={cupomRef}
-            className="relative bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 rounded-2xl overflow-hidden"
+            className="relative bg-slate-950 rounded-2xl overflow-hidden border border-white/10 shadow-[0_0_60px_-15px_rgba(139,92,246,0.6)]"
           >
-            {/* Padrão decorativo */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 left-0 w-40 h-40 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
-              <div className="absolute bottom-0 right-0 w-60 h-60 bg-white rounded-full translate-x-1/2 translate-y-1/2" />
+            {/* Glow decorativo */}
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+              <div className="absolute bottom-0 right-0 w-60 h-60 bg-gradient-to-br from-fuchsia-500 to-pink-500 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
             </div>
 
             {/* Conteúdo do cupom */}
-            <div className="relative p-6">
+            <div className="relative">
               
-              {/* Logo do site */}
-              <div className="text-center mb-4">
-                <p className="text-white/60 text-xs uppercase tracking-widest mb-1">
-                  Benefício Exclusivo
-                </p>
-                <h3 className="text-white text-xl font-bold">
-                  ANIVERSARIANTE VIP
-                </h3>
-              </div>
-
-              {/* Divisor pontilhado */}
-              <div className="border-t-2 border-dashed border-white/30 my-4 relative">
-                <div className="absolute -left-8 top-1/2 -translate-y-1/2 w-6 h-6 bg-gray-900 rounded-full" />
-                <div className="absolute -right-8 top-1/2 -translate-y-1/2 w-6 h-6 bg-gray-900 rounded-full" />
-              </div>
-
-              {/* Estabelecimento */}
-              <div className="text-center mb-4">
-                {estabelecimento.logo_url && (
-                  <div className="w-16 h-16 mx-auto mb-3 rounded-xl overflow-hidden border-2 border-white/30">
-                    <img 
-                      src={estabelecimento.logo_url} 
-                      alt={estabelecimento.nome_fantasia}
-                      className="w-full h-full object-cover"
-                    />
+              {/* Header VIP Premium */}
+              <div className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 p-4 text-center relative overflow-hidden">
+                <div className="absolute inset-0 bg-black/20" />
+                <div className="relative">
+                  <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-1 mb-2">
+                    <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">
+                      Benefício Exclusivo
+                    </span>
                   </div>
-                )}
-                <h4 className="text-white text-lg font-bold">
-                  {estabelecimento.nome_fantasia}
-                </h4>
-                <p className="text-white/60 text-sm">
-                  {estabelecimento.categoria?.[0]}
-                </p>
-              </div>
-
-              {/* Benefício */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Gift className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-white/60 text-xs uppercase tracking-wider mb-1">
-                      Benefício
-                    </p>
-                    <p className="text-white font-medium">
-                      {estabelecimento.descricao_beneficio || 'Benefício especial de aniversário'}
-                    </p>
-                  </div>
+                  <h3 className="text-white text-2xl font-bold tracking-tight">
+                    ANIVERSARIANTE VIP
+                  </h3>
                 </div>
               </div>
 
-              {/* Regras do Estabelecimento */}
-              {estabelecimento.regras_utilizacao && (
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-3">
+              <div className="p-6 space-y-4">
+                {/* Estabelecimento */}
+                <div className="text-center pb-4 border-b border-white/10">
+                  {estabelecimento.logo_url && (
+                    <div className="w-20 h-20 mx-auto mb-3 rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg">
+                      <img 
+                        src={estabelecimento.logo_url} 
+                        alt={estabelecimento.nome_fantasia}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <h4 className="text-white text-xl font-bold mb-1">
+                    {estabelecimento.nome_fantasia}
+                  </h4>
+                  <p className="text-white/60 text-sm">
+                    📍 {estabelecimento.categoria?.[0]}
+                  </p>
+                </div>
+
+                {/* Benefício */}
+                <div className="bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20 backdrop-blur-sm rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <Gift className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-white/60 text-xs uppercase tracking-wider mb-1">
-                        Regras do Estabelecimento
+                      <p className="text-violet-300 text-xs uppercase tracking-wider mb-1 font-semibold">
+                        Seu Benefício
                       </p>
-                      <p className="text-white/90 text-sm">
-                        {estabelecimento.regras_utilizacao}
+                      <p className="text-white font-medium text-base leading-relaxed">
+                        {estabelecimento.descricao_beneficio || 'Benefício especial de aniversário'}
                       </p>
                     </div>
                   </div>
                 </div>
-              )}
 
-              {/* Validade */}
-              {estabelecimento.periodo_validade_beneficio && (
-                <div className="flex items-center justify-center gap-2 text-white/80 text-sm mb-4 bg-white/10 rounded-lg py-2 px-4">
-                  <Calendar className="w-4 h-4" />
-                  <span>Válido: {estabelecimento.periodo_validade_beneficio}</span>
-                </div>
-              )}
-
-              {/* REGRAS GERAIS - FIXO EM TODOS OS CUPONS */}
-              <div className="bg-black/20 rounded-xl p-4 border border-amber-500/20">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="w-4 h-4 text-amber-400" />
+                {/* Validade */}
+                {estabelecimento.periodo_validade_beneficio && (
+                  <div className="flex items-center justify-center gap-2 text-white/80 text-sm bg-white/5 rounded-lg py-2.5 px-4 border border-white/10">
+                    <Calendar className="w-4 h-4 text-violet-400" />
+                    <span>Válido: {estabelecimento.periodo_validade_beneficio}</span>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-white/60 text-xs uppercase tracking-wider mb-2">
-                      Regras Gerais
-                    </p>
-                    <ul className="text-white/70 text-xs space-y-1.5">
-                      <li className="flex items-start gap-2">
-                        <span className="text-amber-400 mt-0.5">•</span>
-                        <span>Obrigatório apresentação de documento com foto.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-amber-400 mt-0.5">•</span>
-                        <span>Cortesia válida quando há consumo no local.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-amber-400 mt-0.5">•</span>
-                        <span>Informações podem sofrer alteração sem aviso prévio, confirme com o estabelecimento.</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
+                )}
 
-              {/* Rodapé do cupom */}
-              <div className="text-center mt-4 pt-4 border-t border-white/20">
-                <p className="text-white/40 text-xs">
-                  Apresente este cupom no estabelecimento
-                </p>
-                <p className="text-white/30 text-[10px] mt-1">
-                  aniversariantevip.com.br
-                </p>
+                {/* Regras Colapsáveis */}
+                <Collapsible>
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-center gap-2 text-white/60 hover:text-white/80 text-sm py-2 transition-colors">
+                      <FileText className="w-4 h-4" />
+                      <span>Ver regras de utilização</span>
+                      <span className="text-xs">▼</span>
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="mt-3 space-y-3">
+                      {/* Regras do Estabelecimento */}
+                      {estabelecimento.regras_utilizacao && (
+                        <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                          <p className="text-white/60 text-xs uppercase tracking-wider mb-2 font-semibold">
+                            Regras do Estabelecimento
+                          </p>
+                          <p className="text-white/80 text-sm leading-relaxed">
+                            {estabelecimento.regras_utilizacao}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Regras Gerais */}
+                      <div className="bg-amber-500/5 rounded-xl p-4 border border-amber-500/20">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-amber-300 text-xs uppercase tracking-wider mb-2 font-semibold">
+                              Regras Gerais
+                            </p>
+                            <ul className="text-white/70 text-xs space-y-1.5">
+                              <li>• Obrigatório apresentação de documento com foto.</li>
+                              <li>• Cortesia válida quando há consumo no local.</li>
+                              <li>• Informações podem sofrer alteração sem aviso prévio.</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {/* Rodapé */}
+                <div className="text-center pt-4 border-t border-white/10">
+                  <p className="text-white/30 text-[10px]">
+                    aniversariantevip.com.br
+                  </p>
+                </div>
               </div>
 
             </div>
           </div>
         </div>
 
-        {/* Ações */}
-        <div className="p-4 border-t border-gray-800 space-y-3">
-          
-          {/* Botões principais */}
-          <div className="grid grid-cols-2 gap-3">
+        {/* Ações Premium */}
+        <div className="p-4 border-t border-gray-800">
+          <div className="grid grid-cols-3 gap-3">
             <Button
-              onClick={handleDownload}
-              disabled={downloading}
-              variant="outline"
-              className="flex items-center justify-center gap-2"
+              onClick={handleShare}
+              className="bg-gradient-to-br from-violet-600 to-violet-700 hover:from-violet-700 hover:to-violet-800 border-violet-500/30 flex flex-col items-center justify-center gap-1.5 h-auto py-3 shadow-lg hover:shadow-violet-500/25 transition-all"
             >
-              <Download className="w-4 h-4" />
-              {downloading ? 'Salvando...' : 'Baixar'}
+              <Share2 className="w-5 h-5" />
+              <span className="text-xs font-medium">Compartilhar</span>
             </Button>
             
             <Button
-              onClick={handleShare}
-              variant="outline"
-              className="flex items-center justify-center gap-2"
+              onClick={handleDownload}
+              disabled={downloading}
+              className="bg-gradient-to-br from-fuchsia-600 to-fuchsia-700 hover:from-fuchsia-700 hover:to-fuchsia-800 border-fuchsia-500/30 flex flex-col items-center justify-center gap-1.5 h-auto py-3 shadow-lg hover:shadow-fuchsia-500/25 transition-all"
             >
-              <Share2 className="w-4 h-4" />
-              Compartilhar
-            </Button>
-          </div>
-
-          {/* Botões secundários */}
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              onClick={handleWhatsAppShare}
-              className="bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-              </svg>
-              WhatsApp
+              <Download className="w-5 h-5" />
+              <span className="text-xs font-medium">{downloading ? 'Salvando...' : 'Salvar'}</span>
             </Button>
 
             <Button
               onClick={handleAddToWallet}
-              className="bg-gray-800 hover:bg-gray-700 flex items-center justify-center gap-2"
+              className="bg-gradient-to-br from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 border-pink-500/30 flex flex-col items-center justify-center gap-1.5 h-auto py-3 shadow-lg hover:shadow-pink-500/25 transition-all"
             >
-              <Smartphone className="w-4 h-4" />
-              Carteira
+              <Wallet className="w-5 h-5" />
+              <span className="text-xs font-medium">Carteira</span>
             </Button>
           </div>
-
         </div>
 
       </div>

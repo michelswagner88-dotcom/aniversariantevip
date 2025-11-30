@@ -67,3 +67,6 @@ verify_jwt = false
 
 [functions.standardize-text]
 verify_jwt = false
+
+[functions.carol-chat]
+verify_jwt = false

@@ -253,6 +253,19 @@ All colors MUST be HSL.
     }
   }
   
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 1.5s infinite;
+  }
+  
   /* Premium hover effects */
   .hover-scale {
     transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);

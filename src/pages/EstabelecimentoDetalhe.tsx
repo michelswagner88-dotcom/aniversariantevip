@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ArrowLeft, MapPin, Phone, Globe, Instagram, Clock, 
-  Share2, Heart, Gift, MessageCircle, ExternalLink,
+  Share2, Heart, Sparkles, MessageCircle, ExternalLink,
   Navigation, UtensilsCrossed, Copy, Send, Linkedin, Facebook
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -489,15 +489,15 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
 
             </div>
 
-            {/* ========== BOTÃO VER BENEFÍCIO - Abaixo dos ícones ========== */}
-            <div className="mt-4 pt-4 border-t border-white/10">
+            {/* ========== BOTÃO VER BENEFÍCIO - Design Minimalista Premium ========== */}
+            <div className="mt-6">
               <ShimmerButton
                 onClick={handleVerBeneficio}
-                className="w-full h-12 text-base rounded-xl"
-                background="linear-gradient(90deg, #8b5cf6, #d946ef, #ec4899)"
+                className="w-full h-11 text-sm font-medium rounded-xl shadow-lg shadow-violet-500/20"
+                background="linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #ec4899 100%)"
               >
-                <Gift className="w-5 h-5 mr-2" />
-                🎂 Ver Meu Benefício de Aniversário
+                <Sparkles className="w-4 h-4 mr-2" />
+                Ver Meu Benefício Especial
               </ShimmerButton>
             </div>
           </div>

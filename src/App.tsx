@@ -5,7 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CookieConsent } from "@/components/CookieConsent";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import ChatAssistant from "@/components/ChatAssistant";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -92,9 +91,8 @@ const App = () => (
         )}
       >
         <BrowserRouter>
-          <AnalyticsProvider>
-            <ChatAssistant />
-            <Carol />
+            <AnalyticsProvider>
+              <Carol />
             <ErrorBoundary>
               <PageTransition>
                 <BottomNav />

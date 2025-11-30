@@ -1022,9 +1022,7 @@ export type Database = {
       affiliate_stats: {
         Row: {
           active_establishments: number | null
-          email: string | null
           pending_commission: number | null
-          stripe_account_id: string | null
           total_earned: number | null
           total_establishments: number | null
           user_id: string | null

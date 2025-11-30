@@ -1,15 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { validarOrigem, getCorsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
-  // Handle CORS preflight
+  const corsHeaders = getCorsHeaders(req);
+  
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  // Validar origem
+  if (!validarOrigem(req)) {
+    return new Response(
+      JSON.stringify({ error: 'Origem não autorizada' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
@@ -22,7 +27,6 @@ serve(async (req) => {
       );
     }
 
-    // Cliente com service_role para UPDATE no banco
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
@@ -35,7 +39,7 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 1. Verificar se já existe cache no banco
+    // Verificar se já existe cache no banco
     const { data: existing } = await supabase
       .from('estabelecimentos')
       .select('galeria_fotos')
@@ -58,7 +62,7 @@ serve(async (req) => {
       );
     }
 
-    // 1. Buscar Place usando Text Search
+    // Buscar Place usando Text Search
     const searchQuery = `${establishmentName} ${address}`;
     const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${apiKey}`;
     
@@ -83,7 +87,7 @@ serve(async (req) => {
       );
     }
 
-    // 2. Download e upload para Supabase Storage
+    // Download e upload para Supabase Storage
     const uploadedUrls: string[] = [];
     const photosToProcess = photos.slice(0, 5);
 
@@ -92,7 +96,6 @@ serve(async (req) => {
         const photoRef = photosToProcess[i].photo_reference;
         const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1200&photo_reference=${photoRef}&key=${apiKey}`;
         
-        // Download da imagem
         const imageResponse = await fetch(photoUrl);
         if (!imageResponse.ok) continue;
         
@@ -100,7 +103,6 @@ serve(async (req) => {
         const arrayBuffer = await imageBlob.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
         
-        // Upload para Storage
         const fileName = `${establishmentId}/${Date.now()}-${i}.jpg`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('establishment-photos')
@@ -114,7 +116,6 @@ serve(async (req) => {
           continue;
         }
 
-        // Obter URL pública
         const { data: { publicUrl } } = supabase.storage
           .from('establishment-photos')
           .getPublicUrl(fileName);
@@ -127,7 +128,7 @@ serve(async (req) => {
       }
     }
 
-    // 3. Salvar URLs no banco (cache permanente)
+    // Salvar URLs no banco (cache permanente)
     if (uploadedUrls.length > 0) {
       const { error: updateError } = await supabase
         .from('estabelecimentos')

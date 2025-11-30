@@ -57,7 +57,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.cleanup-orphan-users]
-verify_jwt = false
+verify_jwt = true
 
 [functions.delete-user]
 verify_jwt = true

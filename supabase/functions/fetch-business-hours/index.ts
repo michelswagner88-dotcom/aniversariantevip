@@ -1,20 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validarOrigem, getCorsHeaders } from "../_shared/cors.ts";
 
 const GOOGLE_PLACES_API_KEY = Deno.env.get('VITE_GOOGLE_MAPS_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 serve(async (req) => {
-  // Handle CORS preflight requests
+  const corsHeaders = getCorsHeaders(req);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Validar origem
+  if (!validarOrigem(req)) {
+    return new Response(
+      JSON.stringify({ error: 'Origem não autorizada' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
@@ -24,7 +28,7 @@ serve(async (req) => {
 
     console.log('Buscando horário para:', { nome, cidade, estado });
 
-    // 1. Buscar Place ID usando Text Search
+    // Buscar Place ID usando Text Search
     const searchQuery = `${nome} ${endereco} ${cidade} ${estado} Brasil`;
     const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${GOOGLE_PLACES_API_KEY}&language=pt-BR`;
     
@@ -42,7 +46,7 @@ serve(async (req) => {
     const placeId = searchData.results[0].place_id;
     console.log('Place ID encontrado:', placeId);
 
-    // 2. Buscar detalhes do lugar (incluindo horário)
+    // Buscar detalhes do lugar (incluindo horário)
     const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=opening_hours,formatted_phone_number,website&key=${GOOGLE_PLACES_API_KEY}&language=pt-BR`;
     
     const detailsResponse = await fetch(detailsUrl);
@@ -58,7 +62,7 @@ serve(async (req) => {
 
     const result = detailsData.result;
     
-    // 3. Formatar horário de funcionamento
+    // Formatar horário de funcionamento
     let horarioFormatado = null;
     if (result.opening_hours?.weekday_text) {
       horarioFormatado = result.opening_hours.weekday_text
@@ -79,7 +83,7 @@ serve(async (req) => {
       console.log('Horário formatado:', horarioFormatado);
     }
 
-    // 4. Atualizar no banco se tiver horário
+    // Atualizar no banco se tiver horário
     if (horarioFormatado && estabelecimentoId) {
       const updateData: any = { horario_funcionamento: horarioFormatado };
       

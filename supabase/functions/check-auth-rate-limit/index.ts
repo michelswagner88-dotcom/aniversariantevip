@@ -1,12 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { validarOrigem, getCorsHeaders } from "../_shared/cors.ts";
 
 interface RateLimitRequest {
-  identifier: string; // email ou IP
+  identifier: string;
   action: 'login' | 'signup';
 }
 
@@ -18,21 +14,30 @@ interface RateLimitConfig {
 
 const RATE_LIMITS: Record<string, RateLimitConfig> = {
   login: {
-    maxAttempts: 5, // 5 tentativas
-    windowMinutes: 15, // em 15 minutos
-    blockDurationMinutes: 30, // bloqueia por 30 minutos
+    maxAttempts: 5,
+    windowMinutes: 15,
+    blockDurationMinutes: 30,
   },
   signup: {
-    maxAttempts: 3, // 3 tentativas
-    windowMinutes: 60, // em 1 hora
-    blockDurationMinutes: 60, // bloqueia por 1 hora
+    maxAttempts: 3,
+    windowMinutes: 60,
+    blockDurationMinutes: 60,
   },
 };
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
+  const corsHeaders = getCorsHeaders(req);
+  
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  // Validar origem
+  if (!validarOrigem(req)) {
+    return new Response(
+      JSON.stringify({ error: 'Origem não autorizada' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
@@ -63,7 +68,6 @@ Deno.serve(async (req) => {
 
     console.log(`🔒 Verificando rate limit para: ${rateLimitKey}`);
 
-    // Chamar função do banco para verificar rate limit
     const { data, error } = await supabase.rpc('check_rate_limit', {
       p_key: rateLimitKey,
       p_limit: config.maxAttempts,

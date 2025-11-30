@@ -1,32 +1,36 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validarOrigem, getCorsHeaders } from "../_shared/cors.ts";
 
 const GOOGLE_PLACES_API_KEY = Deno.env.get('VITE_GOOGLE_MAPS_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 serve(async (req) => {
-  // Handle CORS preflight requests
+  const corsHeaders = getCorsHeaders(req);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Validar origem
+  if (!validarOrigem(req)) {
+    return new Response(
+      JSON.stringify({ error: 'Origem não autorizada' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // 1. Buscar estabelecimentos sem horário
+    // Buscar estabelecimentos sem horário
     const { data: estabelecimentos, error } = await supabase
       .from('estabelecimentos')
       .select('id, nome_fantasia, logradouro, numero, bairro, cidade, estado')
       .eq('ativo', true)
       .is('horario_funcionamento', null)
-      .limit(50); // Limitar para evitar timeout
+      .limit(50);
 
     if (error) throw error;
 
@@ -34,12 +38,11 @@ serve(async (req) => {
 
     const resultados = [];
 
-    // 2. Processar cada estabelecimento (com delay para não exceder rate limit)
+    // Processar cada estabelecimento (com delay para não exceder rate limit)
     for (const est of estabelecimentos || []) {
       try {
         const endereco = `${est.logradouro}, ${est.numero} - ${est.bairro}`;
         
-        // Buscar no Google Places
         const searchQuery = `${est.nome_fantasia} ${endereco} ${est.cidade} ${est.estado} Brasil`;
         const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${GOOGLE_PLACES_API_KEY}&language=pt-BR`;
         
@@ -51,7 +54,6 @@ serve(async (req) => {
         if (searchData.results && searchData.results.length > 0) {
           const placeId = searchData.results[0].place_id;
 
-          // Buscar detalhes
           const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=opening_hours&key=${GOOGLE_PLACES_API_KEY}&language=pt-BR`;
           const detailsResponse = await fetch(detailsUrl);
           const detailsData = await detailsResponse.json();
@@ -72,7 +74,6 @@ serve(async (req) => {
               })
               .join(' | ');
 
-            // Atualizar no banco
             const { error: updateError } = await supabase
               .from('estabelecimentos')
               .update({ horario_funcionamento: horarioFormatado })

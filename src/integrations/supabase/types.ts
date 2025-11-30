@@ -53,6 +53,45 @@ export type Database = {
         }
         Relationships: []
       }
+      admins: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          criado_por: string | null
+          email: string
+          id: string
+          nivel: string | null
+          nome: string | null
+          ultimo_acesso: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          criado_por?: string | null
+          email: string
+          id?: string
+          nivel?: string | null
+          nome?: string | null
+          ultimo_acesso?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          criado_por?: string | null
+          email?: string
+          id?: string
+          nivel?: string | null
+          nome?: string | null
+          ultimo_acesso?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       agenda_events: {
         Row: {
           created_at: string
@@ -1443,6 +1482,7 @@ export type Database = {
       generate_city_slug: { Args: { cidade: string }; Returns: string }
       generate_slug: { Args: { nome: string }; Returns: string }
       generate_unique_coupon_code: { Args: never; Returns: string }
+      get_admin_level: { Args: { check_user_id?: string }; Returns: string }
       get_birthday_forecast: {
         Args: { p_cidade: string; p_estado: string }
         Returns: Json
@@ -1453,6 +1493,11 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      is_admin: { Args: { check_user_id?: string }; Returns: boolean }
+      update_admin_last_access: {
+        Args: { admin_user_id: string }
+        Returns: undefined
       }
       upsert_establishment_bulk: { Args: { p_data: Json }; Returns: Json }
       use_coupon: {

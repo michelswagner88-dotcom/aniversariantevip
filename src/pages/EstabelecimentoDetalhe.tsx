@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ArrowLeft, MapPin, Phone, Globe, Instagram, Clock, 
-  Share2, Heart, Sparkles, MessageCircle, ExternalLink,
+  Share2, Heart, Gift, MessageCircle, ExternalLink,
   Navigation, UtensilsCrossed, Copy, Send, Linkedin, Facebook
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -489,15 +489,24 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
 
             </div>
 
-            {/* ========== BOTÃO VER BENEFÍCIO - Design Minimalista Premium ========== */}
-            <div className="mt-6">
+            {/* ========== BOTÃO VER BENEFÍCIO - Premium com animação ========== */}
+            <div className="mt-6 flex justify-center">
               <ShimmerButton
-                onClick={handleVerBeneficio}
-                className="w-full h-11 text-sm font-medium rounded-xl shadow-lg shadow-violet-500/20"
-                background="linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #ec4899 100%)"
+                onClick={(e) => {
+                  // Adiciona animação ao ícone antes de executar a ação
+                  const icon = e.currentTarget.querySelector('.gift-icon');
+                  if (icon) {
+                    icon.classList.add('animate-gift-open');
+                    setTimeout(() => icon.classList.remove('animate-gift-open'), 600);
+                  }
+                  // Pequeno delay para a animação completar antes de abrir modal
+                  setTimeout(handleVerBeneficio, 300);
+                }}
+                className="px-8 py-3 text-base font-semibold rounded-2xl shadow-xl shadow-violet-500/25 hover:shadow-violet-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                background="linear-gradient(135deg, #7c3aed 0%, #c026d3 50%, #db2777 100%)"
               >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Ver Meu Benefício Especial
+                <Gift className="gift-icon w-5 h-5 mr-2.5" />
+                Ver Benefício
               </ShimmerButton>
             </div>
           </div>

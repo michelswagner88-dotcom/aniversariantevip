@@ -14,21 +14,49 @@ enable_confirmations = false
 subject = "Redefinir sua senha - Aniversariante VIP"
 content_path = "./supabase/templates/recovery.html"
 
-[functions.reverse-geocode]
+# ============================================
+# EDGE FUNCTIONS - CONFIGURAÇÃO COMPLETA
+# ============================================
+
+# --- CHATBOT ---
+[functions.carol-chat]
 verify_jwt = false
 
-[functions.fetch-place-photo]
+[functions.chat-assistant]
+verify_jwt = false
+
+# --- GEOCODIFICAÇÃO ---
+[functions.reverse-geocode]
 verify_jwt = false
 
 [functions.geocode-address]
 verify_jwt = false
 
+# --- GOOGLE PLACES ---
+[functions.fetch-place-photo]
+verify_jwt = false
+
+[functions.fetch-business-hours]
+verify_jwt = false
+
+[functions.update-all-business-hours]
+verify_jwt = true
+
+# --- CIDADES E INSIGHTS ---
 [functions.get-active-cities]
 verify_jwt = false
 
 [functions.get-expansion-insights]
 verify_jwt = false
 
+# --- CUPONS ---
+[functions.emit-coupon]
+verify_jwt = false
+
+[functions.validate-coupon]
+verify_jwt = false
+
+# --- EMAILS ---
 [functions.send-recovery-email]
 verify_jwt = false
 
@@ -38,21 +66,35 @@ verify_jwt = false
 [functions.send-birthday-reminder]
 verify_jwt = false
 
-[functions.emit-coupon]
+[functions.track-email-open]
 verify_jwt = false
 
-[functions.validate-coupon]
+[functions.track-email-click]
 verify_jwt = false
 
+# --- STRIPE / PAGAMENTOS ---
 [functions.stripe-webhook]
 verify_jwt = false
 
-[functions.submit-establishment-data]
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.check-subscription]
+verify_jwt = true
+
+[functions.customer-portal]
+verify_jwt = true
+
+[functions.create-referral-checkout]
+verify_jwt = true
+
+[functions.stripe-connect-onboarding]
 verify_jwt = true
 
 [functions.release-held-commissions]
-verify_jwt = false
+verify_jwt = true
 
+# --- ADMIN ---
 [functions.setup-first-admin]
 verify_jwt = false
 
@@ -62,17 +104,17 @@ verify_jwt = true
 [functions.delete-user]
 verify_jwt = true
 
+[functions.notify-new-establishments]
+verify_jwt = true
+
+# --- ESTABELECIMENTOS ---
+[functions.submit-establishment-data]
+verify_jwt = true
+
+# --- RATE LIMITING ---
 [functions.check-auth-rate-limit]
 verify_jwt = false
 
+# --- UTILIDADES ---
 [functions.standardize-text]
-verify_jwt = false
-
-[functions.carol-chat]
-verify_jwt = false
-
-[functions.fetch-business-hours]
-verify_jwt = false
-
-[functions.update-all-business-hours]
 verify_jwt = false

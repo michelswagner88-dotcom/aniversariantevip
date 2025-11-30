@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import GaleriaFullscreen from './GaleriaFullscreen';
 
 interface GaleriaFotosViewerProps {
@@ -10,6 +11,7 @@ interface GaleriaFotosViewerProps {
 const GaleriaFotosViewer = ({ fotoPrincipal, galeriaFotos }: GaleriaFotosViewerProps) => {
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [fullscreenIndex, setFullscreenIndex] = useState(0);
+  const [loadedImages, setLoadedImages] = useState<Record<number, boolean>>({});
   const todasFotos = [fotoPrincipal, ...(galeriaFotos || [])].filter(Boolean);
   
   if (todasFotos.length === 0) {
@@ -38,10 +40,21 @@ const GaleriaFotosViewer = ({ fotoPrincipal, galeriaFotos }: GaleriaFotosViewerP
             }}
             className="relative aspect-square rounded-lg overflow-hidden bg-muted hover:ring-2 hover:ring-violet-500 transition-all duration-300 group cursor-pointer"
           >
+            {/* Skeleton com shimmer - aparece até imagem carregar */}
+            {!loadedImages[index] && (
+              <div className="absolute inset-0 bg-muted overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+              </div>
+            )}
+            
             <img 
               src={foto} 
               alt={`Foto ${index + 1} do estabelecimento`}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              onLoad={() => setLoadedImages(prev => ({ ...prev, [index]: true }))}
+              className={cn(
+                "w-full h-full object-cover transition-all duration-500 group-hover:scale-110",
+                loadedImages[index] ? "opacity-100" : "opacity-0"
+              )}
               loading="lazy"
             />
             

@@ -8,6 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { sanitizarInput } from '@/lib/sanitize';
+import { supabase } from '@/integrations/supabase/client';
+import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
+import { toast } from 'sonner';
+import { normalizarCidade } from '@/lib/utils';
 
 const VoiceSearchBar = () => {
   const navigate = useNavigate();
@@ -33,12 +37,13 @@ const VoiceSearchBar = () => {
     }
   }, [location]);
 
-  // Atualiza o input quando a voz detecta texto
+  // Atualiza o input e processa busca por voz quando detecta texto
   useEffect(() => {
-    if (transcript) {
+    if (transcript && !isListening) {
       setSearchQuery(transcript);
+      handleVoiceSearch(transcript);
     }
-  }, [transcript]);
+  }, [transcript, isListening]);
 
   const handleDetectLocation = async () => {
     try {
@@ -63,10 +68,121 @@ const VoiceSearchBar = () => {
     localStorage.removeItem('user_location');
   };
 
+  const handleVoiceSearch = async (texto: string) => {
+    const textoLower = texto.toLowerCase().trim();
+    
+    // Mapeamento de categorias com sinônimos
+    const categoriasMap: Record<string, string> = {
+      'restaurante': 'Restaurante',
+      'restaurantes': 'Restaurante',
+      'comida': 'Restaurante',
+      'bar': 'Bar',
+      'bares': 'Bar',
+      'pub': 'Bar',
+      'cervejaria': 'Bar',
+      'academia': 'Academia',
+      'academias': 'Academia',
+      'ginásio': 'Academia',
+      'barbearia': 'Barbearia',
+      'barbearias': 'Barbearia',
+      'barbeiro': 'Barbearia',
+      'salão': 'Salão de Beleza',
+      'salao': 'Salão de Beleza',
+      'cabeleireiro': 'Salão de Beleza',
+      'café': 'Cafeteria',
+      'cafe': 'Cafeteria',
+      'cafeteria': 'Cafeteria',
+      'balada': 'Casa Noturna',
+      'boate': 'Casa Noturna',
+      'casa noturna': 'Casa Noturna',
+      'confeitaria': 'Confeitaria',
+      'doçaria': 'Confeitaria',
+      'hotel': 'Hospedagem',
+      'pousada': 'Hospedagem',
+      'hospedagem': 'Hospedagem',
+      'loja': 'Outros Comércios',
+      'comércio': 'Outros Comércios',
+    };
+
+    // Detectar categoria
+    let categoriaEncontrada: string | null = null;
+    for (const [key, value] of Object.entries(categoriasMap)) {
+      if (textoLower.includes(key)) {
+        categoriaEncontrada = value;
+        break;
+      }
+    }
+
+    // Detectar cidade comum
+    const cidadesComuns = [
+      'florianópolis', 'florianopolis', 'floripa',
+      'curitiba',
+      'porto alegre', 'porto-alegre',
+      'são paulo', 'sao paulo', 'sp',
+      'rio de janeiro', 'rio',
+      'joinville',
+      'blumenau',
+      'balneário camboriú', 'balneario camboriu', 'bc',
+      'chapecó', 'chapeco',
+      'criciúma', 'criciuma'
+    ];
+
+    let cidadeEncontrada: string | null = null;
+    for (const cidade of cidadesComuns) {
+      if (textoLower.includes(cidade)) {
+        cidadeEncontrada = normalizarCidade(cidade);
+        break;
+      }
+    }
+
+    // Se não encontrou cidade, usar a cidade atual
+    if (!cidadeEncontrada && locationText) {
+      const [cidade] = locationText.split(',');
+      cidadeEncontrada = cidade.trim();
+    }
+
+    // Se não encontrou categoria, tentar buscar estabelecimento por nome
+    if (!categoriaEncontrada) {
+      try {
+        const { data: estabelecimentos } = await supabase
+          .from('public_estabelecimentos')
+          .select('slug, nome_fantasia, cidade, estado')
+          .eq('ativo', true)
+          .ilike('nome_fantasia', `%${textoLower}%`)
+          .limit(5);
+
+        if (estabelecimentos && estabelecimentos.length > 0) {
+          const est = estabelecimentos[0];
+          toast.success(`Encontrado: ${est.nome_fantasia}`);
+          navigate(`/${est.estado?.toLowerCase()}/${est.cidade?.toLowerCase().replace(/\s+/g, '-')}/${est.slug}`);
+          return;
+        }
+      } catch (error) {
+        console.error('Erro ao buscar estabelecimento:', error);
+      }
+    }
+
+    // Montar URL de navegação
+    const params = new URLSearchParams();
+    if (categoriaEncontrada) {
+      params.set('categoria', categoriaEncontrada);
+      toast.success(`Buscando ${categoriaEncontrada}${cidadeEncontrada ? ` em ${cidadeEncontrada}` : ''}`);
+    }
+    if (cidadeEncontrada) {
+      params.set('cidade', cidadeEncontrada);
+    }
+    if (!categoriaEncontrada && !cidadeEncontrada) {
+      // Busca genérica
+      params.set('q', textoLower);
+      toast.info('Buscando por: ' + texto);
+    }
+
+    navigate(`/explorar?${params.toString()}`);
+  };
+
   const handleSearch = () => {
     if (searchQuery.trim()) {
-      const searchSeguro = sanitizarInput(searchQuery, 100);
-      navigate(`/explorar?q=${encodeURIComponent(searchSeguro)}`);
+      handleVoiceSearch(searchQuery);
     }
   };
 

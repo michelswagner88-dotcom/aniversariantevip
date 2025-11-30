@@ -17,7 +17,7 @@ export const usePosts = (establishmentId?: string) => {
     queryFn: async () => {
       let query = supabase
         .from('posts')
-        .select('*, estabelecimentos(nome_fantasia, logo_url)')
+        .select('*, estabelecimentos!fk_posts_estabelecimento(nome_fantasia, logo_url)')
         .order('created_at', { ascending: false });
 
       if (establishmentId) {

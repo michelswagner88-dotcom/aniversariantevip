@@ -185,7 +185,7 @@ export default function Feed() {
         .from('posts')
         .select(`
           *,
-          estabelecimentos(
+          estabelecimentos!fk_posts_estabelecimento(
             id,
             nome_fantasia,
             logo_url,

@@ -15,7 +15,7 @@ export const useStories = (establishmentId?: string) => {
     queryFn: async () => {
       let query = supabase
         .from('stories')
-        .select('*, estabelecimentos(nome_fantasia, logo_url)')
+        .select('*, estabelecimentos!fk_stories_estabelecimento(nome_fantasia, logo_url)')
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
 

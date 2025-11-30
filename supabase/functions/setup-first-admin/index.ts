@@ -28,6 +28,14 @@ serve(async (req) => {
 
     const { email, password, nome } = await req.json();
 
+    // FASE 2: Proteção adicional - Extrair IP e User Agent
+    const clientIP = req.headers.get('x-forwarded-for') || 
+                     req.headers.get('x-real-ip') || 
+                     'unknown';
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+
+    console.log(`Setup Admin: Tentativa de criação de admin de IP ${clientIP}`);
+
     console.log('Verificando se já existem admins...');
     
     // Verificar se já existe algum admin
@@ -37,6 +45,20 @@ serve(async (req) => {
       .eq('role', 'admin');
 
     if (count && count > 0) {
+      // Log tentativa de criar admin quando já existe
+      await supabase.from('admin_access_logs').insert({
+        email: email || 'unknown',
+        action: 'setup_admin_duplicate_attempt',
+        endpoint: '/setup-first-admin',
+        ip_address: clientIP,
+        user_agent: userAgent,
+        authorized: false,
+        metadata: { 
+          reason: 'admin_already_exists',
+          existing_admins_count: count
+        }
+      });
+
       return new Response(
         JSON.stringify({ error: 'Já existem administradores cadastrados' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -110,6 +132,21 @@ serve(async (req) => {
 
     console.log('Primeiro admin criado com sucesso!');
 
+    // Log criação bem-sucedida do primeiro admin
+    await supabase.from('admin_access_logs').insert({
+      user_id: userData.user.id,
+      email: email,
+      action: 'setup_first_admin_success',
+      endpoint: '/setup-first-admin',
+      ip_address: clientIP,
+      user_agent: userAgent,
+      authorized: true,
+      metadata: { 
+        nome,
+        created_at: new Date().toISOString()
+      }
+    });
+
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -122,6 +159,34 @@ serve(async (req) => {
   } catch (error) {
     console.error('Erro completo:', error);
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    
+    // Log erro na criação do admin
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+      
+      const clientIP = req.headers.get('x-forwarded-for') || 
+                       req.headers.get('x-real-ip') || 
+                       'unknown';
+      const userAgent = req.headers.get('user-agent') || 'unknown';
+      
+      await supabaseClient.from('admin_access_logs').insert({
+        email: 'unknown',
+        action: 'setup_first_admin_error',
+        endpoint: '/setup-first-admin',
+        ip_address: clientIP,
+        user_agent: userAgent,
+        authorized: false,
+        metadata: { 
+          error: errorMessage,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (logError) {
+      console.error('Erro ao logar erro de setup:', logError);
+    }
+    
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

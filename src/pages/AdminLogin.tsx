@@ -50,12 +50,54 @@ export default function AdminLogin() {
         return;
       }
 
+      // FASE 1: Rate Limiting - Verificar antes de tentar login
+      const { data: rateLimitData, error: rateLimitError } = await supabase.functions.invoke(
+        'check-auth-rate-limit',
+        {
+          body: { 
+            identifier: email.toLowerCase(), 
+            action: 'login' 
+          }
+        }
+      );
+
+      if (rateLimitError || !rateLimitData.allowed) {
+        const message = rateLimitData?.message || 'Muitas tentativas de login. Aguarde alguns minutos.';
+        toast.error(message);
+        setIsLoading(false);
+        
+        // Log tentativa bloqueada por rate limit
+        await supabase.from('admin_access_logs').insert({
+          email: email.toLowerCase(),
+          action: 'login_rate_limited',
+          endpoint: '/login/colaborador',
+          authorized: false,
+          metadata: {
+            remaining: rateLimitData?.remaining || 0,
+            retryAfter: rateLimitData?.retryAfter
+          }
+        });
+        
+        return;
+      }
+
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        // Log falha de autenticação
+        await supabase.from('admin_access_logs').insert({
+          email: email.toLowerCase(),
+          action: 'login_failed',
+          endpoint: '/login/colaborador',
+          authorized: false,
+          metadata: { error: authError.message }
+        });
+        
+        throw authError;
+      }
 
       if (authData.user) {
         const { data: roleData, error: roleError } = await supabase
@@ -67,10 +109,31 @@ export default function AdminLogin() {
 
         if (roleError || !roleData) {
           await supabase.auth.signOut();
+          
+          // Log acesso negado
+          await supabase.from('admin_access_logs').insert({
+            user_id: authData.user.id,
+            email: authData.user.email || email,
+            action: 'access_denied',
+            endpoint: '/login/colaborador',
+            authorized: false,
+            metadata: { reason: 'missing_admin_role' }
+          });
+          
           toast.error('Acesso negado. Você não tem permissões de administrador.');
           setIsLoading(false);
           return;
         }
+
+        // Log login bem-sucedido
+        await supabase.from('admin_access_logs').insert({
+          user_id: authData.user.id,
+          email: authData.user.email || email,
+          action: 'login_success',
+          endpoint: '/login/colaborador',
+          authorized: true,
+          metadata: { role: roleData.role }
+        });
 
         toast.success('Login realizado com sucesso!');
         navigate('/admin/dashboard');

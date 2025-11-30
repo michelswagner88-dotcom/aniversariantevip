@@ -53,23 +53,56 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
 
         // Verificar se é admin (apenas via banco de dados)
         const isAdmin = await checkIsAdmin(user.id);
+        
+        // FASE 3: Verificação periódica de role a cada 5 minutos
+        const roleCheckInterval = setInterval(async () => {
+          const stillAdmin = await checkIsAdmin(user.id);
+          
+          if (!stillAdmin) {
+            console.warn('Admin: Role removida, forçando logout');
+            
+            // Log role removida
+            try {
+              await supabase.from('admin_access_logs').insert({
+                user_id: user.id,
+                email: user.email || '',
+                action: 'role_revoked',
+                endpoint: location.pathname,
+                authorized: false,
+                metadata: { reason: 'role_removed_during_session' }
+              });
+            } catch (logError) {
+              console.error('Erro ao logar revogação de role:', logError);
+            }
+            
+            // Forçar logout
+            await supabase.auth.signOut();
+            setIsAuthorized(false);
+            setError('Suas permissões foram removidas. Faça login novamente.');
+          }
+        }, 5 * 60 * 1000); // 5 minutos
+
+        // Cleanup do interval quando componente desmontar
+        return () => clearInterval(roleCheckInterval);
 
         if (!isAdmin) {
           console.warn(`Admin: Acesso negado para ${user.email}`);
           
-          // Log de tentativa de acesso não autorizado
+          // Log de tentativa de acesso não autorizado - usar tabela dedicada
           try {
-            await supabase.from('analytics').insert({
-              event_type: 'admin_access_denied',
+            await supabase.from('admin_access_logs').insert({
               user_id: user.id,
+              email: user.email || '',
+              action: 'access_denied',
+              endpoint: location.pathname,
+              authorized: false,
               metadata: {
-                email: user.email,
-                path: location.pathname,
+                reason: 'missing_admin_role',
                 timestamp: new Date().toISOString(),
               }
             });
           } catch (logError) {
-            // Silencioso se falhar
+            console.error('Erro ao logar acesso negado:', logError);
           }
 
           setError('Você não tem permissão para acessar esta área');
@@ -78,19 +111,20 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
           return;
         }
 
-        // Log de acesso autorizado
+        // Log de acesso autorizado - usar tabela dedicada
         try {
-          await supabase.from('analytics').insert({
-            event_type: 'admin_access_authorized',
+          await supabase.from('admin_access_logs').insert({
             user_id: user.id,
+            email: user.email || '',
+            action: 'access_authorized',
+            endpoint: location.pathname,
+            authorized: true,
             metadata: {
-              email: user.email,
-              path: location.pathname,
               timestamp: new Date().toISOString(),
             }
           });
         } catch (logError) {
-          // Silencioso se falhar
+          console.error('Erro ao logar acesso autorizado:', logError);
         }
 
         console.log(`Admin: Acesso autorizado para ${user.email}`);

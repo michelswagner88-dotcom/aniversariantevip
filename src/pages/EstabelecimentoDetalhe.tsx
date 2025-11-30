@@ -500,11 +500,23 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                 className="flex flex-col items-center gap-1.5 p-3 bg-gray-800/80 rounded-xl hover:bg-gray-700 transition-all"
               >
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M120 10C68.5786 10 27 51.5786 27 103C27 154.421 68.5786 196 120 196C171.421 196 213 154.421 213 103C213 51.5786 171.421 10 120 10Z" fill="#33CCFF"/>
-                    <circle cx="90" cy="95" r="12" fill="white"/>
-                    <circle cx="150" cy="95" r="12" fill="white"/>
-                    <path d="M85 130C85 130 95 145 120 145C145 145 155 130 155 130" stroke="white" strokeWidth="8" strokeLinecap="round"/>
+                  <svg className="w-7 h-7" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    {/* Waze ghost body - iconic shape */}
+                    <path d="M256 64C167.634 64 96 135.634 96 224C96 268.418 112.946 308.758 140.8 338.4C140.8 338.4 148.8 346.4 148.8 362.4C148.8 378.4 140.8 386.4 140.8 386.4L140.8 416C140.8 433.673 155.127 448 172.8 448H339.2C356.873 448 371.2 433.673 371.2 416V386.4C371.2 386.4 363.2 378.4 363.2 362.4C363.2 346.4 371.2 338.4 371.2 338.4C399.054 308.758 416 268.418 416 224C416 135.634 344.366 64 256 64Z" fill="#33D6ED"/>
+                    
+                    {/* Left eye */}
+                    <circle cx="208" cy="224" r="28" fill="white"/>
+                    <circle cx="208" cy="224" r="14" fill="#1A1A1A"/>
+                    
+                    {/* Right eye */}
+                    <circle cx="304" cy="224" r="28" fill="white"/>
+                    <circle cx="304" cy="224" r="14" fill="#1A1A1A"/>
+                    
+                    {/* Smile */}
+                    <path d="M196 288C196 288 216 312 256 312C296 312 316 288 316 288" stroke="white" strokeWidth="16" strokeLinecap="round"/>
+                    
+                    {/* Bottom wave details (iconic Waze ghost) */}
+                    <path d="M140.8 416C140.8 416 156.8 432 172.8 432C188.8 432 204.8 416 220.8 416C236.8 416 252.8 432 268.8 432C284.8 432 300.8 416 316.8 416C332.8 416 348.8 432 364.8 432C380.8 432 396.8 416 396.8 416" stroke="#1FB6CC" strokeWidth="12" strokeLinecap="round"/>
                   </svg>
                 </div>
                 <span className="text-[10px] text-gray-400">Waze</span>

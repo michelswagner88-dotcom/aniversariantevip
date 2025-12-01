@@ -67,6 +67,62 @@ export default function AdminImport() {
     periodo_validade: 'dia_aniversario',
   };
 
+  // Mapeamento de estados por nome completo para sigla (UF)
+  const normalizeEstado = (estado: string): string => {
+    if (!estado) return '';
+    
+    const normalized = estado.trim().toLowerCase();
+    
+    // Se já é uma sigla de 2 caracteres, retorna em maiúsculo
+    if (normalized.length === 2) {
+      return normalized.toUpperCase();
+    }
+    
+    // Mapeamento de nomes completos para siglas
+    const estadosMap: Record<string, string> = {
+      'acre': 'AC',
+      'alagoas': 'AL',
+      'amapa': 'AP',
+      'amapá': 'AP',
+      'amazonas': 'AM',
+      'bahia': 'BA',
+      'ceara': 'CE',
+      'ceará': 'CE',
+      'distrito federal': 'DF',
+      'espirito santo': 'ES',
+      'espírito santo': 'ES',
+      'goias': 'GO',
+      'goiás': 'GO',
+      'maranhao': 'MA',
+      'maranhão': 'MA',
+      'mato grosso': 'MT',
+      'mato grosso do sul': 'MS',
+      'minas gerais': 'MG',
+      'para': 'PA',
+      'pará': 'PA',
+      'paraiba': 'PB',
+      'paraíba': 'PB',
+      'parana': 'PR',
+      'paraná': 'PR',
+      'pernambuco': 'PE',
+      'piaui': 'PI',
+      'piauí': 'PI',
+      'rio de janeiro': 'RJ',
+      'rio grande do norte': 'RN',
+      'rio grande do sul': 'RS',
+      'rondonia': 'RO',
+      'rondônia': 'RO',
+      'roraima': 'RR',
+      'santa catarina': 'SC',
+      'sao paulo': 'SP',
+      'são paulo': 'SP',
+      'sergipe': 'SE',
+      'tocantins': 'TO',
+    };
+    
+    return estadosMap[normalized] || estado.toUpperCase().slice(0, 2);
+  };
+
   const cleanCNPJ = (cnpj: string): string => {
     if (!cnpj) return "";
     return cnpj.replace(/\D/g, "");
@@ -557,7 +613,7 @@ export default function AdminImport() {
           let cidade = addressData?.city || cidadeRaw;
           if (cidade) cidade = normalizarCidade(cidade);
 
-          let estado = addressData?.state || estadoRaw;
+          let estado = normalizeEstado(addressData?.state || estadoRaw || '');
           let logradouro = addressData?.street || logradouroRaw || '';
           let bairro = addressData?.neighborhood || bairroRaw || '';
           const numero = numeroRaw || "";
@@ -614,7 +670,10 @@ export default function AdminImport() {
             site: site || null,
             descricao_beneficio: beneficio,
             regras_utilizacao: regras,
-            periodo_validade_beneficio: validadeRaw ? mapValidity(validadeRaw) : VALORES_PADRAO.periodo_validade,
+            // Extrair validade do texto do benefício se não tiver campo específico
+            periodo_validade_beneficio: validadeRaw 
+              ? mapValidity(validadeRaw) 
+              : (beneficio ? mapValidity(beneficio) : VALORES_PADRAO.periodo_validade),
             horario_funcionamento: horario || null,
             logo_url: placeDetails.photoUrl || null,
             ativo: true,

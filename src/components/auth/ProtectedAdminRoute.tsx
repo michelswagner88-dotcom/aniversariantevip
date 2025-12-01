@@ -7,32 +7,37 @@ interface Props {
   children: React.ReactNode;
 }
 
-// Verificar se usuário é admin usando tabela user_roles
+// Verificar se usuário é admin usando função has_role (SECURITY DEFINER)
 const checkIsAdmin = async (userId: string): Promise<{ 
   isAdmin: boolean; 
   nivel?: string;
 }> => {
   try {
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .in('role', ['admin', 'colaborador'])
-      .maybeSingle();
+    // Usar função has_role que bypassa RLS
+    const { data: isAdmin, error: adminError } = await supabase
+      .rpc('has_role', { _user_id: userId, _role: 'admin' });
 
-    if (roleError) {
-      console.error('Erro ao verificar role:', roleError);
-      return { isAdmin: false };
+    if (adminError) {
+      console.error('Erro ao verificar role admin:', adminError);
     }
 
-    if (!roleData) {
-      return { isAdmin: false };
+    if (isAdmin) {
+      return { isAdmin: true, nivel: 'admin' };
     }
 
-    return { 
-      isAdmin: true, 
-      nivel: roleData.role
-    };
+    // Verificar se é colaborador
+    const { data: isColaborador, error: colabError } = await supabase
+      .rpc('has_role', { _user_id: userId, _role: 'colaborador' });
+
+    if (colabError) {
+      console.error('Erro ao verificar role colaborador:', colabError);
+    }
+
+    if (isColaborador) {
+      return { isAdmin: true, nivel: 'colaborador' };
+    }
+
+    return { isAdmin: false };
   } catch (error) {
     console.error('Erro ao verificar admin:', error);
     return { isAdmin: false };

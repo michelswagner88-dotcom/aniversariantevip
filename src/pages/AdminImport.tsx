@@ -666,116 +666,6 @@ export default function AdminImport() {
 
     return results;
   };
-          let estado = addressData?.state || estadoRaw || null;
-          let logradouro = addressData?.street || logradouroRaw || null;
-          let bairro = addressData?.neighborhood || bairroRaw || null;
-          const numero = numeroRaw || "S/N";
-          const complemento = complementoRaw ? `, ${complementoRaw}` : "";
-
-          // PASSO 2: Montar endereço formatado se tiver dados mínimos (cidade + estado)
-          if (cidade && estado) {
-            const partes = [];
-            if (logradouro) partes.push(`${logradouro}, ${numero}${complemento}`);
-            if (bairro) partes.push(bairro);
-            partes.push(`${cidade} - ${estado}`);
-            finalAddress = partes.join(" - ");
-            
-            // PASSO 3: Geocodificar usando Edge Function
-            const coords = await geocodeAddress(
-              logradouro || '',
-              numero,
-              bairro || '',
-              cidade,
-              estado
-            );
-            if (coords) {
-              coordinates = coords;
-            }
-          } else {
-            // Sem cidade/estado - não consegue geocodificar
-            finalAddress = row.CEP ? `Endereço pendente (CEP: ${row.CEP})` : null;
-          }
-
-          // Google Places (foto e avaliação) - só tenta se tiver nome E endereço
-          let placeDetails = { photoUrl: null, rating: null, ratingsTotal: null };
-          if (nome && finalAddress && coordinates) {
-            placeDetails = await getPlaceDetails(nome, finalAddress, cidade || "Florianópolis", estado || "SC");
-          }
-
-          // Preparar dados para inserção - TODOS os campos são opcionais
-          const estabelecimentoData = {
-            razao_social: nome || "Pendente de preenchimento",
-            nome_fantasia: nome || "Pendente de preenchimento",
-            cnpj: cnpj,
-            categoria: categoriaRaw ? [mapCategory(categoriaRaw)] : [],
-            especialidades: especialidadesValidadas, // Array de strings validadas
-            telefone: telefone ? cleanPhone(telefone) : null,
-            whatsapp: whatsapp ? cleanPhone(whatsapp) : null,
-            email: email || null,
-            endereco: finalAddress,
-            cep: cep || null,
-            logradouro: logradouro,
-            numero: numeroRaw || null,
-            complemento: complementoRaw || null,
-            bairro: bairro,
-            latitude: coordinates?.lat || null,
-            longitude: coordinates?.lng || null,
-            instagram: instagramRaw ? cleanInstagram(instagramRaw) : null,
-            site: site || null,
-            descricao_beneficio: beneficio || null,
-            periodo_validade_beneficio: validade ? mapValidity(validade) : "dia_aniversario",
-            horario_funcionamento: horario || null,
-            logo_url: placeDetails.photoUrl || null,
-            ativo: true,
-            plan_status: "active",
-            cidade: cidade,
-            estado: estado,
-            deleted_at: null, // IMPORTANTE: Garantir que nunca seja marcado como deletado na importação
-          };
-
-          console.log(`[Row ${rowNumber}] Dados finais para INSERT:`, estabelecimentoData);
-
-          // Inserir/Atualizar no Supabase usando RPC (ignora RLS)
-          const { data: rpcResult, error: insertError } = await supabase
-            .rpc('upsert_establishment_bulk', { p_data: estabelecimentoData });
-
-          const result = rpcResult as { success: boolean; error?: string } | null;
-
-          if (insertError || (result && !result.success)) {
-            return {
-              success: false,
-              rowNumber,
-              empresa: nome || 'N/A',
-              error: `Erro ao salvar: ${insertError?.message || result?.error || 'Erro desconhecido'}`,
-              hasGeocode: false,
-              hasPhoto: false,
-            };
-          }
-
-          return {
-            success: true,
-            rowNumber,
-            empresa: nome,
-            warnings,
-            hasGeocode: !!coordinates,
-            hasPhoto: !!placeDetails.photoUrl,
-          };
-        } catch (error: any) {
-          return {
-            success: false,
-            rowNumber,
-            empresa: nome || "N/A",
-            error: error.message || "Erro desconhecido",
-            warnings: [],
-            hasGeocode: false,
-            hasPhoto: false,
-          };
-        }
-      })
-    );
-
-    return results;
-  };
 
   const processFile = async () => {
     if (!file) {
@@ -831,7 +721,7 @@ export default function AdminImport() {
           photosFound: photosFoundCount
         }));
 
-        setResult({ success: successCount, errors });
+        setResult({ success: successCount, errors, warnings: [] });
         setShowResult(true);
 
         // Processo adicional de geocodificação para estabelecimentos sem coordenadas

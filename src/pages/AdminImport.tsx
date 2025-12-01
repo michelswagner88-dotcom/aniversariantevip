@@ -135,6 +135,38 @@ export default function AdminImport() {
     return "dia_aniversario";
   };
 
+  // Processar especialidades da planilha
+  const processarEspecialidades = (especialidadesString: string | undefined | null): string[] => {
+    if (!especialidadesString || String(especialidadesString).trim() === '') {
+      return [];
+    }
+    
+    // Separar por vírgula, limpar espaços, limitar a 3
+    return String(especialidadesString)
+      .split(',')
+      .map(e => e.trim())
+      .filter(e => e.length > 0)
+      .slice(0, 3); // Máximo 3 especialidades
+  };
+
+  // Validar se especialidades existem na categoria
+  const validarEspecialidades = async (categoria: string, especialidades: string[]): Promise<string[]> => {
+    if (especialidades.length === 0) return [];
+    
+    const { data: especialidadesValidas } = await supabase
+      .from('especialidades')
+      .select('nome')
+      .eq('categoria', categoria)
+      .eq('ativo', true)
+      .in('nome', especialidades);
+    
+    if (!especialidadesValidas) return [];
+    
+    // Retornar apenas as que existem na tabela
+    const nomesValidos = especialidadesValidas.map(e => e.nome);
+    return especialidades.filter(e => nomesValidos.includes(e));
+  };
+
   // Função para extrair valores de colunas com múltiplas variações (case-insensitive)
   const getColumnValue = (row: any, ...possibleNames: string[]): string | null => {
     if (!row) return null;
@@ -417,6 +449,14 @@ export default function AdminImport() {
             'HORARIO_FUNCIONAMENTO', 'Horario Funcionamento', 'FUNCIONAMENTO'
           );
 
+          // Especialidades
+          const especialidadesRaw = getColumnValue(row,
+            'ESPECIALIDADES', 'Especialidades', 'especialidades',
+            'ESPECIALIDADE', 'Especialidade', 'especialidade',
+            'SUBCATEGORIA', 'Subcategoria', 'subcategoria',
+            'SUBCATEGORIAS', 'Subcategorias', 'subcategorias'
+          );
+
           // Debug log
           console.log(`[Row ${rowNumber}] Dados extraídos:`, {
             nome,
@@ -428,7 +468,23 @@ export default function AdminImport() {
             cidade: cidadeRaw,
             estado: estadoRaw,
             categoria: categoriaRaw,
+            especialidades: especialidadesRaw,
           });
+
+          // Processar e validar especialidades
+          const especialidadesArray = processarEspecialidades(especialidadesRaw);
+          const categoriaMapeada = categoriaRaw ? mapCategory(categoriaRaw) : '';
+          let especialidadesValidadas: string[] = [];
+          
+          if (especialidadesArray.length > 0 && categoriaMapeada) {
+            especialidadesValidadas = await validarEspecialidades(categoriaMapeada, especialidadesArray);
+            
+            // Log se alguma especialidade foi ignorada
+            const ignoradas = especialidadesArray.filter(e => !especialidadesValidadas.includes(e));
+            if (ignoradas.length > 0) {
+              console.warn(`[Row ${rowNumber}] Especialidades ignoradas (não existem para ${categoriaMapeada}): ${ignoradas.join(', ')}`);
+            }
+          }
 
           // NOVO FLUXO: Buscar endereço pelo CEP (só se tiver CEP)
           const addressData = cep ? await fetchAddressByCep(cep) : null;
@@ -481,6 +537,7 @@ export default function AdminImport() {
             nome_fantasia: nome || "Pendente de preenchimento",
             cnpj: cnpj,
             categoria: categoriaRaw ? [mapCategory(categoriaRaw)] : [],
+            especialidades: especialidadesValidadas, // Array de strings validadas
             telefone: telefone ? cleanPhone(telefone) : null,
             whatsapp: whatsapp ? cleanPhone(whatsapp) : null,
             email: email || null,
@@ -696,6 +753,184 @@ export default function AdminImport() {
     XLSX.writeFile(wb, "erros-importacao.xlsx");
   };
 
+  const downloadTemplate = () => {
+    // Cabeçalhos
+    const headers = [
+      'NOME_FANTASIA',
+      'RAZAO_SOCIAL', 
+      'CNPJ',
+      'CATEGORIA',
+      'ESPECIALIDADES',
+      'DESCRICAO_BENEFICIO',
+      'TIPO_BENEFICIO',
+      'REGRAS_BENEFICIO',
+      'LOGRADOURO',
+      'NUMERO',
+      'COMPLEMENTO',
+      'BAIRRO',
+      'CIDADE',
+      'ESTADO',
+      'CEP',
+      'TELEFONE',
+      'WHATSAPP',
+      'EMAIL',
+      'SITE',
+      'INSTAGRAM',
+      'HORARIO_FUNCIONAMENTO',
+      'LATITUDE',
+      'LONGITUDE'
+    ];
+
+    // Linha de exemplo - Restaurante
+    const exemploRestaurante = [
+      'Pizzaria do João',
+      'João Pizzas LTDA',
+      '12.345.678/0001-90',
+      'Restaurante',
+      'Pizzaria, Italiana, Delivery',
+      '20% de desconto no dia do aniversário',
+      'desconto',
+      'Válido apenas no dia do aniversário. Apresentar documento com foto.',
+      'Rua das Flores',
+      '123',
+      'Sala 1',
+      'Centro',
+      'Florianópolis',
+      'SC',
+      '88000-000',
+      '(48) 3333-4444',
+      '(48) 99999-8888',
+      'contato@pizzariadojoao.com.br',
+      'https://pizzariadojoao.com.br',
+      '@pizzariadojoao',
+      'Seg-Sex 18h-23h, Sáb-Dom 12h-23h',
+      '-27.5969',
+      '-48.5495'
+    ];
+
+    // Linha de exemplo - Bar
+    const exemploBar = [
+      'Boteco do Zé',
+      'Zé Bar LTDA',
+      '98.765.432/0001-10',
+      'Bar',
+      'Boteco, Música ao Vivo',
+      'Chopp grátis para aniversariante',
+      'cortesia',
+      'Válido na semana do aniversário. Consumação mínima de R$50.',
+      'Av. Beira Mar',
+      '456',
+      '',
+      'Centro',
+      'Florianópolis',
+      'SC',
+      '88000-001',
+      '(48) 3333-5555',
+      '(48) 99999-7777',
+      'contato@botecodose.com.br',
+      '',
+      '@botecodoze',
+      'Ter-Dom 18h-02h',
+      '-27.5950',
+      '-48.5480'
+    ];
+
+    // Linha de exemplo - Loja
+    const exemploLoja = [
+      'Loja da Maria',
+      'Maria Presentes LTDA',
+      '11.222.333/0001-44',
+      'Loja',
+      'Presentes, Moda e Acessórios',
+      '15% de desconto em qualquer produto',
+      'desconto',
+      'Válido no mês do aniversário.',
+      'Rua das Palmeiras',
+      '789',
+      'Loja 5',
+      'Trindade',
+      'Florianópolis',
+      'SC',
+      '88000-002',
+      '(48) 3333-6666',
+      '(48) 99999-6666',
+      'contato@lojadamaria.com.br',
+      'https://lojadamaria.com.br',
+      '@lojadamaria',
+      'Seg-Sáb 10h-20h',
+      '-27.5900',
+      '-48.5400'
+    ];
+
+    // Linha de instruções
+    const instrucoes = [
+      '--- INSTRUÇÕES ---',
+      'Preencha os campos obrigatórios',
+      'CNPJ com pontuação ou só números',
+      'Ver lista abaixo',
+      'Até 3, separadas por vírgula',
+      'Descreva o benefício oferecido',
+      'desconto, cortesia, brinde ou combo',
+      'Condições de uso do benefício',
+      'Nome da rua/avenida',
+      'Número do endereço',
+      'Opcional',
+      'Nome do bairro',
+      'Nome da cidade',
+      'UF (2 letras)',
+      'CEP com ou sem traço',
+      'Telefone fixo',
+      'WhatsApp com DDD',
+      'Email de contato',
+      'URL completa (opcional)',
+      'Usuário sem @',
+      'Formato livre',
+      'Decimal com ponto',
+      'Decimal com ponto'
+    ];
+
+    // Montar CSV
+    const csvContent = [
+      headers.join(';'),
+      instrucoes.join(';'),
+      exemploRestaurante.join(';'),
+      exemploBar.join(';'),
+      exemploLoja.join(';'),
+      '',
+      '--- CATEGORIAS DISPONÍVEIS ---',
+      'Academia;Bar;Barbearia;Cafeteria;Casa Noturna;Confeitaria;Entretenimento;Hospedagem;Loja;Restaurante;Salão de Beleza;Saúde e Suplementos;Serviços;Outros',
+      '',
+      '--- ESPECIALIDADES POR CATEGORIA ---',
+      'RESTAURANTE: Pizzaria, Churrascaria, Sushi/Japonês, Hambúrguer, Italiana, Brasileira, Mexicana, Árabe, Chinesa/Asiática, Frutos do Mar, Vegetariana/Vegana, Self-Service, Rodízio, Fast Food, Comida Caseira, Café da Manhã, Massas, Carnes',
+      'BAR: Cervejaria, Coquetelaria, Wine Bar, Karaokê, Sports Bar, Boteco, Música ao Vivo, Rooftop',
+      'BARBEARIA: Tradicional, Moderna, Premium, Barba, Tratamentos',
+      'CAFETERIA: Café Especial, Padaria, Sorveteria, Açaí, Sucos/Smoothies, Bubble Tea, Casa de Chá',
+      'CASA NOTURNA: Balada, Show ao Vivo, Pista de Dança, DJ, Lounge, Temática',
+      'CONFEITARIA: Bolos, Cupcakes, Tortas, Biscoitos, Chocolates, Doces Finos, Encomendas',
+      'ENTRETENIMENTO: Cinema, Teatro, Boliche, Escape Room, Parque, Games, Laser Tag, Kart',
+      'HOSPEDAGEM: Hotel, Pousada, Resort, Hostel, Airbnb, Camping, Spa',
+      'LOJA: Moda e Acessórios, Presentes, Cosméticos, Joias e Bijuterias, Calçados, Bolsas, Ótica, Eletrônicos, Brinquedos, Livraria, Floricultura, Decoração, Variedades',
+      'SALÃO DE BELEZA: Cabelo, Unhas, Estética, Depilação, Maquiagem, Sobrancelhas, Tratamentos, Completo',
+      'ACADEMIA: Musculação, CrossFit, Yoga, Pilates, Natação, Artes Marciais, Funcional, Dança, Spinning, Ginástica',
+      'SAÚDE E SUPLEMENTOS: Suplementos, Nutrição Esportiva, Produtos Naturais, Manipulados, Clínica Estética, Odontologia, Oftalmologia, Terapias',
+      'SERVIÇOS: Automotivo, Pet Shop, Fotografia, Tatuagem, Tecnologia, Limpeza, Manutenção',
+      '',
+      '--- TIPOS DE BENEFÍCIO ---',
+      'desconto = Porcentagem ou valor de desconto',
+      'cortesia = Item gratuito (ex: sobremesa grátis)',
+      'brinde = Presente para levar',
+      'combo = Pacote especial'
+    ].join('\n');
+
+    // Criar blob e download
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'template_estabelecimentos_aniversariantevip.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 p-6">
       <div className="max-w-4xl mx-auto">
@@ -715,6 +950,28 @@ export default function AdminImport() {
           <p className="text-slate-400 mb-8">
             Faça upload do arquivo CSV/Excel com os dados dos estabelecimentos
           </p>
+
+          {/* Instruções de Importação */}
+          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-white mb-2">📋 Instruções de Importação</h3>
+            <ul className="text-sm text-gray-400 space-y-1">
+              <li>• Baixe o template CSV e preencha com seus dados</li>
+              <li>• <strong className="text-white">Campos obrigatórios:</strong> NOME_FANTASIA, CNPJ, CATEGORIA, CIDADE, ESTADO</li>
+              <li>• <strong className="text-white">Especialidades:</strong> Até 3, separadas por vírgula (ex: "Pizzaria, Italiana, Delivery")</li>
+              <li>• O sistema validará se as especialidades existem para a categoria informada</li>
+              <li>• Estabelecimentos com CNPJ duplicado serão atualizados</li>
+            </ul>
+          </div>
+
+          {/* Botão de Download do Template */}
+          <Button
+            onClick={downloadTemplate}
+            variant="outline"
+            className="w-full mb-4 border-violet-500 text-violet-400 hover:bg-violet-500/10"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Baixar Template CSV
+          </Button>
 
           <div className="space-y-4">
             <Button

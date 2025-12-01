@@ -17,9 +17,16 @@ interface ImportError {
   error: string;
 }
 
+interface ImportWarning {
+  row: number;
+  empresa: string;
+  warning: string;
+}
+
 interface ProcessResult {
   success: number;
   errors: ImportError[];
+  warnings: ImportWarning[];
 }
 
 export default function AdminImport() {
@@ -51,12 +58,28 @@ export default function AdminImport() {
     }
   };
 
+  // Valores padrão para campos vazios
+  const VALORES_PADRAO = {
+    categoria: 'Outros Comércios',
+    especialidades: [],
+    descricao_beneficio: 'Benefício especial para aniversariantes',
+    regras_beneficio: 'Apresentar documento com foto',
+    periodo_validade: 'dia_aniversario',
+  };
+
   const cleanCNPJ = (cnpj: string): string => {
-    return cnpj?.replace(/\D/g, "") || "";
+    if (!cnpj) return "";
+    return cnpj.replace(/\D/g, "");
+  };
+
+  const cleanCEP = (cep: string): string => {
+    if (!cep) return "";
+    return cep.replace(/\D/g, "");
   };
 
   const cleanPhone = (phone: string): string => {
-    return phone?.replace(/\D/g, "") || "";
+    if (!phone) return "";
+    return phone.replace(/[^\d\s\-\(\)]/g, "").trim();
   };
 
   const cleanInstagram = (instagram: string): string => {
@@ -345,35 +368,85 @@ export default function AdminImport() {
     const results = await Promise.all(
       batch.map(async (row, batchIdx) => {
         const rowNumber = startIndex + batchIdx + 2;
-        let nome: string | null = null; // Declarar fora do try para usar no catch
+        let nome: string | null = null;
+        const warnings: string[] = [];
         
         try {
           // === EXTRAÇÃO DE DADOS COM MAPEAMENTO FLEXÍVEL ===
           
-          // Nome do estabelecimento - aceita várias variações
+          // Nome do estabelecimento - aceita várias variações (OBRIGATÓRIO)
           nome = getColumnValue(row,
             'EMPRESA', 'NOME_ESTABELECIMENTO', 'NOME', 'Nome Fantasia', 'Nome', 
             'nome_fantasia', 'RAZAO_SOCIAL', 'Razao Social', 'razao_social',
             'NOME_EMPRESA', 'Nome Empresa', 'ESTABELECIMENTO', 'Estabelecimento'
           );
 
-          // CNPJ
+          if (!nome) {
+            return {
+              success: false,
+              rowNumber,
+              empresa: 'N/A',
+              error: 'Nome do estabelecimento é obrigatório',
+              warnings: [],
+              hasGeocode: false,
+              hasPhoto: false,
+            };
+          }
+
+          // Cidade (OBRIGATÓRIO)
+          const cidadeRaw = getColumnValue(row, 
+            'CIDADE', 'Cidade', 'cidade', 'CITY', 'City', 'MUNICIPIO', 'Municipio'
+          );
+
+          if (!cidadeRaw) {
+            return {
+              success: false,
+              rowNumber,
+              empresa: nome,
+              error: 'Cidade é obrigatória',
+              warnings: [],
+              hasGeocode: false,
+              hasPhoto: false,
+            };
+          }
+
+          // Estado (OBRIGATÓRIO)
+          const estadoRaw = getColumnValue(row, 
+            'ESTADO', 'Estado', 'estado', 'UF', 'Uf', 'uf', 'STATE', 'State'
+          );
+
+          if (!estadoRaw) {
+            return {
+              success: false,
+              rowNumber,
+              empresa: nome,
+              error: 'Estado é obrigatório',
+              warnings: [],
+              hasGeocode: false,
+              hasPhoto: false,
+            };
+          }
+
+          // CNPJ (OPCIONAL)
           const cnpjRaw = getColumnValue(row, 'CNPJ', 'cnpj', 'Cnpj');
-          const cnpj = cnpjRaw 
-            ? cleanCNPJ(cnpjRaw)
-            : `PENDENTE_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          const cnpj = cnpjRaw ? cleanCNPJ(cnpjRaw) : '';
+          
+          if (!cnpj) {
+            warnings.push('CNPJ não informado - estabelecimento cadastrado sem CNPJ');
+          }
 
           // Telefone
-          const telefone = getColumnValue(row, 
+          const telefoneRaw = getColumnValue(row, 
             'TELEFONE', 'Telefone', 'telefone', 'CONTATO', 'Contato', 'contato',
             'PHONE', 'Phone', 'TEL', 'Tel'
           );
+          const telefone = telefoneRaw ? cleanPhone(telefoneRaw) : null;
 
           // WhatsApp (fallback para telefone se não tiver)
           const whatsappRaw = getColumnValue(row, 
             'WHATSAPP', 'WhatsApp', 'whatsapp', 'Whatsapp', 'ZAPP', 'Zap', 'ZAP'
           );
-          const whatsapp = whatsappRaw || telefone;
+          const whatsapp = whatsappRaw ? cleanPhone(whatsappRaw) : telefone;
 
           // Email
           const email = getColumnValue(row, 
@@ -382,17 +455,7 @@ export default function AdminImport() {
 
           // CEP
           const cepRaw = getColumnValue(row, 'CEP', 'cep', 'Cep', 'CODIGO_POSTAL');
-          const cep = cepRaw ? cepRaw.replace(/\D/g, '') : null;
-
-          // Cidade (da planilha)
-          const cidadeRaw = getColumnValue(row, 
-            'CIDADE', 'Cidade', 'cidade', 'CITY', 'City', 'MUNICIPIO', 'Municipio'
-          );
-
-          // Estado (da planilha)
-          const estadoRaw = getColumnValue(row, 
-            'ESTADO', 'Estado', 'estado', 'UF', 'Uf', 'uf', 'STATE', 'State'
-          );
+          const cep = cepRaw ? cleanCEP(cepRaw) : null;
 
           // Bairro (da planilha)
           const bairroRaw = getColumnValue(row, 
@@ -425,23 +488,37 @@ export default function AdminImport() {
             'SITE', 'Site', 'site', 'WEBSITE', 'Website', 'website', 'URL', 'Url'
           );
 
-          // Categoria
+          // Categoria (OPCIONAL - usa padrão)
           const categoriaRaw = getColumnValue(row, 
             'CATEGORIA', 'Categoria', 'categoria', 'CATEGORY', 'Category', 'TIPO', 'Tipo'
           );
+          
+          const categoriaMapeada = categoriaRaw ? mapCategory(categoriaRaw) : VALORES_PADRAO.categoria;
+          
+          if (!categoriaRaw) {
+            warnings.push(`Categoria não informada - usando "${VALORES_PADRAO.categoria}"`);
+          }
 
-          // Benefício
-          const beneficio = getColumnValue(row, 
+          // Benefício (OPCIONAL - usa padrão)
+          const beneficioRaw = getColumnValue(row, 
             'BENEFICIO', 'Beneficio', 'beneficio', 'BENEFÍCIO', 'Benefício',
             'BENEFICIO E REGRAS', 'Beneficio e Regras', 'DESCRICAO', 'Descricao',
             'DESCRICAO_BENEFICIO', 'OFERTA', 'Oferta'
           );
+          
+          const beneficio = beneficioRaw || VALORES_PADRAO.descricao_beneficio;
+          
+          if (!beneficioRaw) {
+            warnings.push('Descrição do benefício não informada - usando padrão');
+          }
 
           // Regras / Validade
-          const validade = getColumnValue(row, 
+          const validadeRaw = getColumnValue(row, 
             'VALIDADE', 'Validade', 'validade', 'DIA/SEMANA/MÊS', 'PERIODO',
             'Periodo', 'REGRAS', 'Regras', 'regras'
           );
+          
+          const regras = validadeRaw || VALORES_PADRAO.regras_beneficio;
 
           // Horário de funcionamento
           const horario = getColumnValue(row, 
@@ -457,32 +534,16 @@ export default function AdminImport() {
             'SUBCATEGORIAS', 'Subcategorias', 'subcategorias'
           );
 
-          // Debug log
-          console.log(`[Row ${rowNumber}] Dados extraídos:`, {
-            nome,
-            cnpj,
-            telefone,
-            whatsapp,
-            email,
-            cep,
-            cidade: cidadeRaw,
-            estado: estadoRaw,
-            categoria: categoriaRaw,
-            especialidades: especialidadesRaw,
-          });
-
           // Processar e validar especialidades
           const especialidadesArray = processarEspecialidades(especialidadesRaw);
-          const categoriaMapeada = categoriaRaw ? mapCategory(categoriaRaw) : '';
           let especialidadesValidadas: string[] = [];
           
           if (especialidadesArray.length > 0 && categoriaMapeada) {
             especialidadesValidadas = await validarEspecialidades(categoriaMapeada, especialidadesArray);
             
-            // Log se alguma especialidade foi ignorada
             const ignoradas = especialidadesArray.filter(e => !especialidadesValidadas.includes(e));
             if (ignoradas.length > 0) {
-              console.warn(`[Row ${rowNumber}] Especialidades ignoradas (não existem para ${categoriaMapeada}): ${ignoradas.join(', ')}`);
+              warnings.push(`Especialidades ignoradas (não existem para ${categoriaMapeada}): ${ignoradas.join(', ')}`);
             }
           }
 
@@ -492,9 +553,119 @@ export default function AdminImport() {
           let finalAddress: string | null = null;
           let coordinates: { lat: number; lng: number } | null = null;
 
-          // PASSO 1: Priorizar dados do CEP, fallback para dados da planilha
-          let cidade = addressData?.city || cidadeRaw || null;
+          // Priorizar dados do CEP, fallback para dados da planilha
+          let cidade = addressData?.city || cidadeRaw;
           if (cidade) cidade = normalizarCidade(cidade);
+
+          let estado = addressData?.state || estadoRaw;
+          let logradouro = addressData?.street || logradouroRaw || '';
+          let bairro = addressData?.neighborhood || bairroRaw || '';
+          const numero = numeroRaw || "";
+          const complemento = complementoRaw ? `, ${complementoRaw}` : "";
+
+          // Montar endereço formatado se tiver dados mínimos
+          if (cidade && estado) {
+            const partes = [];
+            if (logradouro) partes.push(`${logradouro}${numero ? ', ' + numero : ''}${complemento}`);
+            if (bairro) partes.push(bairro);
+            partes.push(`${cidade} - ${estado}`);
+            finalAddress = partes.join(" - ");
+            
+            // Geocodificar usando Edge Function
+            const coords = await geocodeAddress(
+              logradouro,
+              numero,
+              bairro,
+              cidade,
+              estado
+            );
+            if (coords) {
+              coordinates = coords;
+            } else {
+              warnings.push('Coordenadas não encontradas - geocodificação pendente');
+            }
+          }
+
+          // Google Places (foto e avaliação)
+          let placeDetails = { photoUrl: null, rating: null, ratingsTotal: null };
+          if (nome && finalAddress && coordinates) {
+            placeDetails = await getPlaceDetails(nome, finalAddress, cidade || "", estado || "");
+          }
+
+          // Preparar dados para inserção
+          const estabelecimentoData = {
+            razao_social: nome,
+            nome_fantasia: nome,
+            cnpj: cnpj || null,
+            categoria: [categoriaMapeada],
+            especialidades: especialidadesValidadas,
+            telefone: telefone,
+            whatsapp: whatsapp,
+            email: email || null,
+            endereco: finalAddress,
+            cep: cep || null,
+            logradouro: logradouro || null,
+            numero: numeroRaw || null,
+            complemento: complementoRaw || null,
+            bairro: bairro || null,
+            latitude: coordinates?.lat || null,
+            longitude: coordinates?.lng || null,
+            instagram: instagramRaw ? cleanInstagram(instagramRaw) : null,
+            site: site || null,
+            descricao_beneficio: beneficio,
+            regras_utilizacao: regras,
+            periodo_validade_beneficio: validadeRaw ? mapValidity(validadeRaw) : VALORES_PADRAO.periodo_validade,
+            horario_funcionamento: horario || null,
+            logo_url: placeDetails.photoUrl || null,
+            ativo: true,
+            plan_status: "active",
+            cidade: cidade,
+            estado: estado,
+            deleted_at: null,
+          };
+
+          // Inserir/Atualizar no Supabase
+          const { data: rpcResult, error: insertError } = await supabase
+            .rpc('upsert_establishment_bulk', { p_data: estabelecimentoData });
+
+          const result = rpcResult as { success: boolean; error?: string } | null;
+
+          if (insertError || (result && !result.success)) {
+            return {
+              success: false,
+              rowNumber,
+              empresa: nome,
+              error: `Erro ao salvar: ${insertError?.message || result?.error || 'Erro desconhecido'}`,
+              warnings: [],
+              hasGeocode: false,
+              hasPhoto: false,
+            };
+          }
+
+          return {
+            success: true,
+            rowNumber,
+            empresa: nome,
+            warnings,
+            hasGeocode: !!coordinates,
+            hasPhoto: !!placeDetails.photoUrl,
+          };
+        } catch (error: any) {
+          return {
+            success: false,
+            rowNumber,
+            empresa: nome || "N/A",
+            error: error.message || "Erro desconhecido",
+            warnings: [],
+            hasGeocode: false,
+            hasPhoto: false,
+          };
+        }
+      })
+    );
+
+    return results;
+  };
           let estado = addressData?.state || estadoRaw || null;
           let logradouro = addressData?.street || logradouroRaw || null;
           let bairro = addressData?.neighborhood || bairroRaw || null;
@@ -584,7 +755,8 @@ export default function AdminImport() {
           return {
             success: true,
             rowNumber,
-            empresa: nome || 'N/A',
+            empresa: nome,
+            warnings,
             hasGeocode: !!coordinates,
             hasPhoto: !!placeDetails.photoUrl,
           };
@@ -594,6 +766,7 @@ export default function AdminImport() {
             rowNumber,
             empresa: nome || "N/A",
             error: error.message || "Erro desconhecido",
+            warnings: [],
             hasGeocode: false,
             hasPhoto: false,
           };

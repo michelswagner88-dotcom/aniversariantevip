@@ -7,14 +7,12 @@ interface Props {
   children: React.ReactNode;
 }
 
-// Verificar se usuário é admin usando banco de dados (role + tabela admins)
+// Verificar se usuário é admin usando tabela user_roles
 const checkIsAdmin = async (userId: string): Promise<{ 
   isAdmin: boolean; 
   nivel?: string;
-  adminId?: string;
 }> => {
   try {
-    // 1. Verificar na tabela user_roles
     const { data: roleData, error: roleError } = await supabase
       .from('user_roles')
       .select('role')
@@ -31,27 +29,9 @@ const checkIsAdmin = async (userId: string): Promise<{
       return { isAdmin: false };
     }
 
-    // 2. Verificar na tabela admins
-    const { data: adminData, error: adminError } = await supabase
-      .from('admins')
-      .select('id, nivel, ativo')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (adminError) {
-      console.error('Erro ao verificar admins:', adminError);
-      return { isAdmin: false };
-    }
-
-    // Admin deve estar na tabela admins E estar ativo
-    if (!adminData || !adminData.ativo) {
-      return { isAdmin: false };
-    }
-
     return { 
       isAdmin: true, 
-      nivel: adminData.nivel,
-      adminId: adminData.id
+      nivel: roleData.role
     };
   } catch (error) {
     console.error('Erro ao verificar admin:', error);
@@ -128,7 +108,6 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
             authorized: true,
             metadata: {
               nivel: adminCheck.nivel,
-              adminId: adminCheck.adminId,
               timestamp: new Date().toISOString(),
             }
           });

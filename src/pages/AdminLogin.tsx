@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Mail, ArrowRight, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, ArrowRight, ShieldCheck, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -16,6 +16,7 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,18 +24,32 @@ export default function AdminLogin() {
   }, []);
 
   const checkAdminSession = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .eq('role', 'admin')
-        .single();
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (roleData) {
-        navigate('/admin/dashboard');
+      if (session?.user) {
+        // Usar has_role (SECURITY DEFINER) ao invés de query direta
+        const { data: isAdmin } = await supabase
+          .rpc('has_role', { _user_id: session.user.id, _role: 'admin' });
+        
+        if (isAdmin) {
+          navigate('/admin/dashboard', { replace: true });
+          return;
+        }
+        
+        // Também verificar se é colaborador
+        const { data: isColaborador } = await supabase
+          .rpc('has_role', { _user_id: session.user.id, _role: 'colaborador' });
+        
+        if (isColaborador) {
+          navigate('/admin/dashboard', { replace: true });
+          return;
+        }
       }
+    } catch (error) {
+      console.error('Erro ao verificar sessão admin:', error);
+    } finally {
+      setCheckingSession(false);
     }
   };
 
@@ -70,7 +85,7 @@ export default function AdminLogin() {
         await supabase.from('admin_access_logs').insert({
           email: email.toLowerCase(),
           action: 'login_rate_limited',
-          endpoint: '/login/colaborador',
+          endpoint: '/admin',
           authorized: false,
           metadata: {
             remaining: rateLimitData?.remaining || 0,
@@ -91,7 +106,7 @@ export default function AdminLogin() {
         await supabase.from('admin_access_logs').insert({
           email: email.toLowerCase(),
           action: 'login_failed',
-          endpoint: '/login/colaborador',
+          endpoint: '/admin',
           authorized: false,
           metadata: { error: authError.message }
         });
@@ -100,14 +115,14 @@ export default function AdminLogin() {
       }
 
       if (authData.user) {
-        const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', authData.user.id)
-          .eq('role', 'admin')
-          .single();
+        // Usar has_role (SECURITY DEFINER) para verificação consistente
+        const { data: isAdmin } = await supabase
+          .rpc('has_role', { _user_id: authData.user.id, _role: 'admin' });
 
-        if (roleError || !roleData) {
+        const { data: isColaborador } = await supabase
+          .rpc('has_role', { _user_id: authData.user.id, _role: 'colaborador' });
+
+        if (!isAdmin && !isColaborador) {
           await supabase.auth.signOut();
           
           // Log acesso negado
@@ -115,7 +130,7 @@ export default function AdminLogin() {
             user_id: authData.user.id,
             email: authData.user.email || email,
             action: 'access_denied',
-            endpoint: '/login/colaborador',
+            endpoint: '/admin',
             authorized: false,
             metadata: { reason: 'missing_admin_role' }
           });
@@ -130,13 +145,13 @@ export default function AdminLogin() {
           user_id: authData.user.id,
           email: authData.user.email || email,
           action: 'login_success',
-          endpoint: '/login/colaborador',
+          endpoint: '/admin',
           authorized: true,
-          metadata: { role: roleData.role }
+          metadata: { role: isAdmin ? 'admin' : 'colaborador' }
         });
 
         toast.success('Login realizado com sucesso!');
-        navigate('/admin/dashboard');
+        navigate('/admin/dashboard', { replace: true });
       }
     } catch (error: any) {
       console.error('Erro no login:', error);
@@ -145,6 +160,15 @@ export default function AdminLogin() {
       setIsLoading(false);
     }
   };
+
+  // Mostrar loading enquanto verifica sessão
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">

@@ -538,6 +538,7 @@ export type Database = {
           cep: string | null
           cidade: string | null
           cnpj: string
+          codigo: string | null
           complemento: string | null
           created_at: string | null
           deleted_at: string | null
@@ -578,6 +579,7 @@ export type Database = {
           cep?: string | null
           cidade?: string | null
           cnpj: string
+          codigo?: string | null
           complemento?: string | null
           created_at?: string | null
           deleted_at?: string | null
@@ -618,6 +620,7 @@ export type Database = {
           cep?: string | null
           cidade?: string | null
           cnpj?: string
+          codigo?: string | null
           complemento?: string | null
           created_at?: string | null
           deleted_at?: string | null
@@ -1397,17 +1400,18 @@ export type Database = {
           categoria: string[] | null
           cep: string | null
           cidade: string | null
+          codigo: string | null
           complemento: string | null
           created_at: string | null
           descricao_beneficio: string | null
           endereco: string | null
+          especialidades: string[] | null
           estado: string | null
           galeria_fotos: string[] | null
           horario_funcionamento: string | null
           id: string | null
           instagram: string | null
           latitude: number | null
-          link_cardapio: string | null
           logo_url: string | null
           logradouro: string | null
           longitude: number | null
@@ -1427,17 +1431,18 @@ export type Database = {
           categoria?: string[] | null
           cep?: string | null
           cidade?: string | null
+          codigo?: string | null
           complemento?: string | null
           created_at?: string | null
           descricao_beneficio?: string | null
           endereco?: string | null
+          especialidades?: string[] | null
           estado?: string | null
           galeria_fotos?: string[] | null
           horario_funcionamento?: string | null
           id?: string | null
           instagram?: string | null
           latitude?: number | null
-          link_cardapio?: string | null
           logo_url?: string | null
           logradouro?: string | null
           longitude?: number | null
@@ -1457,17 +1462,18 @@ export type Database = {
           categoria?: string[] | null
           cep?: string | null
           cidade?: string | null
+          codigo?: string | null
           complemento?: string | null
           created_at?: string | null
           descricao_beneficio?: string | null
           endereco?: string | null
+          especialidades?: string[] | null
           estado?: string | null
           galeria_fotos?: string[] | null
           horario_funcionamento?: string | null
           id?: string | null
           instagram?: string | null
           latitude?: number | null
-          link_cardapio?: string | null
           logo_url?: string | null
           logradouro?: string | null
           longitude?: number | null
@@ -1515,6 +1521,7 @@ export type Database = {
       generate_city_slug: { Args: { cidade: string }; Returns: string }
       generate_slug: { Args: { nome: string }; Returns: string }
       generate_unique_coupon_code: { Args: never; Returns: string }
+      gerar_proximo_codigo: { Args: never; Returns: string }
       get_admin_level: { Args: { check_user_id?: string }; Returns: string }
       get_birthday_forecast: {
         Args: { p_cidade: string; p_estado: string }

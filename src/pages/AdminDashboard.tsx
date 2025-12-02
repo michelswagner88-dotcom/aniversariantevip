@@ -19,7 +19,8 @@ import {
   UserCog,
   Camera,
   Clock,
-  ShieldAlert
+  ShieldAlert,
+  Hash
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -117,6 +118,7 @@ export default function AdminDashboard() {
   const [establishments, setEstablishments] = useState<any[]>([]);
   const [cupons, setCupons] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchCode, setSearchCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [adminName, setAdminName] = useState('');
 
@@ -511,10 +513,14 @@ export default function AdminDashboard() {
 
   const filteredEstablishments = useMemo(() => {
     const searchSeguro = sanitizarInput(searchTerm, 100);
+    const codeSeguro = sanitizarInput(searchCode, 6);
     const citySeguro = sanitizarInput(filterCity, 100);
     const categorySeguro = sanitizarInput(filterCategory, 50);
     
     return establishments.filter(est => {
+      // Se tiver código na busca, prioriza código
+      const matchesCode = !codeSeguro || est.codigo?.includes(codeSeguro);
+      
       const matchesSearch = !searchSeguro || 
         est.nome_fantasia?.toLowerCase().includes(searchSeguro.toLowerCase()) ||
         est.cnpj?.includes(searchSeguro) ||
@@ -526,9 +532,14 @@ export default function AdminDashboard() {
         (filterStatus === 'active' && est.ativo) || 
         (filterStatus === 'inactive' && !est.ativo);
 
+      // Se estiver buscando por código, usa apenas o filtro de código + status
+      if (codeSeguro) {
+        return matchesCode && matchesStatus;
+      }
+
       return matchesSearch && matchesCity && matchesCategory && matchesStatus;
     });
-  }, [establishments, searchTerm, filterCity, filterCategory, filterStatus]);
+  }, [establishments, searchTerm, searchCode, filterCity, filterCategory, filterStatus]);
 
   const estabelecimentosSemFoto = useMemo(() => {
     return establishments.filter(e => !e.logo_url || e.logo_url === '');
@@ -874,11 +885,24 @@ export default function AdminDashboard() {
         
         {/* Filtros */}
         <div className="flex flex-wrap gap-3">
+          {/* Busca por código */}
+          <div className="relative w-32">
+            <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500" size={18} />
+            <input 
+              type="text" 
+              placeholder="Código..." 
+              className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 placeholder:text-slate-500 font-mono"
+              value={searchCode}
+              onChange={(e) => setSearchCode(e.target.value)}
+              maxLength={6}
+            />
+          </div>
+          {/* Busca por nome */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500" size={18} />
             <input 
               type="text" 
-              placeholder="Buscar..." 
+              placeholder="Buscar nome..." 
               className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 placeholder:text-slate-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -951,6 +975,7 @@ export default function AdminDashboard() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-800/50 text-slate-300 text-sm font-semibold uppercase tracking-wider">
+              <th className="p-4 border-b border-white/10">Código</th>
               <th className="p-4 border-b border-white/10">Estabelecimento</th>
               <th className="p-4 border-b border-white/10">CNPJ</th>
               <th className="p-4 border-b border-white/10">Cidade</th>
@@ -964,6 +989,11 @@ export default function AdminDashboard() {
                 key={est.id} 
                 className={`hover:bg-white/5 transition-colors ${est.deleted_at ? 'opacity-50 bg-red-500/10' : ''}`}
               >
+                <td className="p-4">
+                  <span className="font-mono text-sm bg-violet-500/20 text-violet-400 px-2 py-1 rounded">
+                    #{est.codigo || '---'}
+                  </span>
+                </td>
                 <td className="p-4">
                   <div className="flex items-center gap-2">
                     <div>

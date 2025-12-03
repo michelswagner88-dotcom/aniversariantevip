@@ -138,6 +138,13 @@ export type Database = {
             foreignKeyName: "agenda_events_establishment_id_fkey"
             columns: ["establishment_id"]
             isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_events_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
             referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
@@ -153,6 +160,13 @@ export type Database = {
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_agenda_events_estabelecimento"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
             referencedColumns: ["id"]
           },
           {
@@ -299,6 +313,13 @@ export type Database = {
             foreignKeyName: "cupom_rate_limit_estabelecimento_id_fkey"
             columns: ["estabelecimento_id"]
             isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cupom_rate_limit_estabelecimento_id_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
             referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
@@ -314,6 +335,13 @@ export type Database = {
             columns: ["estabelecimento_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_cupom_rate_limit_estabelecimento"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
             referencedColumns: ["id"]
           },
           {
@@ -375,6 +403,13 @@ export type Database = {
             columns: ["estabelecimento_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_cupons_estabelecimento"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
             referencedColumns: ["id"]
           },
           {
@@ -510,6 +545,13 @@ export type Database = {
             foreignKeyName: "estabelecimento_analytics_estabelecimento_id_fkey"
             columns: ["estabelecimento_id"]
             isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estabelecimento_analytics_estabelecimento_id_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
             referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
@@ -518,6 +560,13 @@ export type Database = {
             columns: ["estabelecimento_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_estab_analytics_estabelecimento"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
             referencedColumns: ["id"]
           },
           {
@@ -701,6 +750,13 @@ export type Database = {
             foreignKeyName: "favoritos_estabelecimento_fkey"
             columns: ["estabelecimento_id"]
             isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favoritos_estabelecimento_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
             referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
@@ -709,6 +765,13 @@ export type Database = {
             columns: ["estabelecimento_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_favoritos_estabelecimento"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
             referencedColumns: ["id"]
           },
           {
@@ -772,6 +835,13 @@ export type Database = {
             foreignKeyName: "fk_flash_promos_estabelecimento"
             columns: ["estabelecimento_id"]
             isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_flash_promos_estabelecimento"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
             referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
@@ -780,6 +850,13 @@ export type Database = {
             columns: ["estabelecimento_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flash_promos_estabelecimento_id_fkey"
+            columns: ["estabelecimento_id"]
+            isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
             referencedColumns: ["id"]
           },
           {
@@ -822,6 +899,13 @@ export type Database = {
             foreignKeyName: "fk_followers_estabelecimento"
             columns: ["establishment_id"]
             isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_followers_estabelecimento"
+            columns: ["establishment_id"]
+            isOneToOne: false
             referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
@@ -830,6 +914,13 @@ export type Database = {
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "followers_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
             referencedColumns: ["id"]
           },
           {
@@ -875,6 +966,13 @@ export type Database = {
             foreignKeyName: "fk_navigation_logs_estabelecimento"
             columns: ["establishment_id"]
             isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_navigation_logs_estabelecimento"
+            columns: ["establishment_id"]
+            isOneToOne: false
             referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
@@ -883,6 +981,13 @@ export type Database = {
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "navigation_logs_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
             referencedColumns: ["id"]
           },
           {
@@ -1060,6 +1165,13 @@ export type Database = {
             foreignKeyName: "fk_posts_estabelecimento"
             columns: ["establishment_id"]
             isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_posts_estabelecimento"
+            columns: ["establishment_id"]
+            isOneToOne: false
             referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
@@ -1068,6 +1180,13 @@ export type Database = {
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
             referencedColumns: ["id"]
           },
           {
@@ -1182,6 +1301,13 @@ export type Database = {
             foreignKeyName: "fk_referrals_establishment"
             columns: ["establishment_id"]
             isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_referrals_establishment"
+            columns: ["establishment_id"]
+            isOneToOne: false
             referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
@@ -1190,6 +1316,13 @@ export type Database = {
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
             referencedColumns: ["id"]
           },
           {
@@ -1327,6 +1460,13 @@ export type Database = {
             foreignKeyName: "fk_stories_estabelecimento"
             columns: ["establishment_id"]
             isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_stories_estabelecimento"
+            columns: ["establishment_id"]
+            isOneToOne: false
             referencedRelation: "public_estabelecimentos"
             referencedColumns: ["id"]
           },
@@ -1335,6 +1475,13 @@ export type Database = {
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "estabelecimentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stories_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "mv_estabelecimentos_populares"
             referencedColumns: ["id"]
           },
           {
@@ -1390,6 +1537,37 @@ export type Database = {
           total_searches: number | null
           unique_users: number | null
           zero_results_count: number | null
+        }
+        Relationships: []
+      }
+      mv_contagem_cidades: {
+        Row: {
+          academias: number | null
+          bares: number | null
+          cidade: string | null
+          estado: string | null
+          restaurantes: number | null
+          saloes: number | null
+          total_estabelecimentos: number | null
+        }
+        Relationships: []
+      }
+      mv_estabelecimentos_populares: {
+        Row: {
+          bairro: string | null
+          categoria: string[] | null
+          cidade: string | null
+          created_at: string | null
+          descricao_beneficio: string | null
+          especialidades: string[] | null
+          estado: string | null
+          id: string | null
+          latitude: number | null
+          logo_url: string | null
+          longitude: number | null
+          nome_fantasia: string | null
+          slug: string | null
+          total_favoritos: number | null
         }
         Relationships: []
       }
@@ -1498,6 +1676,7 @@ export type Database = {
           remaining: number
         }[]
       }
+      cleanup_old_rate_limits: { Args: never; Returns: undefined }
       emit_coupon: {
         Args: { p_aniversariante_id: string; p_estabelecimento_id: string }
         Returns: {
@@ -1527,6 +1706,36 @@ export type Database = {
         Args: { p_cidade: string; p_estado: string }
         Returns: Json
       }
+      get_contagem_cidades: {
+        Args: never
+        Returns: {
+          academias: number
+          bares: number
+          cidade: string
+          estado: string
+          restaurantes: number
+          saloes: number
+          total_estabelecimentos: number
+        }[]
+      }
+      get_estabelecimentos_populares: {
+        Args: { p_cidade?: string; p_limit?: number }
+        Returns: {
+          bairro: string
+          categoria: string[]
+          cidade: string
+          descricao_beneficio: string
+          especialidades: string[]
+          estado: string
+          id: string
+          latitude: number
+          logo_url: string
+          longitude: number
+          nome_fantasia: string
+          slug: string
+          total_favoritos: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1535,6 +1744,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { check_user_id?: string }; Returns: boolean }
+      refresh_materialized_views: { Args: never; Returns: undefined }
       update_admin_last_access: {
         Args: { admin_user_id: string }
         Returns: undefined

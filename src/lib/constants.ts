@@ -9,13 +9,12 @@ export const CATEGORIAS_ESTABELECIMENTO = [
   { value: "Confeitaria", label: "Confeitaria", icon: "🧁" },
   { value: "Entretenimento", label: "Entretenimento", icon: "🎬" },
   { value: "Hospedagem", label: "Hospedagem", icon: "🏨" },
-  { value: "Loja de Presentes", label: "Loja de Presentes", icon: "🎁" },
-  { value: "Moda e Acessórios", label: "Moda e Acessórios", icon: "👗" },
+  { value: "Loja", label: "Loja", icon: "🛍️" },
   { value: "Restaurante", label: "Restaurante", icon: "🍽️" },
   { value: "Salão de Beleza", label: "Salão de Beleza", icon: "💅" },
   { value: "Saúde e Suplementos", label: "Saúde e Suplementos", icon: "💪" },
-  { value: "Outros Comércios", label: "Outros Comércios", icon: "🏪" },
   { value: "Serviços", label: "Serviços", icon: "🔧" },
+  { value: "Outros", label: "Outros", icon: "🏪" },
 ] as const;
 
 // Helper functions

@@ -62,7 +62,7 @@ export default function AdminImport() {
   const VALORES_PADRAO = {
     nome_fantasia: 'Estabelecimento sem nome',
     razao_social: 'Razão Social Pendente',
-    categoria: 'Outros Comércios',
+    categoria: 'Outros',
     especialidades: [],
     descricao_beneficio: 'Benefício especial para aniversariantes',
     regras_beneficio: 'Apresentar documento com foto',
@@ -174,7 +174,7 @@ export default function AdminImport() {
   };
 
   const mapCategory = (categoria: string): string => {
-    if (!categoria) return 'Outros Comércios';
+    if (!categoria) return 'Outros';
     
     const normalized = categoria.trim().toLowerCase();
     
@@ -186,7 +186,7 @@ export default function AdminImport() {
     
     if (found) return found.value;
     
-    // Mapeamento de aliases/sinônimos
+    // Mapeamento de aliases/sinônimos - ATUALIZADO para nova categoria "Loja"
     const aliases: Record<string, string> = {
       'restaurante': 'Restaurante',
       'restaurantes': 'Restaurante',
@@ -208,14 +208,19 @@ export default function AdminImport() {
       'hotel': 'Hospedagem',
       'pousada': 'Hospedagem',
       'hospedagem': 'Hospedagem',
-      'loja': 'Outros Comércios',
+      'loja': 'Loja',
+      'loja de presentes': 'Loja',
+      'presentes': 'Loja',
+      'moda e acessórios': 'Loja',
+      'moda e acessorios': 'Loja',
+      'roupa': 'Loja',
+      'roupas': 'Loja',
+      'moda': 'Loja',
+      'acessorios': 'Loja',
+      'acessórios': 'Loja',
       'cinema': 'Entretenimento',
       'teatro': 'Entretenimento',
       'parque': 'Entretenimento',
-      'presentes': 'Loja de Presentes',
-      'roupa': 'Moda e Acessórios',
-      'roupas': 'Moda e Acessórios',
-      'moda': 'Moda e Acessórios',
       'farmacia': 'Saúde e Suplementos',
       'farmácia': 'Saúde e Suplementos',
       'suplementos': 'Saúde e Suplementos',
@@ -225,9 +230,11 @@ export default function AdminImport() {
       'serviço': 'Serviços',
       'servicos': 'Serviços',
       'serviços': 'Serviços',
+      'outros comercios': 'Outros',
+      'outros comércios': 'Outros',
     };
     
-    return aliases[normalized] || 'Outros Comércios';
+    return aliases[normalized] || 'Outros';
   };
 
   const mapValidity = (validity: string): string => {

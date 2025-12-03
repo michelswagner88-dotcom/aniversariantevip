@@ -7,10 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, MapPin, Camera } from "lucide-react";
 import { processarImagemQuadrada, dataURLtoBlob } from "@/lib/imageUtils";
 import { CATEGORIAS_ESTABELECIMENTO, PERIODOS_VALIDADE } from "@/lib/constants";
+import { getSubcategoriesForCategory } from "@/constants/categorySubcategories";
 import { HorarioFuncionamentoEditor } from "./HorarioFuncionamentoEditor";
 import { Switch } from "@/components/ui/switch";
 
@@ -20,6 +22,7 @@ interface Establishment {
   razao_social: string;
   cnpj: string;
   categoria: string[] | null;
+  especialidades?: string[] | null;
   cep: string | null;
   numero: string | null;
   complemento: string | null;
@@ -202,6 +205,7 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
           razao_social: formData.razao_social,
           cnpj: formData.cnpj,
           categoria: formData.categoria,
+          especialidades: formData.especialidades || [],
           cep: formData.cep,
           numero: formData.numero,
           complemento: formData.complemento,
@@ -290,7 +294,10 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
               <Label>Categoria *</Label>
               <Select
                 value={formData.categoria?.[0] || ''}
-                onValueChange={(value) => setFormData({...formData, categoria: [value]})}
+                onValueChange={(value) => {
+                  // Limpar subcategorias ao mudar categoria
+                  setFormData({...formData, categoria: [value], especialidades: []});
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma categoria" />
@@ -307,6 +314,59 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
                 <p className="text-xs text-destructive mt-1">⚠️ Categoria vazia - corrija!</p>
               )}
             </div>
+
+            {/* Subcategorias */}
+            {formData.categoria?.[0] && getSubcategoriesForCategory(formData.categoria[0]).length > 0 && (
+              <div className="space-y-2">
+                <Label>Subcategorias (máximo 3)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Selecione até 3 subcategorias que melhor descrevem o estabelecimento
+                </p>
+                <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-3 bg-muted/30 rounded-lg border">
+                  {getSubcategoriesForCategory(formData.categoria[0]).map(subcategory => {
+                    const currentSubs = formData.especialidades || [];
+                    const isSelected = currentSubs.includes(subcategory);
+                    const isDisabled = currentSubs.length >= 3 && !isSelected;
+                    
+                    return (
+                      <Badge
+                        key={subcategory}
+                        variant={isSelected ? "default" : "outline"}
+                        className={`
+                          cursor-pointer transition-all
+                          ${isSelected 
+                            ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white border-transparent hover:from-violet-700 hover:to-fuchsia-700' 
+                            : 'hover:bg-violet-600/20 border-muted-foreground/30 hover:border-violet-500'
+                          }
+                          ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
+                        `}
+                        onClick={() => {
+                          if (isDisabled) return;
+                          const newSubs = isSelected 
+                            ? currentSubs.filter(s => s !== subcategory)
+                            : [...currentSubs, subcategory];
+                          setFormData({...formData, especialidades: newSubs});
+                        }}
+                      >
+                        {subcategory}
+                      </Badge>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {(formData.especialidades || []).length}/3 selecionadas
+                  {(formData.especialidades || []).length > 0 && (
+                    <button 
+                      type="button"
+                      onClick={() => setFormData({...formData, especialidades: []})}
+                      className="ml-2 text-violet-500 hover:text-violet-400"
+                    >
+                      (limpar)
+                    </button>
+                  )}
+                </p>
+              </div>
+            )}
           </TabsContent>
 
           {/* LOCALIZAÇÃO */}

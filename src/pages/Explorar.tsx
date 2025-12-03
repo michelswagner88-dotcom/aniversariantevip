@@ -19,6 +19,7 @@ import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { TiltCard } from '@/components/ui/tilt-card';
 import { EstabelecimentoCardSkeleton } from '@/components/skeletons/EstabelecimentoCardSkeleton';
+import { SubcategoryFilter } from '@/components/SubcategoryFilter';
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick }: any) => (
@@ -146,6 +147,7 @@ const Explorar = () => {
   const navigate = useNavigate();
   const [showFilters, setShowFilters] = useState(false);
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
   const [showCepInput, setShowCepInput] = useState(false);
   const [cepValue, setCepValue] = useState("");
   
@@ -277,18 +279,30 @@ const Explorar = () => {
   const filteredPlaces = allPlaces.filter(place => {
     if (activeCategories.length > 0 && !activeCategories.includes(place.category)) return false;
     if (filterDay !== 'any' && !place.validDays.includes(filterDay)) return false;
+    // Filtrar por subcategorias selecionadas
+    if (selectedSubcategories.length > 0) {
+      const placeSubcats = place.especialidades || [];
+      const hasMatch = selectedSubcategories.some(sub => placeSubcats.includes(sub));
+      if (!hasMatch) return false;
+    }
     return true;
   });
 
   const handleCategoryToggle = (category: string) => {
     if (category === "Todos") {
       setActiveCategories([]);
+      setSelectedSubcategories([]);
     } else {
-      setActiveCategories(prev => 
-        prev.includes(category) 
-          ? prev.filter(cat => cat !== category)
-          : [...prev, category]
-      );
+      const newCategories = activeCategories.includes(category) 
+        ? activeCategories.filter(cat => cat !== category)
+        : [...activeCategories, category];
+      
+      setActiveCategories(newCategories);
+      
+      // Limpar subcategorias ao mudar de categoria
+      if (newCategories.length !== 1) {
+        setSelectedSubcategories([]);
+      }
     }
   };
 
@@ -382,7 +396,7 @@ const Explorar = () => {
               <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none z-10"></div>
               <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none z-10"></div>
               
-              <div className="flex gap-3 pb-2">
+              <div className="flex gap-3 pb-2 px-8">
                 <CategoryPill icon="🚀" label="Todos" active={activeCategories.length === 0} onClick={() => handleCategoryToggle("Todos")} />
                 {CATEGORIAS_ESTABELECIMENTO.map((cat) => (
                   <CategoryPill 
@@ -396,6 +410,17 @@ const Explorar = () => {
               </div>
             </div>
           </div>
+
+          {/* Filtro de Subcategorias - aparece quando 1 categoria está selecionada */}
+          {activeCategories.length === 1 && (
+            <div className="mt-3">
+              <SubcategoryFilter
+                category={activeCategories[0]}
+                selectedSubcategories={selectedSubcategories}
+                onSubcategoriesChange={setSelectedSubcategories}
+              />
+            </div>
+          )}
         </div>
       </div>
 

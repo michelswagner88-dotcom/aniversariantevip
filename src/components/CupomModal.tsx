@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
-import { X, Download, Share2, Gift, Calendar, FileText, Wallet, AlertTriangle } from 'lucide-react';
+import { X, Download, Share2, Gift, Calendar, FileText, Wallet, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface CupomModalProps {
   isOpen: boolean;
@@ -11,9 +11,37 @@ interface CupomModalProps {
   estabelecimento: any;
 }
 
+// Função para formatar validade em texto amigável
+const formatValidity = (validity: string | null | undefined): string => {
+  if (!validity) return 'Válido no DIA do aniversário';
+  
+  const normalized = validity.toLowerCase().trim();
+  
+  const validityMap: Record<string, string> = {
+    'dia_aniversario': 'Válido no DIA do aniversário',
+    'dia': 'Válido no DIA do aniversário',
+    'semana_aniversario': 'Válido na SEMANA do aniversário',
+    'semana': 'Válido na SEMANA do aniversário',
+    'mes_aniversario': 'Válido no MÊS do aniversário',
+    'mes': 'Válido no MÊS do aniversário',
+    'mês': 'Válido no MÊS do aniversário',
+  };
+  
+  return validityMap[normalized] || 'Válido no DIA do aniversário';
+};
+
+// Regras gerais da plataforma (sempre as mesmas)
+const generalRules = [
+  'Obrigatório apresentação de documento com foto e data de nascimento',
+  'Cortesia válida quando há consumo no local',
+  'Sujeito à disponibilidade do estabelecimento',
+  'Informações podem sofrer alteração sem aviso prévio',
+];
+
 const CupomModal = ({ isOpen, onClose, estabelecimento }: CupomModalProps) => {
   const cupomRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
+  const [showRules, setShowRules] = useState(false);
 
   if (!isOpen) return null;
 
@@ -60,11 +88,6 @@ const CupomModal = ({ isOpen, onClose, estabelecimento }: CupomModalProps) => {
     }
   };
 
-  const handleWhatsAppShare = () => {
-    const text = `🎂 Meu benefício de aniversário no ${estabelecimento.nome_fantasia}!\n\n🎁 ${estabelecimento.descricao_beneficio}\n\n📍 ${estabelecimento.bairro}, ${estabelecimento.cidade}\n\nDescubra mais: ${window.location.href}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-  };
-
   const handleAddToWallet = () => {
     toast.info('Google Wallet em breve!');
   };
@@ -78,180 +101,184 @@ const CupomModal = ({ isOpen, onClose, estabelecimento }: CupomModalProps) => {
       />
       
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-gray-900 rounded-3xl overflow-hidden animate-in fade-in zoom-in duration-300">
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="relative w-full max-w-md bg-gray-900 rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+      >
         
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800">
-          <h2 className="text-lg font-semibold text-white">Seu Benefício</h2>
+        {/* Header Gradiente Premium */}
+        <div className="relative bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 px-6 py-8 text-center overflow-hidden">
+          <div className="absolute inset-0 bg-black/20" />
+          
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-800 rounded-full transition-colors"
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
           >
-            <X className="w-5 h-5 text-gray-400" />
+            <X className="w-5 h-5 text-white" />
+          </button>
+          
+          <div className="relative">
+            <span className="inline-block px-3 py-1 rounded-full bg-white/20 text-white text-xs font-medium mb-3 uppercase tracking-wider">
+              Benefício Exclusivo
+            </span>
+            
+            <h2 className="text-2xl font-bold text-white">
+              ANIVERSARIANTE VIP
+            </h2>
+          </div>
+        </div>
+
+        {/* Cupom Visual */}
+        <div className="p-6" ref={cupomRef}>
+          
+          {/* Logo + Nome do Estabelecimento */}
+          <div className="flex flex-col items-center mb-6 -mt-12">
+            <div className="w-20 h-20 rounded-2xl overflow-hidden border-4 border-gray-800 shadow-lg bg-gray-800">
+              {estabelecimento.logo_url || estabelecimento.galeria_fotos?.[0] ? (
+                <img 
+                  src={estabelecimento.logo_url || estabelecimento.galeria_fotos?.[0]} 
+                  alt={estabelecimento.nome_fantasia}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-white">
+                    {estabelecimento.nome_fantasia?.charAt(0) || '?'}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            <h3 className="text-xl font-bold text-white text-center mt-3">
+              {estabelecimento.nome_fantasia}
+            </h3>
+            
+            <p className="text-gray-400 text-sm mt-1">
+              📍 {estabelecimento.categoria?.[0] || 'Estabelecimento'}
+            </p>
+          </div>
+          
+          {/* ========== SEU BENEFÍCIO ========== */}
+          <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-5 mb-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-violet-500/20 shrink-0">
+                <Gift className="w-5 h-5 text-violet-400" />
+              </div>
+              <div>
+                <p className="text-xs text-violet-400 font-medium uppercase tracking-wider mb-2">
+                  Seu Benefício
+                </p>
+                <p className="text-white font-medium leading-relaxed">
+                  {estabelecimento.descricao_beneficio || 'Benefício especial de aniversário'}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {/* ========== VALIDADE - SEPARADO ========== */}
+          <div className="flex items-center gap-3 px-4 py-3 bg-gray-800/30 border border-gray-700/50 rounded-xl mb-4">
+            <Calendar className="w-5 h-5 text-pink-400" />
+            <span className="text-white font-medium">
+              {formatValidity(estabelecimento.periodo_validade_beneficio)}
+            </span>
+          </div>
+          
+          {/* ========== VER REGRAS (expansível) ========== */}
+          <button
+            onClick={() => setShowRules(!showRules)}
+            className="w-full flex items-center justify-center gap-2 text-gray-400 text-sm py-3 hover:text-gray-300 transition-colors"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Ver regras de utilização</span>
+            {showRules ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </button>
+          
+          {/* Regras expandidas */}
+          <AnimatePresence>
+            {showRules && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-4 mt-2">
+                  
+                  {/* CONDIÇÕES DO BENEFÍCIO (específicas do estabelecimento) */}
+                  {estabelecimento.regras_utilizacao && (
+                    <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4">
+                      <h4 className="text-sm font-bold text-violet-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                        <Gift className="w-4 h-4" />
+                        Condições do Benefício
+                      </h4>
+                      <p className="text-gray-300 text-sm leading-relaxed">
+                        {estabelecimento.regras_utilizacao}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* REGRAS GERAIS (sempre as mesmas) */}
+                  <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-4">
+                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" />
+                      Regras Gerais
+                    </h4>
+                    <ul className="space-y-2">
+                      {generalRules.map((rule, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm text-gray-400">
+                          <span className="text-violet-400 mt-0.5">•</span>
+                          <span>{rule}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          {/* URL */}
+          <p className="text-center text-gray-600 text-xs mt-6">
+            aniversariantevip.com.br
+          </p>
+        </div>
+
+        {/* Botões de Ação */}
+        <div className="grid grid-cols-3 border-t border-gray-800">
+          <button
+            onClick={handleShare}
+            className="flex flex-col items-center gap-1.5 py-4 text-gray-400 hover:text-violet-400 hover:bg-violet-500/10 transition-colors"
+          >
+            <Share2 className="w-5 h-5" />
+            <span className="text-xs">Compartilhar</span>
+          </button>
+          
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex flex-col items-center gap-1.5 py-4 text-gray-400 hover:text-violet-400 hover:bg-violet-500/10 transition-colors border-x border-gray-800 disabled:opacity-50"
+          >
+            <Download className="w-5 h-5" />
+            <span className="text-xs">{downloading ? 'Salvando...' : 'Salvar'}</span>
+          </button>
+          
+          <button
+            onClick={handleAddToWallet}
+            className="flex flex-col items-center gap-1.5 py-4 text-gray-400 hover:text-violet-400 hover:bg-violet-500/10 transition-colors"
+          >
+            <Wallet className="w-5 h-5" />
+            <span className="text-xs">Carteira</span>
           </button>
         </div>
 
-        {/* Cupom Visual Premium */}
-        <div className="p-4">
-          <div 
-            ref={cupomRef}
-            className="relative bg-slate-950 rounded-2xl overflow-hidden border border-white/10 shadow-[0_0_60px_-15px_rgba(139,92,246,0.6)]"
-          >
-            {/* Glow decorativo */}
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-              <div className="absolute bottom-0 right-0 w-60 h-60 bg-gradient-to-br from-fuchsia-500 to-pink-500 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
-            </div>
-
-            {/* Conteúdo do cupom */}
-            <div className="relative">
-              
-              {/* Header VIP Premium */}
-              <div className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 p-4 text-center relative overflow-hidden">
-                <div className="absolute inset-0 bg-black/20" />
-                <div className="relative">
-                  <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-1 mb-2">
-                    <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">
-                      Benefício Exclusivo
-                    </span>
-                  </div>
-                  <h3 className="text-white text-2xl font-bold tracking-tight">
-                    ANIVERSARIANTE VIP
-                  </h3>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-4">
-                {/* Estabelecimento */}
-                <div className="text-center pb-4 border-b border-white/10">
-                  {estabelecimento.logo_url && (
-                    <div className="w-20 h-20 mx-auto mb-3 rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg">
-                      <img 
-                        src={estabelecimento.logo_url} 
-                        alt={estabelecimento.nome_fantasia}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <h4 className="text-white text-xl font-bold mb-1">
-                    {estabelecimento.nome_fantasia}
-                  </h4>
-                  <p className="text-white/60 text-sm">
-                    📍 {estabelecimento.categoria?.[0]}
-                  </p>
-                </div>
-
-                {/* Benefício */}
-                <div className="bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20 backdrop-blur-sm rounded-xl p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
-                      <Gift className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-violet-300 text-xs uppercase tracking-wider mb-1 font-semibold">
-                        Seu Benefício
-                      </p>
-                      <p className="text-white font-medium text-base leading-relaxed">
-                        {estabelecimento.descricao_beneficio || 'Benefício especial de aniversário'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Validade */}
-                {estabelecimento.periodo_validade_beneficio && (
-                  <div className="flex items-center justify-center gap-2 text-white/80 text-sm bg-white/5 rounded-lg py-2.5 px-4 border border-white/10">
-                    <Calendar className="w-4 h-4 text-violet-400" />
-                    <span>Válido: {estabelecimento.periodo_validade_beneficio}</span>
-                  </div>
-                )}
-
-                {/* Regras Colapsáveis */}
-                <Collapsible>
-                  <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-center gap-2 text-white/60 hover:text-white/80 text-sm py-2 transition-colors">
-                      <FileText className="w-4 h-4" />
-                      <span>Ver regras de utilização</span>
-                      <span className="text-xs">▼</span>
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="mt-3 space-y-3">
-                      {/* Regras do Estabelecimento */}
-                      {estabelecimento.regras_utilizacao && (
-                        <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                          <p className="text-white/60 text-xs uppercase tracking-wider mb-2 font-semibold">
-                            Regras do Estabelecimento
-                          </p>
-                          <p className="text-white/80 text-sm leading-relaxed">
-                            {estabelecimento.regras_utilizacao}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {/* Regras Gerais */}
-                      <div className="bg-amber-500/5 rounded-xl p-4 border border-amber-500/20">
-                        <div className="flex items-start gap-3">
-                          <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                          <div className="flex-1">
-                            <p className="text-amber-300 text-xs uppercase tracking-wider mb-2 font-semibold">
-                              Regras Gerais
-                            </p>
-                            <ul className="text-white/70 text-xs space-y-1.5">
-                              <li>• Obrigatório apresentação de documento com foto.</li>
-                              <li>• Cortesia válida quando há consumo no local.</li>
-                              <li>• Informações podem sofrer alteração sem aviso prévio.</li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                {/* Rodapé */}
-                <div className="text-center pt-4 border-t border-white/10">
-                  <p className="text-white/30 text-[10px]">
-                    aniversariantevip.com.br
-                  </p>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-        {/* Ações Premium */}
-        <div className="p-4 border-t border-gray-800">
-          <div className="grid grid-cols-3 gap-3">
-            <Button
-              onClick={handleShare}
-              className="bg-gradient-to-br from-violet-600 to-violet-700 hover:from-violet-700 hover:to-violet-800 border-violet-500/30 flex flex-col items-center justify-center gap-1.5 h-auto py-3 shadow-lg hover:shadow-violet-500/25 transition-all"
-            >
-              <Share2 className="w-5 h-5" />
-              <span className="text-xs font-medium">Compartilhar</span>
-            </Button>
-            
-            <Button
-              onClick={handleDownload}
-              disabled={downloading}
-              className="bg-gradient-to-br from-fuchsia-600 to-fuchsia-700 hover:from-fuchsia-700 hover:to-fuchsia-800 border-fuchsia-500/30 flex flex-col items-center justify-center gap-1.5 h-auto py-3 shadow-lg hover:shadow-fuchsia-500/25 transition-all"
-            >
-              <Download className="w-5 h-5" />
-              <span className="text-xs font-medium">{downloading ? 'Salvando...' : 'Salvar'}</span>
-            </Button>
-
-            <Button
-              onClick={handleAddToWallet}
-              className="bg-gradient-to-br from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 border-pink-500/30 flex flex-col items-center justify-center gap-1.5 h-auto py-3 shadow-lg hover:shadow-pink-500/25 transition-all"
-            >
-              <Wallet className="w-5 h-5" />
-              <span className="text-xs font-medium">Carteira</span>
-            </Button>
-          </div>
-        </div>
-
-      </div>
+      </motion.div>
     </div>
   );
 };

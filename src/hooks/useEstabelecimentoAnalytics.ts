@@ -1,15 +1,37 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { startOfMonth, endOfMonth, format, parseISO } from 'date-fns';
+import { startOfMonth, endOfMonth, format, parseISO, subDays } from 'date-fns';
 
 export interface AnalyticsData {
+  // Métricas de cupons
   cuponsEmitidos: number;
-  visualizacoesPerfil: number;
   cuponsUsados: number;
   taxaConversao: number;
+  
+  // Métricas de engajamento
+  visualizacoesPerfil: number;
+  cliquesBeneficio: number;
+  cliquesWhatsApp: number;
+  cliquesTelefone: number;
+  cliquesNavegacao: number;
+  compartilhamentos: number;
+  favoritosAdicionados: number;
+  
+  // Taxas de conversão
+  taxaViewToBenefit: number;
+  taxaBenefitToWhatsApp: number;
+  
+  // Dados temporais
+  views7d: number;
+  views30d: number;
+  benefitClicks7d: number;
+  benefitClicks30d: number;
+  
+  // Dados para gráficos
   cupomsPorDia: { date: string; cupons: number }[];
   cupomsPorHorario: { hora: number; cupons: number }[];
   cupomsPorMes: { mes: string; cupons: number }[];
+  engajamentoPorDia: { date: string; views: number; clicks: number }[];
 }
 
 export const useEstabelecimentoAnalytics = (estabelecimentoId: string | undefined) => {
@@ -20,8 +42,10 @@ export const useEstabelecimentoAnalytics = (estabelecimentoId: string | undefine
 
       const startDate = startOfMonth(new Date());
       const endDate = endOfMonth(new Date());
+      const date7dAgo = subDays(new Date(), 7);
+      const date30dAgo = subDays(new Date(), 30);
 
-      // Buscar todos os eventos de analytics
+      // Buscar todos os eventos de analytics do mês
       const { data: analytics, error: analyticsError } = await supabase
         .from('estabelecimento_analytics')
         .select('*')
@@ -42,11 +66,56 @@ export const useEstabelecimentoAnalytics = (estabelecimentoId: string | undefine
 
       if (cuponsError) throw cuponsError;
 
-      // Calcular métricas
+      // Buscar eventos dos últimos 7 e 30 dias para comparação
+      const { data: analytics30d } = await supabase
+        .from('estabelecimento_analytics')
+        .select('tipo_evento, data_evento')
+        .eq('estabelecimento_id', estabelecimentoId)
+        .gte('data_evento', date30dAgo.toISOString());
+
+      // Calcular métricas de cupons
       const cuponsEmitidos = analytics?.filter(a => a.tipo_evento === 'cupom_emitido').length || 0;
-      const visualizacoesPerfil = analytics?.filter(a => a.tipo_evento === 'visualizacao_perfil').length || 0;
       const cuponsUsados = cupons?.filter(c => c.usado).length || 0;
       const taxaConversao = cuponsEmitidos > 0 ? (cuponsUsados / cuponsEmitidos) * 100 : 0;
+
+      // Calcular métricas de engajamento
+      const visualizacoesPerfil = analytics?.filter(a => 
+        a.tipo_evento === 'visualizacao_perfil' || a.tipo_evento === 'page_view'
+      ).length || 0;
+      
+      const cliquesBeneficio = analytics?.filter(a => a.tipo_evento === 'benefit_click').length || 0;
+      const cliquesWhatsApp = analytics?.filter(a => a.tipo_evento === 'whatsapp_click').length || 0;
+      const cliquesTelefone = analytics?.filter(a => a.tipo_evento === 'phone_click').length || 0;
+      const cliquesNavegacao = analytics?.filter(a => a.tipo_evento === 'directions_click').length || 0;
+      const compartilhamentos = analytics?.filter(a => a.tipo_evento === 'share').length || 0;
+      const favoritosAdicionados = analytics?.filter(a => a.tipo_evento === 'favorite_add').length || 0;
+
+      // Taxas de conversão do funil
+      const taxaViewToBenefit = visualizacoesPerfil > 0 
+        ? (cliquesBeneficio / visualizacoesPerfil) * 100 
+        : 0;
+      const taxaBenefitToWhatsApp = cliquesBeneficio > 0 
+        ? (cliquesWhatsApp / cliquesBeneficio) * 100 
+        : 0;
+
+      // Métricas temporais (7d e 30d)
+      const views7d = analytics30d?.filter(a => 
+        (a.tipo_evento === 'page_view' || a.tipo_evento === 'visualizacao_perfil') &&
+        new Date(a.data_evento) >= date7dAgo
+      ).length || 0;
+      
+      const views30d = analytics30d?.filter(a => 
+        a.tipo_evento === 'page_view' || a.tipo_evento === 'visualizacao_perfil'
+      ).length || 0;
+      
+      const benefitClicks7d = analytics30d?.filter(a => 
+        a.tipo_evento === 'benefit_click' &&
+        new Date(a.data_evento) >= date7dAgo
+      ).length || 0;
+      
+      const benefitClicks30d = analytics30d?.filter(a => 
+        a.tipo_evento === 'benefit_click'
+      ).length || 0;
 
       // Agrupar cupons por dia
       const cuponsMap = new Map<string, number>();
@@ -58,6 +127,27 @@ export const useEstabelecimentoAnalytics = (estabelecimentoId: string | undefine
       const cupomsPorDia = Array.from(cuponsMap.entries()).map(([date, cupons]) => ({
         date,
         cupons
+      }));
+
+      // Agrupar engajamento por dia
+      const engajamentoMap = new Map<string, { views: number; clicks: number }>();
+      analytics?.forEach(event => {
+        const date = format(parseISO(event.data_evento), 'dd/MM');
+        const current = engajamentoMap.get(date) || { views: 0, clicks: 0 };
+        
+        if (event.tipo_evento === 'page_view' || event.tipo_evento === 'visualizacao_perfil') {
+          current.views += 1;
+        }
+        if (event.tipo_evento === 'benefit_click') {
+          current.clicks += 1;
+        }
+        engajamentoMap.set(date, current);
+      });
+
+      const engajamentoPorDia = Array.from(engajamentoMap.entries()).map(([date, data]) => ({
+        date,
+        views: data.views,
+        clicks: data.clicks
       }));
 
       // Agrupar cupons por horário (0-23h)
@@ -100,16 +190,29 @@ export const useEstabelecimentoAnalytics = (estabelecimentoId: string | undefine
 
       return {
         cuponsEmitidos,
-        visualizacoesPerfil,
         cuponsUsados,
         taxaConversao,
+        visualizacoesPerfil,
+        cliquesBeneficio,
+        cliquesWhatsApp,
+        cliquesTelefone,
+        cliquesNavegacao,
+        compartilhamentos,
+        favoritosAdicionados,
+        taxaViewToBenefit,
+        taxaBenefitToWhatsApp,
+        views7d,
+        views30d,
+        benefitClicks7d,
+        benefitClicks30d,
         cupomsPorDia,
         cupomsPorHorario,
-        cupomsPorMes
+        cupomsPorMes,
+        engajamentoPorDia
       } as AnalyticsData;
     },
     enabled: !!estabelecimentoId,
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 };

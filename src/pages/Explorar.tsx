@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Search, SlidersHorizontal, Map as MapIconLucide, List, X, Check, Gift, Share2, Heart, CalendarDays, Navigation, Crosshair, Store } from 'lucide-react';
+import { MapPin, Search, SlidersHorizontal, Map as MapIconLucide, List, X, Check, Gift, Share2, Heart, CalendarDays, Navigation, Crosshair } from 'lucide-react';
 import { toast } from "sonner";
 import VoiceSearchBar from "@/components/VoiceSearchBar";
 import { SafeImage } from "@/components/SafeImage";
@@ -131,11 +131,13 @@ const PlaceCard = ({ place }: any) => {
             ))}
           </div>
         )}
-        <div className="mt-3 sm:mt-4 inline-flex items-center gap-2 sm:gap-2.5 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 shadow-2xl shadow-violet-500/30">
-          <Store size={18} className="text-white" />
-          <span className="text-base sm:text-lg font-extrabold text-white">
-            Ver Estabelecimento
-          </span>
+        <div className="mt-3 sm:mt-4 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-violet-600/90 via-fuchsia-500/90 to-pink-500/90 backdrop-blur-sm border border-white/10">
+          <div className="flex items-center gap-2">
+            <Gift size={16} className="text-white shrink-0" />
+            <span className="text-xs sm:text-sm font-bold text-white">
+              🎁 Tem benefício de aniversário!
+            </span>
+          </div>
         </div>
       </div>
       </div>

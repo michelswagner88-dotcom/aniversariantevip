@@ -537,7 +537,7 @@ export type Database = {
           categoria: string[] | null
           cep: string | null
           cidade: string | null
-          cnpj: string
+          cnpj: string | null
           codigo: string | null
           complemento: string | null
           created_at: string | null
@@ -560,7 +560,7 @@ export type Database = {
           numero: string | null
           periodo_validade_beneficio: string | null
           plan_status: string | null
-          razao_social: string
+          razao_social: string | null
           referred_by_user_id: string | null
           regras_utilizacao: string | null
           site: string | null
@@ -578,7 +578,7 @@ export type Database = {
           categoria?: string[] | null
           cep?: string | null
           cidade?: string | null
-          cnpj: string
+          cnpj?: string | null
           codigo?: string | null
           complemento?: string | null
           created_at?: string | null
@@ -601,7 +601,7 @@ export type Database = {
           numero?: string | null
           periodo_validade_beneficio?: string | null
           plan_status?: string | null
-          razao_social: string
+          razao_social?: string | null
           referred_by_user_id?: string | null
           regras_utilizacao?: string | null
           site?: string | null
@@ -619,7 +619,7 @@ export type Database = {
           categoria?: string[] | null
           cep?: string | null
           cidade?: string | null
-          cnpj?: string
+          cnpj?: string | null
           codigo?: string | null
           complemento?: string | null
           created_at?: string | null
@@ -642,7 +642,7 @@ export type Database = {
           numero?: string | null
           periodo_validade_beneficio?: string | null
           plan_status?: string | null
-          razao_social?: string
+          razao_social?: string | null
           referred_by_user_id?: string | null
           regras_utilizacao?: string | null
           site?: string | null

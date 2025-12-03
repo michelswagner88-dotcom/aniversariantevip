@@ -4,24 +4,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   ArrowLeft, MapPin, Phone, Globe, Instagram, Clock, 
   Share2, Heart, Gift, MessageCircle, ExternalLink,
-  Navigation, UtensilsCrossed, Copy, Send, Linkedin, Facebook
+  UtensilsCrossed, Copy, Send, Linkedin, Facebook,
+  Camera, X, ChevronLeft, ChevronRight, Check, Sparkles, ZoomIn, Store, ArrowRight, BadgeCheck, Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import CupomModal from '@/components/CupomModal';
 import LoginRequiredModal from '@/components/LoginRequiredModal';
 import { useFavoritos } from '@/hooks/useFavoritos';
-import { SafeImage } from '@/components/SafeImage';
-import GaleriaFotosViewer from '@/components/GaleriaFotosViewer';
 import { 
   Sheet, 
   SheetContent, 
   SheetHeader, 
   SheetTitle 
 } from '@/components/ui/sheet';
-import { RevealOnScroll } from '@/components/ui/reveal-on-scroll';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import Confetti from 'react-confetti';
+import { useWindowSize } from '@/hooks/useWindowSize';
 
 interface EstabelecimentoDetalheProps {
   estabelecimentoIdProp?: string | null;
@@ -36,18 +35,23 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   const [showCupomModal, setShowCupomModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
-  const [beneficioAberto, setBeneficioAberto] = useState(false);
+  const [showBenefitModal, setShowBenefitModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
+  
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  
+  const { width, height } = useWindowSize();
 
   // Hook de favoritos
   const { isFavorito, toggleFavorito } = useFavoritos(userId);
 
   // Parallax effect para o header
-  const { scrollYProgress } = useScroll();
-  
-  const headerY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-  const headerOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0.3]);
+  const { scrollY } = useScroll();
+  const headerY = useTransform(scrollY, [0, 500], [0, 150]);
+  const headerOpacity = useTransform(scrollY, [0, 300], [1, 0.3]);
 
   // Verificar autenticação
   useEffect(() => {
@@ -71,8 +75,6 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   ) => {
     try {
       setLoadingPhotos(true);
-
-      // Chamar edge function para buscar fotos (com cache automático)
       const { data, error } = await supabase.functions.invoke('fetch-google-photos', {
         body: { establishmentId, establishmentName, address }
       });
@@ -83,19 +85,11 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
       }
 
       if (data?.photos && data.photos.length > 0) {
-        // Atualizar o estado local com as fotos cacheadas
         setEstabelecimento((prev: any) => ({
           ...prev,
           galeria_fotos: data.photos
         }));
-        
-        if (data.cached) {
-          console.log('✅ Fotos carregadas do cache');
-        } else {
-          console.log(`📸 ${data.photos.length} fotos baixadas e salvas no cache`);
-        }
       }
-
     } catch (error) {
       console.error('Erro ao buscar fotos do Google Places:', error);
     } finally {
@@ -121,41 +115,15 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
         return;
       }
 
-      // Debug: verificar dados do endereço
-      console.log('📍 Endereço do estabelecimento:', {
-        logradouro: data.logradouro,
-        numero: data.numero,
-        complemento: data.complemento,
-        bairro: data.bairro,
-        cidade: data.cidade,
-        estado: data.estado,
-        cep: data.cep
-      });
-
       setEstabelecimento(data);
       setLoading(false);
 
-      // Buscar fotos do Google Places se não houver galeria (com cache automático)
       if (!data.galeria_fotos || data.galeria_fotos.length === 0) {
-        console.log('🔍 Galeria vazia, buscando fotos do Google Places...');
         const endereco = `${data.logradouro}, ${data.numero} - ${data.bairro}, ${data.cidade}, ${data.estado}`;
         await fetchGooglePlacesPhotos(data.id, data.nome_fantasia, endereco);
       }
       
-      // Meta tags para SEO
       document.title = `${data.nome_fantasia} - Aniversariante VIP`;
-      
-      const metaDescription = document.querySelector('meta[name="description"]');
-      if (metaDescription) {
-        metaDescription.setAttribute('content', 
-          `${data.descricao_beneficio || 'Benefício exclusivo de aniversário'} - ${data.bairro}, ${data.cidade}`
-        );
-      }
-      
-      const canonical = document.querySelector('link[rel="canonical"]');
-      if (canonical) {
-        canonical.setAttribute('href', window.location.href);
-      }
     };
     fetchEstabelecimento();
   }, [id, navigate]);
@@ -166,11 +134,12 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
       setShowLoginModal(true);
       return;
     }
-    setBeneficioAberto(true);
-    setTimeout(() => {
-      setShowCupomModal(true);
-      setBeneficioAberto(false);
-    }, 800);
+    setShowBenefitModal(true);
+  };
+
+  const handleEmitirCupom = () => {
+    setShowBenefitModal(false);
+    setShowCupomModal(true);
   };
 
   const handleFavorito = async () => {
@@ -186,20 +155,13 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
     await toggleFavorito(id);
   };
 
-  const handleShare = () => {
-    setShowShareSheet(true);
-  };
+  const handleShare = () => setShowShareSheet(true);
 
-  const getShareText = () => {
-    return `🎂 Confira ${estabelecimento.nome_fantasia} no Aniversariante VIP!\n\n📍 ${estabelecimento.bairro}, ${estabelecimento.cidade}`;
-  };
-
+  const getShareText = () => `🎂 Confira ${estabelecimento.nome_fantasia} no Aniversariante VIP!\n\n📍 ${estabelecimento.bairro}, ${estabelecimento.cidade}`;
   const getShareUrl = () => window.location.href;
 
   const handleShareWhatsApp = () => {
-    const text = getShareText();
-    const url = getShareUrl();
-    window.open(`https://wa.me/?text=${encodeURIComponent(text + '\n\n' + url)}`, '_blank');
+    window.open(`https://wa.me/?text=${encodeURIComponent(getShareText() + '\n\n' + getShareUrl())}`, '_blank');
     setShowShareSheet(false);
   };
 
@@ -210,28 +172,22 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   };
 
   const handleShareFacebook = () => {
-    const url = getShareUrl();
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getShareUrl())}`, '_blank');
     setShowShareSheet(false);
   };
 
   const handleShareX = () => {
-    const text = getShareText();
-    const url = getShareUrl();
-    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(getShareText())}&url=${encodeURIComponent(getShareUrl())}`, '_blank');
     setShowShareSheet(false);
   };
 
   const handleShareTelegram = () => {
-    const text = getShareText();
-    const url = getShareUrl();
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(getShareUrl())}&text=${encodeURIComponent(getShareText())}`, '_blank');
     setShowShareSheet(false);
   };
 
   const handleShareLinkedin = () => {
-    const url = getShareUrl();
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(getShareUrl())}`, '_blank');
     setShowShareSheet(false);
   };
 
@@ -258,37 +214,27 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   };
 
   const handleSite = () => {
-    if (!estabelecimento.site) { 
-      toast.error('Site não disponível'); 
-      return; 
-    }
+    if (!estabelecimento.site) { toast.error('Site não disponível'); return; }
     window.open(estabelecimento.site, '_blank');
   };
 
   const handleCardapio = () => {
-    if (!estabelecimento.link_cardapio) { 
-      toast.error('Cardápio não disponível'); 
-      return; 
-    }
+    if (!estabelecimento.link_cardapio) { toast.error('Cardápio não disponível'); return; }
     window.open(estabelecimento.link_cardapio, '_blank');
   };
 
-  // URLs de navegação
-  const getEnderecoCompleto = () => {
-    return `${estabelecimento.logradouro}, ${estabelecimento.numero} - ${estabelecimento.bairro}, ${estabelecimento.cidade}, ${estabelecimento.estado}`;
-  };
+  const getEnderecoCompleto = () => 
+    `${estabelecimento.logradouro}, ${estabelecimento.numero} - ${estabelecimento.bairro}, ${estabelecimento.cidade}, ${estabelecimento.estado}`;
 
   const handleGoogleMaps = () => {
-    const endereco = getEnderecoCompleto();
-    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`, '_blank');
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(getEnderecoCompleto())}`, '_blank');
   };
 
   const handleWaze = () => {
     if (estabelecimento.latitude && estabelecimento.longitude) {
       window.open(`https://waze.com/ul?ll=${estabelecimento.latitude},${estabelecimento.longitude}&navigate=yes`, '_blank');
     } else {
-      const endereco = getEnderecoCompleto();
-      window.open(`https://waze.com/ul?q=${encodeURIComponent(endereco)}`, '_blank');
+      window.open(`https://waze.com/ul?q=${encodeURIComponent(getEnderecoCompleto())}`, '_blank');
     }
   };
 
@@ -308,7 +254,6 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
     }
   };
 
-  // Ícone da categoria
   const getCategoriaIcon = (categoria: string) => {
     const icons: Record<string, string> = {
       'Restaurante': '🍽️', 'Bar': '🍺', 'Academia': '💪', 'Salão de Beleza': '💇',
@@ -320,7 +265,6 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
     return icons[categoria] || '📍';
   };
 
-  // Loading
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -333,368 +277,704 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
 
   const categoria = estabelecimento.categoria?.[0] || 'Estabelecimento';
   const mostraCardapio = ['Bar', 'Restaurante'].includes(categoria);
-  const gridCols = mostraCardapio ? 'grid-cols-5' : 'grid-cols-4';
-
-  // Determinar fotos a exibir
   const fotosParaExibir = estabelecimento?.galeria_fotos || [];
-  
-  // Usar logo_url como foto principal apenas se não houver galeria
-  const fotoPrincipal = fotosParaExibir.length > 0 ? null : estabelecimento.logo_url;
+  const fotoPrincipal = fotosParaExibir.length > 0 ? fotosParaExibir[0] : estabelecimento.logo_url;
   const temFotos = fotosParaExibir.length > 0 || estabelecimento.logo_url;
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-slate-950 pb-24 md:pb-8">
       
-      {/* ========== HEADER COM FOTO E PARALLAX ========== */}
-      <div className="relative">
+      {/* ========== HERO SECTION IMERSIVA ========== */}
+      <div className="relative h-[45vh] md:h-[55vh] w-full overflow-hidden">
+        <motion.img
+          src={fotoPrincipal || '/placeholder-estabelecimento.png'}
+          style={{ y: headerY }}
+          className="absolute inset-0 w-full h-full object-cover scale-110"
+          alt={estabelecimento.nome_fantasia}
+        />
+        
+        {/* Overlays gradiente premium */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/20 to-pink-900/20" />
+        
+        {/* Header com botões */}
         <motion.div 
-          className="h-64 md:h-80 relative overflow-hidden"
-          style={{ y: headerY, opacity: headerOpacity }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10"
         >
-          {fotosParaExibir[0] || estabelecimento.logo_url ? (
-            <img 
-              src={fotosParaExibir[0] || estabelecimento.logo_url} 
-              alt={estabelecimento.nome_fantasia}
-              className="w-full h-full object-cover scale-110"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 flex items-center justify-center">
-              <span className="text-7xl">{getCategoriaIcon(categoria)}</span>
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-        </motion.div>
-
-        {/* Botões topo */}
-        <div className="absolute top-4 left-4 right-4 flex justify-between z-20">
-          <Button
-            variant="ghost"
-            size="icon"
+          <motion.button 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate(-1)}
-            className="w-10 h-10 bg-black/50 backdrop-blur-md text-white hover:bg-black/70 rounded-full"
+            className="p-2.5 rounded-full bg-black/30 backdrop-blur-md border border-white/10"
           >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+            <ArrowLeft className="w-5 h-5 text-white" />
+          </motion.button>
           
           <div className="flex gap-2">
-            <Button
+            <motion.button 
               id="favorito-btn"
-              variant="ghost"
-              size="icon"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleFavorito}
-              className="w-10 h-10 bg-black/50 backdrop-blur-md text-white hover:bg-black/70 rounded-full"
+              className="p-2.5 rounded-full bg-black/30 backdrop-blur-md border border-white/10"
             >
-              <Heart className={`w-5 h-5 transition-colors ${id && isFavorito(id) ? 'fill-red-500 text-red-500' : ''}`} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
+              <Heart className={`w-5 h-5 transition-colors ${id && isFavorito(id) ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleShare}
-              className="w-10 h-10 bg-black/50 backdrop-blur-md text-white hover:bg-black/70 rounded-full"
+              className="p-2.5 rounded-full bg-black/30 backdrop-blur-md border border-white/10"
             >
-              <Share2 className="w-5 h-5" />
-            </Button>
+              <Share2 className="w-5 h-5 text-white" />
+            </motion.button>
+          </div>
+        </motion.div>
+        
+        {/* Conteúdo sobre a imagem */}
+        <motion.div 
+          style={{ opacity: headerOpacity }}
+          className="absolute bottom-0 left-0 right-0 p-5"
+        >
+          {/* Selos */}
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <span className="px-3 py-1 rounded-full bg-purple-600/90 backdrop-blur-sm text-xs font-semibold text-white flex items-center gap-1.5">
+              <span>{getCategoriaIcon(categoria)}</span>
+              {categoria}
+            </span>
+            
+            <span className="px-3 py-1 rounded-full bg-green-500/90 backdrop-blur-sm text-xs font-semibold text-white flex items-center gap-1.5">
+              <BadgeCheck className="w-3.5 h-3.5" />
+              Verificado
+            </span>
+          </div>
+          
+          {/* Nome */}
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-2xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg"
+          >
+            {estabelecimento.nome_fantasia || estabelecimento.razao_social}
+          </motion.h1>
+          
+          {/* Especialidades */}
+          {estabelecimento.especialidades?.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="flex flex-wrap gap-1.5 mb-3"
+            >
+              {estabelecimento.especialidades.slice(0, 3).map((spec: string, i: number) => (
+                <span 
+                  key={spec} 
+                  className="px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs text-white border border-white/20"
+                >
+                  {spec}
+                </span>
+              ))}
+            </motion.div>
+          )}
+          
+          {/* Localização */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="flex items-center gap-2 text-white/90 text-sm"
+          >
+            <MapPin className="w-4 h-4" />
+            <span>{estabelecimento.bairro} • {estabelecimento.cidade}/{estabelecimento.estado}</span>
+          </motion.div>
+        </motion.div>
+      </div>
+
+      {/* ========== AVATAR/LOGO FLUTUANTE ========== */}
+      <div className="relative z-20 px-4 -mt-10">
+        <div className="flex items-end gap-4">
+          <motion.div 
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200, delay: 0.3 }}
+            className="relative"
+          >
+            <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-900 border-4 border-slate-900 shadow-2xl overflow-hidden">
+              {estabelecimento.logo_url ? (
+                <img src={estabelecimento.logo_url} alt="Logo" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+                  <span className="text-2xl md:text-3xl font-bold text-white">
+                    {estabelecimento.nome_fantasia?.charAt(0)}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-500 border-2 border-slate-900 flex items-center justify-center">
+              <Check className="w-3 h-3 text-white" />
+            </div>
+          </motion.div>
+          
+          <div className="flex-1 pb-2">
+            <p className="text-gray-400 text-xs">Parceiro Aniversariante VIP</p>
+            <div className="flex items-center gap-3 mt-1">
+              <div className="flex items-center gap-1 text-yellow-400">
+                <Star className="w-4 h-4 fill-current" />
+                <span className="text-sm font-medium text-white">4.8</span>
+              </div>
+              <span className="text-gray-600">•</span>
+              <span className="text-gray-400 text-sm">Benefício exclusivo</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ========== CONTEÚDO ========== */}
-      <div className="px-4 -mt-16 relative z-10">
-        <div className="max-w-2xl mx-auto space-y-4">
+      {/* ========== GOLDEN TICKET - CARD DO BENEFÍCIO ========== */}
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, type: "spring" }}
+        className="mx-4 mt-6"
+      >
+        <motion.button
+          onClick={handleVerBeneficio}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="relative w-full overflow-hidden rounded-2xl"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900" />
+          <div className="absolute inset-0 rounded-2xl border border-purple-500/30" />
+          <div className="absolute inset-0 shimmer-premium" />
           
-          {/* ========== CARD PRINCIPAL ========== */}
-          <RevealOnScroll delay={0.1}>
-            <div className="bg-gray-900/90 backdrop-blur-lg border border-white/10 rounded-2xl p-5">
-            
-            {/* Categoria */}
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xl">{getCategoriaIcon(categoria)}</span>
-              <span className="text-violet-400 text-sm font-medium">{categoria}</span>
-            </div>
-
-            {/* Nome */}
-            <h1 className="text-2xl font-bold text-white mb-1">
-              {estabelecimento.nome_fantasia || estabelecimento.razao_social}
-            </h1>
-
-            {/* Especialidades */}
-            {estabelecimento.especialidades && estabelecimento.especialidades.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3">
-                {estabelecimento.especialidades.map((esp: string, index: number) => (
-                  <span 
-                    key={index}
-                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-violet-500/20 text-violet-300 rounded-full border border-violet-400/30"
-                  >
-                    {esp}
-                  </span>
-                ))}
+          <div className="relative p-5 md:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                  <Gift className="w-5 h-5 text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="text-purple-300 text-xs font-medium uppercase tracking-wider">
+                    Benefício Exclusivo
+                  </p>
+                  <p className="text-white font-bold">Aniversariante VIP</p>
+                </div>
               </div>
-            )}
-
-            {/* Endereço curto */}
-            <p className="text-gray-400 text-sm mb-5">
-              {estabelecimento.bairro} • {estabelecimento.cidade}/{estabelecimento.estado}
-            </p>
-
-            {/* ========== BOTÕES DE AÇÃO ========== */}
-            <div className={`grid ${gridCols} gap-2`}>
-              
-              {/* WhatsApp */}
-              <button
-                onClick={handleWhatsApp}
-                disabled={!estabelecimento.whatsapp && !estabelecimento.telefone}
-                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-green-500/20 transition-all group disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <div className="w-9 h-9 bg-green-500/20 rounded-full flex items-center justify-center group-hover:bg-green-500/30">
-                  <MessageCircle className="w-4 h-4 text-green-400" />
-                </div>
-                <span className="text-[10px] text-gray-400 group-hover:text-green-400">WhatsApp</span>
-              </button>
-
-              {/* Instagram */}
-              <button
-                onClick={handleInstagram}
-                disabled={!estabelecimento.instagram}
-                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-pink-500/20 transition-all group disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <div className="w-9 h-9 bg-pink-500/20 rounded-full flex items-center justify-center group-hover:bg-pink-500/30">
-                  <Instagram className="w-4 h-4 text-pink-400" />
-                </div>
-                <span className="text-[10px] text-gray-400 group-hover:text-pink-400">Instagram</span>
-              </button>
-
-              {/* Ligar */}
-              <button
-                onClick={handleLigar}
-                disabled={!estabelecimento.telefone}
-                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-blue-500/20 transition-all group disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <div className="w-9 h-9 bg-blue-500/20 rounded-full flex items-center justify-center group-hover:bg-blue-500/30">
-                  <Phone className="w-4 h-4 text-blue-400" />
-                </div>
-                <span className="text-[10px] text-gray-400 group-hover:text-blue-400">Ligar</span>
-              </button>
-
-              {/* Cardápio */}
-              {mostraCardapio && (
-                <button
-                  onClick={handleCardapio}
-                  disabled={!estabelecimento.link_cardapio}
-                  className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-orange-500/20 transition-all group disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <div className="w-9 h-9 bg-orange-500/20 rounded-full flex items-center justify-center group-hover:bg-orange-500/30">
-                    <UtensilsCrossed className="w-4 h-4 text-orange-400" />
-                  </div>
-                  <span className="text-[10px] text-gray-400 group-hover:text-orange-400">Cardápio</span>
-                </button>
-              )}
-
-              {/* Site */}
-              <button
-                onClick={handleSite}
-                disabled={!estabelecimento.site}
-                className="flex flex-col items-center gap-1 p-2 bg-gray-800/80 rounded-xl hover:bg-violet-500/20 transition-all group disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <div className="w-9 h-9 bg-violet-500/20 rounded-full flex items-center justify-center group-hover:bg-violet-500/30">
-                  <Globe className="w-4 h-4 text-violet-400" />
-                </div>
-                <span className="text-[10px] text-gray-400 group-hover:text-violet-400">Site</span>
-              </button>
-
+              <Sparkles className="w-6 h-6 text-purple-400" />
             </div>
-
-            {/* ========== BOTÃO VER BENEFÍCIO - Premium com animação ========== */}
-            <div className="mt-6 flex justify-center">
-              <ShimmerButton
-                onClick={(e) => {
-                  // Vibração háptica no mobile
-                  if (navigator.vibrate) {
-                    // Padrão: vibra 50ms, pausa 50ms, vibra 100ms (simula abertura do presente)
-                    navigator.vibrate([50, 50, 100]);
-                  }
-                  
-                  // Adiciona animação ao ícone antes de executar a ação
-                  const icon = e.currentTarget.querySelector('.gift-icon');
-                  if (icon) {
-                    icon.classList.add('animate-gift-open');
-                    setTimeout(() => icon.classList.remove('animate-gift-open'), 600);
-                  }
-                  // Pequeno delay para a animação completar antes de abrir modal
-                  setTimeout(handleVerBeneficio, 300);
-                }}
-                className="px-8 py-3 text-base font-semibold rounded-2xl shadow-xl shadow-violet-500/25 hover:shadow-violet-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-                background="linear-gradient(135deg, #7c3aed 0%, #c026d3 50%, #db2777 100%)"
+            
+            <div className="border-t border-dashed border-purple-500/30 my-4 relative">
+              <div className="absolute -left-7 -top-3 w-6 h-6 rounded-full bg-slate-950" />
+              <div className="absolute -right-7 -top-3 w-6 h-6 rounded-full bg-slate-950" />
+            </div>
+            
+            <div className="text-center py-2">
+              <p className="text-lg md:text-xl text-white font-medium leading-relaxed">
+                🎁 Toque para revelar seu benefício
+              </p>
+              <p className="text-purple-300/70 text-sm mt-2">
+                Exclusivo para aniversariantes
+              </p>
+            </div>
+            
+            <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-purple-500/20">
+              <motion.div
+                animate={{ x: [0, 5, 0] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
               >
-                <Gift className="gift-icon w-5 h-5 mr-2.5" />
-                Ver Benefício
-              </ShimmerButton>
+                <ChevronRight className="w-5 h-5 text-purple-400" />
+              </motion.div>
+              <span className="text-purple-400 text-sm font-medium">
+                Toque para ver
+              </span>
             </div>
           </div>
-          </RevealOnScroll>
+        </motion.button>
+      </motion.div>
 
-          {/* ========== GALERIA DE FOTOS ========== */}
-          {temFotos && (
-            <RevealOnScroll delay={0.3}>
-            <div className="bg-gray-900/90 backdrop-blur-lg border border-white/10 rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-white font-semibold flex items-center gap-2">
-                  📸 Fotos
-                </h3>
-                {loadingPhotos && (
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <div className="w-3 h-3 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-                    <span>Carregando fotos...</span>
+      {/* ========== SEÇÃO DE AÇÕES RÁPIDAS ========== */}
+      <motion.section 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="mx-4 mt-6"
+      >
+        <div className={`grid ${mostraCardapio ? 'grid-cols-5' : 'grid-cols-4'} gap-2`}>
+          {/* WhatsApp */}
+          <motion.button
+            onClick={handleWhatsApp}
+            disabled={!estabelecimento.whatsapp && !estabelecimento.telefone}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-green-500/20 to-green-600/20 border-green-500/30 text-green-400 hover:bg-green-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <MessageCircle className="w-5 h-5" />
+            <span className="text-[10px] font-medium text-gray-300">WhatsApp</span>
+          </motion.button>
+
+          {/* Instagram */}
+          <motion.button
+            onClick={handleInstagram}
+            disabled={!estabelecimento.instagram}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-pink-500/20 to-pink-600/20 border-pink-500/30 text-pink-400 hover:bg-pink-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Instagram className="w-5 h-5" />
+            <span className="text-[10px] font-medium text-gray-300">Instagram</span>
+          </motion.button>
+
+          {/* Ligar */}
+          <motion.button
+            onClick={handleLigar}
+            disabled={!estabelecimento.telefone}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-blue-500/20 to-blue-600/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Phone className="w-5 h-5" />
+            <span className="text-[10px] font-medium text-gray-300">Ligar</span>
+          </motion.button>
+
+          {/* Cardápio */}
+          {mostraCardapio && (
+            <motion.button
+              onClick={handleCardapio}
+              disabled={!estabelecimento.link_cardapio}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-orange-500/20 to-orange-600/20 border-orange-500/30 text-orange-400 hover:bg-orange-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <UtensilsCrossed className="w-5 h-5" />
+              <span className="text-[10px] font-medium text-gray-300">Cardápio</span>
+            </motion.button>
+          )}
+
+          {/* Site */}
+          <motion.button
+            onClick={handleSite}
+            disabled={!estabelecimento.site}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-purple-500/20 to-purple-600/20 border-purple-500/30 text-purple-400 hover:bg-purple-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Globe className="w-5 h-5" />
+            <span className="text-[10px] font-medium text-gray-300">Site</span>
+          </motion.button>
+        </div>
+      </motion.section>
+
+      {/* ========== GALERIA DE FOTOS PREMIUM ========== */}
+      {temFotos && fotosParaExibir.length > 0 && (
+        <motion.section 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7 }}
+          className="mx-4 mt-6"
+        >
+          <h3 className="text-base font-bold text-white mb-3 flex items-center gap-2">
+            <Camera className="w-4 h-4 text-purple-400" />
+            Fotos
+            <span className="text-gray-500 text-sm font-normal">({fotosParaExibir.length})</span>
+            {loadingPhotos && (
+              <div className="ml-2 w-3 h-3 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+            )}
+          </h3>
+          
+          <div className="grid grid-cols-4 gap-2">
+            {fotosParaExibir.slice(0, 4).map((photo: string, index: number) => (
+              <motion.button
+                key={index}
+                onClick={() => { setCurrentPhotoIndex(index); setLightboxOpen(true); }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="relative aspect-square rounded-xl overflow-hidden group"
+              >
+                <img 
+                  src={photo} 
+                  alt={`Foto ${index + 1}`}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
+                  <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                
+                {index === 3 && fotosParaExibir.length > 4 && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <span className="text-white font-bold">+{fotosParaExibir.length - 4}</span>
                   </div>
                 )}
+              </motion.button>
+            ))}
+          </div>
+        </motion.section>
+      )}
+
+      {/* ========== HORÁRIO DE FUNCIONAMENTO PREMIUM ========== */}
+      {estabelecimento.horario_funcionamento && (
+        <motion.section 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="mx-4 mt-6"
+        >
+          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-purple-500/20 border border-purple-500/30">
+                <Clock className="w-5 h-5 text-purple-400" />
               </div>
-              <GaleriaFotosViewer 
-                fotoPrincipal={fotoPrincipal}
-                galeriaFotos={fotosParaExibir}
-              />
-            </div>
-            </RevealOnScroll>
-          )}
-
-          {/* ========== HORÁRIO DE FUNCIONAMENTO ========== */}
-          {estabelecimento.horario_funcionamento && (
-            <RevealOnScroll delay={0.4}>
-            <div className="bg-gray-900/90 backdrop-blur-lg border border-white/10 rounded-2xl p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-amber-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">Horário de Funcionamento</p>
-                  <p className="text-white text-sm">{estabelecimento.horario_funcionamento}</p>
-                </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-white">Horário de Funcionamento</h4>
+                <p className="text-gray-400 text-sm mt-1">{estabelecimento.horario_funcionamento}</p>
               </div>
-            </div>
-            </RevealOnScroll>
-          )}
-
-          {/* ========== COMO CHEGAR ========== */}
-          <RevealOnScroll delay={0.5}>
-          <div className="bg-gray-900/90 backdrop-blur-lg border border-white/10 rounded-2xl p-4">
-            
-            <div className="flex items-center gap-2 mb-4">
-              <MapPin className="w-5 h-5 text-violet-400" />
-              <h2 className="text-white font-semibold">Como Chegar</h2>
-            </div>
-
-            {/* Endereço completo */}
-            <p className="text-gray-400 text-sm mb-4">
-              {estabelecimento.logradouro && `${estabelecimento.logradouro}, `}
-              {estabelecimento.numero}
-              {estabelecimento.complemento && ` - ${estabelecimento.complemento}`}
-              <br />
-              {estabelecimento.bairro} - {estabelecimento.cidade}/{estabelecimento.estado}
-              {estabelecimento.cep && ` • CEP: ${estabelecimento.cep}`}
-            </p>
-
-            {/* Mini mapa decorativo clicável - sempre visível */}
-            <div 
-              onClick={handleGoogleMaps}
-              className="h-32 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl overflow-hidden mb-4 cursor-pointer relative group border border-white/10"
-            >
-              {/* Fundo decorativo tipo mapa */}
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute inset-0" style={{
-                  backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(139,92,246,0.1) 10px, rgba(139,92,246,0.1) 11px),
-                                    repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(139,92,246,0.1) 10px, rgba(139,92,246,0.1) 11px)`
-                }} />
-              </div>
-              
-              {/* Pin central */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-12 h-12 bg-violet-500 rounded-full flex items-center justify-center shadow-lg shadow-violet-500/50 animate-pulse">
-                  <MapPin className="w-6 h-6 text-white" />
-                </div>
-              </div>
-              
-              {/* Overlay hover */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium flex items-center gap-2 transition-opacity">
-                  <ExternalLink className="w-4 h-4" />
-                  Abrir no Google Maps
-                </span>
-              </div>
-            </div>
-
-            {/* Botões de navegação */}
-            <div className="grid grid-cols-4 gap-2 mb-24">
-              
-              {/* Google Maps */}
-              <button
-                onClick={handleGoogleMaps}
-                className="flex flex-col items-center gap-1.5 p-3 bg-gray-800/80 rounded-xl hover:bg-gray-700 transition-all"
-              >
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                  <img 
-                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Google_Maps_icon_%282020%29.svg/1024px-Google_Maps_icon_%282020%29.svg.png" 
-                    alt="Google Maps"
-                    className="w-6 h-6"
-                  />
-                </div>
-                <span className="text-[10px] text-gray-400">Maps</span>
-              </button>
-
-              {/* Waze */}
-              <button
-                onClick={handleWaze}
-                className="flex flex-col items-center gap-1.5 p-3 bg-gray-800/80 rounded-xl hover:bg-gray-700 transition-all"
-              >
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                  <svg className="w-7 h-7" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    {/* Waze ghost body - iconic shape */}
-                    <path d="M256 64C167.634 64 96 135.634 96 224C96 268.418 112.946 308.758 140.8 338.4C140.8 338.4 148.8 346.4 148.8 362.4C148.8 378.4 140.8 386.4 140.8 386.4L140.8 416C140.8 433.673 155.127 448 172.8 448H339.2C356.873 448 371.2 433.673 371.2 416V386.4C371.2 386.4 363.2 378.4 363.2 362.4C363.2 346.4 371.2 338.4 371.2 338.4C399.054 308.758 416 268.418 416 224C416 135.634 344.366 64 256 64Z" fill="#33D6ED"/>
-                    
-                    {/* Left eye */}
-                    <circle cx="208" cy="224" r="28" fill="white"/>
-                    <circle cx="208" cy="224" r="14" fill="#1A1A1A"/>
-                    
-                    {/* Right eye */}
-                    <circle cx="304" cy="224" r="28" fill="white"/>
-                    <circle cx="304" cy="224" r="14" fill="#1A1A1A"/>
-                    
-                    {/* Smile */}
-                    <path d="M196 288C196 288 216 312 256 312C296 312 316 288 316 288" stroke="white" strokeWidth="16" strokeLinecap="round"/>
-                    
-                    {/* Bottom wave details (iconic Waze ghost) */}
-                    <path d="M140.8 416C140.8 416 156.8 432 172.8 432C188.8 432 204.8 416 220.8 416C236.8 416 252.8 432 268.8 432C284.8 432 300.8 416 316.8 416C332.8 416 348.8 432 364.8 432C380.8 432 396.8 416 396.8 416" stroke="#1FB6CC" strokeWidth="12" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                <span className="text-[10px] text-gray-400">Waze</span>
-              </button>
-
-              {/* Uber */}
-              <button
-                onClick={handleUber}
-                className="flex flex-col items-center gap-1.5 p-3 bg-gray-800/80 rounded-xl hover:bg-gray-700 transition-all"
-              >
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-black">
-                  <span className="text-white text-xs font-bold">Uber</span>
-                </div>
-                <span className="text-[10px] text-gray-400">Uber</span>
-              </button>
-
-              {/* 99 */}
-              <button
-                onClick={handle99}
-                className="flex flex-col items-center gap-1.5 p-3 bg-gray-800/80 rounded-xl hover:bg-gray-700 transition-all"
-              >
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-yellow-400">
-                  <span className="text-black text-xs font-bold">99</span>
-                </div>
-                <span className="text-[10px] text-gray-400">99</span>
-              </button>
-
             </div>
           </div>
-          </RevealOnScroll>
+        </motion.section>
+      )}
 
+      {/* ========== SEÇÃO LOCALIZAÇÃO PREMIUM ========== */}
+      <motion.section 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.9 }}
+        className="mx-4 mt-6"
+      >
+        <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 overflow-hidden">
+          <div className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="p-3 rounded-xl bg-pink-500/20 border border-pink-500/30">
+                <MapPin className="w-5 h-5 text-pink-400" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-white">Como Chegar</h4>
+                <p className="text-gray-400 text-sm mt-1">
+                  {estabelecimento.logradouro}, {estabelecimento.numero}
+                  {estabelecimento.complemento && ` - ${estabelecimento.complemento}`}
+                </p>
+                <p className="text-gray-500 text-xs mt-0.5">
+                  {estabelecimento.bairro} • CEP: {estabelecimento.cep}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Mini mapa decorativo */}
+          <div 
+            onClick={handleGoogleMaps}
+            className="h-32 bg-gradient-to-br from-slate-800 to-slate-900 relative cursor-pointer group"
+          >
+            <div className="absolute inset-0 opacity-20" style={{
+              backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(139,92,246,0.1) 10px, rgba(139,92,246,0.1) 11px),
+                                repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(139,92,246,0.1) 10px, rgba(139,92,246,0.1) 11px)`
+            }} />
+            
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-12 h-12 bg-violet-500 rounded-full flex items-center justify-center shadow-lg shadow-violet-500/50 animate-pulse">
+                <MapPin className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+              <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium flex items-center gap-2 transition-opacity">
+                <ExternalLink className="w-4 h-4" />
+                Abrir no Google Maps
+              </span>
+            </div>
+          </div>
+          
+          {/* Botões de navegação */}
+          <div className="grid grid-cols-4 divide-x divide-slate-700/50">
+            <motion.button
+              onClick={handleGoogleMaps}
+              whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
+              whileTap={{ scale: 0.95 }}
+              className="py-3 flex flex-col items-center gap-1.5 transition-colors"
+            >
+              <img 
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Google_Maps_icon_%282020%29.svg/1024px-Google_Maps_icon_%282020%29.svg.png" 
+                alt="Google Maps"
+                className="w-6 h-6"
+              />
+              <span className="text-xs text-gray-400">Maps</span>
+            </motion.button>
 
+            <motion.button
+              onClick={handleWaze}
+              whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
+              whileTap={{ scale: 0.95 }}
+              className="py-3 flex flex-col items-center gap-1.5 transition-colors"
+            >
+              <div className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center">
+                <span className="text-white text-[8px] font-bold">W</span>
+              </div>
+              <span className="text-xs text-gray-400">Waze</span>
+            </motion.button>
+
+            <motion.button
+              onClick={handleUber}
+              whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
+              whileTap={{ scale: 0.95 }}
+              className="py-3 flex flex-col items-center gap-1.5 transition-colors"
+            >
+              <div className="w-6 h-6 bg-black rounded flex items-center justify-center">
+                <span className="text-white text-[8px] font-bold">Uber</span>
+              </div>
+              <span className="text-xs text-gray-400">Uber</span>
+            </motion.button>
+
+            <motion.button
+              onClick={handle99}
+              whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
+              whileTap={{ scale: 0.95 }}
+              className="py-3 flex flex-col items-center gap-1.5 transition-colors"
+            >
+              <div className="w-6 h-6 bg-yellow-400 rounded flex items-center justify-center">
+                <span className="text-black text-[10px] font-bold">99</span>
+              </div>
+              <span className="text-xs text-gray-400">99</span>
+            </motion.button>
+          </div>
         </div>
-      </div>
+      </motion.section>
+
+      {/* ========== CTA PARA ESTABELECIMENTOS ========== */}
+      <motion.section 
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="mx-4 mt-10 mb-8"
+      >
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/80 via-pink-900/60 to-purple-900/80 p-6 text-center">
+          <div className="absolute top-0 left-1/4 w-32 h-32 bg-purple-500/30 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-pink-500/30 rounded-full blur-3xl" />
+          
+          <div className="relative">
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ repeat: Infinity, duration: 3 }}
+            >
+              <Store className="w-12 h-12 text-purple-300 mx-auto mb-4" />
+            </motion.div>
+            
+            <h3 className="text-xl font-bold text-white mb-2">
+              Quer sua página assim?
+            </h3>
+            <p className="text-purple-200 text-sm mb-5 max-w-xs mx-auto">
+              Cadastre seu estabelecimento e atraia aniversariantes todos os meses!
+            </p>
+            
+            <motion.button 
+              onClick={() => navigate('/seja-parceiro')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-purple-900 font-bold text-sm shadow-lg shadow-purple-500/25"
+            >
+              Cadastrar meu negócio
+              <ArrowRight className="w-4 h-4" />
+            </motion.button>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* ========== BOTÃO FLUTUANTE MOBILE ========== */}
+      <motion.div 
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.8, type: "spring" }}
+        className="fixed bottom-0 left-0 right-0 z-40 p-4 md:hidden"
+      >
+        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-xl border-t border-slate-800" />
+        
+        <motion.button
+          onClick={handleVerBeneficio}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="relative w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-[length:200%_200%] animate-gradient-x text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30"
+        >
+          <Gift className="w-5 h-5" />
+          Ver Benefício de Aniversário
+          <Sparkles className="w-4 h-4" />
+        </motion.button>
+      </motion.div>
+
+      {/* ========== LIGHTBOX MODAL ========== */}
+      <AnimatePresence>
+        {lightboxOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <motion.button 
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute top-4 right-4 p-3 rounded-full bg-white/10 backdrop-blur-sm z-10"
+              onClick={() => setLightboxOpen(false)}
+            >
+              <X className="w-6 h-6 text-white" />
+            </motion.button>
+            
+            {fotosParaExibir.length > 1 && (
+              <>
+                <motion.button 
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="absolute left-4 p-3 rounded-full bg-white/10 backdrop-blur-sm"
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    setCurrentPhotoIndex(prev => prev === 0 ? fotosParaExibir.length - 1 : prev - 1);
+                  }}
+                >
+                  <ChevronLeft className="w-6 h-6 text-white" />
+                </motion.button>
+                <motion.button 
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="absolute right-4 p-3 rounded-full bg-white/10 backdrop-blur-sm"
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    setCurrentPhotoIndex(prev => prev === fotosParaExibir.length - 1 ? 0 : prev + 1);
+                  }}
+                >
+                  <ChevronRight className="w-6 h-6 text-white" />
+                </motion.button>
+              </>
+            )}
+            
+            <motion.img 
+              key={currentPhotoIndex}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              src={fotosParaExibir[currentPhotoIndex]} 
+              className="max-w-[90vw] max-h-[80vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+            
+            <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2">
+              {fotosParaExibir.map((_: string, index: number) => (
+                <button
+                  key={index}
+                  onClick={(e) => { e.stopPropagation(); setCurrentPhotoIndex(index); }}
+                  className={`h-2 rounded-full transition-all ${
+                    index === currentPhotoIndex ? 'bg-white w-6' : 'bg-white/40 w-2'
+                  }`}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ========== MODAL DE BENEFÍCIO REVELADO ========== */}
+      <AnimatePresence>
+        {showBenefitModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              onClick={() => setShowBenefitModal(false)}
+            />
+            
+            <Confetti
+              width={width}
+              height={height}
+              recycle={false}
+              numberOfPieces={200}
+              gravity={0.3}
+              colors={['#8B5CF6', '#D946EF', '#F472B6', '#FFD700', '#FFF']}
+            />
+            
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0, y: 50 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: 50 }}
+              transition={{ type: "spring", damping: 20 }}
+              className="relative w-full max-w-md bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 rounded-3xl border border-purple-500/30 overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-purple-600/20 to-transparent" />
+              
+              <div className="relative p-6 text-center">
+                <motion.div
+                  animate={{ 
+                    y: [0, -10, 0],
+                    rotate: [0, 5, -5, 0]
+                  }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30"
+                >
+                  <Gift className="w-10 h-10 text-white" />
+                </motion.div>
+                
+                <h2 className="text-2xl font-bold text-white mb-1">
+                  🎉 Parabéns!
+                </h2>
+                <p className="text-purple-300 mb-6">
+                  Você desbloqueou um benefício exclusivo
+                </p>
+                
+                <div className="bg-black/40 backdrop-blur-sm rounded-xl p-5 border border-purple-500/20 mb-6">
+                  <p className="text-lg text-white leading-relaxed">
+                    {estabelecimento.descricao_beneficio || 'Benefício exclusivo para aniversariantes!'}
+                  </p>
+                </div>
+                
+                {estabelecimento.regras_utilizacao && (
+                  <div className="bg-slate-800/50 rounded-xl p-4 mb-6 text-left">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                      Regras de Utilização
+                    </h4>
+                    <p className="text-sm text-gray-300">{estabelecimento.regras_utilizacao}</p>
+                  </div>
+                )}
+                
+                <div className="space-y-3">
+                  <motion.button
+                    onClick={handleEmitirCupom}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold transition-colors"
+                  >
+                    <Gift className="w-5 h-5" />
+                    Emitir Meu Cupom
+                  </motion.button>
+                  
+                  {(estabelecimento.whatsapp || estabelecimento.telefone) && (
+                    <motion.button
+                      onClick={handleWhatsApp}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold transition-colors"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      Falar no WhatsApp
+                    </motion.button>
+                  )}
+                  
+                  <button
+                    onClick={() => setShowBenefitModal(false)}
+                    className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-gray-300 font-medium transition-colors"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modais */}
       <CupomModal
@@ -717,47 +997,28 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
           </SheetHeader>
           
           <div className="grid grid-cols-3 gap-4 mt-6 mb-4">
-            
-            {/* WhatsApp */}
-            <button
-              onClick={handleShareWhatsApp}
-              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
-            >
-              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(37, 211, 102, 0.2)' }}>
-                <MessageCircle className="w-6 h-6" style={{ color: '#25D366' }} />
+            <button onClick={handleShareWhatsApp} className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-green-500/20">
+                <MessageCircle className="w-6 h-6 text-green-500" />
               </div>
               <span className="text-xs text-gray-300">WhatsApp</span>
             </button>
 
-            {/* Instagram */}
-            <button
-              onClick={handleShareInstagram}
-              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
-            >
-              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ 
-                background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)' 
-              }}>
+            <button onClick={handleShareInstagram} className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)' }}>
                 <Instagram className="w-6 h-6 text-white" />
               </div>
               <span className="text-xs text-gray-300">Instagram</span>
             </button>
 
-            {/* Facebook */}
-            <button
-              onClick={handleShareFacebook}
-              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
-            >
-              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(24, 119, 242, 0.2)' }}>
-                <Facebook className="w-6 h-6" style={{ color: '#1877F2' }} />
+            <button onClick={handleShareFacebook} className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-600/20">
+                <Facebook className="w-6 h-6 text-blue-500" />
               </div>
               <span className="text-xs text-gray-300">Facebook</span>
             </button>
 
-            {/* X (Twitter) */}
-            <button
-              onClick={handleShareX}
-              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
-            >
+            <button onClick={handleShareX} className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors">
               <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -766,40 +1027,27 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               <span className="text-xs text-gray-300">X</span>
             </button>
 
-            {/* Telegram */}
-            <button
-              onClick={handleShareTelegram}
-              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
-            >
-              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 136, 204, 0.2)' }}>
-                <Send className="w-6 h-6" style={{ color: '#0088cc' }} />
+            <button onClick={handleShareTelegram} className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-sky-500/20">
+                <Send className="w-6 h-6 text-sky-500" />
               </div>
               <span className="text-xs text-gray-300">Telegram</span>
             </button>
 
-            {/* LinkedIn */}
-            <button
-              onClick={handleShareLinkedin}
-              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
-            >
-              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(10, 102, 194, 0.2)' }}>
-                <Linkedin className="w-6 h-6" style={{ color: '#0A66C2' }} />
+            <button onClick={handleShareLinkedin} className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-700/20">
+                <Linkedin className="w-6 h-6 text-blue-600" />
               </div>
               <span className="text-xs text-gray-300">LinkedIn</span>
             </button>
           </div>
 
-          {/* Copiar Link */}
-          <button
-            onClick={handleCopyLink}
-            className="w-full flex items-center justify-center gap-2 p-4 bg-violet-500/20 rounded-xl hover:bg-violet-500/30 transition-colors mt-2"
-          >
+          <button onClick={handleCopyLink} className="w-full flex items-center justify-center gap-2 p-4 bg-violet-500/20 rounded-xl hover:bg-violet-500/30 transition-colors mt-2">
             <Copy className="w-5 h-5 text-violet-400" />
             <span className="text-white font-medium">Copiar Link</span>
           </button>
         </SheetContent>
       </Sheet>
-
     </div>
   );
 };

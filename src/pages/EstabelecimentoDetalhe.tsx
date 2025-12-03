@@ -564,7 +564,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                   <Clock className="w-5 h-5 text-amber-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">Horário</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">Horário de Funcionamento</p>
                   <p className="text-white text-sm">{estabelecimento.horario_funcionamento}</p>
                 </div>
               </div>

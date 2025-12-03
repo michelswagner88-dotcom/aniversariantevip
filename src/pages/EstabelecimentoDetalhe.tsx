@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import CupomModal from '@/components/CupomModal';
 import LoginRequiredModal from '@/components/LoginRequiredModal';
 import { useFavoritos } from '@/hooks/useFavoritos';
+import { useEstablishmentMetrics } from '@/hooks/useEstablishmentMetrics';
 import { 
   Sheet, 
   SheetContent, 
@@ -47,6 +48,18 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
 
   // Hook de favoritos
   const { isFavorito, toggleFavorito } = useFavoritos(userId);
+
+  // Hook de métricas
+  const { 
+    trackPageView, 
+    trackBenefitClick, 
+    trackWhatsAppClick, 
+    trackPhoneClick, 
+    trackDirectionsClick, 
+    trackShare, 
+    trackFavorite 
+  } = useEstablishmentMetrics();
+  const hasTrackedView = useRef(false);
 
   // Parallax effect para o header
   const { scrollY } = useScroll();
@@ -118,6 +131,12 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
       setEstabelecimento(data);
       setLoading(false);
 
+      // Rastrear visualização da página (apenas uma vez)
+      if (!hasTrackedView.current && data.id) {
+        trackPageView(data.id);
+        hasTrackedView.current = true;
+      }
+
       if (!data.galeria_fotos || data.galeria_fotos.length === 0) {
         const endereco = `${data.logradouro}, ${data.numero} - ${data.bairro}, ${data.cidade}, ${data.estado}`;
         await fetchGooglePlacesPhotos(data.id, data.nome_fantasia, endereco);
@@ -134,6 +153,8 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
       setShowLoginModal(true);
       return;
     }
+    // Rastrear clique no benefício
+    if (id) trackBenefitClick(id);
     setShowBenefitModal(true);
   };
 
@@ -152,10 +173,16 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
       button.classList.add('animate-heartbeat');
       setTimeout(() => button.classList.remove('animate-heartbeat'), 1200);
     }
+    // Rastrear favorito
+    trackFavorite(id);
     await toggleFavorito(id);
   };
 
-  const handleShare = () => setShowShareSheet(true);
+  const handleShare = () => {
+    // Rastrear compartilhamento
+    if (id) trackShare(id);
+    setShowShareSheet(true);
+  };
 
   const getShareText = () => `🎂 Confira ${estabelecimento.nome_fantasia} no Aniversariante VIP!\n\n📍 ${estabelecimento.bairro}, ${estabelecimento.cidade}`;
   const getShareUrl = () => window.location.href;
@@ -200,6 +227,8 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   const handleWhatsApp = () => {
     const numero = estabelecimento.whatsapp || estabelecimento.telefone;
     if (!numero) { toast.error('WhatsApp não disponível'); return; }
+    // Rastrear clique no WhatsApp
+    if (id) trackWhatsAppClick(id);
     window.open(`https://wa.me/55${numero.replace(/\D/g, '')}`, '_blank');
   };
 
@@ -210,6 +239,8 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
 
   const handleLigar = () => {
     if (!estabelecimento.telefone) { toast.error('Telefone não disponível'); return; }
+    // Rastrear clique no telefone
+    if (id) trackPhoneClick(id);
     window.open(`tel:${estabelecimento.telefone.replace(/\D/g, '')}`);
   };
 
@@ -227,10 +258,12 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
     `${estabelecimento.logradouro}, ${estabelecimento.numero} - ${estabelecimento.bairro}, ${estabelecimento.cidade}, ${estabelecimento.estado}`;
 
   const handleGoogleMaps = () => {
+    if (id) trackDirectionsClick(id, 'google_maps');
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(getEnderecoCompleto())}`, '_blank');
   };
 
   const handleWaze = () => {
+    if (id) trackDirectionsClick(id, 'waze');
     if (estabelecimento.latitude && estabelecimento.longitude) {
       window.open(`https://waze.com/ul?ll=${estabelecimento.latitude},${estabelecimento.longitude}&navigate=yes`, '_blank');
     } else {
@@ -239,6 +272,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   };
 
   const handleUber = () => {
+    if (id) trackDirectionsClick(id, 'uber');
     if (estabelecimento.latitude && estabelecimento.longitude) {
       window.open(`https://m.uber.com/ul/?action=setPickup&dropoff[latitude]=${estabelecimento.latitude}&dropoff[longitude]=${estabelecimento.longitude}&dropoff[nickname]=${encodeURIComponent(estabelecimento.nome_fantasia)}`, '_blank');
     } else {
@@ -247,6 +281,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   };
 
   const handle99 = () => {
+    if (id) trackDirectionsClick(id, '99');
     if (estabelecimento.latitude && estabelecimento.longitude) {
       window.open(`https://99app.com/app/ride?destination_latitude=${estabelecimento.latitude}&destination_longitude=${estabelecimento.longitude}&destination_title=${encodeURIComponent(estabelecimento.nome_fantasia)}`, '_blank');
     } else {

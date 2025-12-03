@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { MapPin, Search, SlidersHorizontal, Map as MapIconLucide, List, X, Check, Gift, Share2, Heart, CalendarDays, Navigation, Crosshair } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { MapPin, Search, SlidersHorizontal, Map as MapIconLucide, List, X, Check, Gift, Share2, Heart, CalendarDays, Navigation, Crosshair, Store, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
+import { motion, AnimatePresence } from 'framer-motion';
 import VoiceSearchBar from "@/components/VoiceSearchBar";
 import { SafeImage } from "@/components/SafeImage";
 import { GoogleMapView } from "@/components/GoogleMapView";
-import { useGeolocation } from "@/hooks/useGeolocation";
-import { useCepLookup } from "@/hooks/useCepLookup";
+import { CityCombobox } from "@/components/CityCombobox";
 import { BackButton } from "@/components/BackButton";
 import { EmptyState } from "@/components/EmptyState";
 import { useEstabelecimentos } from "@/hooks/useEstabelecimentos";
@@ -52,6 +52,48 @@ const FilterOption = ({ label, icon: Icon, selected, onClick, className = "" }: 
   </button>
 );
 
+// --- CTA Bar para Estabelecimentos ---
+const EstablishmentCTABar = () => {
+  const [isVisible, setIsVisible] = useState(true);
+  
+  if (!isVisible) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="bg-gradient-to-r from-violet-900/60 to-pink-900/60 border border-violet-500/30 rounded-xl p-4 mb-4"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-violet-500/20 shrink-0">
+            <Store className="w-5 h-5 text-violet-400" />
+          </div>
+          <div>
+            <p className="text-white font-medium text-sm">Tem um estabelecimento?</p>
+            <p className="text-violet-300 text-xs">Apareça aqui e atraia aniversariantes todos os meses</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link 
+            to="/seja-parceiro"
+            className="px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 hover:brightness-110 rounded-lg text-white text-sm font-medium transition-all"
+          >
+            Cadastrar grátis
+          </Link>
+          <button 
+            onClick={() => setIsVisible(false)}
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <X className="w-4 h-4 text-slate-400" />
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 const PlaceCard = ({ place }: any) => {
   const navigate = useNavigate();
 
@@ -67,22 +109,12 @@ const PlaceCard = ({ place }: any) => {
   };
 
   const handleCardClick = () => {
-    console.log('🎯 Clicou no card:', {
-      name: place.name,
-      estado: place.estado,
-      cidade: place.cidade,
-      slug: place.slug,
-      id: place.id
-    });
-    
     const url = getEstabelecimentoUrl({
       estado: place.estado,
       cidade: place.cidade,
       slug: place.slug,
       id: place.id
     });
-    
-    console.log('🔗 URL gerada:', url);
     navigate(url);
   };
 
@@ -150,8 +182,10 @@ const Explorar = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
-  const [showCepInput, setShowCepInput] = useState(false);
-  const [cepValue, setCepValue] = useState("");
+  
+  // --- CIDADE SELECIONADA ---
+  const [selectedCity, setSelectedCity] = useState<{ nome: string; estado: string } | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   
   // --- TOGGLE LISTA/MAPA ---
   const [viewMode, setViewMode] = useState<'lista' | 'mapa'>('lista');
@@ -161,33 +195,25 @@ const Explorar = () => {
   const [ordenacao, setOrdenacao] = useState('distancia');
 
   // --- HOOKS ---
-  const { 
-    location, 
-    loading: geoLoading, 
-    error: geoError, 
-    currentStep, 
-    setManualLocation
-  } = useGeolocation();
-  const { fetchCep, formatCep, loading: cepLoading } = useCepLookup();
   const { location: userLocation, requestLocation, loading: userLocationLoading } = useUserLocation();
   
-  // Buscar estabelecimentos da cidade do usuário
+  // Buscar estabelecimentos da cidade selecionada
   const { data: estabelecimentosCidade = [], isLoading: loadingCidade } = useEstabelecimentos({
-    cidade: location?.cidade,
-    estado: location?.estado,
+    cidade: selectedCity?.nome,
+    estado: selectedCity?.estado,
   });
 
-  // Se não houver estabelecimentos na cidade, busca todos
+  // Sempre busca todos para mostrar quando cidade não tem resultados
   const { data: todosEstabelecimentos = [], isLoading: loadingTodos } = useEstabelecimentos({
     showAll: true,
   });
 
   // Prioriza estabelecimentos da cidade, senão mostra todos
-  const estabelecimentos = estabelecimentosCidade.length > 0 
+  const estabelecimentos = selectedCity && estabelecimentosCidade.length > 0 
     ? estabelecimentosCidade 
     : todosEstabelecimentos;
 
-  const mostrandoOutrasCidades = estabelecimentosCidade.length === 0 && todosEstabelecimentos.length > 0;
+  const mostrandoOutrasCidades = selectedCity && estabelecimentosCidade.length === 0 && todosEstabelecimentos.length > 0;
   const loadingEstabelecimentos = loadingCidade || loadingTodos;
 
   // --- ESTADOS DOS FILTROS ---
@@ -195,37 +221,62 @@ const Explorar = () => {
   const [filterValidity, setFilterValidity] = useState("month");
   const [filterDistance, setFilterDistance] = useState<number | undefined>(undefined);
 
-  useEffect(() => {
-    // Se já tem localização, esconder o banner de CEP
-    if (location) {
-      setShowCepInput(false);
-    } 
-    // Só mostrar banner se falhou E não tem localização E não está carregando
-    else if (geoError && !location && !geoLoading) {
-      setShowCepInput(true);
-    }
-  }, [geoError, location, geoLoading]);
-
-  const handleCepSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const data = await fetchCep(cepValue);
-    if (data) {
-      setManualLocation(data.localidade, data.uf);
-      setShowCepInput(false);
-      setCepValue("");
+  // Handler para usar localização atual
+  const handleUseCurrentLocation = async () => {
+    setIsGettingLocation(true);
+    
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000
+        });
+      });
+      
+      // Reverse geocode para pegar cidade
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.coords.latitude},${position.coords.longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&language=pt-BR`
+      );
+      const data = await response.json();
+      
+      if (data.results?.[0]) {
+        const cityComponent = data.results[0].address_components.find(
+          (c: any) => c.types.includes('administrative_area_level_2')
+        );
+        const stateComponent = data.results[0].address_components.find(
+          (c: any) => c.types.includes('administrative_area_level_1')
+        );
+        
+        if (cityComponent && stateComponent) {
+          // Extrair sigla do estado (SP, RJ, etc)
+          const estadoSigla = stateComponent.short_name.length === 2 
+            ? stateComponent.short_name 
+            : stateComponent.short_name.substring(0, 2).toUpperCase();
+            
+          setSelectedCity({
+            nome: cityComponent.long_name,
+            estado: estadoSigla
+          });
+          
+          // Também salva a localização para cálculo de distância
+          requestLocation();
+          
+          toast.success(`Localização detectada: ${cityComponent.long_name}`);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao obter localização:', error);
+      toast.error('Não foi possível detectar sua localização');
+    } finally {
+      setIsGettingLocation(false);
     }
   };
 
-  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCep(e.target.value);
-    setCepValue(formatted);
+  // Handler para limpar cidade
+  const handleClearCity = () => {
+    setSelectedCity(null);
   };
-
-  const displayLocation = location 
-    ? `${location.cidade}, ${location.estado}` 
-    : geoLoading 
-    ? "Detectando localização..." 
-    : "Localização não disponível";
 
   // Aplicar filtros de proximidade e ordenação
   const estabelecimentosComDistancia = useEstabelecimentosProximos(
@@ -253,7 +304,6 @@ const Explorar = () => {
     longitude: est.longitude ? Number(est.longitude) : null,
     image: est.logo_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
     distancia: est.distancia,
-    // Dados necessários para URL amigável
     estado: est.estado,
     cidade: est.cidade,
     slug: est.slug,
@@ -281,7 +331,6 @@ const Explorar = () => {
   const filteredPlaces = allPlaces.filter(place => {
     if (selectedCategory && place.category !== selectedCategory) return false;
     if (filterDay !== 'any' && !place.validDays.includes(filterDay)) return false;
-    // Filtrar por subcategorias selecionadas
     if (selectedSubcategories.length > 0) {
       const placeSubcats = place.especialidades || [];
       const hasMatch = selectedSubcategories.some(sub => placeSubcats.includes(sub));
@@ -291,15 +340,30 @@ const Explorar = () => {
   });
 
   const selectCategory = (category: string | null) => {
-    // Se clicar na mesma categoria, desmarca (volta pra "Todos")
     if (selectedCategory === category) {
       setSelectedCategory(null);
     } else {
       setSelectedCategory(category);
     }
-    // Sempre limpa subcategorias ao trocar categoria
     setSelectedSubcategories([]);
   };
+
+  // Agrupar estabelecimentos por cidade (para mostrar quando não tem na cidade selecionada)
+  const establishmentsByCity = useMemo(() => {
+    if (!mostrandoOutrasCidades) return [];
+    
+    const byCity: Record<string, typeof allPlaces> = {};
+    allPlaces.forEach(place => {
+      const key = place.cidade || 'Outras';
+      if (!byCity[key]) byCity[key] = [];
+      byCity[key].push(place);
+    });
+    
+    return Object.entries(byCity)
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 4)
+      .map(([city, places]) => ({ city, places: places.slice(0, 4) }));
+  }, [allPlaces, mostrandoOutrasCidades]);
 
   const daysOfWeek = [
     { id: 'seg', label: 'Seg' }, { id: 'ter', label: 'Ter' }, { id: 'qua', label: 'Qua' },
@@ -314,67 +378,59 @@ const Explorar = () => {
         </div>
         <VoiceSearchBar />
 
-        {showCepInput && (
-          <div className="container mx-auto px-6 mt-3 animate-in slide-in-from-top duration-300">
-            <div className="rounded-2xl border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-amber-500/10 p-4">
-              <div className="flex items-start gap-3">
-                <div className="rounded-full bg-orange-500/20 p-2 shrink-0">
-                  <MapPin size={20} className="text-orange-400" />
-                </div>
-                <div className="flex-1 space-y-3">
-                  <div>
-                    <h4 className="font-bold text-white text-sm">Não conseguimos detectar sua localização</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Digite seu CEP para encontrar benefícios perto de você</p>
+        {/* Seção de Busca por Cidade */}
+        <div className="container mx-auto px-6 mt-4">
+          <div className="flex flex-col gap-3">
+            {/* Input de Cidade com Autocomplete */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 relative">
+                {selectedCity ? (
+                  <div className="flex items-center gap-2 w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-violet-400" />
+                    <span className="flex-1 text-white font-medium">
+                      {selectedCity.nome}, {selectedCity.estado}
+                    </span>
+                    <button 
+                      onClick={handleClearCity}
+                      className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                    >
+                      <X className="w-4 h-4 text-slate-400" />
+                    </button>
                   </div>
-                  
-                  <form onSubmit={handleCepSubmit} className="flex gap-2">
-                    <div className="relative flex-1">
-                      <input
-                        type="text"
-                        value={cepValue}
-                        onChange={handleCepChange}
-                        placeholder="00000-000"
-                        maxLength={9}
-                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white placeholder:text-slate-500 focus:border-violet-500/50 focus:bg-white/10 focus:outline-none transition-colors"
+                ) : (
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
+                    <div className="pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus-within:border-violet-500/50 transition-colors">
+                      <CityCombobox
+                        value=""
+                        onSelect={(cidade, estado) => setSelectedCity({ nome: cidade, estado })}
+                        placeholder="Digite a cidade (mín. 3 letras)"
                       />
                     </div>
-                    <button
-                      type="submit"
-                      disabled={cepLoading || cepValue.replace(/\D/g, '').length !== 8}
-                      className="rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-500/20 transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {cepLoading ? "Buscando..." : "Buscar"}
-                    </button>
-                  </form>
-
-                  <button
-                    onClick={() => setShowCepInput(false)}
-                    className="text-xs text-slate-400 hover:text-white transition-colors"
-                  >
-                    Fechar
-                  </button>
-                </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        )}
-
-        {location && !showCepInput && (
-          <div className="container mx-auto px-6 mt-3">
-            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-2.5">
-              <div className="flex items-center gap-2">
-                <Navigation size={14} className="text-violet-400" />
-                <span className="text-sm font-medium text-white">{displayLocation}</span>
-              </div>
-              <button
-                onClick={() => setShowCepInput(true)}
-                className="text-xs font-medium text-violet-400 hover:text-violet-300 transition-colors"
+            
+            {/* Botão Usar Localização - Separado */}
+            {!selectedCity && (
+              <motion.button
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={handleUseCurrentLocation}
+                disabled={isGettingLocation}
+                className="flex items-center justify-center gap-2 text-sm text-violet-400 hover:text-violet-300 transition-colors py-2"
               >
-                Alterar CEP
-              </button>
-            </div>
+                {isGettingLocation ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Navigation className="w-4 h-4" />
+                )}
+                {isGettingLocation ? 'Detectando localização...' : '📍 Usar minha localização atual'}
+              </motion.button>
+            )}
           </div>
-        )}
+        </div>
 
         <div className="container mx-auto px-6 mt-4">
           <div className="flex items-center gap-3">
@@ -420,6 +476,9 @@ const Explorar = () => {
       </div>
 
       <div className="px-4 pt-6">
+        {/* CTA Bar para Estabelecimentos */}
+        <EstablishmentCTABar />
+
         {loadingEstabelecimentos && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -434,30 +493,83 @@ const Explorar = () => {
 
         {!loadingEstabelecimentos && estabelecimentos.length > 0 && (
           <>
-            {/* Banner informativo quando mostra outras cidades */}
+            {/* Banner Premium quando cidade não tem estabelecimentos */}
             {mostrandoOutrasCidades && (
-              <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4 mb-4">
-                <div className="flex items-start gap-3">
-                  <MapPin className="text-violet-400 shrink-0 mt-0.5" size={20} />
-                  <div>
-                    <h4 className="font-bold text-white text-sm">
-                      Ainda não chegamos em {location?.cidade} 😔
-                    </h4>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Mas olha só os lugares incríveis que já estão no Aniversariante VIP! 
-                      Em breve estaremos na sua cidade também! 🚀
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-gradient-to-r from-violet-900/50 to-pink-900/50 border border-violet-500/30 rounded-2xl p-5 mb-6"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-violet-500/20 shrink-0">
+                    <MapPin className="w-6 h-6 text-violet-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-white mb-1">
+                      Ainda não temos parceiros em {selectedCity?.nome} 😔
+                    </h3>
+                    <p className="text-violet-200 text-sm mb-4">
+                      Mas estamos crescendo rápido! Quer ajudar a trazer o Aniversariante VIP pra sua cidade?
                     </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Link 
+                        to="/seja-parceiro"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-pink-600 hover:brightness-110 rounded-lg text-white text-sm font-medium transition-all"
+                      >
+                        <Store className="w-4 h-4" />
+                        Cadastrar meu estabelecimento
+                      </Link>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="border-violet-500/50 text-violet-300 hover:bg-violet-500/20"
+                      >
+                        <Heart className="w-4 h-4 mr-2" />
+                        Sugerir um lugar
+                      </Button>
+                    </div>
                   </div>
                 </div>
+              </motion.div>
+            )}
+
+            {/* Seção: Estabelecimentos de outras cidades */}
+            {mostrandoOutrasCidades && establishmentsByCity.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-lg font-bold text-white mb-4">
+                  Enquanto isso, confira nossos parceiros em outras cidades:
+                </h3>
+                
+                {establishmentsByCity.map(({ city, places }) => (
+                  <div key={city} className="mb-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-white font-medium flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-violet-400" />
+                        {city}
+                        <span className="text-slate-400 text-sm font-normal">
+                          ({places.length} {places.length === 1 ? 'lugar' : 'lugares'})
+                        </span>
+                      </h4>
+                    </div>
+                    
+                    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                      {places.map(place => (
+                        <div key={place.id} className="w-72 shrink-0">
+                          <PlaceCard place={place} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
-            {/* Banner para ativar localização */}
+            {/* Banner para ativar localização (só se não está mostrando outras cidades) */}
             {!userLocation && !mostrandoOutrasCidades && (
               <div className="bg-violet-500/10 border border-violet-500/30 rounded-lg p-4 mb-4 flex items-center justify-between">
                 <div>
                   <p className="text-white font-medium">Ative sua localização</p>
-                  <p className="text-slate-400 text-sm">Para ver estabelecimentos perto de você</p>
+                  <p className="text-slate-400 text-sm">Para ver estabelecimentos mais perto de você</p>
                 </div>
                 <Button 
                   onClick={requestLocation} 
@@ -473,94 +585,101 @@ const Explorar = () => {
             )}
 
             {/* Filtros de distância e ordenação */}
-            <div className="flex flex-wrap gap-3 mb-4">
-              <Select value={raioKm} onValueChange={setRaioKm}>
-                <SelectTrigger className="w-[180px] bg-white/5 border-white/10">
-                  <SelectValue placeholder="Distância" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Qualquer distância</SelectItem>
-                  <SelectItem value="1">Até 1 km</SelectItem>
-                  <SelectItem value="3">Até 3 km</SelectItem>
-                  <SelectItem value="5">Até 5 km</SelectItem>
-                  <SelectItem value="10">Até 10 km</SelectItem>
-                  <SelectItem value="25">Até 25 km</SelectItem>
-                </SelectContent>
-              </Select>
+            {!mostrandoOutrasCidades && (
+              <div className="flex flex-wrap gap-3 mb-4">
+                <Select value={raioKm} onValueChange={setRaioKm}>
+                  <SelectTrigger className="w-[180px] bg-white/5 border-white/10">
+                    <SelectValue placeholder="Distância" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Qualquer distância</SelectItem>
+                    <SelectItem value="1">Até 1 km</SelectItem>
+                    <SelectItem value="3">Até 3 km</SelectItem>
+                    <SelectItem value="5">Até 5 km</SelectItem>
+                    <SelectItem value="10">Até 10 km</SelectItem>
+                    <SelectItem value="25">Até 25 km</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              <Select value={ordenacao} onValueChange={setOrdenacao}>
-                <SelectTrigger className="w-[180px] bg-white/5 border-white/10">
-                  <SelectValue placeholder="Ordenar por" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="distancia">Mais próximos</SelectItem>
-                  <SelectItem value="nome">Nome A-Z</SelectItem>
-                  <SelectItem value="avaliacao">Melhor avaliados</SelectItem>
-                  <SelectItem value="recentes">Mais recentes</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <Select value={ordenacao} onValueChange={setOrdenacao}>
+                  <SelectTrigger className="w-[180px] bg-white/5 border-white/10">
+                    <SelectValue placeholder="Ordenar por" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="distancia">Mais próximos</SelectItem>
+                    <SelectItem value="nome">Nome A-Z</SelectItem>
+                    <SelectItem value="avaliacao">Melhor avaliados</SelectItem>
+                    <SelectItem value="recentes">Mais recentes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Toggle Lista/Mapa */}
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-slate-400 text-sm">
-                {filteredPlaces.length} estabelecimentos encontrados
-              </p>
-              
-              <div className="flex bg-white/5 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('lista')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-                    viewMode === 'lista' 
-                      ? 'bg-violet-600 text-white' 
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <List className="w-4 h-4" />
-                  Lista
-                </button>
-                <button
-                  onClick={() => setViewMode('mapa')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-                    viewMode === 'mapa' 
-                      ? 'bg-violet-600 text-white' 
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <MapIconLucide className="w-4 h-4" />
-                  Mapa
-                </button>
+            {!mostrandoOutrasCidades && (
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-slate-400 text-sm">
+                  {filteredPlaces.length} estabelecimentos encontrados
+                  {selectedCity && <span className="text-violet-400"> em {selectedCity.nome}</span>}
+                </p>
+                
+                <div className="flex bg-white/5 rounded-lg p-1">
+                  <button
+                    onClick={() => setViewMode('lista')}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+                      viewMode === 'lista' 
+                        ? 'bg-violet-600 text-white' 
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <List className="w-4 h-4" />
+                    Lista
+                  </button>
+                  <button
+                    onClick={() => setViewMode('mapa')}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+                      viewMode === 'mapa' 
+                        ? 'bg-violet-600 text-white' 
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <MapIconLucide className="w-4 h-4" />
+                    Mapa
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Conteúdo: Lista ou Mapa */}
-            {filteredPlaces.length === 0 ? (
-              <div className="col-span-full text-center py-12 text-slate-400">
-                Nenhum resultado encontrado com os filtros selecionados
-              </div>
-            ) : viewMode === 'lista' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredPlaces.map((place) => (
-                  <PlaceCard key={place.id} place={place} />
-                ))}
-              </div>
-            ) : (
-              <GoogleMapView
-                establishments={estabelecimentosFormatados}
-                onEstablishmentClick={(establishment) => {
-                  const url = getEstabelecimentoUrl({
-                    estado: establishment.estado,
-                    cidade: establishment.cidade,
-                    slug: establishment.slug,
-                    id: establishment.id
-                  });
-                  navigate(url);
-                }}
-                userLocation={userLocation ? {
-                  lat: userLocation.lat,
-                  lng: userLocation.lng
-                } : null}
-              />
+            {!mostrandoOutrasCidades && (
+              filteredPlaces.length === 0 ? (
+                <div className="col-span-full text-center py-12 text-slate-400">
+                  Nenhum resultado encontrado com os filtros selecionados
+                </div>
+              ) : viewMode === 'lista' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {filteredPlaces.map((place) => (
+                    <PlaceCard key={place.id} place={place} />
+                  ))}
+                </div>
+              ) : (
+                <GoogleMapView
+                  establishments={estabelecimentosFormatados}
+                  onEstablishmentClick={(establishment) => {
+                    const url = getEstabelecimentoUrl({
+                      estado: establishment.estado,
+                      cidade: establishment.cidade,
+                      slug: establishment.slug,
+                      id: establishment.id
+                    });
+                    navigate(url);
+                  }}
+                  userLocation={userLocation ? {
+                    lat: userLocation.lat,
+                    lng: userLocation.lng
+                  } : null}
+                />
+              )
             )}
           </>
         )}
@@ -593,7 +712,7 @@ const Explorar = () => {
                 </div>
               </div>
 
-              {location?.coordinates && (
+              {userLocation && (
                 <div className="space-y-3">
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
                     <Navigation size={14} /> Distância Máxima

@@ -16,9 +16,18 @@ export const useAppNavigation = () => {
     subcategoria?: string;
     q?: string;
   }) => {
-    const url = getExplorarUrl(params || {});
-    console.log('[Navigation] Navegando para:', url);
-    navigate(url, { replace: false });
+    try {
+      const url = getExplorarUrl(params || {});
+      console.log('[Navigation] goToExplorar - Params:', params);
+      console.log('[Navigation] goToExplorar - URL gerada:', url);
+      console.log('[Navigation] goToExplorar - Executando navigate()...');
+      navigate(url, { replace: false });
+      console.log('[Navigation] goToExplorar - navigate() concluído');
+    } catch (error) {
+      console.error('[Navigation] ERRO em goToExplorar:', error);
+      // Fallback: navegar direto para /explorar sem params
+      navigate('/explorar');
+    }
   }, [navigate]);
 
   // Navegar para estabelecimento

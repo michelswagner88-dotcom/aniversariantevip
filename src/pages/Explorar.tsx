@@ -179,6 +179,9 @@ const PlaceCard = ({ place }: any) => {
 };
 
 const Explorar = () => {
+  // DEBUG: Log inicial do componente
+  console.log('[Explorar] Componente renderizando...');
+  
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
@@ -193,6 +196,9 @@ const Explorar = () => {
   const estadoParam = searchParams.get('estado') || '';
   const categoriaParam = searchParams.get('categoria') || '';
   const especialidadeParam = searchParams.get('especialidade') || '';
+  
+  // DEBUG: Log dos parâmetros da URL
+  console.log('[Explorar] URL Params:', { searchQuery, cidadeParam, estadoParam, categoriaParam, especialidadeParam });
   
   // --- CIDADE SELECIONADA ---
   const [selectedCity, setSelectedCity] = useState<{ nome: string; estado: string } | null>(null);

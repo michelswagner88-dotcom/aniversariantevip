@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { MapPin, Search, SlidersHorizontal, Map as MapIconLucide, List, X, Check, Gift, Share2, Heart, CalendarDays, Navigation, Crosshair, Store, Loader2 } from 'lucide-react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { MapPin, Search, SlidersHorizontal, Map as MapIconLucide, List, X, Check, Share2, Heart, CalendarDays, Navigation, Store, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
 import { motion, AnimatePresence } from 'framer-motion';
 import VoiceSearchBar from "@/components/VoiceSearchBar";
 import { SafeImage } from "@/components/SafeImage";
 import { GoogleMapView } from "@/components/GoogleMapView";
-import { CityCombobox } from "@/components/CityCombobox";
+
 import { BackButton } from "@/components/BackButton";
 import { EmptyState } from "@/components/EmptyState";
 import { useEstabelecimentos } from "@/hooks/useEstabelecimentos";
@@ -163,9 +163,9 @@ const PlaceCard = ({ place }: any) => {
             ))}
           </div>
         )}
+        {/* Badge benefício - APENAS emoji, sem ícone duplicado */}
         <div className="mt-3 sm:mt-4 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-violet-600/90 via-fuchsia-500/90 to-pink-500/90 backdrop-blur-sm border border-white/10">
-          <div className="flex items-center gap-2">
-            <Gift size={16} className="text-white shrink-0" />
+          <div className="flex items-center justify-center">
             <span className="text-xs sm:text-sm font-bold text-white">
               🎁 Tem benefício de aniversário!
             </span>
@@ -179,13 +179,18 @@ const PlaceCard = ({ place }: any) => {
 
 const Explorar = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
   
+  // --- BUSCA POR TEXTO (do URL param) ---
+  const searchQuery = searchParams.get('q') || '';
+  const cidadeParam = searchParams.get('cidade') || '';
+  const categoriaParam = searchParams.get('categoria') || '';
+  
   // --- CIDADE SELECIONADA ---
   const [selectedCity, setSelectedCity] = useState<{ nome: string; estado: string } | null>(null);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
   
   // --- TOGGLE LISTA/MAPA ---
   const [viewMode, setViewMode] = useState<'lista' | 'mapa'>('lista');
@@ -196,6 +201,16 @@ const Explorar = () => {
 
   // --- HOOKS ---
   const { location: userLocation, requestLocation, loading: userLocationLoading } = useUserLocation();
+  
+  // Inicializar cidade e categoria a partir dos URL params
+  useEffect(() => {
+    if (cidadeParam && !selectedCity) {
+      setSelectedCity({ nome: cidadeParam, estado: '' });
+    }
+    if (categoriaParam && !selectedCategory) {
+      setSelectedCategory(categoriaParam);
+    }
+  }, [cidadeParam, categoriaParam]);
   
   // Buscar estabelecimentos da cidade selecionada
   const { data: estabelecimentosCidade = [], isLoading: loadingCidade } = useEstabelecimentos({
@@ -220,58 +235,6 @@ const Explorar = () => {
   const [filterDay, setFilterDay] = useState("any");
   const [filterValidity, setFilterValidity] = useState("month");
   const [filterDistance, setFilterDistance] = useState<number | undefined>(undefined);
-
-  // Handler para usar localização atual
-  const handleUseCurrentLocation = async () => {
-    setIsGettingLocation(true);
-    
-    try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000
-        });
-      });
-      
-      // Reverse geocode para pegar cidade
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.coords.latitude},${position.coords.longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&language=pt-BR`
-      );
-      const data = await response.json();
-      
-      if (data.results?.[0]) {
-        const cityComponent = data.results[0].address_components.find(
-          (c: any) => c.types.includes('administrative_area_level_2')
-        );
-        const stateComponent = data.results[0].address_components.find(
-          (c: any) => c.types.includes('administrative_area_level_1')
-        );
-        
-        if (cityComponent && stateComponent) {
-          // Extrair sigla do estado (SP, RJ, etc)
-          const estadoSigla = stateComponent.short_name.length === 2 
-            ? stateComponent.short_name 
-            : stateComponent.short_name.substring(0, 2).toUpperCase();
-            
-          setSelectedCity({
-            nome: cityComponent.long_name,
-            estado: estadoSigla
-          });
-          
-          // Também salva a localização para cálculo de distância
-          requestLocation();
-          
-          toast.success(`Localização detectada: ${cityComponent.long_name}`);
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao obter localização:', error);
-      toast.error('Não foi possível detectar sua localização');
-    } finally {
-      setIsGettingLocation(false);
-    }
-  };
 
   // Handler para limpar cidade
   const handleClearCity = () => {
@@ -336,6 +299,15 @@ const Explorar = () => {
       const hasMatch = selectedSubcategories.some(sub => placeSubcats.includes(sub));
       if (!hasMatch) return false;
     }
+    // Filtro por busca de texto (nome, categoria, bairro, especialidades)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      const matchesName = place.name?.toLowerCase().includes(query);
+      const matchesCategory = place.category?.toLowerCase().includes(query);
+      const matchesNeighborhood = place.neighborhood?.toLowerCase().includes(query);
+      const matchesSpecialties = place.especialidades?.some((s: string) => s.toLowerCase().includes(query));
+      if (!matchesName && !matchesCategory && !matchesNeighborhood && !matchesSpecialties) return false;
+    }
     return true;
   });
 
@@ -377,60 +349,6 @@ const Explorar = () => {
           <BackButton to="/" />
         </div>
         <VoiceSearchBar />
-
-        {/* Seção de Busca por Cidade */}
-        <div className="container mx-auto px-6 mt-4">
-          <div className="flex flex-col gap-3">
-            {/* Input de Cidade com Autocomplete */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1 relative">
-                {selectedCity ? (
-                  <div className="flex items-center gap-2 w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-violet-400" />
-                    <span className="flex-1 text-white font-medium">
-                      {selectedCity.nome}, {selectedCity.estado}
-                    </span>
-                    <button 
-                      onClick={handleClearCity}
-                      className="p-1 hover:bg-white/10 rounded-full transition-colors"
-                    >
-                      <X className="w-4 h-4 text-slate-400" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
-                    <div className="pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus-within:border-violet-500/50 transition-colors">
-                      <CityCombobox
-                        value=""
-                        onSelect={(cidade, estado) => setSelectedCity({ nome: cidade, estado })}
-                        placeholder="Digite a cidade (mín. 3 letras)"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Botão Usar Localização - Separado */}
-            {!selectedCity && (
-              <motion.button
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={handleUseCurrentLocation}
-                disabled={isGettingLocation}
-                className="flex items-center justify-center gap-2 text-sm text-violet-400 hover:text-violet-300 transition-colors py-2"
-              >
-                {isGettingLocation ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Navigation className="w-4 h-4" />
-                )}
-                {isGettingLocation ? 'Detectando localização...' : '📍 Usar minha localização atual'}
-              </motion.button>
-            )}
-          </div>
-        </div>
 
         <div className="container mx-auto px-6 mt-4">
           <div className="flex items-center gap-3">
@@ -564,25 +482,6 @@ const Explorar = () => {
               </div>
             )}
 
-            {/* Banner para ativar localização (só se não está mostrando outras cidades) */}
-            {!userLocation && !mostrandoOutrasCidades && (
-              <div className="bg-violet-500/10 border border-violet-500/30 rounded-lg p-4 mb-4 flex items-center justify-between">
-                <div>
-                  <p className="text-white font-medium">Ative sua localização</p>
-                  <p className="text-slate-400 text-sm">Para ver estabelecimentos mais perto de você</p>
-                </div>
-                <Button 
-                  onClick={requestLocation} 
-                  variant="outline" 
-                  size="sm"
-                  disabled={userLocationLoading}
-                  className="bg-violet-600/20 border-violet-500/50 hover:bg-violet-600/30"
-                >
-                  <Crosshair className="w-4 h-4 mr-2" />
-                  {userLocationLoading ? 'Obtendo...' : 'Ativar'}
-                </Button>
-              </div>
-            )}
 
             {/* Filtros de distância e ordenação */}
             {!mostrandoOutrasCidades && (

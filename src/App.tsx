@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import ProtectedEstabelecimentoRoute from "@/components/auth/ProtectedEstabelecimentoRoute";
 import ProtectedAniversarianteRoute from "@/components/auth/ProtectedAniversarianteRoute";
 import ProtectedAdminRoute from "@/components/auth/ProtectedAdminRoute";
-import PasswordProtection from "@/components/auth/PasswordProtection";
 import Carol from "@/components/ChatBot/Carol";
 import { useAppUpdate } from "@/hooks/useAppUpdate";
 
@@ -73,8 +72,7 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <PasswordProtection>
-    <ThemeProvider defaultTheme="dark" storageKey="vip-theme">
+  <ThemeProvider defaultTheme="dark" storageKey="vip-theme">
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -217,7 +215,6 @@ const App = () => (
       </Sentry.ErrorBoundary>
     </TooltipProvider>
   </ThemeProvider>
-  </PasswordProtection>
 );
 
 export default App;

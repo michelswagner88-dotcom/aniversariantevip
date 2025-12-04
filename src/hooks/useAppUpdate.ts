@@ -1,8 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
+// Versão do app - atualizada a cada build pelo Vite
+const APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.0.0';
+const BUILD_TIME = import.meta.env.VITE_BUILD_TIME || Date.now().toString();
+
 /**
- * Hook para gerenciar atualizações do Service Worker e forçar atualizações automáticas.
+ * Hook para gerenciar atualizações do Service Worker e verificação de versão.
+ * Detecta novas versões automaticamente e força atualização.
  */
 export const useAppUpdate = () => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -29,6 +34,49 @@ export const useAppUpdate = () => {
   }, []);
 
   useEffect(() => {
+    // === VERIFICAÇÃO DE VERSÃO ===
+    const storedVersion = localStorage.getItem('app_version');
+    const storedBuildTime = localStorage.getItem('app_build_time');
+
+    // Se é primeira visita, salvar versão atual
+    if (!storedVersion || !storedBuildTime) {
+      localStorage.setItem('app_version', APP_VERSION);
+      localStorage.setItem('app_build_time', BUILD_TIME);
+      console.log('[Version] Primeira visita, versão salva:', APP_VERSION, BUILD_TIME);
+    } 
+    // Se versão mudou, limpar caches e notificar
+    else if (storedBuildTime !== BUILD_TIME) {
+      console.log('[Version] Nova versão detectada!', {
+        oldBuild: storedBuildTime,
+        newBuild: BUILD_TIME,
+        oldVersion: storedVersion,
+        newVersion: APP_VERSION,
+      });
+
+      setUpdateAvailable(true);
+
+      // Limpar caches do browser
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => {
+            caches.delete(name);
+            console.log('[Version] Cache removido:', name);
+          });
+        });
+      }
+
+      // Atualizar versão armazenada
+      localStorage.setItem('app_version', APP_VERSION);
+      localStorage.setItem('app_build_time', BUILD_TIME);
+
+      // Notificar usuário
+      toast.info('App atualizado!', {
+        description: 'Uma nova versão foi carregada.',
+        duration: 3000,
+      });
+    }
+
+    // === SERVICE WORKER ===
     if (!('serviceWorker' in navigator)) return;
 
     const handleUpdate = async (reg: ServiceWorkerRegistration) => {
@@ -71,6 +119,14 @@ export const useAppUpdate = () => {
           });
         }
       });
+
+      // Verificar atualizações periodicamente (a cada 60 segundos)
+      const checkInterval = setInterval(() => {
+        reg.update().catch(console.error);
+      }, 60 * 1000);
+
+      // Cleanup do interval (não será executado pois é useEffect sem cleanup)
+      return () => clearInterval(checkInterval);
     });
 
     // Recarregar quando novo SW assumir controle
@@ -78,6 +134,7 @@ export const useAppUpdate = () => {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!refreshing) {
         refreshing = true;
+        console.log('[SW] Novo Service Worker ativo, recarregando...');
         window.location.reload();
       }
     });

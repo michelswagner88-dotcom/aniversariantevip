@@ -6,6 +6,11 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Variáveis de versão para detecção automática de atualizações
+  define: {
+    'import.meta.env.VITE_BUILD_TIME': JSON.stringify(Date.now().toString()),
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify('2.7.0'),
+  },
   server: {
     host: "::",
     port: 8080,

@@ -13,6 +13,7 @@ export const CATEGORIAS_ESTABELECIMENTO = [
   { value: "Restaurante", label: "Restaurante", icon: "🍽️" },
   { value: "Salão de Beleza", label: "Salão de Beleza", icon: "💅" },
   { value: "Serviços", label: "Serviços", icon: "🔧" },
+  { value: "Sorveteria", label: "Sorveteria", icon: "🍦" },
   { value: "Outros", label: "Outros", icon: "🏪" },
 ] as const;
 

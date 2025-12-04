@@ -15,80 +15,65 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      
       devOptions: {
-        enabled: false, // Desabilitar SW em desenvolvimento
+        enabled: false,
       },
-      includeAssets: ["favicon.png"],
-      manifest: {
-        name: "Aniversariante VIP",
-        short_name: "VIP",
-        description: "Plataforma de benefícios para aniversariantes",
-        theme_color: "#FFB800",
-        background_color: "#0D0D0D",
-        display: "standalone",
-        icons: [
-          {
-            src: "/favicon.png",
-            sizes: "any",
-            type: "image/png",
-            purpose: "any maskable",
-          },
-        ],
-      },
+
       workbox: {
-        // NÃO cachear HTML - apenas assets estáticos
+        // CRÍTICO: Remover HTML do cache - nunca cachear HTML!
         globPatterns: ["**/*.{js,css,ico,png,svg,woff,woff2}"],
-        
-        // Limpar caches antigos automaticamente
+
+        // CRÍTICO: Limpar caches de versões antigas
         cleanupOutdatedCaches: true,
-        
-        // Ativar novo SW imediatamente
+
+        // CRÍTICO: Ativar novo SW imediatamente
         skipWaiting: true,
         clientsClaim: true,
-        
-        // Não usar fallback para navegação (SPA handled by router)
+
+        // CRÍTICO: Não interceptar navegação SPA
         navigateFallback: null,
-        
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
-        
+
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+
         runtimeCaching: [
+          // Fontes Google - Cache First (nunca mudam)
           {
-            // Fontes Google - Cache First (nunca mudam)
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: "CacheFirst",
             options: {
               cacheName: "google-fonts-cache",
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
               cacheableResponse: {
                 statuses: [0, 200],
               },
             },
           },
+          // Fontes estáticas Google
           {
-            // Fontes estáticas Google
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
             handler: "CacheFirst",
             options: {
               cacheName: "google-fonts-static",
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
               cacheableResponse: {
                 statuses: [0, 200],
               },
             },
           },
+          // CRÍTICO: Supabase - NUNCA cachear dados do banco!
           {
-            // Supabase API - SEMPRE buscar do servidor (NUNCA cachear)
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
             handler: "NetworkOnly",
           },
+          // Google Maps
           {
-            // Google Maps - Network First com timeout curto
             urlPattern: /^https:\/\/maps\.googleapis\.com\/.*/i,
             handler: "NetworkFirst",
             options: {
@@ -96,21 +81,45 @@ export default defineConfig(({ mode }) => ({
               networkTimeoutSeconds: 5,
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24, // 1 day
+                maxAgeSeconds: 60 * 60 * 24,
               },
             },
           },
+          // Imagens externas
           {
-            // Imagens - Stale While Revalidate (mostra cache, busca nova versão)
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "images-cache",
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+                maxAgeSeconds: 60 * 60 * 24 * 7,
               },
             },
+          },
+        ],
+      },
+
+      manifest: {
+        name: "Aniversariante VIP",
+        short_name: "Aniversariante VIP",
+        description: "Benefícios exclusivos para aniversariantes",
+        theme_color: "#7c3aed",
+        background_color: "#0a0a0f",
+        display: "standalone",
+        orientation: "portrait",
+        scope: "/",
+        start_url: "/",
+        icons: [
+          {
+            src: "/icon-192.png",
+            sizes: "192x192",
+            type: "image/png",
+          },
+          {
+            src: "/icon-512.png",
+            sizes: "512x512",
+            type: "image/png",
           },
         ],
       },

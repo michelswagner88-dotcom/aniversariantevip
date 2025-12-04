@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ interface EditEstablishmentModalProps {
 }
 
 export function EditEstablishmentModal({ establishment, open, onOpenChange, onSuccess }: EditEstablishmentModalProps) {
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
   const [fetchingPhoto, setFetchingPhoto] = useState(false);
@@ -226,6 +228,11 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
         .eq('id', formData.id);
 
       if (error) throw error;
+
+      // IMPORTANTE: Invalidar TODAS as queries de estabelecimentos para forçar refetch
+      console.log('[EditEstablishment] Invalidando cache de estabelecimentos...');
+      await queryClient.invalidateQueries({ queryKey: ['estabelecimentos'] });
+      await queryClient.invalidateQueries({ queryKey: ['public_estabelecimentos'] });
 
       toast.success("Estabelecimento atualizado com sucesso!");
       onSuccess();

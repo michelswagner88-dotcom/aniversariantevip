@@ -37,7 +37,7 @@ export const CATEGORY_SUBCATEGORIES: Record<string, string[]> = {
   ],
   'Loja': [
     'Roupas', 'Calçados', 'Cosméticos', 'Acessórios', 'Presentes', 
-    'Eletrônicos', 'Decoração', 'Joias', 'Bolsas', 'Óculos', 'Perfumaria', 'Suplementos', 'Outros'
+    'Eletrônicos', 'Decoração', 'Joias', 'Bolsas', 'Óculos', 'Perfumaria', 'Suplementos', 'Chocolates', 'Outros'
   ],
   'Restaurante': [
     'Pizzaria', 'Churrascaria', 'Sushi/Japonês', 'Hambúrguer', 'Italiana', 

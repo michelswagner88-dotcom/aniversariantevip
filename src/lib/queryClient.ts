@@ -1,32 +1,30 @@
 import { QueryClient } from '@tanstack/react-query';
 
-// Configuração otimizada do React Query para alta escala
+// Configuração do React Query para ATUALIZAÇÃO EM TEMPO REAL
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Cache por 5 minutos (estabelecimentos mudam raramente)
-      staleTime: 5 * 60 * 1000,
-      // Manter dados em cache por 10 minutos
-      gcTime: 10 * 60 * 1000,
+      // Dados são considerados "stale" imediatamente para forçar refetch
+      staleTime: 0,
+      // Manter dados em cache por 5 minutos
+      gcTime: 5 * 60 * 1000,
       // Retry inteligente: não fazer retry em erros 4xx (cliente)
       retry: (failureCount, error: any) => {
-        // Não fazer retry em erros 4xx (cliente)
         if (error?.status >= 400 && error?.status < 500) {
           return false;
         }
-        // Retry até 3x em outros erros (5xx, timeout, rede)
-        return failureCount < 3;
+        return failureCount < 2;
       },
-      // Exponential backoff: 1s, 2s, 4s
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-      // Não refetch ao voltar para a aba
-      refetchOnWindowFocus: false,
-      // Não refetch em mount se dados ainda são frescos
-      refetchOnMount: false,
+      retryDelay: 1000,
+      // SEMPRE refetch ao voltar para a aba
+      refetchOnWindowFocus: true,
+      // SEMPRE refetch ao reconectar
+      refetchOnReconnect: true,
+      // SEMPRE refetch ao montar componente
+      refetchOnMount: true,
     },
     mutations: {
-      // Mutations não devem fazer retry automático
-      retry: false,
+      retry: 1,
     },
   },
 });

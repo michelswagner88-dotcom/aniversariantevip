@@ -238,11 +238,6 @@ const Index = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-950">
-      {/* Badge de teste de cache - REMOVER DEPOIS */}
-      <div className="fixed bottom-20 left-4 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-medium z-50 shadow-lg">
-        v2.4.0 - Cache OK ✅
-      </div>
-      
       <Header />
 
       {/* Hero Section */}

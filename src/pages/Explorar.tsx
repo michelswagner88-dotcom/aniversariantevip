@@ -408,13 +408,13 @@ const Explorar = () => {
               <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none z-10"></div>
               
               <div className="flex gap-3 pb-2 px-8">
-                <CategoryPill icon="🚀" label="Todos" active={!selectedCategory} onClick={() => selectCategory(null)} />
+                <CategoryPill icon="🚀" label="Todos" active={!categoryToFilter} onClick={() => selectCategory(null)} />
                 {CATEGORIAS_ESTABELECIMENTO.map((cat) => (
                   <CategoryPill 
                     key={cat.value}
                     icon={cat.icon} 
                     label={cat.label} 
-                    active={selectedCategory === cat.value} 
+                    active={categoryToFilter === cat.value} 
                     onClick={() => selectCategory(cat.value)} 
                   />
                 ))}
@@ -423,10 +423,10 @@ const Explorar = () => {
           </div>
 
           {/* Filtro de Subcategorias - aparece quando 1 categoria está selecionada */}
-          {selectedCategory && (
+          {categoryToFilter && (
             <div className="mt-3">
               <SubcategoryFilter
-                category={selectedCategory}
+                category={categoryToFilter}
                 selectedSubcategories={selectedSubcategories}
                 onSubcategoriesChange={setSelectedSubcategories}
               />

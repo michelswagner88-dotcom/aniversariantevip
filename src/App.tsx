@@ -17,6 +17,7 @@ import ProtectedAniversarianteRoute from "@/components/auth/ProtectedAniversaria
 import ProtectedAdminRoute from "@/components/auth/ProtectedAdminRoute";
 import PasswordProtection from "@/components/auth/PasswordProtection";
 import Carol from "@/components/ChatBot/Carol";
+import { useAppUpdate } from "@/hooks/useAppUpdate";
 
 // Lazy load das páginas principais
 const Index = lazy(() => import("./pages/Index"));
@@ -63,6 +64,13 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
+// Componente interno para usar hooks
+const AppContent = () => {
+  // Gerenciar atualizações automáticas do Service Worker
+  useAppUpdate();
+  
+  return null;
+};
 
 const App = () => (
   <PasswordProtection>
@@ -92,6 +100,7 @@ const App = () => (
       >
         <BrowserRouter>
             <AnalyticsProvider>
+              <AppContent />
               <Carol />
             <ErrorBoundary>
               <PageTransition>

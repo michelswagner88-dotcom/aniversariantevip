@@ -185,6 +185,7 @@ const Explorar = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const prevCidadeRef = useRef<string | null>(null);
   
   // --- BUSCA POR TEXTO (do URL param) ---
   const searchQuery = searchParams.get('q') || '';
@@ -208,6 +209,9 @@ const Explorar = () => {
   
   // Inicializar cidade, estado e categoria a partir dos URL params
   useEffect(() => {
+    // Detectar se a cidade mudou
+    const cidadeMudou = prevCidadeRef.current !== null && prevCidadeRef.current !== cidadeParam;
+    
     // Inicializar cidade da URL (com estado completo)
     if (cidadeParam) {
       setSelectedCity({ nome: cidadeParam, estado: estadoParam });
@@ -221,6 +225,14 @@ const Explorar = () => {
     } else {
       setSelectedCategory(null);
     }
+    
+    // RESETAR SUBCATEGORIAS quando a cidade muda
+    if (cidadeMudou) {
+      setSelectedSubcategories([]);
+    }
+    
+    // Atualizar referência da cidade anterior
+    prevCidadeRef.current = cidadeParam;
   }, [cidadeParam, estadoParam, categoriaParam]);
 
   // Auto-scroll para categoria selecionada quando vem da URL
@@ -265,6 +277,7 @@ const Explorar = () => {
   // Handler para limpar cidade
   const handleClearCity = () => {
     setSelectedCity(null);
+    setSelectedSubcategories([]);
   };
 
   // Aplicar filtros de proximidade e ordenação

@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface FlashPromo {
@@ -29,13 +30,14 @@ interface UseFlashPromosOptions {
 
 export const useFlashPromos = (options: UseFlashPromosOptions = {}) => {
   const { cidade, estado, enabled = true } = options;
+  const queryClient = useQueryClient();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['flash-promos', cidade, estado],
     queryFn: async () => {
       const now = new Date().toISOString();
       
-      let query = supabase
+      let q = supabase
         .from('flash_promos')
         .select(`
           *,
@@ -46,14 +48,14 @@ export const useFlashPromos = (options: UseFlashPromosOptions = {}) => {
         .order('expires_at', { ascending: true });
 
       if (cidade) {
-        query = query.eq('cidade', cidade);
+        q = q.eq('cidade', cidade);
       }
       
       if (estado) {
-        query = query.eq('estado', estado);
+        q = q.eq('estado', estado);
       }
 
-      const { data, error } = await query;
+      const { data, error } = await q;
 
       if (error) throw error;
       
@@ -66,8 +68,39 @@ export const useFlashPromos = (options: UseFlashPromosOptions = {}) => {
       return activeDeals as FlashPromo[];
     },
     enabled,
-    staleTime: 10 * 1000, // 10 segundos para dados mais frescos
-    gcTime: 30 * 1000, // 30 segundos
-    refetchInterval: 30 * 1000, // Refetch a cada 30s automaticamente
+    staleTime: 0, // Sempre fresh para realtime
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
+
+  // REALTIME: Escutar mudanças nas promos
+  useEffect(() => {
+    if (!enabled) return;
+    
+    console.log('[useFlashPromos] Configurando realtime listener...');
+    
+    const channel = supabase
+      .channel('flash-promos-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'flash_promos',
+        },
+        (payload) => {
+          console.log('[Realtime] Flash promo mudou:', payload.eventType);
+          queryClient.invalidateQueries({ queryKey: ['flash-promos'] });
+        }
+      )
+      .subscribe((status) => {
+        console.log('[Realtime] Flash promos subscription:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [enabled, queryClient]);
+
+  return query;
 };

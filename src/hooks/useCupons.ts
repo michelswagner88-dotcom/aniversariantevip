@@ -1,13 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryClient';
 import { Tables } from '@/integrations/supabase/types';
 
 type Cupom = Tables<'cupons'>;
 
-// Hook para listar cupons do usuário com cache
+// Hook para listar cupons do usuário com cache e REALTIME
 export const useMeusCupons = (userId: string | undefined) => {
-  return useQuery({
+  const queryClient = useQueryClient();
+  
+  const query = useQuery({
     queryKey: queryKeys.cupons.list(userId || ''),
     queryFn: async () => {
       if (!userId) throw new Error('Usuário não autenticado');
@@ -32,15 +35,50 @@ export const useMeusCupons = (userId: string | undefined) => {
       return data;
     },
     enabled: !!userId,
-    // Cupons mudam com menos frequência, cache moderado
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 0, // Sempre considerar stale para realtime
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
+
+  // REALTIME: Escutar mudanças nos cupons do usuário
+  useEffect(() => {
+    if (!userId) return;
+    
+    console.log('[useCupons] Configurando realtime listener...');
+    
+    const channel = supabase
+      .channel(`cupons-user-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cupons',
+          filter: `aniversariante_id=eq.${userId}`,
+        },
+        (payload) => {
+          console.log('[Realtime] Cupom mudou:', payload.eventType);
+          queryClient.invalidateQueries({ queryKey: queryKeys.cupons.list(userId) });
+        }
+      )
+      .subscribe((status) => {
+        console.log('[Realtime] Cupons subscription:', status);
+      });
+
+    return () => {
+      console.log('[Realtime] Removendo cupons listener...');
+      supabase.removeChannel(channel);
+    };
+  }, [userId, queryClient]);
+
+  return query;
 };
 
 // Hook para cupons ativos (não usados e não expirados)
 export const useCuponsAtivos = (userId: string | undefined) => {
-  return useQuery({
+  const queryClient = useQueryClient();
+  
+  const query = useQuery({
     queryKey: [...queryKeys.cupons.list(userId || ''), 'ativos'],
     queryFn: async () => {
       if (!userId) throw new Error('Usuário não autenticado');
@@ -68,8 +106,37 @@ export const useCuponsAtivos = (userId: string | undefined) => {
       return data;
     },
     enabled: !!userId,
-    staleTime: 1 * 60 * 1000, // 1 minuto (cupons ativos precisam ser mais atualizados)
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
+
+  // REALTIME já configurado em useMeusCupons - compartilha invalidação
+  useEffect(() => {
+    if (!userId) return;
+    
+    const channel = supabase
+      .channel(`cupons-ativos-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cupons',
+          filter: `aniversariante_id=eq.${userId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: [...queryKeys.cupons.list(userId), 'ativos'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, queryClient]);
+
+  return query;
 };
 
 // Mutation para emitir cupom com rate limiting

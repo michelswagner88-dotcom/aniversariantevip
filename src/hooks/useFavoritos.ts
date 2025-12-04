@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -6,16 +7,9 @@ export const useFavoritos = (userId: string | null) => {
   const [favoritos, setFavoritos] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (userId) {
-      loadFavoritos();
-    } else {
-      setFavoritos([]);
-    }
-  }, [userId]);
-
-  const loadFavoritos = async () => {
+  const loadFavoritos = useCallback(async () => {
     if (!userId) return;
 
     try {
@@ -29,7 +23,61 @@ export const useFavoritos = (userId: string | null) => {
     } catch (error) {
       console.error("Erro ao carregar favoritos:", error);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      loadFavoritos();
+    } else {
+      setFavoritos([]);
+    }
+  }, [userId, loadFavoritos]);
+
+  // REALTIME: Escutar mudanças nos favoritos do usuário
+  useEffect(() => {
+    if (!userId) return;
+    
+    console.log('[useFavoritos] Configurando realtime listener...');
+    
+    const channel = supabase
+      .channel(`favoritos-user-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'favoritos',
+          filter: `usuario_id=eq.${userId}`,
+        },
+        (payload) => {
+          console.log('[Realtime] Favorito mudou:', payload.eventType);
+          
+          // Atualizar lista local baseado no evento
+          if (payload.eventType === 'INSERT' && payload.new) {
+            const newFav = payload.new as { estabelecimento_id: string };
+            setFavoritos(prev => [...prev, newFav.estabelecimento_id]);
+          } else if (payload.eventType === 'DELETE' && payload.old) {
+            const oldFav = payload.old as { estabelecimento_id: string };
+            setFavoritos(prev => prev.filter(id => id !== oldFav.estabelecimento_id));
+          } else {
+            // Fallback: recarregar tudo
+            loadFavoritos();
+          }
+          
+          // Invalidar queries relacionadas
+          queryClient.invalidateQueries({ queryKey: ['favoritos'] });
+          queryClient.invalidateQueries({ queryKey: ['meus-favoritos'] });
+        }
+      )
+      .subscribe((status) => {
+        console.log('[Realtime] Favoritos subscription:', status);
+      });
+
+    return () => {
+      console.log('[Realtime] Removendo favoritos listener...');
+      supabase.removeChannel(channel);
+    };
+  }, [userId, loadFavoritos, queryClient]);
 
   const toggleFavorito = async (estabelecimentoId: string) => {
     if (!userId) {
@@ -43,9 +91,9 @@ export const useFavoritos = (userId: string | null) => {
 
     setLoading(true);
     try {
-      const isFavorito = favoritos.includes(estabelecimentoId);
+      const isFav = favoritos.includes(estabelecimentoId);
 
-      if (isFavorito) {
+      if (isFav) {
         // Remove favorito
         const { error } = await supabase
           .from("favoritos")
@@ -54,7 +102,7 @@ export const useFavoritos = (userId: string | null) => {
           .eq("estabelecimento_id", estabelecimentoId);
 
         if (error) throw error;
-        setFavoritos(favoritos.filter((id) => id !== estabelecimentoId));
+        // Realtime irá atualizar automaticamente
         toast({
           title: "Removido dos favoritos",
           description: "Estabelecimento removido da sua lista",
@@ -69,7 +117,7 @@ export const useFavoritos = (userId: string | null) => {
           });
 
         if (error) throw error;
-        setFavoritos([...favoritos, estabelecimentoId]);
+        // Realtime irá atualizar automaticamente
         toast({
           title: "Adicionado aos favoritos",
           description: "Estabelecimento salvo na sua lista",
@@ -96,5 +144,6 @@ export const useFavoritos = (userId: string | null) => {
     toggleFavorito,
     isFavorito,
     loading,
+    refetch: loadFavoritos,
   };
 };

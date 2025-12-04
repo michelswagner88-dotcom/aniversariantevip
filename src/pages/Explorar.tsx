@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { MapPin, Search, SlidersHorizontal, Map as MapIconLucide, List, X, Check, Share2, Heart, CalendarDays, Navigation, Store, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
@@ -22,9 +22,10 @@ import { EstabelecimentoCardSkeleton } from '@/components/skeletons/Estabelecime
 import { SubcategoryFilter } from '@/components/SubcategoryFilter';
 
 // --- Componentes UI ---
-const CategoryPill = ({ icon, label, active, onClick }: any) => (
+const CategoryPill = ({ icon, label, active, onClick, dataCategory }: any) => (
   <button 
     onClick={onClick}
+    data-category={dataCategory}
     className={`flex items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition-all duration-300 active:scale-95 ${
       active 
         ? 'border-violet-500 bg-violet-600 text-white shadow-lg shadow-violet-500/20 scale-105' 
@@ -183,6 +184,7 @@ const Explorar = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
   
   // --- BUSCA POR TEXTO (do URL param) ---
   const searchQuery = searchParams.get('q') || '';
@@ -220,6 +222,18 @@ const Explorar = () => {
       setSelectedCategory(null);
     }
   }, [searchParams]);
+
+  // Auto-scroll para categoria selecionada quando vem da URL
+  useEffect(() => {
+    if (categoriaParam && categoryScrollRef.current) {
+      const selectedPill = categoryScrollRef.current.querySelector(`[data-category="${categoriaParam}"]`);
+      if (selectedPill) {
+        setTimeout(() => {
+          selectedPill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }, 100);
+      }
+    }
+  }, [categoriaParam]);
   
   // Buscar estabelecimentos da cidade selecionada (usando params direto para evitar delay de estado)
   const { data: estabelecimentosCidade = [], isLoading: loadingCidade, error: errorCidade } = useEstabelecimentos({
@@ -403,19 +417,20 @@ const Explorar = () => {
             </button>
             
             {/* Categorias em scroll horizontal */}
-            <div className="flex-1 overflow-x-auto scrollbar-hide relative">
+            <div ref={categoryScrollRef} className="flex-1 overflow-x-auto scrollbar-hide relative">
               <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none z-10"></div>
               <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none z-10"></div>
               
               <div className="flex gap-3 pb-2 px-8">
-                <CategoryPill icon="🚀" label="Todos" active={!categoryToFilter} onClick={() => selectCategory(null)} />
+                <CategoryPill icon="🚀" label="Todos" active={!categoryToFilter} onClick={() => selectCategory(null)} dataCategory="todos" />
                 {CATEGORIAS_ESTABELECIMENTO.map((cat) => (
                   <CategoryPill 
                     key={cat.value}
                     icon={cat.icon} 
                     label={cat.label} 
                     active={categoryToFilter === cat.value} 
-                    onClick={() => selectCategory(cat.value)} 
+                    onClick={() => selectCategory(cat.value)}
+                    dataCategory={cat.value}
                   />
                 ))}
               </div>

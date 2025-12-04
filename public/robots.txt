@@ -1,14 +1,54 @@
+# robots.txt - Aniversariante VIP
+# O maior guia de benefícios para aniversariantes do Brasil
+
+User-agent: *
+Allow: /
+
+# Sitemap (Edge Function dinâmico)
+Sitemap: https://muwugpcegkdgujfesrfq.supabase.co/functions/v1/sitemap
+
+# Bloquear páginas administrativas e de autenticação
+Disallow: /admin/
+Disallow: /auth
+Disallow: /login/
+Disallow: /cadastro/
+Disallow: /area-colaborador
+Disallow: /area-aniversariante
+Disallow: /area-estabelecimento
+Disallow: /setup-admin
+Disallow: /reset-password
+Disallow: /forgot-password
+
+# Bloquear parâmetros de busca duplicados
+Disallow: /*?*
+
+# Permitir parâmetros importantes
+Allow: /explorar?cidade=
+Allow: /explorar?estado=
+Allow: /explorar?categoria=
+
+# Crawlers de redes sociais - permitir tudo
 User-agent: Googlebot
 Allow: /
 
 User-agent: Bingbot
 Allow: /
 
-User-agent: Twitterbot
-Allow: /
-
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
+User-agent: Twitterbot
 Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+# Crawl-delay para bots genéricos (evita sobrecarga)
+User-agent: *
+Crawl-delay: 1

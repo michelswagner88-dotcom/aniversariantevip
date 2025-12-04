@@ -5,8 +5,15 @@ import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { BackButton } from "@/components/BackButton";
+import { useSEO } from "@/hooks/useSEO";
+import { SEO_CONTENT } from "@/constants/seo";
 
 export default function SejaParceiro() {
+  // SEO
+  useSEO({
+    title: SEO_CONTENT.sejaParceiro.title,
+    description: SEO_CONTENT.sejaParceiro.description,
+  });
   const vantagens = [
     {
       titulo: "Mais movimento",

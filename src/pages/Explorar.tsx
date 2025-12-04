@@ -20,6 +20,8 @@ import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { TiltCard } from '@/components/ui/tilt-card';
 import { EstabelecimentoCardSkeleton } from '@/components/skeletons/EstabelecimentoCardSkeleton';
 import { SubcategoryFilter } from '@/components/SubcategoryFilter';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO_CONTENT, getCidadeSEO, getCategoriaSEO } from '@/constants/seo';
 
 // --- Componentes UI ---
 const CategoryPill = ({ icon, label, active, onClick, dataCategory }: any) => (
@@ -184,6 +186,29 @@ const Explorar = () => {
   
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  
+  // SEO dinâmico baseado nos filtros
+  const cidadeParamSEO = searchParams.get('cidade') || '';
+  const estadoParamSEO = searchParams.get('estado') || '';
+  const categoriaParamSEO = searchParams.get('categoria') || '';
+  
+  const seoContent = useMemo(() => {
+    if (cidadeParamSEO && categoriaParamSEO) {
+      return getCategoriaSEO(categoriaParamSEO, cidadeParamSEO, estadoParamSEO);
+    }
+    if (cidadeParamSEO) {
+      return getCidadeSEO(cidadeParamSEO, estadoParamSEO);
+    }
+    if (categoriaParamSEO) {
+      return getCategoriaSEO(categoriaParamSEO);
+    }
+    return SEO_CONTENT.explorar;
+  }, [cidadeParamSEO, estadoParamSEO, categoriaParamSEO]);
+  
+  useSEO({
+    title: seoContent.title,
+    description: seoContent.description,
+  });
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);

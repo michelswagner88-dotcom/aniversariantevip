@@ -2,8 +2,15 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { useSEO } from "@/hooks/useSEO";
+import { SEO_CONTENT } from "@/constants/seo";
 
 export default function PoliticaPrivacidade() {
+  // SEO
+  useSEO({
+    title: SEO_CONTENT.politicaPrivacidade.title,
+    description: SEO_CONTENT.politicaPrivacidade.description,
+  });
   return (
     <div className="min-h-screen flex flex-col bg-slate-950">
       {/* Background com grid pattern */}

@@ -7,8 +7,16 @@ import {
   Smartphone, Zap, LayoutGrid, MapPin, Shield, Heart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO_CONTENT } from '@/constants/seo';
 
 const ComoFunciona = () => {
+  // SEO
+  useSEO({
+    title: SEO_CONTENT.comoFunciona.title,
+    description: SEO_CONTENT.comoFunciona.description,
+  });
+
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'aniversariante' | 'estabelecimento'>('aniversariante');
 

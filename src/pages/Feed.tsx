@@ -16,6 +16,8 @@ import { toast } from 'sonner';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { PostCardSkeleton } from '@/components/skeletons/PostCardSkeleton';
 import { EmptyState } from '@/components/EmptyState';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO_CONTENT } from '@/constants/seo';
 
 const PostCard = ({ post, navigate }: { post: any; navigate: any }) => {
   const { likesCount, hasLiked, toggleLike, commentsCount, addComment, isTogglingLike } = usePostInteractions(post.id);
@@ -161,6 +163,12 @@ const PostCard = ({ post, navigate }: { post: any; navigate: any }) => {
 };
 
 export default function Feed() {
+  // SEO
+  useSEO({
+    title: SEO_CONTENT.feed.title,
+    description: SEO_CONTENT.feed.description,
+  });
+  
   const navigate = useNavigate();
 
   // Buscar posts dos estabelecimentos que o usuário segue

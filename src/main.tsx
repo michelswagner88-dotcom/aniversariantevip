@@ -7,7 +7,7 @@ import App from "./App.tsx";
 import "./index.css";
 
 // Versão do app para controle de cache
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.3.0';
 
 // Verificação de versão - limpar caches se versão mudou
 const storedVersion = localStorage.getItem('app_version');
@@ -33,6 +33,11 @@ if ('serviceWorker' in navigator) {
     registration.update().catch((err) => {
       console.error('[SW] Erro ao verificar atualizações:', err);
     });
+    
+    // Verificar atualizações periodicamente (a cada 60 segundos)
+    setInterval(() => {
+      registration.update().catch(console.error);
+    }, 60 * 1000);
     
     // Escutar quando um novo SW for instalado
     registration.onupdatefound = () => {

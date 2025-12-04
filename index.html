@@ -3,6 +3,45 @@
   <head>
     <meta charset="UTF-8" />
     
+    <!-- Cache Cleanup Script - Limpar caches problemáticos de versões antigas -->
+    <script>
+      (function() {
+        var CACHE_VERSION = 'v3';
+        var lastVersion = localStorage.getItem('cache_version');
+        
+        if (lastVersion !== CACHE_VERSION) {
+          console.log('[Cache] Versão do cache mudou, limpando...');
+          
+          // Limpar todos os caches
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              names.forEach(function(name) {
+                caches.delete(name);
+                console.log('[Cache] Removido:', name);
+              });
+            });
+          }
+          
+          // Desregistrar Service Workers antigos
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+              registrations.forEach(function(registration) {
+                registration.unregister();
+                console.log('[SW] Desregistrado');
+              });
+            });
+          }
+          
+          localStorage.setItem('cache_version', CACHE_VERSION);
+          
+          // Recarregar após limpeza (com pequeno delay)
+          setTimeout(function() {
+            window.location.reload();
+          }, 100);
+        }
+      })();
+    </script>
+    
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-6YZWYCLN8T"></script>
     <script>

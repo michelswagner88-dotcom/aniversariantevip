@@ -14,6 +14,7 @@ import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import { useNavigate, Link } from "react-router-dom";
 import { CityCombobox } from "@/components/CityCombobox";
+import { useAppNavigation } from "@/hooks/useAppNavigation";
 import { useQuery } from "@tanstack/react-query";
 import { sanitizarInput } from "@/lib/sanitize";
 
@@ -40,6 +41,7 @@ interface Estabelecimento {
 
 const Index = () => {
   const navigate = useNavigate();
+  const { goToExplorar } = useAppNavigation();
   const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoria, setSelectedCategoria] = useState("");
@@ -356,15 +358,16 @@ const Index = () => {
                 {/* Botão Buscar */}
                 <Button 
                   size="lg"
-                  onClick={() => {
-                    const params = new URLSearchParams();
-                    if (selectedCidade) params.set('cidade', selectedCidade);
-                    if (selectedEstado) params.set('estado', selectedEstado);
-                    if (selectedCategoria && selectedCategoria !== 'todas' && selectedCategoria !== '') {
-                      params.set('categoria', selectedCategoria);
-                    }
-                    const queryString = params.toString();
-                    navigate(queryString ? `/explorar?${queryString}` : '/explorar');
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[HeroSearch] Buscar clicado:', { selectedCidade, selectedEstado, selectedCategoria });
+                    goToExplorar({
+                      cidade: selectedCidade,
+                      estado: selectedEstado,
+                      categoria: selectedCategoria,
+                    });
                   }}
                   className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white h-12 px-8 rounded-xl font-semibold shadow-lg shadow-violet-500/25"
                 >
@@ -435,15 +438,16 @@ const Index = () => {
                     
                     <Button 
                       size="lg"
-                      onClick={() => {
-                        const params = new URLSearchParams();
-                        if (selectedCidade) params.set('cidade', selectedCidade);
-                        if (selectedEstado) params.set('estado', selectedEstado);
-                        if (selectedCategoria && selectedCategoria !== 'todas' && selectedCategoria !== '') {
-                          params.set('categoria', selectedCategoria);
-                        }
-                        const queryString = params.toString();
-                        navigate(queryString ? `/explorar?${queryString}` : '/explorar');
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('[HeroSearch Mobile] Buscar clicado:', { selectedCidade, selectedEstado, selectedCategoria });
+                        goToExplorar({
+                          cidade: selectedCidade,
+                          estado: selectedEstado,
+                          categoria: selectedCategoria,
+                        });
                       }}
                       className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white h-12 rounded-xl font-semibold shadow-lg shadow-violet-500/25 w-full"
                     >

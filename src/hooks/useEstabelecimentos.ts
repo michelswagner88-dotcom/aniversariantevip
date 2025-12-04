@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryClient';
 import { Tables } from '@/integrations/supabase/types';
@@ -14,40 +15,39 @@ interface EstabelecimentoFilters {
   showAll?: boolean;
 }
 
-// Hook otimizado para listar estabelecimentos com cache e filtros
+// Hook otimizado para listar estabelecimentos com cache, filtros e REALTIME
 export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
-  return useQuery({
+  const queryClient = useQueryClient();
+  
+  const query = useQuery({
     queryKey: queryKeys.estabelecimentos.list(filters),
     queryFn: async () => {
       console.log('[useEstabelecimentos] Executando query com filtros:', filters);
       
-      let query = supabase
+      let q = supabase
         .from('public_estabelecimentos')
         .select('*')
-        .eq('ativo', true) // Apenas estabelecimentos ativos
+        .eq('ativo', true)
         .order('created_at', { ascending: false });
 
-      // Aplicar filtros (ignora cidade/estado se showAll está ativo)
       if (filters.cidade && !filters.showAll) {
-        // Usar wildcards para match mais flexível (lida com acentos e variações)
         const cidadeSanitizada = sanitizarInput(filters.cidade, 100);
         console.log('[useEstabelecimentos] Filtrando por cidade:', cidadeSanitizada);
-        query = query.ilike('cidade', `%${cidadeSanitizada}%`);
+        q = q.ilike('cidade', `%${cidadeSanitizada}%`);
       }
       if (filters.estado && !filters.showAll) {
-        query = query.ilike('estado', sanitizarInput(filters.estado, 2));
+        q = q.ilike('estado', sanitizarInput(filters.estado, 2));
       }
       if (filters.categoria && filters.categoria.length > 0) {
-        // Categorias são enums controlados, não precisam sanitização mas aplicamos por segurança
         const categoriasSanitizadas = filters.categoria.map(c => sanitizarInput(c, 50));
-        query = query.overlaps('categoria', categoriasSanitizadas);
+        q = q.overlaps('categoria', categoriasSanitizadas);
       }
       if (filters.search) {
         const searchSanitizado = sanitizarInput(filters.search, 100);
-        query = query.or(`nome_fantasia.ilike.%${searchSanitizado}%,razao_social.ilike.%${searchSanitizado}%`);
+        q = q.or(`nome_fantasia.ilike.%${searchSanitizado}%,razao_social.ilike.%${searchSanitizado}%`);
       }
 
-      const { data, error } = await query;
+      const { data, error } = await q;
       
       console.log('[useEstabelecimentos] Resultado:', { 
         count: data?.length, 
@@ -58,12 +58,43 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
       if (error) throw error;
       return data as Estabelecimento[];
     },
-    // Cache menos agressivo para evitar stale data
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
-    // Sempre refetch quando montar
+    staleTime: 0, // Sempre considerar stale
     refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
+
+  // REALTIME: Escutar mudanças na tabela estabelecimentos
+  useEffect(() => {
+    console.log('[useEstabelecimentos] Configurando listener realtime...');
+    
+    const channel = supabase
+      .channel('estabelecimentos-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'estabelecimentos',
+        },
+        (payload) => {
+          console.log('[Realtime] Mudança detectada:', payload.eventType);
+          
+          // Invalidar TODAS as queries de estabelecimentos
+          queryClient.invalidateQueries({ queryKey: ['estabelecimentos'] });
+          queryClient.invalidateQueries({ queryKey: ['public_estabelecimentos'] });
+        }
+      )
+      .subscribe((status) => {
+        console.log('[Realtime] Status subscription:', status);
+      });
+
+    return () => {
+      console.log('[Realtime] Removendo listener...');
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  return query;
 };
 
 // Hook para obter detalhes de um estabelecimento específico
@@ -77,14 +108,15 @@ export const useEstabelecimento = (id: string | undefined) => {
         .from('public_estabelecimentos')
         .select('*')
         .eq('id', id)
-        .eq('ativo', true) // Apenas estabelecimentos ativos
+        .eq('ativo', true)
         .single();
       
       if (error) throw error;
       return data as Estabelecimento;
     },
     enabled: !!id,
-    staleTime: 15 * 60 * 1000, // 15 minutos (detalhes mudam ainda menos)
+    staleTime: 0,
+    refetchOnMount: true,
   });
 };
 

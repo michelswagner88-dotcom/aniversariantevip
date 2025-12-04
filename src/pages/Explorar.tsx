@@ -315,8 +315,11 @@ const Explorar = () => {
       }));
   }, [estabelecimentosComDistancia]);
 
+  // Usar categoriaParam diretamente da URL para evitar delay do estado
+  const categoryToFilter = categoriaParam || selectedCategory;
+  
   const filteredPlaces = allPlaces.filter(place => {
-    if (selectedCategory && place.category !== selectedCategory) return false;
+    if (categoryToFilter && place.category !== categoryToFilter) return false;
     if (filterDay !== 'any' && !place.validDays.includes(filterDay)) return false;
     if (selectedSubcategories.length > 0) {
       const placeSubcats = place.especialidades || [];
@@ -344,11 +347,18 @@ const Explorar = () => {
   });
 
   const selectCategory = (category: string | null) => {
-    if (selectedCategory === category) {
-      setSelectedCategory(null);
+    const newCategory = (categoryToFilter === category) ? null : category;
+    
+    // Atualizar URL para manter estado sincronizado
+    const newParams = new URLSearchParams(searchParams);
+    if (newCategory) {
+      newParams.set('categoria', newCategory);
     } else {
-      setSelectedCategory(category);
+      newParams.delete('categoria');
     }
+    navigate(`/explorar?${newParams.toString()}`, { replace: true });
+    
+    setSelectedCategory(newCategory);
     setSelectedSubcategories([]);
   };
 

@@ -6,7 +6,7 @@
     <!-- Cache Cleanup Script - Limpar caches problemáticos de versões antigas -->
     <script>
       (function() {
-        var CACHE_VERSION = 'v6';
+        var CACHE_VERSION = 'v7';
         var lastVersion = localStorage.getItem('cache_version');
         
         // Forçar atualização se versão mudou
@@ -67,12 +67,16 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Aniversariante VIP" />
     <meta name="theme-color" content="#0D0D0D" />
     
-    <title>Aniversariante VIP - O Maior Guia de Benefícios do Brasil</title>
-    <meta name="description" content="Encontre estabelecimentos com benefícios especiais para o seu aniversário: do mês inteiro ao grande dia de comemoração." />
+    <!-- SEO Base Tags -->
+    <title>Aniversariante VIP - Benefícios Exclusivos para Aniversariantes</title>
+    <meta name="description" content="O maior guia de benefícios para aniversariantes do Brasil. Encontre restaurantes, bares, academias e mais de 50 categorias com vantagens especiais no seu aniversário. Cadastre-se grátis!" />
+    <meta name="keywords" content="aniversário, benefícios, cupons, restaurantes, bares, academias, descontos, promoções, aniversariante, grátis" />
     <meta name="author" content="Aniversariante VIP" />
-    <link rel="canonical" href="https://www.aniversariantevip.com.br" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://aniversariantevip.com.br" />
 
     <!-- Google Fonts - Otimizado para performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -83,15 +87,23 @@
     <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
     <link rel="dns-prefetch" href="https://images.unsplash.com" />
 
-    <meta property="og:title" content="Aniversariante VIP - O Maior Guia de Benefícios do Brasil" />
-    <meta property="og:description" content="Encontre estabelecimentos com benefícios especiais para o seu aniversário: do mês inteiro ao grande dia de comemoração." />
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://www.aniversariantevip.com.br/og-image.png" />
-    <meta property="og:url" content="https://www.aniversariantevip.com.br" />
+    <meta property="og:site_name" content="Aniversariante VIP" />
+    <meta property="og:title" content="Aniversariante VIP - Benefícios Exclusivos para Aniversariantes" />
+    <meta property="og:description" content="O maior guia de benefícios para aniversariantes do Brasil. Encontre restaurantes, bares, academias e mais de 50 categorias com vantagens especiais no seu aniversário." />
+    <meta property="og:image" content="https://aniversariantevip.com.br/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://aniversariantevip.com.br" />
+    <meta property="og:locale" content="pt_BR" />
 
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@aniversariantevip" />
-    <meta name="twitter:image" content="https://www.aniversariantevip.com.br/og-image.png" />
+    <meta name="twitter:title" content="Aniversariante VIP - Benefícios Exclusivos para Aniversariantes" />
+    <meta name="twitter:description" content="O maior guia de benefícios para aniversariantes do Brasil. Cadastre-se grátis!" />
+    <meta name="twitter:image" content="https://aniversariantevip.com.br/og-image.png" />
   </head>
 
   <body>

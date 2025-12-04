@@ -22,6 +22,8 @@ import {
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/useWindowSize';
+import { useSEO } from '@/hooks/useSEO';
+import { getEstabelecimentoSEO } from '@/constants/seo';
 
 interface EstabelecimentoDetalheProps {
   estabelecimentoIdProp?: string | null;
@@ -33,6 +35,13 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   const navigate = useNavigate();
   const [estabelecimento, setEstabelecimento] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
+  // SEO dinâmico do estabelecimento
+  useSEO(
+    estabelecimento 
+      ? getEstabelecimentoSEO(estabelecimento)
+      : { title: 'Carregando...', description: 'Carregando informações do estabelecimento...' }
+  );
   const [showCupomModal, setShowCupomModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);

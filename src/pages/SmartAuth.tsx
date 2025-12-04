@@ -13,8 +13,15 @@ import { useInputMask } from '@/hooks/useInputMask';
 import { useCheckCpfExists } from '@/hooks/useCheckCpfExists';
 import { useCepLookup } from '@/hooks/useCepLookup';
 import { getFriendlyErrorMessage } from '@/lib/errorTranslator';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO_CONTENT } from '@/constants/seo';
 
 const SmartAuth = () => {
+  // SEO
+  useSEO({
+    title: SEO_CONTENT.auth.title,
+    description: SEO_CONTENT.auth.description,
+  });
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');

@@ -6,8 +6,15 @@ import { Link } from "react-router-dom";
 import { CONTATOS } from "@/lib/constants";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { useSEO } from "@/hooks/useSEO";
+import { SEO_CONTENT } from "@/constants/seo";
 
 export default function FAQ() {
+  // SEO
+  useSEO({
+    title: SEO_CONTENT.faq.title,
+    description: SEO_CONTENT.faq.description,
+  });
   const faqItems = [
     {
       pergunta: "Posso usar vários benefícios no mesmo mês?",

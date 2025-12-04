@@ -17,6 +17,8 @@ import { CityCombobox } from "@/components/CityCombobox";
 import { useAppNavigation } from "@/hooks/useAppNavigation";
 import { useQuery } from "@tanstack/react-query";
 import { sanitizarInput } from "@/lib/sanitize";
+import { useSEO } from "@/hooks/useSEO";
+import { SEO_CONTENT } from "@/constants/seo";
 
 import { GlowText } from "@/components/ui/glow-text";
 import { RevealOnScroll } from "@/components/ui/reveal-on-scroll";
@@ -40,6 +42,12 @@ interface Estabelecimento {
 }
 
 const Index = () => {
+  // SEO
+  useSEO({
+    title: SEO_CONTENT.home.title,
+    description: SEO_CONTENT.home.description,
+  });
+
   const navigate = useNavigate();
   const { goToExplorar } = useAppNavigation();
   const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);

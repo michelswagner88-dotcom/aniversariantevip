@@ -221,7 +221,7 @@ const Explorar = () => {
     } else {
       setSelectedCategory(null);
     }
-  }, [searchParams]);
+  }, [cidadeParam, estadoParam, categoriaParam]);
 
   // Auto-scroll para categoria selecionada quando vem da URL
   useEffect(() => {
@@ -246,27 +246,15 @@ const Explorar = () => {
     showAll: true,
   });
 
-  // DEBUG: Log para diagnóstico
-  console.log('[Explorar] Debug:', {
-    selectedCity,
-    selectedCategory,
-    cidadeParam,
-    estadoParam,
-    categoriaParam,
-    estabelecimentosCidade: estabelecimentosCidade?.length,
-    todosEstabelecimentos: todosEstabelecimentos?.length,
-    loadingCidade,
-    loadingTodos,
-    errorCidade,
-    errorTodos,
-  });
-
+  // Usar cidadeParam diretamente para evitar race condition com setState
+  const cidadeSelecionada = cidadeParam || selectedCity?.nome;
+  
   // Prioriza estabelecimentos da cidade, senão mostra todos
-  const estabelecimentos = selectedCity && estabelecimentosCidade.length > 0 
+  const estabelecimentos = cidadeSelecionada && estabelecimentosCidade.length > 0 
     ? estabelecimentosCidade 
     : todosEstabelecimentos;
 
-  const mostrandoOutrasCidades = selectedCity && estabelecimentosCidade.length === 0 && todosEstabelecimentos.length > 0;
+  const mostrandoOutrasCidades = cidadeSelecionada && estabelecimentosCidade.length === 0 && todosEstabelecimentos.length > 0;
   const loadingEstabelecimentos = loadingCidade || loadingTodos;
 
   // --- ESTADOS DOS FILTROS ---
@@ -481,7 +469,7 @@ const Explorar = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-white mb-1">
-                      Ainda não temos parceiros em {selectedCity?.nome} 😔
+                      Ainda não temos parceiros em {cidadeSelecionada} 😔
                     </h3>
                     <p className="text-violet-200 text-sm mb-4">
                       Mas estamos crescendo rápido! Quer ajudar a trazer o Aniversariante VIP pra sua cidade?

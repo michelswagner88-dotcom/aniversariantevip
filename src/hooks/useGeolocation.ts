@@ -165,8 +165,9 @@ export const useGeolocation = () => {
       setLoading(false);
       setCurrentStep('success');
     } else {
-      // Não tem cache? Tenta geolocalização UMA vez
-      requestLocation();
+      // NÃO chama automaticamente - aguarda ação explícita do usuário
+      setLoading(false);
+      setCurrentStep('idle');
     }
   }, []);
 

@@ -187,6 +187,7 @@ const Explorar = () => {
   // --- BUSCA POR TEXTO (do URL param) ---
   const searchQuery = searchParams.get('q') || '';
   const cidadeParam = searchParams.get('cidade') || '';
+  const estadoParam = searchParams.get('estado') || '';
   const categoriaParam = searchParams.get('categoria') || '';
   const especialidadeParam = searchParams.get('especialidade') || '';
   
@@ -203,15 +204,22 @@ const Explorar = () => {
   // --- HOOKS ---
   const { location: userLocation, requestLocation, loading: userLocationLoading } = useUserLocation();
   
-  // Inicializar cidade e categoria a partir dos URL params
+  // Inicializar cidade, estado e categoria a partir dos URL params
   useEffect(() => {
-    if (cidadeParam && !selectedCity) {
-      setSelectedCity({ nome: cidadeParam, estado: '' });
+    // Inicializar cidade da URL (com estado completo)
+    if (cidadeParam) {
+      setSelectedCity({ nome: cidadeParam, estado: estadoParam });
+    } else {
+      setSelectedCity(null);
     }
-    if (categoriaParam && !selectedCategory) {
+    
+    // Inicializar categoria da URL
+    if (categoriaParam) {
       setSelectedCategory(categoriaParam);
+    } else {
+      setSelectedCategory(null);
     }
-  }, [cidadeParam, categoriaParam]);
+  }, [searchParams]);
   
   // Buscar estabelecimentos da cidade selecionada
   const { data: estabelecimentosCidade = [], isLoading: loadingCidade } = useEstabelecimentos({

@@ -293,9 +293,8 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
     const icons: Record<string, string> = {
       'Restaurante': '🍽️', 'Bar': '🍺', 'Academia': '💪', 'Salão de Beleza': '💇',
       'Barbearia': '✂️', 'Cafeteria': '☕', 'Casa Noturna': '🎉', 'Confeitaria': '🍰',
-      'Entretenimento': '🎬', 'Hospedagem': '🏨', 'Loja de Presentes': '🎁',
-      'Moda e Acessórios': '👗', 'Saúde e Suplementos': '💊', 'Serviços': '🔧',
-      'Outros Comércios': '🏪',
+      'Entretenimento': '🎬', 'Hospedagem': '🏨', 'Loja': '🛍️',
+      'Serviços': '🔧', 'Outros Comércios': '🏪',
     };
     return icons[categoria] || '📍';
   };

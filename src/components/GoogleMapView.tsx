@@ -37,9 +37,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   'Confeitaria': '🍰',
   'Entretenimento': '🎬',
   'Hospedagem': '🏨',
-  'Loja de Presentes': '🎁',
-  'Moda e Acessórios': '👗',
-  'Saúde e Suplementos': '💊',
+  'Loja': '🛍️',
   'Serviços': '🔧',
   'Outros Comércios': '🏪',
 };

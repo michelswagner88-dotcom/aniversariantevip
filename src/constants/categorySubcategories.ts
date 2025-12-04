@@ -37,7 +37,7 @@ export const CATEGORY_SUBCATEGORIES: Record<string, string[]> = {
   ],
   'Loja': [
     'Roupas', 'Calçados', 'Cosméticos', 'Acessórios', 'Presentes', 
-    'Eletrônicos', 'Decoração', 'Joias', 'Bolsas', 'Óculos', 'Perfumaria', 'Outros'
+    'Eletrônicos', 'Decoração', 'Joias', 'Bolsas', 'Óculos', 'Perfumaria', 'Suplementos', 'Outros'
   ],
   'Restaurante': [
     'Pizzaria', 'Churrascaria', 'Sushi/Japonês', 'Hambúrguer', 'Italiana', 
@@ -49,10 +49,6 @@ export const CATEGORY_SUBCATEGORIES: Record<string, string[]> = {
     'Corte', 'Coloração', 'Manicure/Pedicure', 'Maquiagem', 
     'Sobrancelha', 'Depilação', 'Tratamentos Capilares', 'Escova', 
     'Penteado', 'Extensão de Cílios', 'Design de Sobrancelha', 'Outros'
-  ],
-  'Saúde e Suplementos': [
-    'Suplementos', 'Produtos Naturais', 'Vitaminas', 'Fitness', 
-    'Proteínas', 'Emagrecedores', 'Energéticos', 'Orgânicos', 'Veganos', 'Outros'
   ],
   'Serviços': [
     'Estética', 'Massagem', 'Spa Day', 'Bronzeamento', 'Tatuagem', 

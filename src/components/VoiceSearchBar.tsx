@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Search, MapPin, Mic, Loader2, LocateFixed, X, Store, Tag, Clock, Sparkles } from 'lucide-react';
+import { Search, MapPin, Mic, Loader2, LocateFixed, X, Store, Tag, Clock, Sparkles, CheckCircle } from 'lucide-react';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useCepLookup } from '../hooks/useCepLookup';
+import { useCidadesAutocomplete } from '../hooks/useCidadesAutocomplete';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -68,6 +69,11 @@ const VoiceSearchBar = () => {
   
   // Search history state
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+  
+  // City autocomplete state
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const { cidades: cidadesSugestoes, isLoading: loadingCidades } = useCidadesAutocomplete(locationText);
+  const cityInputRef = useRef<HTMLInputElement>(null);
 
   // Carregar histórico do localStorage
   useEffect(() => {
@@ -166,6 +172,7 @@ const VoiceSearchBar = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
+        setShowCitySuggestions(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -526,16 +533,25 @@ const VoiceSearchBar = () => {
           : 'border-white/10 bg-white/5 shadow-2xl'
       }`}>
         
-        {/* Input 1: Localização */}
-        <div className="flex h-14 w-full flex-1 items-center gap-3 rounded-2xl bg-white/5 px-4 transition-colors focus-within:bg-white/10 md:bg-transparent md:focus-within:bg-transparent">
+        {/* Input 1: Localização com Autocomplete */}
+        <div className="relative flex h-14 w-full flex-1 items-center gap-3 rounded-2xl bg-white/5 px-4 transition-colors focus-within:bg-white/10 md:bg-transparent md:focus-within:bg-transparent">
           <MapPin className="text-violet-400" size={20} />
           <input 
+            ref={cityInputRef}
             type="text" 
             value={locationText}
-            onChange={(e) => handleLocationChange(e.target.value)}
+            onChange={(e) => {
+              handleLocationChange(e.target.value);
+              setShowCitySuggestions(true);
+            }}
+            onFocus={() => locationText.length >= 3 && setShowCitySuggestions(true)}
             placeholder="Digite a cidade" 
             className="w-full bg-transparent text-white placeholder-slate-400 outline-none"
+            autoComplete="off"
           />
+          {loadingCidades && (
+            <Loader2 size={16} className="animate-spin text-violet-400" />
+          )}
           {locationText && (
             <button onClick={clearLocation} className="text-slate-400 hover:text-white">
               <X size={16} />
@@ -553,6 +569,47 @@ const VoiceSearchBar = () => {
               <LocateFixed size={20} className="text-slate-400 group-hover:text-violet-400" />
             )}
           </button>
+          
+          {/* Dropdown de Cidades */}
+          <AnimatePresence>
+            {showCitySuggestions && cidadesSugestoes.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.15 }}
+                className="absolute left-0 right-0 top-full mt-2 rounded-xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl overflow-hidden z-[100]"
+              >
+                <div className="p-2 max-h-60 overflow-y-auto">
+                  {cidadesSugestoes.map((cidade, index) => (
+                    <button
+                      key={`${cidade.nome}-${cidade.estado}-${index}`}
+                      onClick={() => {
+                        const newLocation = `${cidade.nome}, ${cidade.estado}`;
+                        setLocationText(newLocation);
+                        setShowCitySuggestions(false);
+                        if (isOnExplorar) {
+                          updateExplorarUrl(newLocation, searchQuery);
+                        }
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors hover:bg-white/5 text-slate-300"
+                    >
+                      <MapPin size={16} className="text-slate-500" />
+                      <span className="flex-1">
+                        {cidade.nome}, <span className="text-slate-500">{cidade.estado}</span>
+                      </span>
+                      {cidade.disponivel && (
+                        <span className="flex items-center gap-1 text-xs text-emerald-400">
+                          <CheckCircle size={12} />
+                          Disponível
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Divisor Desktop */}

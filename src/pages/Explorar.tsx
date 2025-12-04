@@ -188,6 +188,7 @@ const Explorar = () => {
   const searchQuery = searchParams.get('q') || '';
   const cidadeParam = searchParams.get('cidade') || '';
   const categoriaParam = searchParams.get('categoria') || '';
+  const especialidadeParam = searchParams.get('especialidade') || '';
   
   // --- CIDADE SELECIONADA ---
   const [selectedCity, setSelectedCity] = useState<{ nome: string; estado: string } | null>(null);
@@ -298,6 +299,14 @@ const Explorar = () => {
       const placeSubcats = place.especialidades || [];
       const hasMatch = selectedSubcategories.some(sub => placeSubcats.includes(sub));
       if (!hasMatch) return false;
+    }
+    // Filtro por especialidade (do parâmetro URL)
+    if (especialidadeParam.trim()) {
+      const placeSpecs = place.especialidades || [];
+      const matchesEsp = placeSpecs.some((s: string) => 
+        s.toLowerCase().includes(especialidadeParam.toLowerCase())
+      );
+      if (!matchesEsp) return false;
     }
     // Filtro por busca de texto (nome, categoria, bairro, especialidades)
     if (searchQuery.trim()) {

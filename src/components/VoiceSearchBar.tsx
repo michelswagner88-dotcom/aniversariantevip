@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Search, MapPin, Mic, Loader2, LocateFixed, X, Store, Tag } from 'lucide-react';
+import { Search, MapPin, Mic, Loader2, LocateFixed, X, Store, Tag, Clock, Sparkles } from 'lucide-react';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useGeolocation } from '../hooks/useGeolocation';
@@ -13,8 +13,18 @@ import { normalizarCidade } from '@/lib/utils';
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Constantes para histórico
+const SEARCH_HISTORY_KEY = 'voice_search_history';
+const MAX_HISTORY_ITEMS = 5;
+
+interface SearchHistoryItem {
+  query: string;
+  timestamp: number;
+  type: 'text' | 'category' | 'specialty';
+}
+
 interface Suggestion {
-  type: 'establishment' | 'category';
+  type: 'establishment' | 'category' | 'specialty' | 'history';
   id?: string;
   name: string;
   icon?: string;
@@ -22,6 +32,7 @@ interface Suggestion {
   cidade?: string;
   estado?: string;
   categoria?: string;
+  parentCategory?: string;
 }
 
 const VoiceSearchBar = () => {
@@ -54,6 +65,42 @@ const VoiceSearchBar = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  
+  // Search history state
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+
+  // Carregar histórico do localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SEARCH_HISTORY_KEY);
+      if (saved) {
+        setSearchHistory(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Erro ao carregar histórico:', e);
+    }
+  }, []);
+
+  // Função para salvar busca no histórico
+  const saveToHistory = useCallback((query: string, type: 'text' | 'category' | 'specialty') => {
+    const newItem: SearchHistoryItem = { query, timestamp: Date.now(), type };
+    const updated = [newItem, ...searchHistory.filter(h => h.query.toLowerCase() !== query.toLowerCase())].slice(0, MAX_HISTORY_ITEMS);
+    setSearchHistory(updated);
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updated));
+  }, [searchHistory]);
+
+  // Função para limpar histórico
+  const clearHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem(SEARCH_HISTORY_KEY);
+  };
+
+  // Função para remover item do histórico
+  const removeFromHistory = (query: string) => {
+    const updated = searchHistory.filter(h => h.query !== query);
+    setSearchHistory(updated);
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updated));
+  };
 
   // Inicializar com valores da URL se estiver na página Explorar
   useEffect(() => {
@@ -74,7 +121,6 @@ const VoiceSearchBar = () => {
     if (geoLocation) {
       const newLocation = `${geoLocation.cidade}, ${geoLocation.estado}`;
       setLocationText(newLocation);
-      // Se estiver na página Explorar, atualizar URL
       if (isOnExplorar) {
         updateExplorarUrl(newLocation, searchQuery);
       }
@@ -93,7 +139,6 @@ const VoiceSearchBar = () => {
     try {
       await requestLocation();
     } catch (error) {
-      // Se falhar, abre o diálogo de CEP
       setShowCepDialog(true);
     }
   };
@@ -111,7 +156,6 @@ const VoiceSearchBar = () => {
   const clearLocation = () => {
     setLocationText("");
     localStorage.removeItem('user_location');
-    // Atualizar URL se estiver na página Explorar
     if (isOnExplorar) {
       updateExplorarUrl('', searchQuery);
     }
@@ -128,11 +172,10 @@ const VoiceSearchBar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Buscar sugestões
+  // Buscar sugestões (categorias, especialidades e estabelecimentos)
   const fetchSuggestions = useCallback(async (query: string) => {
     if (query.length < 2) {
       setSuggestions([]);
-      setShowSuggestions(false);
       return;
     }
 
@@ -140,7 +183,7 @@ const VoiceSearchBar = () => {
     const queryLower = query.toLowerCase();
 
     try {
-      // Buscar categorias correspondentes
+      // 1. Buscar categorias correspondentes
       const matchingCategories: Suggestion[] = CATEGORIAS_ESTABELECIMENTO
         .filter(cat => cat.label.toLowerCase().includes(queryLower))
         .slice(0, 3)
@@ -150,7 +193,22 @@ const VoiceSearchBar = () => {
           icon: cat.icon,
         }));
 
-      // Buscar estabelecimentos
+      // 2. Buscar especialidades
+      const { data: specialties } = await supabase
+        .from('especialidades')
+        .select('nome, icone, categoria')
+        .eq('ativo', true)
+        .ilike('nome', `%${query}%`)
+        .limit(5);
+
+      const matchingSpecialties: Suggestion[] = (specialties || []).map(spec => ({
+        type: 'specialty',
+        name: spec.nome,
+        icon: spec.icone || '✨',
+        parentCategory: spec.categoria,
+      }));
+
+      // 3. Buscar estabelecimentos
       const { data: establishments } = await supabase
         .from('public_estabelecimentos')
         .select('id, nome_fantasia, slug, cidade, estado, categoria')
@@ -168,7 +226,8 @@ const VoiceSearchBar = () => {
         categoria: Array.isArray(est.categoria) ? est.categoria[0] : est.categoria,
       }));
 
-      const allSuggestions = [...matchingCategories, ...establishmentSuggestions];
+      // Combinar: Categorias > Especialidades > Estabelecimentos
+      const allSuggestions = [...matchingCategories, ...matchingSpecialties, ...establishmentSuggestions];
       setSuggestions(allSuggestions);
       setShowSuggestions(allSuggestions.length > 0);
       setSelectedIndex(-1);
@@ -203,16 +262,20 @@ const VoiceSearchBar = () => {
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     
-    // Cancelar debounces anteriores
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (suggestionsRef.current) clearTimeout(suggestionsRef.current);
     
-    // Buscar sugestões com debounce de 200ms
-    suggestionsRef.current = setTimeout(() => {
-      fetchSuggestions(value);
-    }, 200);
+    // Se o campo estiver vazio, mostrar histórico
+    if (value.length === 0) {
+      setSuggestions([]);
+      setShowSuggestions(searchHistory.length > 0);
+    } else {
+      // Buscar sugestões com debounce de 200ms
+      suggestionsRef.current = setTimeout(() => {
+        fetchSuggestions(value);
+      }, 200);
+    }
     
-    // Atualizar URL se estiver na página Explorar
     if (isOnExplorar) {
       debounceRef.current = setTimeout(() => {
         updateExplorarUrl(locationText, value);
@@ -224,11 +287,27 @@ const VoiceSearchBar = () => {
   const handleSelectSuggestion = (suggestion: Suggestion) => {
     setShowSuggestions(false);
     
+    if (suggestion.type === 'history') {
+      // Re-executar busca do histórico
+      setSearchQuery(suggestion.name);
+      handleVoiceSearch(suggestion.name);
+      return;
+    }
+    
+    // Salvar no histórico
+    const historyType = suggestion.type === 'category' ? 'category' : suggestion.type === 'specialty' ? 'specialty' : 'text';
+    saveToHistory(suggestion.name, historyType);
+    
     if (suggestion.type === 'category') {
-      // Navegar para explorar com categoria
       navigate(`/explorar?categoria=${encodeURIComponent(suggestion.name)}`);
+    } else if (suggestion.type === 'specialty') {
+      const params = new URLSearchParams();
+      if (suggestion.parentCategory) {
+        params.set('categoria', suggestion.parentCategory);
+      }
+      params.set('especialidade', suggestion.name);
+      navigate(`/explorar?${params.toString()}`);
     } else if (suggestion.type === 'establishment' && suggestion.slug) {
-      // Navegar direto para o estabelecimento
       const estado = suggestion.estado?.toLowerCase() || '';
       const cidade = suggestion.cidade?.toLowerCase().replace(/\s+/g, '-') || '';
       navigate(`/${estado}/${cidade}/${suggestion.slug}`);
@@ -237,9 +316,12 @@ const VoiceSearchBar = () => {
     setSearchQuery('');
   };
 
+  // Total de itens navegáveis (histórico ou sugestões)
+  const totalNavigableItems = searchQuery.length === 0 ? searchHistory.length : suggestions.length;
+
   // Navegação por teclado
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showSuggestions || suggestions.length === 0) {
+    if (!showSuggestions || totalNavigableItems === 0) {
       if (e.key === 'Enter') handleSearch();
       return;
     }
@@ -247,16 +329,20 @@ const VoiceSearchBar = () => {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : 0));
+        setSelectedIndex(prev => (prev < totalNavigableItems - 1 ? prev + 1 : 0));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex(prev => (prev > 0 ? prev - 1 : suggestions.length - 1));
+        setSelectedIndex(prev => (prev > 0 ? prev - 1 : totalNavigableItems - 1));
         break;
       case 'Enter':
         e.preventDefault();
         if (selectedIndex >= 0) {
-          handleSelectSuggestion(suggestions[selectedIndex]);
+          if (searchQuery.length === 0 && searchHistory[selectedIndex]) {
+            handleSelectSuggestion({ type: 'history', name: searchHistory[selectedIndex].query });
+          } else if (suggestions[selectedIndex]) {
+            handleSelectSuggestion(suggestions[selectedIndex]);
+          }
         } else {
           handleSearch();
         }
@@ -285,29 +371,24 @@ const VoiceSearchBar = () => {
   const handleVoiceSearch = async (texto: string) => {
     const textoLower = texto.toLowerCase().trim();
     
+    // Salvar no histórico
+    saveToHistory(texto, 'text');
+    
     // Detectar comandos de proximidade
     const comandosProximidade = [
-      'perto de mim',
-      'próximo',
-      'proximo',
-      'aqui perto',
-      'por aqui',
-      'na minha região',
-      'na região',
-      'ao redor'
+      'perto de mim', 'próximo', 'proximo', 'aqui perto',
+      'por aqui', 'na minha região', 'na região', 'ao redor'
     ];
     
     const isComandoProximidade = comandosProximidade.some(cmd => textoLower.includes(cmd));
     
     if (isComandoProximidade) {
-      // Se não tem localização, solicitar
       if (!geoLocation && !locationText) {
         toast.info('Detectando sua localização...');
         try {
           await requestLocation();
-          // Aguardar um momento para a localização ser detectada
           setTimeout(() => {
-            handleVoiceSearch(texto); // Reprocessar após obter localização
+            handleVoiceSearch(texto);
           }, 2000);
           return;
         } catch (error) {
@@ -320,38 +401,18 @@ const VoiceSearchBar = () => {
     
     // Mapeamento de categorias com sinônimos
     const categoriasMap: Record<string, string> = {
-      'restaurante': 'Restaurante',
-      'restaurantes': 'Restaurante',
-      'comida': 'Restaurante',
-      'bar': 'Bar',
-      'bares': 'Bar',
-      'pub': 'Bar',
-      'cervejaria': 'Bar',
-      'academia': 'Academia',
-      'academias': 'Academia',
-      'ginásio': 'Academia',
-      'barbearia': 'Barbearia',
-      'barbearias': 'Barbearia',
-      'barbeiro': 'Barbearia',
-      'salão': 'Salão de Beleza',
-      'salao': 'Salão de Beleza',
-      'cabeleireiro': 'Salão de Beleza',
-      'café': 'Cafeteria',
-      'cafe': 'Cafeteria',
-      'cafeteria': 'Cafeteria',
-      'balada': 'Casa Noturna',
-      'boate': 'Casa Noturna',
-      'casa noturna': 'Casa Noturna',
-      'confeitaria': 'Confeitaria',
-      'doçaria': 'Confeitaria',
-      'hotel': 'Hospedagem',
-      'pousada': 'Hospedagem',
-      'hospedagem': 'Hospedagem',
-      'loja': 'Outros Comércios',
-      'comércio': 'Outros Comércios',
+      'restaurante': 'Restaurante', 'restaurantes': 'Restaurante', 'comida': 'Restaurante',
+      'bar': 'Bar', 'bares': 'Bar', 'pub': 'Bar', 'cervejaria': 'Bar',
+      'academia': 'Academia', 'academias': 'Academia', 'ginásio': 'Academia',
+      'barbearia': 'Barbearia', 'barbearias': 'Barbearia', 'barbeiro': 'Barbearia',
+      'salão': 'Salão de Beleza', 'salao': 'Salão de Beleza', 'cabeleireiro': 'Salão de Beleza',
+      'café': 'Cafeteria', 'cafe': 'Cafeteria', 'cafeteria': 'Cafeteria',
+      'balada': 'Casa Noturna', 'boate': 'Casa Noturna', 'casa noturna': 'Casa Noturna',
+      'confeitaria': 'Confeitaria', 'doçaria': 'Confeitaria',
+      'hotel': 'Hospedagem', 'pousada': 'Hospedagem', 'hospedagem': 'Hospedagem',
+      'loja': 'Outros Comércios', 'comércio': 'Outros Comércios',
     };
 
-    // Detectar categoria
     let categoriaEncontrada: string | null = null;
     for (const [key, value] of Object.entries(categoriasMap)) {
       if (textoLower.includes(key)) {
@@ -360,17 +421,11 @@ const VoiceSearchBar = () => {
       }
     }
 
-    // Detectar cidade comum
     const cidadesComuns = [
-      'florianópolis', 'florianopolis', 'floripa',
-      'curitiba',
-      'porto alegre', 'porto-alegre',
-      'são paulo', 'sao paulo', 'sp',
-      'rio de janeiro', 'rio',
-      'joinville',
-      'blumenau',
-      'balneário camboriú', 'balneario camboriu', 'bc',
-      'chapecó', 'chapeco',
+      'florianópolis', 'florianopolis', 'floripa', 'curitiba',
+      'porto alegre', 'porto-alegre', 'são paulo', 'sao paulo', 'sp',
+      'rio de janeiro', 'rio', 'joinville', 'blumenau',
+      'balneário camboriú', 'balneario camboriu', 'bc', 'chapecó', 'chapeco',
       'criciúma', 'criciuma'
     ];
 
@@ -382,13 +437,11 @@ const VoiceSearchBar = () => {
       }
     }
 
-    // Se não encontrou cidade, usar a cidade atual
     if (!cidadeEncontrada && locationText) {
       const [cidade] = locationText.split(',');
       cidadeEncontrada = cidade.trim();
     }
 
-    // Se não encontrou categoria, tentar buscar estabelecimento por nome
     if (!categoriaEncontrada) {
       try {
         const { data: estabelecimentos } = await supabase
@@ -409,10 +462,8 @@ const VoiceSearchBar = () => {
       }
     }
 
-    // Montar URL de navegação
     const params = new URLSearchParams();
     
-    // Se é comando de proximidade, usar cidade atual ou geolocalização
     if (isComandoProximidade) {
       if (geoLocation?.cidade) {
         params.set('cidade', geoLocation.cidade);
@@ -430,7 +481,6 @@ const VoiceSearchBar = () => {
         toast.success(`Buscando estabelecimentos perto de você em ${cidadeEncontrada || 'sua região'}`);
       }
     } else {
-      // Fluxo normal
       if (categoriaEncontrada) {
         params.set('categoria', categoriaEncontrada);
         toast.success(`Buscando ${categoriaEncontrada}${cidadeEncontrada ? ` em ${cidadeEncontrada}` : ''}`);
@@ -439,7 +489,6 @@ const VoiceSearchBar = () => {
         params.set('cidade', cidadeEncontrada);
       }
       if (!categoriaEncontrada && !cidadeEncontrada) {
-        // Busca genérica
         params.set('q', textoLower);
         toast.info('Buscando por: ' + texto);
       }
@@ -451,6 +500,15 @@ const VoiceSearchBar = () => {
   const handleSearch = () => {
     if (searchQuery.trim()) {
       handleVoiceSearch(searchQuery);
+    }
+  };
+
+  // Mostrar histórico quando focar no campo vazio
+  const handleInputFocus = () => {
+    if (searchQuery.length === 0 && searchHistory.length > 0) {
+      setShowSuggestions(true);
+    } else if (searchQuery.length >= 2 && suggestions.length > 0) {
+      setShowSuggestions(true);
     }
   };
 
@@ -509,7 +567,7 @@ const VoiceSearchBar = () => {
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            onFocus={() => searchQuery.length >= 2 && suggestions.length > 0 && setShowSuggestions(true)}
+            onFocus={handleInputFocus}
             placeholder={isListening ? "Pode falar, estou ouvindo..." : "Buscar restaurante, loja..."}
             className={`w-full bg-transparent outline-none transition-all ${
               isListening ? "text-violet-300 placeholder-violet-300/70" : "text-white placeholder-slate-400"
@@ -559,9 +617,9 @@ const VoiceSearchBar = () => {
 
       </div>
 
-      {/* Dropdown de Sugestões */}
+      {/* Dropdown de Sugestões e Histórico */}
       <AnimatePresence>
-        {showSuggestions && suggestions.length > 0 && (
+        {showSuggestions && (suggestions.length > 0 || (searchQuery.length === 0 && searchHistory.length > 0)) && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -570,48 +628,107 @@ const VoiceSearchBar = () => {
             className="absolute left-4 right-4 md:left-0 md:right-0 top-full mt-2 rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl overflow-hidden z-[100]"
           >
             <div className="p-2 max-h-80 overflow-y-auto">
-              {suggestions.map((suggestion, index) => (
-                <button
-                  key={`${suggestion.type}-${suggestion.name}-${index}`}
-                  onClick={() => handleSelectSuggestion(suggestion)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
-                    selectedIndex === index
-                      ? 'bg-violet-600/20 text-white'
-                      : 'hover:bg-white/5 text-gray-300'
-                  }`}
-                >
-                  {suggestion.type === 'category' ? (
-                    <>
-                      <span className="text-xl">{suggestion.icon}</span>
-                      <div className="flex-1">
-                        <span className="font-medium text-white">{suggestion.name}</span>
-                        <span className="ml-2 text-xs text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-full">
-                          Categoria
-                        </span>
-                      </div>
-                      <Tag size={16} className="text-violet-400" />
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-pink-500/20 flex items-center justify-center">
-                        <Store size={16} className="text-violet-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-white truncate">{suggestion.name}</p>
-                        <p className="text-xs text-gray-400 truncate">
-                          {suggestion.categoria && `${suggestion.categoria} • `}
-                          {suggestion.cidade}, {suggestion.estado}
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </button>
-              ))}
+              
+              {/* HISTÓRICO - Quando campo está vazio */}
+              {searchQuery.length === 0 && searchHistory.length > 0 && (
+                <>
+                  <div className="flex items-center justify-between px-4 py-2">
+                    <span className="text-xs text-slate-400 font-medium flex items-center gap-2">
+                      <Clock size={14} />
+                      Buscas recentes
+                    </span>
+                    <button 
+                      onClick={clearHistory} 
+                      className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                  {searchHistory.map((item, index) => (
+                    <button
+                      key={`history-${index}`}
+                      onClick={() => handleSelectSuggestion({ type: 'history', name: item.query })}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
+                        selectedIndex === index
+                          ? 'bg-violet-600/20 text-white'
+                          : 'hover:bg-white/5 text-slate-300'
+                      }`}
+                    >
+                      <Clock size={16} className="text-slate-500" />
+                      <span className="flex-1 truncate">{item.query}</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); removeFromHistory(item.query); }}
+                        className="text-slate-500 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    </button>
+                  ))}
+                </>
+              )}
+
+              {/* SUGESTÕES - Quando há texto digitado */}
+              {searchQuery.length > 0 && suggestions.length > 0 && (
+                <>
+                  {suggestions.map((suggestion, index) => (
+                    <button
+                      key={`${suggestion.type}-${suggestion.name}-${index}`}
+                      onClick={() => handleSelectSuggestion(suggestion)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
+                        selectedIndex === index
+                          ? 'bg-violet-600/20 text-white'
+                          : 'hover:bg-white/5 text-slate-300'
+                      }`}
+                    >
+                      {suggestion.type === 'category' && (
+                        <>
+                          <span className="text-xl">{suggestion.icon}</span>
+                          <div className="flex-1">
+                            <span className="font-medium text-white">{suggestion.name}</span>
+                            <span className="ml-2 text-xs text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-full">
+                              Categoria
+                            </span>
+                          </div>
+                          <Tag size={16} className="text-violet-400" />
+                        </>
+                      )}
+                      
+                      {suggestion.type === 'specialty' && (
+                        <>
+                          <span className="text-xl">{suggestion.icon}</span>
+                          <div className="flex-1">
+                            <span className="font-medium text-white">{suggestion.name}</span>
+                            <span className="ml-2 text-xs text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded-full">
+                              {suggestion.parentCategory}
+                            </span>
+                          </div>
+                          <Sparkles size={16} className="text-pink-400" />
+                        </>
+                      )}
+                      
+                      {suggestion.type === 'establishment' && (
+                        <>
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-pink-500/20 flex items-center justify-center">
+                            <Store size={16} className="text-violet-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-white truncate">{suggestion.name}</p>
+                            <p className="text-xs text-slate-400 truncate">
+                              {suggestion.categoria && `${suggestion.categoria} • `}
+                              {suggestion.cidade}, {suggestion.estado}
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
             
             {/* Dica de navegação */}
             <div className="px-4 py-2 border-t border-white/5 bg-slate-800/50">
-              <p className="text-xs text-gray-500 text-center">
+              <p className="text-xs text-slate-500 text-center">
                 Use ↑↓ para navegar, Enter para selecionar
               </p>
             </div>

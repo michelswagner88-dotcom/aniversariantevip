@@ -221,15 +221,30 @@ const Explorar = () => {
     }
   }, [searchParams]);
   
-  // Buscar estabelecimentos da cidade selecionada
-  const { data: estabelecimentosCidade = [], isLoading: loadingCidade } = useEstabelecimentos({
-    cidade: selectedCity?.nome,
-    estado: selectedCity?.estado,
+  // Buscar estabelecimentos da cidade selecionada (usando params direto para evitar delay de estado)
+  const { data: estabelecimentosCidade = [], isLoading: loadingCidade, error: errorCidade } = useEstabelecimentos({
+    cidade: cidadeParam || selectedCity?.nome,
+    estado: estadoParam || selectedCity?.estado,
   });
 
   // Sempre busca todos para mostrar quando cidade não tem resultados
-  const { data: todosEstabelecimentos = [], isLoading: loadingTodos } = useEstabelecimentos({
+  const { data: todosEstabelecimentos = [], isLoading: loadingTodos, error: errorTodos } = useEstabelecimentos({
     showAll: true,
+  });
+
+  // DEBUG: Log para diagnóstico
+  console.log('[Explorar] Debug:', {
+    selectedCity,
+    selectedCategory,
+    cidadeParam,
+    estadoParam,
+    categoriaParam,
+    estabelecimentosCidade: estabelecimentosCidade?.length,
+    todosEstabelecimentos: todosEstabelecimentos?.length,
+    loadingCidade,
+    loadingTodos,
+    errorCidade,
+    errorTodos,
   });
 
   // Prioriza estabelecimentos da cidade, senão mostra todos

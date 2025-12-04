@@ -19,6 +19,8 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
   return useQuery({
     queryKey: queryKeys.estabelecimentos.list(filters),
     queryFn: async () => {
+      console.log('[useEstabelecimentos] Executando query com filtros:', filters);
+      
       let query = supabase
         .from('public_estabelecimentos')
         .select('*')
@@ -27,10 +29,13 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
 
       // Aplicar filtros (ignora cidade/estado se showAll está ativo)
       if (filters.cidade && !filters.showAll) {
-        query = query.ilike('cidade', sanitizarInput(filters.cidade, 100));
+        // Usar wildcards para match mais flexível (lida com acentos e variações)
+        const cidadeSanitizada = sanitizarInput(filters.cidade, 100);
+        console.log('[useEstabelecimentos] Filtrando por cidade:', cidadeSanitizada);
+        query = query.ilike('cidade', `%${cidadeSanitizada}%`);
       }
       if (filters.estado && !filters.showAll) {
-        query = query.eq('estado', sanitizarInput(filters.estado, 2));
+        query = query.ilike('estado', sanitizarInput(filters.estado, 2));
       }
       if (filters.categoria && filters.categoria.length > 0) {
         // Categorias são enums controlados, não precisam sanitização mas aplicamos por segurança
@@ -44,12 +49,20 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
 
       const { data, error } = await query;
       
+      console.log('[useEstabelecimentos] Resultado:', { 
+        count: data?.length, 
+        error: error?.message,
+        filters 
+      });
+      
       if (error) throw error;
       return data as Estabelecimento[];
     },
-    // Cache agressivo para estabelecimentos (dados mudam pouco)
-    staleTime: 10 * 60 * 1000, // 10 minutos
-    gcTime: 30 * 60 * 1000, // 30 minutos
+    // Cache menos agressivo para evitar stale data
+    staleTime: 2 * 60 * 1000, // 2 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+    // Sempre refetch quando montar
+    refetchOnMount: true,
   });
 };
 

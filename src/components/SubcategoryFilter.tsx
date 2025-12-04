@@ -1,32 +1,47 @@
-import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { getSubcategoriesForCategory } from '@/constants/categorySubcategories';
-import { X } from 'lucide-react';
+import { useAvailableSubcategories } from '@/hooks/useAvailableSubcategories';
+import { X, Loader2 } from 'lucide-react';
 
 interface SubcategoryFilterProps {
   category: string | null;
   selectedSubcategories: string[];
   onSubcategoriesChange: (subcategories: string[]) => void;
+  cidade?: string | null;
+  estado?: string | null;
 }
 
 export const SubcategoryFilter = ({
   category,
   selectedSubcategories,
   onSubcategoriesChange,
+  cidade,
+  estado,
 }: SubcategoryFilterProps) => {
-  const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
+  // Buscar subcategorias dinamicamente do banco de dados
+  const { subcategorias: availableSubcategories, loading } = useAvailableSubcategories({
+    cidade,
+    estado,
+    categoria: category,
+  });
 
-  useEffect(() => {
-    if (category) {
-      setAvailableSubcategories(getSubcategoriesForCategory(category));
-    } else {
-      setAvailableSubcategories([]);
-    }
-  }, [category]);
+  // Se não tem categoria selecionada, não mostra
+  if (!category) {
+    return null;
+  }
 
-  // Se não tem categoria selecionada ou não há subcategorias, não mostra
-  if (!category || availableSubcategories.length === 0) {
+  // Se está carregando, mostra loader
+  if (loading) {
+    return (
+      <div className="w-full flex items-center gap-2 py-2 px-1">
+        <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
+        <span className="text-sm text-slate-400">Carregando filtros...</span>
+      </div>
+    );
+  }
+
+  // Se não há subcategorias disponíveis, não mostra o filtro
+  if (availableSubcategories.length === 0) {
     return null;
   }
 
@@ -45,7 +60,9 @@ export const SubcategoryFilter = ({
   return (
     <div className="w-full animate-in slide-in-from-top-2 duration-300">
       <div className="flex items-center justify-between mb-2 px-1">
-        <span className="text-sm text-slate-400">Filtrar por tipo:</span>
+        <span className="text-sm text-slate-400">
+          Filtrar por tipo{cidade ? ` em ${cidade}` : ''}:
+        </span>
         {selectedSubcategories.length > 0 && (
           <button
             onClick={clearAll}

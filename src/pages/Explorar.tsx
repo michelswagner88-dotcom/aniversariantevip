@@ -432,6 +432,8 @@ const Explorar = () => {
                 category={categoryToFilter}
                 selectedSubcategories={selectedSubcategories}
                 onSubcategoriesChange={setSelectedSubcategories}
+                cidade={cidadeParam || selectedCity?.nome || null}
+                estado={estadoParam || selectedCity?.estado || null}
               />
             </div>
           )}

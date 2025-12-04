@@ -37,6 +37,10 @@ export const useEstabelecimentoMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['estabelecimentos'] }),
       queryClient.invalidateQueries({ queryKey: ['public_estabelecimentos'] }),
       queryClient.invalidateQueries({ queryKey: ['platform-stats'] }),
+      queryClient.invalidateQueries({ queryKey: ['feed'] }),
+      queryClient.invalidateQueries({ queryKey: ['flash-promos'] }),
+      queryClient.invalidateQueries({ queryKey: ['stories'] }),
+      queryClient.invalidateQueries({ queryKey: ['all-stories'] }),
     ]);
     
     console.log('[Mutation] Queries invalidadas com sucesso');

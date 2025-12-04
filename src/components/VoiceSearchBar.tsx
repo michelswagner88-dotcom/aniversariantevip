@@ -1,23 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Search, MapPin, Mic, Loader2, LocateFixed, X } from 'lucide-react';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useCepLookup } from '../hooks/useCepLookup';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { sanitizarInput } from '@/lib/sanitize';
 import { supabase } from '@/integrations/supabase/client';
-import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 import { toast } from 'sonner';
 import { normalizarCidade } from '@/lib/utils';
 
 const VoiceSearchBar = () => {
   const navigate = useNavigate();
+  const routeLocation = useLocation();
+  const [searchParams] = useSearchParams();
+  const isOnExplorar = routeLocation.pathname === '/explorar';
+  
   const { isListening, transcript, startListening, hasSupport } = useSpeechRecognition();
   const { 
-    location, 
+    location: geoLocation, 
     loading: geoLoading, 
     error: geoError,
     currentStep, 
@@ -29,13 +31,33 @@ const VoiceSearchBar = () => {
   const [locationText, setLocationText] = useState("");
   const [showCepDialog, setShowCepDialog] = useState(false);
   const [cepInput, setCepInput] = useState("");
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Inicializar com valores da URL se estiver na página Explorar
+  useEffect(() => {
+    if (isOnExplorar) {
+      const cidadeParam = searchParams.get('cidade');
+      const qParam = searchParams.get('q');
+      if (cidadeParam && !locationText) {
+        setLocationText(cidadeParam);
+      }
+      if (qParam && !searchQuery) {
+        setSearchQuery(qParam);
+      }
+    }
+  }, [isOnExplorar, searchParams]);
 
   // Atualiza o texto de localização quando detectada
   useEffect(() => {
-    if (location) {
-      setLocationText(`${location.cidade}, ${location.estado}`);
+    if (geoLocation) {
+      const newLocation = `${geoLocation.cidade}, ${geoLocation.estado}`;
+      setLocationText(newLocation);
+      // Se estiver na página Explorar, atualizar URL
+      if (isOnExplorar) {
+        updateExplorarUrl(newLocation, searchQuery);
+      }
     }
-  }, [location]);
+  }, [geoLocation]);
 
   // Atualiza o input e processa busca por voz quando detecta texto
   useEffect(() => {
@@ -57,7 +79,8 @@ const VoiceSearchBar = () => {
   const handleCepSubmit = async () => {
     const data = await fetchCep(cepInput);
     if (data) {
-      setLocationText(`${data.localidade}, ${data.uf}`);
+      const newLocation = `${data.localidade}, ${data.uf}`;
+      handleLocationChange(newLocation);
       setShowCepDialog(false);
       setCepInput("");
     }
@@ -66,6 +89,62 @@ const VoiceSearchBar = () => {
   const clearLocation = () => {
     setLocationText("");
     localStorage.removeItem('user_location');
+    // Atualizar URL se estiver na página Explorar
+    if (isOnExplorar) {
+      updateExplorarUrl('', searchQuery);
+    }
+  };
+
+  // Função para atualizar URL em tempo real na página Explorar
+  const updateExplorarUrl = useCallback((cidade: string, query: string) => {
+    const params = new URLSearchParams(searchParams);
+    
+    if (cidade.trim()) {
+      const [cidadeNome] = cidade.split(',');
+      params.set('cidade', cidadeNome.trim());
+    } else {
+      params.delete('cidade');
+    }
+    
+    if (query.trim()) {
+      params.set('q', query.trim().toLowerCase());
+    } else {
+      params.delete('q');
+    }
+    
+    navigate(`/explorar?${params.toString()}`, { replace: true });
+  }, [searchParams, navigate]);
+
+  // Busca em tempo real com debounce
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    
+    if (isOnExplorar) {
+      // Cancelar debounce anterior
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      
+      // Atualizar URL após 300ms de inatividade
+      debounceRef.current = setTimeout(() => {
+        updateExplorarUrl(locationText, value);
+      }, 300);
+    }
+  };
+
+  // Atualizar cidade em tempo real
+  const handleLocationChange = (value: string) => {
+    setLocationText(value);
+    
+    if (isOnExplorar) {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      
+      debounceRef.current = setTimeout(() => {
+        updateExplorarUrl(value, searchQuery);
+      }, 300);
+    }
   };
 
   const handleVoiceSearch = async (texto: string) => {
@@ -87,7 +166,7 @@ const VoiceSearchBar = () => {
     
     if (isComandoProximidade) {
       // Se não tem localização, solicitar
-      if (!location && !locationText) {
+      if (!geoLocation && !locationText) {
         toast.info('Detectando sua localização...');
         try {
           await requestLocation();
@@ -200,9 +279,9 @@ const VoiceSearchBar = () => {
     
     // Se é comando de proximidade, usar cidade atual ou geolocalização
     if (isComandoProximidade) {
-      if (location?.cidade) {
-        params.set('cidade', location.cidade);
-        cidadeEncontrada = location.cidade;
+      if (geoLocation?.cidade) {
+        params.set('cidade', geoLocation.cidade);
+        cidadeEncontrada = geoLocation.cidade;
       } else if (locationText) {
         const [cidade] = locationText.split(',');
         params.set('cidade', cidade.trim());
@@ -260,7 +339,7 @@ const VoiceSearchBar = () => {
           <input 
             type="text" 
             value={locationText}
-            onChange={(e) => setLocationText(e.target.value)}
+            onChange={(e) => handleLocationChange(e.target.value)}
             placeholder="Digite a cidade" 
             className="w-full bg-transparent text-white placeholder-slate-400 outline-none"
           />
@@ -292,7 +371,8 @@ const VoiceSearchBar = () => {
           <input 
             type="text" 
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             placeholder={isListening ? "Pode falar, estou ouvindo..." : "Buscar restaurante, loja..."}
             className={`w-full bg-transparent outline-none transition-all ${
               isListening ? "text-violet-300 placeholder-violet-300/70" : "text-white placeholder-slate-400"

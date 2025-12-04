@@ -79,6 +79,12 @@ export const useAppUpdate = () => {
     // === SERVICE WORKER ===
     if (!('serviceWorker' in navigator)) return;
 
+    // Helper para verificar se erro é de SW removido (não crítico)
+    const isSwNotFoundError = (err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      return message.includes('Not found') || message.includes('not found');
+    };
+
     const handleUpdate = async (reg: ServiceWorkerRegistration) => {
       if (reg.waiting) {
         setUpdateAvailable(true);
@@ -100,8 +106,14 @@ export const useAppUpdate = () => {
 
     // Verificar atualizações ao carregar
     navigator.serviceWorker.ready.then((reg) => {
-      // Verificar atualizações imediatamente
-      reg.update().catch(console.error);
+      // Verificar atualizações imediatamente (com tratamento de erro)
+      reg.update().catch((err) => {
+        if (isSwNotFoundError(err)) {
+          console.log('[SW] Service Worker removido, ignorando erro inicial');
+          return;
+        }
+        console.error('[SW] Erro ao verificar atualizações:', err);
+      });
       
       if (reg.waiting) {
         handleUpdate(reg);
@@ -120,13 +132,25 @@ export const useAppUpdate = () => {
         }
       });
 
-      // Verificar atualizações periodicamente (a cada 60 segundos)
+      // Verificar atualizações periodicamente (a cada 60 segundos) com tratamento de erro
       const checkInterval = setInterval(() => {
-        reg.update().catch(console.error);
+        reg.update().catch((err) => {
+          if (isSwNotFoundError(err)) {
+            console.log('[SW] Service Worker removido, parando verificação periódica');
+            clearInterval(checkInterval);
+            return;
+          }
+          console.log('[SW] Erro de update ignorado:', err instanceof Error ? err.message : err);
+        });
       }, 60 * 1000);
 
-      // Cleanup do interval (não será executado pois é useEffect sem cleanup)
       return () => clearInterval(checkInterval);
+    }).catch((err) => {
+      if (isSwNotFoundError(err)) {
+        console.log('[SW] Service Worker não encontrado');
+        return;
+      }
+      console.error('[SW] Erro ao aguardar SW ready:', err);
     });
 
     // Recarregar quando novo SW assumir controle

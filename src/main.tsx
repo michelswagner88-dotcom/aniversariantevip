@@ -38,16 +38,32 @@ if (storedVersion !== APP_VERSION) {
 
 // Gerenciamento de Service Worker - forçar atualização em novos deploys
 if ('serviceWorker' in navigator) {
+  // Helper para verificar se erro é de SW removido (não crítico)
+  const isSwNotFoundError = (err: unknown) => {
+    const message = err instanceof Error ? err.message : String(err);
+    return message.includes('Not found') || message.includes('not found');
+  };
+
   // Quando o SW estiver pronto, verificar por atualizações
   navigator.serviceWorker.ready.then((registration) => {
-    // Verificar por atualizações imediatamente
+    // Verificar por atualizações imediatamente (silenciando erros não críticos)
     registration.update().catch((err) => {
+      if (isSwNotFoundError(err)) {
+        console.log('[SW] Service Worker removido, ignorando erro de update');
+        return;
+      }
       console.error('[SW] Erro ao verificar atualizações:', err);
     });
     
     // Verificar atualizações periodicamente (a cada 60 segundos)
     setInterval(() => {
-      registration.update().catch(console.error);
+      registration.update().catch((err) => {
+        if (isSwNotFoundError(err)) {
+          console.log('[SW] Service Worker removido, ignorando');
+          return;
+        }
+        console.error('[SW] Erro periódico:', err);
+      });
     }, 60 * 1000);
     
     // Escutar quando um novo SW for instalado
@@ -61,12 +77,22 @@ if ('serviceWorker' in navigator) {
         };
       }
     };
+  }).catch((err) => {
+    if (isSwNotFoundError(err)) {
+      console.log('[SW] Service Worker não encontrado, será registrado no próximo deploy');
+      return;
+    }
+    console.error('[SW] Erro ao aguardar SW:', err);
   });
   
   // Detectar quando o SW assume controle (nova versão ativada)
+  let reloading = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    console.log('[SW] Service Worker atualizado, recarregando página...');
-    window.location.reload();
+    if (!reloading) {
+      reloading = true;
+      console.log('[SW] Service Worker atualizado, recarregando página...');
+      window.location.reload();
+    }
   });
 }
 

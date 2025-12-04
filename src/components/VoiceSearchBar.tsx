@@ -61,6 +61,9 @@ const VoiceSearchBar = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
+  // Flag para controlar se o usuário pediu geolocalização explicitamente
+  const [userRequestedLocation, setUserRequestedLocation] = useState(false);
+  
   // Autocomplete state
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -112,26 +115,41 @@ const VoiceSearchBar = () => {
   useEffect(() => {
     if (isOnExplorar) {
       const cidadeParam = searchParams.get('cidade');
+      const estadoParam = searchParams.get('estado');
       const qParam = searchParams.get('q');
-      if (cidadeParam && !locationText) {
-        setLocationText(cidadeParam);
+      
+      // Cidade da URL tem prioridade absoluta
+      if (cidadeParam) {
+        const fullLocation = estadoParam 
+          ? `${cidadeParam}, ${estadoParam}` 
+          : cidadeParam;
+        setLocationText(fullLocation);
       }
+      
       if (qParam && !searchQuery) {
         setSearchQuery(qParam);
       }
     }
   }, [isOnExplorar, searchParams]);
 
-  // Atualiza o texto de localização quando detectada
+  // Atualiza o texto de localização APENAS quando o usuário pediu explicitamente
   useEffect(() => {
-    if (geoLocation) {
-      const newLocation = `${geoLocation.cidade}, ${geoLocation.estado}`;
-      setLocationText(newLocation);
-      if (isOnExplorar) {
-        updateExplorarUrl(newLocation, searchQuery);
+    if (geoLocation && userRequestedLocation) {
+      const cidadeParam = searchParams.get('cidade');
+      
+      // Não sobrescrever se já existe cidade na URL
+      if (!cidadeParam) {
+        const newLocation = `${geoLocation.cidade}, ${geoLocation.estado}`;
+        setLocationText(newLocation);
+        if (isOnExplorar) {
+          updateExplorarUrl(newLocation, searchQuery);
+        }
       }
+      
+      // Reset da flag após processar
+      setUserRequestedLocation(false);
     }
-  }, [geoLocation]);
+  }, [geoLocation, userRequestedLocation, searchParams]);
 
   // Atualiza o input e processa busca por voz quando detecta texto
   useEffect(() => {
@@ -143,8 +161,10 @@ const VoiceSearchBar = () => {
 
   const handleDetectLocation = async () => {
     try {
+      setUserRequestedLocation(true); // Marcar que usuário pediu explicitamente
       await requestLocation();
     } catch (error) {
+      setUserRequestedLocation(false);
       setShowCepDialog(true);
     }
   };
@@ -544,7 +564,7 @@ const VoiceSearchBar = () => {
               handleLocationChange(e.target.value);
               setShowCitySuggestions(true);
             }}
-            onFocus={() => locationText.length >= 3 && setShowCitySuggestions(true)}
+            onFocus={() => setShowCitySuggestions(true)}
             placeholder="Digite a cidade" 
             className="w-full bg-transparent text-white placeholder-slate-400 outline-none"
             autoComplete="off"
@@ -572,7 +592,7 @@ const VoiceSearchBar = () => {
           
           {/* Dropdown de Cidades */}
           <AnimatePresence>
-            {showCitySuggestions && cidadesSugestoes.length > 0 && (
+            {showCitySuggestions && (cidadesSugestoes.length > 0 || locationText.length < 3) && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -581,6 +601,25 @@ const VoiceSearchBar = () => {
                 className="absolute left-0 right-0 top-full mt-2 rounded-xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl overflow-hidden z-[100]"
               >
                 <div className="p-2 max-h-60 overflow-y-auto">
+                  {/* Opção "Usar minha localização" sempre no topo */}
+                  <button
+                    onClick={() => {
+                      setUserRequestedLocation(true);
+                      requestLocation();
+                      setShowCitySuggestions(false);
+                    }}
+                    disabled={geoLoading}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors hover:bg-violet-500/10 text-slate-300 border-b border-white/10 mb-2"
+                  >
+                    <LocateFixed size={18} className="text-violet-400" />
+                    <div className="flex-1">
+                      <span className="text-white font-medium">Usar minha localização</span>
+                      <p className="text-xs text-slate-400">Detectar cidade automaticamente</p>
+                    </div>
+                    {geoLoading && <Loader2 className="animate-spin text-violet-400" size={16} />}
+                  </button>
+                  
+                  {/* Lista de cidades sugeridas */}
                   {cidadesSugestoes.map((cidade, index) => (
                     <button
                       key={`${cidade.nome}-${cidade.estado}-${index}`}

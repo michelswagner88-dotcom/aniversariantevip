@@ -17,6 +17,7 @@ import ProtectedAniversarianteRoute from "@/components/auth/ProtectedAniversaria
 import ProtectedAdminRoute from "@/components/auth/ProtectedAdminRoute";
 import Carol from "@/components/ChatBot/Carol";
 import { useAppUpdate } from "@/hooks/useAppUpdate";
+import ScrollToTop from "@/components/ScrollToTop";
 
 // Lazy load das páginas principais
 const Index = lazy(() => import("./pages/Index"));
@@ -97,6 +98,7 @@ const App = () => (
         )}
       >
         <BrowserRouter>
+            <ScrollToTop />
             <AnalyticsProvider>
               <AppContent />
               <Carol />

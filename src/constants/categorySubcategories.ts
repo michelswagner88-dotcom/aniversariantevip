@@ -57,6 +57,9 @@ export const CATEGORY_SUBCATEGORIES: Record<string, string[]> = {
     'Day Spa', 'Depilação a Laser', 'Casa de Festas', 'Buffet Infantil', 
     'Espaço para Eventos', 'Outros'
   ],
+  'Sorveteria': [
+    'Sorvete Artesanal', 'Açaí e Frozen', 'Paletas e Picolés', 'Outros'
+  ],
   'Outros': [
     'Outros'
   ],

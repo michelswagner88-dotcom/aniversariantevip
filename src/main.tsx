@@ -6,24 +6,35 @@ import * as Sentry from "@sentry/react";
 import App from "./App.tsx";
 import "./index.css";
 
-// Versão do app para controle de cache
-const APP_VERSION = '2.5.0';
+// Versão do app para controle de cache - INCREMENTAR A CADA DEPLOY
+const APP_VERSION = '2.6.0';
 
 // Verificação de versão - limpar caches se versão mudou
 const storedVersion = localStorage.getItem('app_version');
-if (storedVersion && storedVersion !== APP_VERSION) {
+if (storedVersion !== APP_VERSION) {
   console.log(`[Cache] Versão mudou: ${storedVersion} → ${APP_VERSION}`);
-  // Limpar caches programaticamente
+  
+  // Limpar todos os caches
   if ('caches' in window) {
-    caches.keys().then((names) => {
-      names.forEach((name) => {
+    caches.keys().then(async (names) => {
+      await Promise.all(names.map((name) => {
         console.log(`[Cache] Limpando: ${name}`);
-        caches.delete(name);
-      });
+        return caches.delete(name);
+      }));
+      console.log('[Cache] Todos os caches removidos');
     });
   }
+  
+  // Desregistrar Service Workers antigos
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(async (registrations) => {
+      await Promise.all(registrations.map((reg) => reg.unregister()));
+      console.log('[SW] Service Workers desregistrados');
+    });
+  }
+  
+  localStorage.setItem('app_version', APP_VERSION);
 }
-localStorage.setItem('app_version', APP_VERSION);
 
 // Gerenciamento de Service Worker - forçar atualização em novos deploys
 if ('serviceWorker' in navigator) {

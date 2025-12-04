@@ -6,38 +6,42 @@
     <!-- Cache Cleanup Script - Limpar caches problemáticos de versões antigas -->
     <script>
       (function() {
-        var CACHE_VERSION = 'v5';
+        var CACHE_VERSION = 'v6';
         var lastVersion = localStorage.getItem('cache_version');
         
+        // Forçar atualização se versão mudou
         if (lastVersion !== CACHE_VERSION) {
-          console.log('[Cache] Versão do cache mudou, limpando...');
+          console.log('[Cache] Nova versão detectada:', CACHE_VERSION);
           
           // Limpar todos os caches
           if ('caches' in window) {
             caches.keys().then(function(names) {
-              names.forEach(function(name) {
-                caches.delete(name);
-                console.log('[Cache] Removido:', name);
+              Promise.all(names.map(function(name) {
+                console.log('[Cache] Removendo:', name);
+                return caches.delete(name);
+              })).then(function() {
+                console.log('[Cache] Todos os caches removidos');
               });
             });
           }
           
-          // Desregistrar Service Workers antigos
+          // Desregistrar Service Workers e forçar reload
           if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
-              registrations.forEach(function(registration) {
-                registration.unregister();
-                console.log('[SW] Desregistrado');
+              Promise.all(registrations.map(function(registration) {
+                console.log('[SW] Desregistrando...');
+                return registration.unregister();
+              })).then(function() {
+                localStorage.setItem('cache_version', CACHE_VERSION);
+                console.log('[SW] Recarregando página...');
+                window.location.reload(true);
               });
             });
+          } else {
+            localStorage.setItem('cache_version', CACHE_VERSION);
+            window.location.reload(true);
           }
-          
-          localStorage.setItem('cache_version', CACHE_VERSION);
-          
-          // Recarregar após limpeza (com pequeno delay)
-          setTimeout(function() {
-            window.location.reload();
-          }, 100);
+          return; // Parar execução enquanto recarrega
         }
       })();
     </script>

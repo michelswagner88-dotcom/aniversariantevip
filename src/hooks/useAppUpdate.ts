@@ -2,57 +2,65 @@ import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
 /**
- * Hook para gerenciar atualizações do Service Worker e notificar usuários
- * sobre novas versões disponíveis do aplicativo.
+ * Hook para gerenciar atualizações do Service Worker e forçar atualizações automáticas.
  */
 export const useAppUpdate = () => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
-  const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
 
-  // Função para forçar atualização
-  const updateNow = useCallback(() => {
-    if (registration?.waiting) {
-      // Enviar mensagem para o SW waiting ativar
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+  // Função para forçar atualização completa
+  const updateNow = useCallback(async () => {
+    console.log('[SW] Forçando atualização...');
+    
+    // Limpar todos os caches
+    if ('caches' in window) {
+      const names = await caches.keys();
+      await Promise.all(names.map((name) => caches.delete(name)));
+      console.log('[SW] Caches limpos');
     }
-    // Recarregar a página
+    
+    // Desregistrar SWs e recarregar
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((reg) => reg.unregister()));
+      console.log('[SW] SWs desregistrados');
+    }
+    
     window.location.reload();
-  }, [registration]);
+  }, []);
 
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) {
-      return;
-    }
+    if (!('serviceWorker' in navigator)) return;
 
-    const handleUpdate = (reg: ServiceWorkerRegistration) => {
-      // Quando um novo SW é instalado mas está esperando
+    const handleUpdate = async (reg: ServiceWorkerRegistration) => {
       if (reg.waiting) {
         setUpdateAvailable(true);
-        setRegistration(reg);
         
-        toast.info('Nova versão disponível!', {
-          description: 'Clique para atualizar o aplicativo.',
-          action: {
-            label: 'Atualizar',
-            onClick: () => {
-              reg.waiting?.postMessage({ type: 'SKIP_WAITING' });
-              window.location.reload();
-            },
-          },
-          duration: 10000,
+        // Ativar novo SW imediatamente
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        
+        toast.info('Atualizando...', {
+          description: 'Nova versão disponível!',
+          duration: 2000,
         });
+        
+        // Auto-reload após 2 segundos
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
       }
     };
 
-    // Verificar se já existe um SW esperando
+    // Verificar atualizações ao carregar
     navigator.serviceWorker.ready.then((reg) => {
-      setRegistration(reg);
+      // Verificar atualizações imediatamente
+      reg.update().catch(console.error);
       
       if (reg.waiting) {
         handleUpdate(reg);
+        return;
       }
 
-      // Escutar por novas instalações
+      // Detectar novas instalações
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
         if (newWorker) {
@@ -65,7 +73,7 @@ export const useAppUpdate = () => {
       });
     });
 
-    // Auto-atualizar quando SW assume controle
+    // Recarregar quando novo SW assumir controle
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!refreshing) {
@@ -75,19 +83,5 @@ export const useAppUpdate = () => {
     });
   }, []);
 
-  // Auto-atualizar após 5 segundos se houver nova versão
-  useEffect(() => {
-    if (updateAvailable) {
-      const timer = setTimeout(() => {
-        console.log('[SW] Auto-atualizando após 5 segundos...');
-        updateNow();
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [updateAvailable, updateNow]);
-
-  return {
-    updateAvailable,
-    updateNow,
-  };
+  return { updateAvailable, updateNow };
 };

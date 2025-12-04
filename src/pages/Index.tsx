@@ -200,6 +200,15 @@ const Index = () => {
   const handleCitySelect = (cidade: string, estado: string) => {
     setSelectedCidade(cidade);
     setSelectedEstado(estado);
+    
+    // Navegar automaticamente para /explorar com os parâmetros
+    const params = new URLSearchParams();
+    params.set('cidade', cidade);
+    params.set('estado', estado);
+    if (selectedCategoria && selectedCategoria !== 'todas' && selectedCategoria !== '') {
+      params.set('categoria', selectedCategoria);
+    }
+    navigate(`/explorar?${params.toString()}`);
   };
 
   // Filtros

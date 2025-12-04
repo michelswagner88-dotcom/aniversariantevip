@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Search, MapPin, Mic, Loader2, LocateFixed, X } from 'lucide-react';
+import { Search, MapPin, Mic, Loader2, LocateFixed, X, Store, Tag } from 'lucide-react';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useGeolocation } from '../hooks/useGeolocation';
@@ -10,6 +10,19 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { normalizarCidade } from '@/lib/utils';
+import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface Suggestion {
+  type: 'establishment' | 'category';
+  id?: string;
+  name: string;
+  icon?: string;
+  slug?: string;
+  cidade?: string;
+  estado?: string;
+  categoria?: string;
+}
 
 const VoiceSearchBar = () => {
   const navigate = useNavigate();
@@ -32,6 +45,15 @@ const VoiceSearchBar = () => {
   const [showCepDialog, setShowCepDialog] = useState(false);
   const [cepInput, setCepInput] = useState("");
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const suggestionsRef = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Autocomplete state
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
   // Inicializar com valores da URL se estiver na página Explorar
   useEffect(() => {
@@ -95,6 +117,68 @@ const VoiceSearchBar = () => {
     }
   };
 
+  // Fechar sugestões quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Buscar sugestões
+  const fetchSuggestions = useCallback(async (query: string) => {
+    if (query.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setLoadingSuggestions(true);
+    const queryLower = query.toLowerCase();
+
+    try {
+      // Buscar categorias correspondentes
+      const matchingCategories: Suggestion[] = CATEGORIAS_ESTABELECIMENTO
+        .filter(cat => cat.label.toLowerCase().includes(queryLower))
+        .slice(0, 3)
+        .map(cat => ({
+          type: 'category',
+          name: cat.label,
+          icon: cat.icon,
+        }));
+
+      // Buscar estabelecimentos
+      const { data: establishments } = await supabase
+        .from('public_estabelecimentos')
+        .select('id, nome_fantasia, slug, cidade, estado, categoria')
+        .eq('ativo', true)
+        .ilike('nome_fantasia', `%${query}%`)
+        .limit(5);
+
+      const establishmentSuggestions: Suggestion[] = (establishments || []).map(est => ({
+        type: 'establishment',
+        id: est.id || '',
+        name: est.nome_fantasia || '',
+        slug: est.slug || '',
+        cidade: est.cidade || '',
+        estado: est.estado || '',
+        categoria: Array.isArray(est.categoria) ? est.categoria[0] : est.categoria,
+      }));
+
+      const allSuggestions = [...matchingCategories, ...establishmentSuggestions];
+      setSuggestions(allSuggestions);
+      setShowSuggestions(allSuggestions.length > 0);
+      setSelectedIndex(-1);
+    } catch (error) {
+      console.error('Erro ao buscar sugestões:', error);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, []);
+
   // Função para atualizar URL em tempo real na página Explorar
   const updateExplorarUrl = useCallback((cidade: string, query: string) => {
     const params = new URLSearchParams(searchParams);
@@ -115,20 +199,71 @@ const VoiceSearchBar = () => {
     navigate(`/explorar?${params.toString()}`, { replace: true });
   }, [searchParams, navigate]);
 
-  // Busca em tempo real com debounce
+  // Busca em tempo real com debounce + sugestões
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     
+    // Cancelar debounces anteriores
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (suggestionsRef.current) clearTimeout(suggestionsRef.current);
+    
+    // Buscar sugestões com debounce de 200ms
+    suggestionsRef.current = setTimeout(() => {
+      fetchSuggestions(value);
+    }, 200);
+    
+    // Atualizar URL se estiver na página Explorar
     if (isOnExplorar) {
-      // Cancelar debounce anterior
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-      
-      // Atualizar URL após 300ms de inatividade
       debounceRef.current = setTimeout(() => {
         updateExplorarUrl(locationText, value);
       }, 300);
+    }
+  };
+
+  // Selecionar sugestão
+  const handleSelectSuggestion = (suggestion: Suggestion) => {
+    setShowSuggestions(false);
+    
+    if (suggestion.type === 'category') {
+      // Navegar para explorar com categoria
+      navigate(`/explorar?categoria=${encodeURIComponent(suggestion.name)}`);
+    } else if (suggestion.type === 'establishment' && suggestion.slug) {
+      // Navegar direto para o estabelecimento
+      const estado = suggestion.estado?.toLowerCase() || '';
+      const cidade = suggestion.cidade?.toLowerCase().replace(/\s+/g, '-') || '';
+      navigate(`/${estado}/${cidade}/${suggestion.slug}`);
+    }
+    
+    setSearchQuery('');
+  };
+
+  // Navegação por teclado
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions || suggestions.length === 0) {
+      if (e.key === 'Enter') handleSearch();
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : 0));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev => (prev > 0 ? prev - 1 : suggestions.length - 1));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0) {
+          handleSelectSuggestion(suggestions[selectedIndex]);
+        } else {
+          handleSearch();
+        }
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        break;
     }
   };
 
@@ -320,7 +455,7 @@ const VoiceSearchBar = () => {
   };
 
   return (
-    <div className="relative w-full max-w-4xl mx-auto px-4 md:px-0 z-50">
+    <div className="relative w-full max-w-4xl mx-auto px-4 md:px-0 z-50" ref={containerRef}>
       
       {/* Efeito de 'Ouvindo' (Backdrop) */}
       {isListening && (
@@ -365,19 +500,27 @@ const VoiceSearchBar = () => {
         {/* Divisor Desktop */}
         <div className="hidden h-8 w-[1px] bg-white/10 md:block"></div>
 
-        {/* Input 2: Busca + Microfone */}
-        <div className="flex h-14 w-full flex-[1.5] items-center gap-3 rounded-2xl bg-white/5 px-4 transition-colors focus-within:bg-white/10 md:bg-transparent md:focus-within:bg-transparent">
+        {/* Input 2: Busca + Microfone + Autocomplete */}
+        <div className="relative flex h-14 w-full flex-[1.5] items-center gap-3 rounded-2xl bg-white/5 px-4 transition-colors focus-within:bg-white/10 md:bg-transparent md:focus-within:bg-transparent">
           <Search className={isListening ? "text-violet-400 animate-pulse" : "text-slate-400"} size={20} />
           <input 
+            ref={inputRef}
             type="text" 
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            onKeyDown={handleKeyDown}
+            onFocus={() => searchQuery.length >= 2 && suggestions.length > 0 && setShowSuggestions(true)}
             placeholder={isListening ? "Pode falar, estou ouvindo..." : "Buscar restaurante, loja..."}
             className={`w-full bg-transparent outline-none transition-all ${
               isListening ? "text-violet-300 placeholder-violet-300/70" : "text-white placeholder-slate-400"
             }`}
+            autoComplete="off"
           />
+          
+          {/* Loading indicator */}
+          {loadingSuggestions && (
+            <Loader2 size={16} className="animate-spin text-violet-400" />
+          )}
           
           {/* Botão do Microfone */}
           {hasSupport && (
@@ -415,6 +558,66 @@ const VoiceSearchBar = () => {
         </button>
 
       </div>
+
+      {/* Dropdown de Sugestões */}
+      <AnimatePresence>
+        {showSuggestions && suggestions.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-4 right-4 md:left-0 md:right-0 top-full mt-2 rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl overflow-hidden z-[100]"
+          >
+            <div className="p-2 max-h-80 overflow-y-auto">
+              {suggestions.map((suggestion, index) => (
+                <button
+                  key={`${suggestion.type}-${suggestion.name}-${index}`}
+                  onClick={() => handleSelectSuggestion(suggestion)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
+                    selectedIndex === index
+                      ? 'bg-violet-600/20 text-white'
+                      : 'hover:bg-white/5 text-gray-300'
+                  }`}
+                >
+                  {suggestion.type === 'category' ? (
+                    <>
+                      <span className="text-xl">{suggestion.icon}</span>
+                      <div className="flex-1">
+                        <span className="font-medium text-white">{suggestion.name}</span>
+                        <span className="ml-2 text-xs text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-full">
+                          Categoria
+                        </span>
+                      </div>
+                      <Tag size={16} className="text-violet-400" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-pink-500/20 flex items-center justify-center">
+                        <Store size={16} className="text-violet-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-white truncate">{suggestion.name}</p>
+                        <p className="text-xs text-gray-400 truncate">
+                          {suggestion.categoria && `${suggestion.categoria} • `}
+                          {suggestion.cidade}, {suggestion.estado}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </button>
+              ))}
+            </div>
+            
+            {/* Dica de navegação */}
+            <div className="px-4 py-2 border-t border-white/5 bg-slate-800/50">
+              <p className="text-xs text-gray-500 text-center">
+                Use ↑↓ para navegar, Enter para selecionar
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Feedback Visual de Texto Falado */}
       {isListening && (

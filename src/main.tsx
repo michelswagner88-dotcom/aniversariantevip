@@ -6,6 +6,54 @@ import * as Sentry from "@sentry/react";
 import App from "./App.tsx";
 import "./index.css";
 
+// Versão do app para controle de cache
+const APP_VERSION = '2.1.0';
+
+// Verificação de versão - limpar caches se versão mudou
+const storedVersion = localStorage.getItem('app_version');
+if (storedVersion && storedVersion !== APP_VERSION) {
+  console.log(`[Cache] Versão mudou: ${storedVersion} → ${APP_VERSION}`);
+  // Limpar caches programaticamente
+  if ('caches' in window) {
+    caches.keys().then((names) => {
+      names.forEach((name) => {
+        console.log(`[Cache] Limpando: ${name}`);
+        caches.delete(name);
+      });
+    });
+  }
+}
+localStorage.setItem('app_version', APP_VERSION);
+
+// Gerenciamento de Service Worker - forçar atualização em novos deploys
+if ('serviceWorker' in navigator) {
+  // Quando o SW estiver pronto, verificar por atualizações
+  navigator.serviceWorker.ready.then((registration) => {
+    // Verificar por atualizações imediatamente
+    registration.update().catch((err) => {
+      console.error('[SW] Erro ao verificar atualizações:', err);
+    });
+    
+    // Escutar quando um novo SW for instalado
+    registration.onupdatefound = () => {
+      const newWorker = registration.installing;
+      if (newWorker) {
+        newWorker.onstatechange = () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            console.log('[SW] Nova versão disponível!');
+          }
+        };
+      }
+    };
+  });
+  
+  // Detectar quando o SW assume controle (nova versão ativada)
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    console.log('[SW] Service Worker atualizado, recarregando página...');
+    window.location.reload();
+  });
+}
+
 // Inicializar Sentry (apenas em produção)
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,

@@ -69,7 +69,7 @@ const SortableFotoItem = ({
         ${isPrincipal ? 'border-violet-500' : 'border-border'} 
         bg-muted transition-all ${isDragging ? 'ring-2 ring-violet-500' : ''}`}
       >
-        <img src={foto} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
+        <img src={foto} alt={`Foto ${index + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         
         {/* Grip handle para arrastar */}
         <div 

@@ -447,7 +447,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
           >
             <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-900 border-4 border-slate-900 shadow-2xl overflow-hidden">
               {estabelecimento.logo_url ? (
-                <img src={estabelecimento.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                <img src={estabelecimento.logo_url} alt="Logo" loading="lazy" decoding="async" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
                   <span className="text-2xl md:text-3xl font-bold text-white">
@@ -636,9 +636,11 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                 whileTap={{ scale: 0.95 }}
                 className="relative aspect-square rounded-xl overflow-hidden group"
               >
-                <img 
+              <img 
                   src={photo} 
                   alt={`Foto ${index + 1}`}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
@@ -739,6 +741,8 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               <img 
                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Google_Maps_icon_%282020%29.svg/1024px-Google_Maps_icon_%282020%29.svg.png" 
                 alt="Google Maps"
+                loading="lazy"
+                decoding="async"
                 className="w-6 h-6"
               />
               <span className="text-xs text-gray-400">Maps</span>

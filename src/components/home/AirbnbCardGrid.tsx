@@ -90,10 +90,10 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
           enableParallax
         />
         
-        {/* Badge de benefício estilo Airbnb "Guest favorite" com pulse */}
+        {/* Badge de benefício estilo Airbnb "Guest favorite" com pulse e glow no hover */}
         {temBeneficio && (
           <div className="absolute top-3 left-3">
-            <div className="relative flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 rounded-full shadow-md">
+            <div className="relative flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 rounded-full shadow-md transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(139,92,246,0.5)] group-hover:ring-2 group-hover:ring-violet-400/50">
               {/* Pulse ring */}
               <span className="absolute inset-0 rounded-full bg-violet-400/30 animate-ping" />
               <Gift className="relative w-3.5 h-3.5 text-violet-600 animate-pulse" />

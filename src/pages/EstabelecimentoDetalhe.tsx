@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import CupomModal from '@/components/CupomModal';
+import LazyMap from '@/components/LazyMap';
 import LoginRequiredModal from '@/components/LoginRequiredModal';
 import { useFavoritos } from '@/hooks/useFavoritos';
 import { useEstablishmentMetrics } from '@/hooks/useEstablishmentMetrics';
@@ -723,111 +724,21 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
         </motion.section>
       )}
 
-      {/* ========== SEÇÃO LOCALIZAÇÃO PREMIUM ========== */}
+      {/* ========== SEÇÃO LOCALIZAÇÃO - LAZY MAP ========== */}
       <motion.section 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9 }}
         className="mx-4 mt-6"
       >
-        <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 overflow-hidden">
-          <div className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="p-3 rounded-xl bg-pink-500/20 border border-pink-500/30">
-                <MapPin className="w-5 h-5 text-pink-400" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-white">Como Chegar</h4>
-                <p className="text-gray-400 text-sm mt-1">
-                  {estabelecimento.logradouro}, {estabelecimento.numero}
-                  {estabelecimento.complemento && ` - ${estabelecimento.complemento}`}
-                </p>
-                <p className="text-gray-500 text-xs mt-0.5">
-                  {estabelecimento.bairro} • CEP: {estabelecimento.cep}
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          {/* Mini mapa decorativo */}
-          <div 
-            onClick={handleGoogleMaps}
-            className="h-32 bg-gradient-to-br from-slate-800 to-slate-900 relative cursor-pointer group"
-          >
-            <div className="absolute inset-0 opacity-20" style={{
-              backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(139,92,246,0.1) 10px, rgba(139,92,246,0.1) 11px),
-                                repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(139,92,246,0.1) 10px, rgba(139,92,246,0.1) 11px)`
-            }} />
-            
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-12 h-12 bg-violet-500 rounded-full flex items-center justify-center shadow-lg shadow-violet-500/50 animate-pulse">
-                <MapPin className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-              <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium flex items-center gap-2 transition-opacity">
-                <ExternalLink className="w-4 h-4" />
-                Abrir no Google Maps
-              </span>
-            </div>
-          </div>
-          
-          {/* Botões de navegação */}
-          <div className="grid grid-cols-4 divide-x divide-slate-700/50">
-            <motion.button
-              onClick={handleGoogleMaps}
-              whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
-              whileTap={{ scale: 0.95 }}
-              className="py-3 flex flex-col items-center gap-1.5 transition-colors"
-            >
-              <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Google_Maps_icon_%282020%29.svg/1024px-Google_Maps_icon_%282020%29.svg.png" 
-                alt="Google Maps"
-                loading="lazy"
-                decoding="async"
-                className="w-6 h-6"
-              />
-              <span className="text-xs text-gray-400">Maps</span>
-            </motion.button>
-
-            <motion.button
-              onClick={handleWaze}
-              whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
-              whileTap={{ scale: 0.95 }}
-              className="py-3 flex flex-col items-center gap-1.5 transition-colors"
-            >
-              <div className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center">
-                <span className="text-white text-[8px] font-bold">W</span>
-              </div>
-              <span className="text-xs text-gray-400">Waze</span>
-            </motion.button>
-
-            <motion.button
-              onClick={handleUber}
-              whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
-              whileTap={{ scale: 0.95 }}
-              className="py-3 flex flex-col items-center gap-1.5 transition-colors"
-            >
-              <div className="w-6 h-6 bg-black rounded flex items-center justify-center">
-                <span className="text-white text-[8px] font-bold">Uber</span>
-              </div>
-              <span className="text-xs text-gray-400">Uber</span>
-            </motion.button>
-
-            <motion.button
-              onClick={handle99}
-              whileHover={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
-              whileTap={{ scale: 0.95 }}
-              className="py-3 flex flex-col items-center gap-1.5 transition-colors"
-            >
-              <div className="w-6 h-6 bg-yellow-400 rounded flex items-center justify-center">
-                <span className="text-black text-[10px] font-bold">99</span>
-              </div>
-              <span className="text-xs text-gray-400">99</span>
-            </motion.button>
-          </div>
-        </div>
+        <LazyMap
+          endereco={`${estabelecimento.logradouro}, ${estabelecimento.numero}${estabelecimento.complemento ? ` - ${estabelecimento.complemento}` : ''}`}
+          latitude={estabelecimento.latitude}
+          longitude={estabelecimento.longitude}
+          nomeEstabelecimento={estabelecimento.nome_fantasia}
+          bairro={estabelecimento.bairro}
+          cep={estabelecimento.cep}
+        />
       </motion.section>
 
       {/* ========== CTA PARA ESTABELECIMENTOS ========== */}

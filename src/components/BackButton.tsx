@@ -37,11 +37,11 @@ export const BackButton = ({ to, label = "Voltar", className = "" }: BackButtonP
       onClick={handleBack}
       disabled={isNavigating}
       variant="ghost"
-      size="sm"
-      className={`group flex items-center gap-2 text-slate-300 hover:text-white hover:bg-white/10 transition-all duration-200 active:scale-95 ${className}`}
+      size="default"
+      className={`group flex items-center gap-2 min-h-[44px] min-w-[44px] text-slate-300 hover:text-white hover:bg-white/10 transition-all duration-200 active:scale-95 [-webkit-tap-highlight-color:transparent] ${className}`}
     >
       <ArrowLeft 
-        size={16} 
+        size={20} 
         className={`transition-all duration-200 ${
           isNavigating 
             ? 'opacity-0 -translate-x-2' 

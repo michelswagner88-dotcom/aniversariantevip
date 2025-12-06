@@ -60,14 +60,14 @@ export const CategoriasPills = ({
               key={cat.id || 'todos'}
               onClick={() => onCategoriaChange(cat.id)}
               className={cn(
-                'flex items-center gap-2 px-4 py-2.5 rounded-full whitespace-nowrap transition-all',
-                'border text-sm font-medium',
+                'flex items-center gap-2 px-4 py-3 min-h-[44px] rounded-full whitespace-nowrap transition-all duration-200',
+                'border text-sm font-medium active:scale-[0.97] [-webkit-tap-highlight-color:transparent]',
                 isActive
-                  ? 'bg-violet-600 border-violet-500 text-white'
+                  ? 'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-500/25'
                   : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20'
               )}
             >
-              <span>{cat.icon}</span>
+              <span className="text-base">{cat.icon}</span>
               <span>{cat.nome}</span>
               {count > 0 && (
                 <span className={cn(

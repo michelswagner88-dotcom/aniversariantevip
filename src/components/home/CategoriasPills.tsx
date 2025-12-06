@@ -39,7 +39,7 @@ export const CategoriasPills = ({
     const configs = [
       { id: null, nome: 'Todos', icon: '🚀' },
       ...CATEGORIAS.map(cat => ({
-        id: cat.label, // Usa label para filtrar (compatibilidade com dados)
+        id: cat.plural, // Usa plural para corresponder aos dados do banco
         nome: cat.plural, // PLURAL para exibição nos pills
         icon: cat.icon
       }))

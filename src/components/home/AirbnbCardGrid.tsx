@@ -8,6 +8,7 @@ import { TiltCard } from '@/components/ui/tilt-card';
 import { getFotoEstabelecimento, getPlaceholderPorCategoria } from '@/lib/photoUtils';
 import { EstablishmentBadge, getEstablishmentBadges, getPrimaryBadge } from '@/components/ui/establishment-badge';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/EmptyState';
 
 // Variantes de animação para o grid
 const containerVariants = {
@@ -203,17 +204,7 @@ export const AirbnbCardGrid = ({
   }
   
   if (estabelecimentos.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="text-6xl mb-4">🎂</div>
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-          Nenhum resultado encontrado
-        </h3>
-        <p className="text-slate-500 dark:text-slate-400 max-w-md">
-          Tente ajustar os filtros ou buscar por outro termo.
-        </p>
-      </div>
-    );
+    return <EmptyState type="geral" />;
   }
   
   return (

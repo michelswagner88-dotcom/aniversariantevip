@@ -9,6 +9,7 @@ import { getFotoEstabelecimento, getPlaceholderPorCategoria } from '@/lib/photoU
 import { EstablishmentBadge, getEstablishmentBadges, getPrimaryBadge } from '@/components/ui/establishment-badge';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/EmptyState';
+import { getCategoriaIcon } from '@/lib/constants';
 
 // Variantes de animação para o grid
 const containerVariants = {
@@ -96,6 +97,11 @@ const AirbnbCard = ({ estabelecimento, priority = false }: { estabelecimento: an
   const categoria = Array.isArray(est.categoria) ? est.categoria[0] : est.categoria;
   const temBeneficio = !!est.descricao_beneficio;
   
+  // Badge de categoria + subcategoria
+  const categoriaIcon = getCategoriaIcon(categoria);
+  const subcategoria = est.especialidades?.[0];
+  const categoryLabel = subcategoria || categoria || 'Estabelecimento';
+  
   // Obter badges do estabelecimento
   const badges = getEstablishmentBadges({
     is_verificado: est.is_verificado,
@@ -147,17 +153,25 @@ const AirbnbCard = ({ estabelecimento, priority = false }: { estabelecimento: an
             </div>
           )}
           
-          {/* Badge de benefício - posição inferior esquerda, estilo Airbnb */}
-          {temBeneficio && (
-            <div className="absolute bottom-3 left-3">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full shadow-lg transition-all duration-300 group-hover:shadow-[0_4px_20px_rgba(139,92,246,0.5)]">
+          {/* Badge de categoria + subcategoria - posição inferior esquerda */}
+          <div className="absolute bottom-3 left-3 flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg">
+              <span className="text-sm">{categoriaIcon}</span>
+              <span className="text-xs font-medium text-white truncate max-w-[100px]">
+                {categoryLabel}
+              </span>
+            </div>
+            
+            {/* Badge de benefício */}
+            {temBeneficio && (
+              <div className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-lg shadow-lg transition-all duration-300 group-hover:shadow-[0_4px_20px_rgba(139,92,246,0.5)]">
                 <Gift className="w-3.5 h-3.5 text-white" />
-                <span className="text-xs font-semibold text-white">
-                  Tem benefício
+                <span className="text-xs font-semibold text-white hidden sm:inline">
+                  Benefício
                 </span>
               </div>
-            </div>
-          )}
+            )}
+          </div>
           
           {/* Coração de favoritar - SEMPRE visível no mobile, hover no desktop */}
           <button 

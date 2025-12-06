@@ -1,9 +1,8 @@
-import { Home, Search, Zap, User, Newspaper } from "lucide-react";
+import { Home, Search, Heart, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 
 const BottomNav = () => {
@@ -49,74 +48,60 @@ const BottomNav = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Buscar dados do aniversariante para verificar se cadastro está completo
-  const { data: aniversarianteData } = useQuery({
-    queryKey: ['aniversariante', userId],
-    queryFn: async () => {
-      if (!userId) return null;
-      
-      const { data } = await supabase
-        .from('aniversariantes')
-        .select('cpf, data_nascimento')
-        .eq('id', userId)
-        .single();
-      
-      return data;
-    },
-    enabled: !!userId,
-  });
-
-  // Verificar se o cadastro está completo
-  const cadastroCompleto = aniversarianteData?.cpf && aniversarianteData?.data_nascimento;
-
-  // Não renderizar se:
-  // - Está em uma rota oculta
-  // - Usuário não está logado
-  // - Cadastro não está completo
-  if (shouldHide || !userId || !cadastroCompleto) {
+  // Não renderizar se está em uma rota oculta
+  if (shouldHide) {
     return null;
   }
 
+  // Itens que requerem login
+  const requiresAuth = ['favoritos', 'perfil'];
+
   const navItems = [
     {
+      id: 'inicio',
       icon: Home,
       label: "Início",
       path: "/",
       activeColor: "text-violet-400",
     },
     {
+      id: 'explorar',
       icon: Search,
       label: "Explorar",
       path: "/explorar",
       activeColor: "text-violet-400",
     },
     {
-      icon: Newspaper,
-      label: "Feed",
-      path: "/feed",
-      activeColor: "text-violet-400",
+      id: 'favoritos',
+      icon: Heart,
+      label: "Favoritos",
+      path: "/meus-favoritos",
+      activeColor: "text-rose-400",
+      requiresAuth: true,
     },
     {
-      icon: Zap,
-      label: "Ofertas",
-      path: "/flash-deals",
-      activeColor: "text-orange-400",
-      highlight: true,
-    },
-    {
+      id: 'perfil',
       icon: User,
       label: "Perfil",
       path: "/area-aniversariante",
       activeColor: "text-violet-400",
+      requiresAuth: true,
     },
   ];
 
-  const handleNavClick = (path: string) => {
+  const handleNavClick = (item: typeof navItems[0]) => {
     // Vibração sutil no mobile (se suportado)
     if (navigator.vibrate) {
       navigator.vibrate(10);
     }
-    navigate(path);
+    
+    // Se requer auth e não está logado, redireciona para login
+    if (item.requiresAuth && !userId) {
+      navigate('/auth');
+      return;
+    }
+    
+    navigate(item.path);
   };
 
   return (
@@ -136,11 +121,12 @@ const BottomNav = () => {
           const isActive = item.path === '/' 
             ? location.pathname === '/' 
             : location.pathname.startsWith(item.path);
+          const isFavorite = item.id === 'favoritos';
 
           return (
             <button
-              key={item.path}
-              onClick={() => handleNavClick(item.path)}
+              key={item.id}
+              onClick={() => handleNavClick(item)}
               aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
@@ -160,8 +146,8 @@ const BottomNav = () => {
                     exit={{ scaleX: 0 }}
                     className={cn(
                       "absolute top-0 left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-b-full",
-                      item.highlight
-                        ? "bg-gradient-to-r from-orange-400 to-violet-400"
+                      isFavorite
+                        ? "bg-gradient-to-r from-rose-400 to-pink-400"
                         : "bg-violet-500"
                     )}
                   />
@@ -172,8 +158,8 @@ const BottomNav = () => {
               <div className={cn(
                 "relative flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-200",
                 isActive 
-                  ? item.highlight 
-                    ? "bg-gradient-to-br from-orange-500/15 to-violet-500/15 shadow-[0_0_15px_rgba(251,146,60,0.2)]" 
+                  ? isFavorite 
+                    ? "bg-rose-500/15 shadow-[0_0_15px_rgba(244,63,94,0.2)]" 
                     : "bg-violet-500/15 shadow-[0_0_15px_rgba(139,92,246,0.2)]"
                   : "bg-transparent"
               )}>
@@ -181,26 +167,22 @@ const BottomNav = () => {
                   className={cn(
                     "w-6 h-6 transition-all duration-200",
                     isActive 
-                      ? item.highlight
-                        ? "text-orange-400"
+                      ? isFavorite
+                        ? "text-rose-400"
                         : "text-violet-400"
                       : "text-slate-400"
                   )}
                   strokeWidth={isActive ? 2.5 : 2}
+                  fill={isFavorite && isActive ? 'currentColor' : 'none'}
                 />
-                
-                {/* Badge de destaque para Ofertas */}
-                {item.highlight && (
-                  <span className="absolute -top-1 -right-1 text-[10px]">🔥</span>
-                )}
               </div>
               
               {/* Label */}
               <span className={cn(
                 "text-[10px] font-medium transition-all duration-200 tracking-tight",
                 isActive 
-                  ? item.highlight
-                    ? "text-orange-400 font-semibold"
+                  ? isFavorite
+                    ? "text-rose-400 font-semibold"
                     : "text-violet-400 font-semibold"
                   : "text-slate-500"
               )}>

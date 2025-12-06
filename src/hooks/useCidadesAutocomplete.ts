@@ -115,11 +115,22 @@ export const useCidadesAutocomplete = (searchTerm: string) => {
         console.log('Buscando por:', searchSanitizado, '(normalizado:', searchNormalizado + ')');
         
         // Filtrar pelo termo digitado (case insensitive e sem acentos)
-        const filtradas = data
-          .filter((cidade: any) => {
-            const cidadeNormalizada = normalizeString(cidade.nome);
-            return cidadeNormalizada.startsWith(searchNormalizado);
-          })
+        // Primeiro: cidades que COMEÇAM com o termo
+        // Segundo: cidades que CONTÊM o termo
+        const cidadesQueComecam: any[] = [];
+        const cidadesQueContem: any[] = [];
+        
+        data.forEach((cidade: any) => {
+          const cidadeNormalizada = normalizeString(cidade.nome);
+          if (cidadeNormalizada.startsWith(searchNormalizado)) {
+            cidadesQueComecam.push(cidade);
+          } else if (cidadeNormalizada.includes(searchNormalizado)) {
+            cidadesQueContem.push(cidade);
+          }
+        });
+        
+        // Combinar: primeiro as que começam, depois as que contêm
+        const todasFiltradas = [...cidadesQueComecam, ...cidadesQueContem]
           .slice(0, 10) // Limitar a 10 resultados
           .map((cidade: any) => {
             const estado = cidade.microrregiao.mesorregiao.UF.sigla;
@@ -138,10 +149,12 @@ export const useCidadesAutocomplete = (searchTerm: string) => {
             };
           });
         
-        // Ordenar: cidades disponíveis primeiro
-        filtradas.sort((a, b) => {
+        // Ordenar: cidades disponíveis primeiro, mantendo ordem de relevância
+        const filtradas = todasFiltradas.sort((a, b) => {
+          // Prioridade 1: disponíveis primeiro
           if (a.disponivel && !b.disponivel) return -1;
           if (!a.disponivel && b.disponivel) return 1;
+          // Prioridade 2: manter ordem original (começam > contêm)
           return 0;
         });
         

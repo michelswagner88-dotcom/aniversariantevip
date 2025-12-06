@@ -225,12 +225,12 @@ export const CategoryCarousel = ({
       {/* Header da seção com animação de entrada */}
       <motion.div 
         ref={titleRef}
-        className="flex items-center justify-between mb-4"
+        className="flex items-center justify-between mb-6 md:mb-8"
         initial="hidden"
         animate={isInView ? "visible" : "hidden"}
         variants={titleVariants}
       >
-        <h2 className="text-lg md:text-xl font-semibold text-slate-900 dark:text-white">
+        <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
           {title}
         </h2>
         {onVerTodos && estabelecimentos.length > 4 && (

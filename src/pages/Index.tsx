@@ -222,11 +222,11 @@ const Index = () => {
         </div>
         
         {/* Container principal */}
-        <div className="max-w-7xl mx-auto px-6 md:px-20 pt-8">
+        <div className="max-w-7xl mx-auto px-6 md:px-20 pt-8 pb-16">
           
           {/* MODO CARROSSÉIS: Quando não há filtro ativo */}
           {mostrarCarrosseis ? (
-            <div className="space-y-12">
+            <div className="space-y-16 md:space-y-20">
               {/* Destaques gerais primeiro */}
               <CategoryCarousel
                 title={sectionTitle}

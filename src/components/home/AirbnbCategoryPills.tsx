@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 import { 
@@ -49,6 +49,47 @@ export const AirbnbCategoryPills = ({
   onCategoriaChange,
   estabelecimentos
 }: AirbnbCategoryPillsProps) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showFadeLeft, setShowFadeLeft] = useState(false);
+  const [showFadeRight, setShowFadeRight] = useState(true);
+
+  // Verifica scroll position pra mostrar/esconder fades
+  const checkScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setShowFadeLeft(scrollLeft > 10);
+    setShowFadeRight(scrollLeft < scrollWidth - clientWidth - 10);
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    
+    checkScroll();
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    window.addEventListener('resize', checkScroll);
+    
+    return () => {
+      el.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [estabelecimentos]);
+
+  // Scroll pro item selecionado
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    
+    const selectedEl = scrollRef.current.querySelector(`[data-categoria="${categoriaAtiva ?? 'todos'}"]`);
+    if (selectedEl) {
+      selectedEl.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center'
+      });
+    }
+  }, [categoriaAtiva]);
   // Contar estabelecimentos por categoria
   const contagens = useMemo(() => {
     const counts: Record<string, number> = { todos: estabelecimentos.length };
@@ -84,9 +125,23 @@ export const AirbnbCategoryPills = ({
   }, [contagens]);
   
   return (
-    <div className="relative">
-      {/* Scroll horizontal estilo Airbnb */}
-      <div className="flex gap-6 sm:gap-8 overflow-x-auto py-4 scrollbar-hide scroll-smooth">
+    <div className="relative -mx-4 sm:-mx-6">
+      {/* Fade esquerda - dinâmico */}
+      <div 
+        className={cn(
+          "absolute left-0 top-0 bottom-0 w-8 sm:w-12 z-10 pointer-events-none",
+          "bg-gradient-to-r from-background to-transparent",
+          "transition-opacity duration-300",
+          showFadeLeft ? "opacity-100" : "opacity-0"
+        )} 
+      />
+      
+      {/* Scroll container */}
+      <div 
+        ref={scrollRef}
+        className="flex gap-4 sm:gap-6 overflow-x-auto py-4 px-4 sm:px-6 scrollbar-hide scroll-smooth snap-x snap-proximity"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         {categoriasConfig.map((cat, index) => {
           const isActive = categoriaAtiva === cat.id;
           const IconComponent = cat.Icon;
@@ -94,11 +149,12 @@ export const AirbnbCategoryPills = ({
           return (
             <button
               key={cat.id || 'todos'}
+              data-categoria={cat.id ?? 'todos'}
               onClick={() => onCategoriaChange(cat.id)}
               style={{ animationDelay: `${index * 30}ms` }}
               className={cn(
-                'group flex flex-col items-center gap-2 min-w-[72px] px-2 pb-3 border-b-2 transition-all duration-200 btn-press',
-                'animate-fade-in',
+                'group flex flex-col items-center gap-2 min-w-[68px] sm:min-w-[72px] px-2 pb-3 border-b-2 transition-all duration-200 btn-press snap-start',
+                'animate-fade-in flex-shrink-0',
                 isActive
                   ? 'border-foreground'
                   : 'border-transparent hover:border-muted-foreground/30'
@@ -128,9 +184,15 @@ export const AirbnbCategoryPills = ({
         })}
       </div>
       
-      {/* Fade nas bordas */}
-      <div className="absolute top-0 right-0 h-full w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
-      <div className="absolute top-0 left-0 h-full w-12 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+      {/* Fade direita - dinâmico */}
+      <div 
+        className={cn(
+          "absolute right-0 top-0 bottom-0 w-8 sm:w-12 z-10 pointer-events-none",
+          "bg-gradient-to-l from-background to-transparent",
+          "transition-opacity duration-300",
+          showFadeRight ? "opacity-100" : "opacity-0"
+        )} 
+      />
     </div>
   );
 };

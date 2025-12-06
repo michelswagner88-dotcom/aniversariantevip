@@ -1,9 +1,9 @@
-import { Store, MapPin, Search, Building2, Rocket, ArrowRight } from "lucide-react";
+import { Store, MapPin, Search, Building2, Rocket, ArrowRight, Heart, RefreshCw } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
-type EmptyStateType = 'cidade' | 'categoria' | 'busca' | 'geral';
+type EmptyStateType = 'cidade' | 'categoria' | 'busca' | 'favoritos' | 'filtro' | 'geral';
 
 interface EmptyStateProps {
   type?: EmptyStateType;
@@ -11,6 +11,8 @@ interface EmptyStateProps {
   categoria?: string;
   termoBusca?: string;
   onAction?: () => void;
+  onLimparFiltros?: () => void;
+  onMudarCidade?: () => void;
 }
 
 const configs = {
@@ -26,7 +28,7 @@ const configs = {
   },
   categoria: {
     icon: Building2,
-    emoji: '🔍',
+    emoji: '🎯',
     getTitulo: (categoria?: string) => `Nenhum ${categoria?.toLowerCase() || 'estabelecimento'} encontrado`,
     getSubtitulo: (cidade?: string, categoria?: string) => 
       cidade 
@@ -36,10 +38,28 @@ const configs = {
   },
   busca: {
     icon: Search,
-    emoji: '🤔',
-    getTitulo: (termo?: string) => termo ? `Nenhum resultado para "${termo}"` : 'Nenhum resultado',
+    emoji: '🔍',
+    getTitulo: (termo?: string) => termo ? `Nenhum resultado para "${termo}"` : 'Nenhum resultado encontrado',
     getSubtitulo: () => 'Tente buscar com outras palavras ou explore as categorias.',
     acao: 'Limpar busca'
+  },
+  favoritos: {
+    icon: Heart,
+    emoji: '💜',
+    getTitulo: () => 'Nenhum favorito ainda',
+    getSubtitulo: () => 'Explore e salve os lugares que mais gostar!',
+    acao: 'Explorar lugares'
+  },
+  filtro: {
+    icon: Search,
+    emoji: '🎯',
+    getTitulo: (categoria?: string) => categoria 
+      ? `Nenhum estabelecimento de ${categoria}`
+      : 'Nenhum resultado com esses filtros',
+    getSubtitulo: (cidade?: string) => cidade
+      ? `Ainda não temos parceiros dessa categoria em ${cidade}`
+      : 'Tente ajustar os filtros para encontrar mais opções.',
+    acao: 'Limpar filtros'
   },
   geral: {
     icon: Store,
@@ -55,7 +75,9 @@ export const EmptyState = ({
   cidade, 
   categoria, 
   termoBusca,
-  onAction 
+  onAction,
+  onLimparFiltros,
+  onMudarCidade
 }: EmptyStateProps) => {
   const navigate = useNavigate();
   const config = configs[type];
@@ -66,11 +88,11 @@ export const EmptyState = ({
     ? config.getTitulo(termoBusca) 
     : type === 'cidade' 
       ? config.getTitulo(cidade)
-      : type === 'categoria'
+      : (type === 'categoria' || type === 'filtro')
         ? config.getTitulo(categoria)
         : config.getTitulo();
         
-  const subtitulo = type === 'categoria' 
+  const subtitulo = (type === 'categoria' || type === 'filtro')
     ? config.getSubtitulo(cidade, categoria)
     : type === 'cidade'
       ? config.getSubtitulo(cidade)
@@ -79,6 +101,8 @@ export const EmptyState = ({
   const handleAction = () => {
     if (onAction) {
       onAction();
+    } else if (type === 'favoritos') {
+      navigate('/explorar');
     } else if (type === 'geral') {
       navigate('/seja-parceiro');
     }
@@ -119,15 +143,41 @@ export const EmptyState = ({
         {subtitulo}
       </p>
 
-      {/* Botão de ação */}
-      <Button
-        onClick={handleAction}
-        size="lg"
-        className="group bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg shadow-violet-500/20 px-6 sm:px-8 py-5 sm:py-6 text-sm sm:text-base font-semibold min-h-[44px] min-w-[44px]"
-      >
-        <span>{config.acao}</span>
-        <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 transition-transform group-hover:translate-x-1" />
-      </Button>
+      {/* Botões de ação */}
+      <div className="flex flex-wrap gap-3 justify-center">
+        {onLimparFiltros && (
+          <Button
+            onClick={onLimparFiltros}
+            variant="outline"
+            size="lg"
+            className="group border-violet-500/30 hover:bg-violet-500/10 min-h-[44px] min-w-[44px]"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Limpar filtros
+          </Button>
+        )}
+        
+        {onMudarCidade && (
+          <Button
+            onClick={onMudarCidade}
+            variant="outline"
+            size="lg"
+            className="group border-violet-500/30 hover:bg-violet-500/10 min-h-[44px] min-w-[44px]"
+          >
+            <MapPin className="w-4 h-4 mr-2" />
+            Mudar cidade
+          </Button>
+        )}
+
+        <Button
+          onClick={handleAction}
+          size="lg"
+          className="group bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg shadow-violet-500/20 px-6 sm:px-8 py-5 sm:py-6 text-sm sm:text-base font-semibold min-h-[44px] min-w-[44px]"
+        >
+          <span>{config.acao}</span>
+          <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 transition-transform group-hover:translate-x-1" />
+        </Button>
+      </div>
 
       {/* Divider decorativo */}
       <div className="flex items-center gap-3 w-full max-w-xs my-6 sm:my-8">

@@ -2,6 +2,11 @@
 export { EstabelecimentoCardSkeleton } from './EstabelecimentoCardSkeleton';
 export { GaleriaGridSkeleton } from './GaleriaGridSkeleton';
 export { PostCardSkeleton } from './PostCardSkeleton';
+export { SkeletonCard } from './SkeletonCard';
+export { SkeletonGrid } from './SkeletonGrid';
+export { SkeletonPills } from './SkeletonPills';
+export { SkeletonSection } from './SkeletonSection';
+export { SkeletonEstablishmentPage } from './SkeletonEstablishmentPage';
 export { 
   PageSkeleton, 
   CardSkeleton, 

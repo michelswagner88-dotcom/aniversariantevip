@@ -47,6 +47,11 @@
   100% { background-position: 200% 0; }
 }
 
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
@@ -56,6 +61,20 @@
   );
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
+}
+
+/* Skeleton fade out transition */
+@keyframes skeleton-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.skeleton-fade-out {
+  animation: skeleton-fade-out 0.3s ease forwards;
 }
 
 /* Underline animado para links */

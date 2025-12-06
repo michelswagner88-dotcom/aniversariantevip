@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { PersonalGreeting } from "@/components/PersonalGreeting";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { useBirthdayTheme } from "@/hooks/useBirthdayTheme";
+import { useScrollHeader } from "@/hooks/useScrollHeader";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -16,6 +18,8 @@ export const Header = () => {
   const [dataNascimento, setDataNascimento] = useState<string | null>(null);
   const navigate = useNavigate();
   const { isBirthday } = useBirthdayTheme(dataNascimento);
+  const { isVisible, isAtTop } = useScrollHeader({ threshold: 80, sensitivity: 8 });
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     checkUser();
@@ -79,7 +83,15 @@ export const Header = () => {
         <BirthdayBanner firstName={userName.split(' ')[0]} />
       )}
       
-      <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/[0.08]" style={{ top: isBirthday && userName ? '48px' : '0' }}>
+      <header 
+        className={`
+          fixed left-0 right-0 z-50 
+          transition-all duration-300 ease-out
+          ${isMobile && !isVisible ? '-translate-y-full' : 'translate-y-0'}
+          ${isAtTop ? 'bg-transparent border-transparent' : 'bg-slate-950/95 backdrop-blur-xl border-b border-white/[0.08] shadow-lg shadow-black/20'}
+        `}
+        style={{ top: isBirthday && userName ? '48px' : '0' }}
+      >
         <nav className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
         <div className="flex items-center justify-between h-16">
           {/* Logo - Esquerda com animação hover e transição de cores */}

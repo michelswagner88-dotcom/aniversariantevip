@@ -148,6 +148,13 @@ export default {
           "75%": { transform: "scale(1.05) rotate(-4deg)" },
           "100%": { transform: "scale(1) rotate(0deg)" }
         },
+        "heart-pop": {
+          "0%": { transform: "scale(1)" },
+          "25%": { transform: "scale(1.3)" },
+          "50%": { transform: "scale(1)" },
+          "75%": { transform: "scale(1.15)" },
+          "100%": { transform: "scale(1)" }
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",

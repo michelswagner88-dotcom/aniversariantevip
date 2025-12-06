@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSEO } from '@/hooks/useSEO';
 import { useCidadeInteligente } from '@/hooks/useCidadeInteligente';
@@ -11,9 +11,6 @@ import BottomNav from '@/components/BottomNav';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { CategoriasPills } from '@/components/home/CategoriasPills';
 import { EstabelecimentosGrid } from '@/components/home/EstabelecimentosGrid';
-import { SemCidadeView } from '@/components/home/SemCidadeView';
-import { CidadeSemEstabelecimentosView } from '@/components/home/CidadeSemEstabelecimentosView';
-import { HomeLoadingState } from '@/components/home/HomeLoadingState';
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,38 +21,46 @@ const Index = () => {
   const categoriaParam = searchParams.get('categoria');
   const buscaParam = searchParams.get('q');
   
-  // Sistema de geolocalização inteligente
+  // Sistema de geolocalização inteligente (em background, não bloqueia)
   const {
     cidade: cidadeDetectada,
     estado: estadoDetectado,
     origem,
-    isLoading: isLoadingCidade,
-    isDetecting,
-    temEstabelecimentos,
     setCidadeManual,
     limparCidade,
-    redetectar
   } = useCidadeInteligente();
   
   // Cidade final (prioridade: URL > Detectada)
   const cidadeFinal = cidadeParam || cidadeDetectada;
   const estadoFinal = estadoParam || estadoDetectado;
   
-  // Buscar estabelecimentos da cidade (só quando tiver cidade definida)
+  // CARREGAR TODOS OS ESTABELECIMENTOS IMEDIATAMENTE (estilo Airbnb)
   const { 
     data: estabelecimentos, 
     isLoading: isLoadingEstabelecimentos,
   } = useEstabelecimentos({
-    cidade: cidadeFinal || '',
-    estado: estadoFinal || '',
-    enabled: !!cidadeFinal, // Só buscar quando tiver cidade
+    showAll: true,  // Carrega TODOS do Brasil
+    enabled: true,  // Sempre habilitado - nunca bloqueia
   });
   
-  // Filtrar por categoria e busca
+  // Filtrar por cidade, categoria e busca (client-side, não bloqueia)
   const estabelecimentosFiltrados = useMemo(() => {
     if (!estabelecimentos) return [];
     
     let filtrados = [...estabelecimentos];
+    
+    // Filtrar por cidade (se detectada/selecionada)
+    if (cidadeFinal && estadoFinal) {
+      const filtradosPorCidade = filtrados.filter(est => 
+        est.cidade?.toLowerCase() === cidadeFinal.toLowerCase() &&
+        est.estado?.toLowerCase() === estadoFinal.toLowerCase()
+      );
+      
+      // Se encontrou resultados na cidade, usar. Senão, mostrar todos (nunca tela vazia!)
+      if (filtradosPorCidade.length > 0) {
+        filtrados = filtradosPorCidade;
+      }
+    }
     
     // Filtrar por categoria
     if (categoriaParam) {
@@ -81,7 +86,7 @@ const Index = () => {
     }
     
     return filtrados;
-  }, [estabelecimentos, categoriaParam, buscaParam]);
+  }, [estabelecimentos, cidadeFinal, estadoFinal, categoriaParam, buscaParam]);
   
   // Handlers
   const handleCategoriaChange = (categoria: string | null) => {
@@ -128,60 +133,15 @@ const Index = () => {
       : 'Descubra benefícios exclusivos para aniversariantes em restaurantes, bares, academias e mais de 50 categorias. Cadastre-se grátis!'
   });
   
-  // Estados de loading - priorizar URL sobre detecção
-  const isLoading = !cidadeParam && (isLoadingCidade || isDetecting);
-  
-  // Renderização condicional
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-950">
-        <Header />
-        <HomeLoadingState />
-        <BottomNav />
-      </div>
-    );
-  }
-  
-  // Sem cidade detectada - mostrar seletor
-  if (!cidadeFinal) {
-    return (
-      <div className="min-h-screen bg-slate-950">
-        <Header />
-        <SemCidadeView onCidadeSelect={handleCidadeChange} />
-        <Footer />
-        <BottomNav />
-      </div>
-    );
-  }
-  
-  // Cidade detectada mas sem estabelecimentos
-  const semEstabelecimentos = temEstabelecimentos === false || 
-    (estabelecimentos && estabelecimentos.length === 0 && !isLoadingEstabelecimentos);
-    
-  if (semEstabelecimentos) {
-    return (
-      <div className="min-h-screen bg-slate-950">
-        <Header />
-        <CidadeSemEstabelecimentosView 
-          cidade={cidadeFinal}
-          estado={estadoFinal || ''}
-          onMudarCidade={handleMudarCidade}
-        />
-        <Footer />
-        <BottomNav />
-      </div>
-    );
-  }
-  
-  // Cidade com estabelecimentos - mostrar grid
+  // SEMPRE RENDERIZA OS CARDS - NUNCA BLOQUEIA (estilo Airbnb)
   return (
     <div className="min-h-screen bg-slate-950">
       <Header />
       
       <main className="container mx-auto px-4 pt-20 pb-24">
-        {/* Header com cidade e busca */}
+        {/* Header com cidade opcional + busca */}
         <HomeHeader
-          cidade={cidadeFinal}
+          cidade={cidadeFinal || ''}
           estado={estadoFinal || ''}
           origem={origem}
           onMudarCidade={handleMudarCidade}
@@ -202,11 +162,12 @@ const Index = () => {
           <p className="text-slate-400">
             <span className="text-white font-semibold">{estabelecimentosFiltrados.length}</span>
             {' '}estabelecimento{estabelecimentosFiltrados.length !== 1 ? 's' : ''}
-            {categoriaParam && ` em ${categoriaParam}`}
+            {cidadeFinal && ` em ${cidadeFinal}`}
+            {!cidadeFinal && ' no Brasil'}
           </p>
         </div>
         
-        {/* Grid de estabelecimentos */}
+        {/* Grid de estabelecimentos - SEMPRE RENDERIZADO */}
         <EstabelecimentosGrid
           estabelecimentos={estabelecimentosFiltrados}
           isLoading={isLoadingEstabelecimentos}

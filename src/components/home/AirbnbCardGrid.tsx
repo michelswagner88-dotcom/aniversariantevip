@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { SafeImage } from '@/components/SafeImage';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { cn } from '@/lib/utils';
+import { TiltCard } from '@/components/ui/tilt-card';
 
 // Variantes de animação para o grid
 const containerVariants = {
@@ -77,12 +78,17 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
   const temBeneficio = !!est.descricao_beneficio;
   
   return (
-    <article
-      onClick={handleClick}
-      className="group cursor-pointer transition-all duration-300 hover:scale-[1.02]"
+    <TiltCard 
+      tiltAmount={8} 
+      shadowAmount={15}
+      className="group cursor-pointer"
     >
-      {/* Container da imagem com glassmorphism */}
-      <div className="relative aspect-square overflow-hidden rounded-2xl mb-3 shadow-lg shadow-black/5 dark:shadow-black/20 group-hover:shadow-xl group-hover:shadow-violet-500/15 transition-all duration-300 ring-1 ring-white/10 dark:ring-white/5 backdrop-blur-sm bg-white/5 dark:bg-slate-800/30">
+      <article
+        onClick={handleClick}
+        className="transition-all duration-300"
+      >
+        {/* Container da imagem com glassmorphism */}
+        <div className="relative aspect-square overflow-hidden rounded-2xl mb-3 shadow-lg shadow-black/5 dark:shadow-black/20 transition-all duration-300 ring-1 ring-white/10 dark:ring-white/5 backdrop-blur-sm bg-white/5 dark:bg-slate-800/30">
         <SafeImage
           src={est.logo_url || est.galeria_fotos?.[0]}
           alt={est.nome_fantasia || 'Estabelecimento'}
@@ -148,6 +154,7 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
         )}
       </div>
     </article>
+    </TiltCard>
   );
 };
 

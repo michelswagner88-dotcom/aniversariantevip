@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 // Tipos
@@ -27,6 +27,7 @@ const STORAGE_KEY = 'aniversariante_cidade_selecionada';
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 dias em ms
 const GPS_TIMEOUT = 10000; // 10 segundos
 const IP_API_TIMEOUT = 5000; // 5 segundos
+const SAFETY_TIMEOUT = 15000; // 15 segundos - timeout de segurança
 
 // APIs de IP (fallback chain)
 const IP_APIS = [
@@ -150,7 +151,7 @@ const buscarCidadeDoPerfil = async (): Promise<CidadeDetectada | null> => {
       .from('aniversariantes')
       .select('cidade, estado')
       .eq('id', session.user.id)
-      .single();
+      .maybeSingle();
     
     if (aniversariante?.cidade && aniversariante?.estado) {
       console.log('[Geo] Cidade do perfil:', aniversariante.cidade);
@@ -167,6 +168,40 @@ const buscarCidadeDoPerfil = async (): Promise<CidadeDetectada | null> => {
   }
 };
 
+// Função SÍNCRONA para carregar cache (instantâneo)
+const getCachedCity = (): CidadeDetectada | null => {
+  try {
+    const cached = localStorage.getItem(STORAGE_KEY);
+    if (!cached) return null;
+    
+    const data = JSON.parse(cached);
+    
+    if (Date.now() - data.timestamp > CACHE_DURATION) {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+    
+    return {
+      cidade: data.cidade,
+      estado: data.estado,
+      origem: 'cache'
+    };
+  } catch {
+    return null;
+  }
+};
+
+// Salvar no cache
+const saveToCache = (cidade: string, estado: string, origem: CidadeDetectada['origem']) => {
+  const cache = {
+    cidade,
+    estado,
+    origem,
+    timestamp: Date.now()
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
+};
+
 // Hook principal
 export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
   const [cidadeData, setCidadeData] = useState<CidadeDetectada>({
@@ -180,147 +215,111 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
   const [quantidadeEstabelecimentos, setQuantidadeEstabelecimentos] = useState(0);
   const [temEstabelecimentos, setTemEstabelecimentos] = useState<boolean | null>(null);
 
-  // Salvar no localStorage
-  const salvarCache = useCallback((cidade: string, estado: string, origem: CidadeDetectada['origem']) => {
-    const cache = {
-      cidade,
-      estado,
-      origem,
-      timestamp: Date.now()
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
-  }, []);
+  // Refs para controle de execução única
+  const hasInitialized = useRef(false);
+  const safetyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Carregar do localStorage
-  const carregarCache = useCallback((): CidadeDetectada | null => {
+  // Detectar cidade (lógica principal com try/finally)
+  const detectarCidadeAsync = useCallback(async () => {
     try {
-      const cached = localStorage.getItem(STORAGE_KEY);
-      if (!cached) return null;
+      setIsDetecting(true);
+      setError(null);
       
-      const data = JSON.parse(cached);
+      console.log('[Geo] Iniciando detecção de cidade...');
       
-      if (Date.now() - data.timestamp > CACHE_DURATION) {
-        localStorage.removeItem(STORAGE_KEY);
-        return null;
+      // 1. Verificar perfil do usuário logado
+      const perfilCidade = await buscarCidadeDoPerfil();
+      if (perfilCidade && perfilCidade.cidade && perfilCidade.estado) {
+        console.log('[Geo] Cidade encontrada no perfil:', perfilCidade.cidade);
+        setCidadeData(perfilCidade);
+        saveToCache(perfilCidade.cidade, perfilCidade.estado, 'perfil');
+        
+        const qtd = await verificarEstabelecimentos(perfilCidade.cidade, perfilCidade.estado);
+        setQuantidadeEstabelecimentos(qtd);
+        setTemEstabelecimentos(qtd > 0);
+        return;
       }
       
-      return {
-        cidade: data.cidade,
-        estado: data.estado,
-        origem: 'cache'
-      };
-    } catch {
-      return null;
+      // 2. Tentar GPS (mais preciso)
+      if ('geolocation' in navigator) {
+        try {
+          console.log('[Geo] Tentando GPS...');
+          
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: false,
+              timeout: GPS_TIMEOUT,
+              maximumAge: 300000
+            });
+          });
+          
+          const { latitude, longitude } = position.coords;
+          console.log('[Geo] GPS obtido:', latitude, longitude);
+          
+          const cidadeGPS = await reverseGeocode(latitude, longitude);
+          
+          if (cidadeGPS && cidadeGPS.cidade && cidadeGPS.estado) {
+            console.log('[Geo] Cidade via GPS:', cidadeGPS.cidade);
+            setCidadeData(cidadeGPS);
+            saveToCache(cidadeGPS.cidade, cidadeGPS.estado, 'gps');
+            
+            const qtd = await verificarEstabelecimentos(cidadeGPS.cidade, cidadeGPS.estado);
+            setQuantidadeEstabelecimentos(qtd);
+            setTemEstabelecimentos(qtd > 0);
+            return;
+          }
+        } catch (gpsError: any) {
+          console.log('[Geo] GPS não disponível ou negado:', gpsError.message);
+        }
+      }
+      
+      // 3. Fallback: Detectar por IP
+      console.log('[Geo] Tentando detecção por IP...');
+      const cidadeIP = await detectarPorIP();
+      
+      if (cidadeIP && cidadeIP.cidade && cidadeIP.estado) {
+        setCidadeData(cidadeIP);
+        saveToCache(cidadeIP.cidade, cidadeIP.estado, 'ip');
+        
+        const qtd = await verificarEstabelecimentos(cidadeIP.cidade, cidadeIP.estado);
+        setQuantidadeEstabelecimentos(qtd);
+        setTemEstabelecimentos(qtd > 0);
+        return;
+      }
+      
+      // 4. Nenhum método funcionou
+      console.log('[Geo] Nenhum método de detecção funcionou');
+      setError('Não foi possível detectar sua localização');
+      setCidadeData({ cidade: null, estado: null, origem: null });
+      setTemEstabelecimentos(null);
+      
+    } catch (err) {
+      console.error('[Geo] Erro fatal na detecção:', err);
+      setError('Erro ao detectar localização');
+    } finally {
+      // GARANTIR que loading termine, não importa o que aconteça
+      setIsLoading(false);
+      setIsDetecting(false);
+      
+      // Limpar timeout de segurança
+      if (safetyTimeoutRef.current) {
+        clearTimeout(safetyTimeoutRef.current);
+        safetyTimeoutRef.current = null;
+      }
     }
   }, []);
-
-  // Detectar cidade (lógica principal)
-  const detectarCidade = useCallback(async () => {
-    setIsDetecting(true);
-    setError(null);
-    
-    console.log('[Geo] Iniciando detecção de cidade...');
-    
-    // 1. Verificar cache primeiro (instantâneo)
-    const cached = carregarCache();
-    if (cached && cached.cidade && cached.estado) {
-      console.log('[Geo] Cidade encontrada no cache:', cached.cidade);
-      setCidadeData({ cidade: cached.cidade, estado: cached.estado, origem: 'cache' });
-      
-      const qtd = await verificarEstabelecimentos(cached.cidade, cached.estado);
-      setQuantidadeEstabelecimentos(qtd);
-      setTemEstabelecimentos(qtd > 0);
-      setIsLoading(false);
-      setIsDetecting(false);
-      return;
-    }
-    
-    // 2. Verificar perfil do usuário logado
-    const perfilCidade = await buscarCidadeDoPerfil();
-    if (perfilCidade && perfilCidade.cidade && perfilCidade.estado) {
-      console.log('[Geo] Cidade encontrada no perfil:', perfilCidade.cidade);
-      setCidadeData(perfilCidade);
-      salvarCache(perfilCidade.cidade, perfilCidade.estado, 'perfil');
-      
-      const qtd = await verificarEstabelecimentos(perfilCidade.cidade, perfilCidade.estado);
-      setQuantidadeEstabelecimentos(qtd);
-      setTemEstabelecimentos(qtd > 0);
-      setIsLoading(false);
-      setIsDetecting(false);
-      return;
-    }
-    
-    // 3. Tentar GPS (mais preciso)
-    if ('geolocation' in navigator) {
-      try {
-        console.log('[Geo] Tentando GPS...');
-        
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: false,
-            timeout: GPS_TIMEOUT,
-            maximumAge: 300000
-          });
-        });
-        
-        const { latitude, longitude } = position.coords;
-        console.log('[Geo] GPS obtido:', latitude, longitude);
-        
-        const cidadeGPS = await reverseGeocode(latitude, longitude);
-        
-        if (cidadeGPS && cidadeGPS.cidade && cidadeGPS.estado) {
-          console.log('[Geo] Cidade via GPS:', cidadeGPS.cidade);
-          setCidadeData(cidadeGPS);
-          salvarCache(cidadeGPS.cidade, cidadeGPS.estado, 'gps');
-          
-          const qtd = await verificarEstabelecimentos(cidadeGPS.cidade, cidadeGPS.estado);
-          setQuantidadeEstabelecimentos(qtd);
-          setTemEstabelecimentos(qtd > 0);
-          setIsLoading(false);
-          setIsDetecting(false);
-          return;
-        }
-      } catch (gpsError: any) {
-        console.log('[Geo] GPS não disponível ou negado:', gpsError.message);
-      }
-    }
-    
-    // 4. Fallback: Detectar por IP
-    console.log('[Geo] Tentando detecção por IP...');
-    const cidadeIP = await detectarPorIP();
-    
-    if (cidadeIP && cidadeIP.cidade && cidadeIP.estado) {
-      setCidadeData(cidadeIP);
-      salvarCache(cidadeIP.cidade, cidadeIP.estado, 'ip');
-      
-      const qtd = await verificarEstabelecimentos(cidadeIP.cidade, cidadeIP.estado);
-      setQuantidadeEstabelecimentos(qtd);
-      setTemEstabelecimentos(qtd > 0);
-      setIsLoading(false);
-      setIsDetecting(false);
-      return;
-    }
-    
-    // 5. Nenhum método funcionou
-    console.log('[Geo] Nenhum método de detecção funcionou');
-    setError('Não foi possível detectar sua localização');
-    setCidadeData({ cidade: null, estado: null, origem: null });
-    setTemEstabelecimentos(null);
-    setIsLoading(false);
-    setIsDetecting(false);
-  }, [carregarCache, salvarCache]);
 
   // Definir cidade manualmente
   const setCidadeManual = useCallback(async (cidade: string, estado: string) => {
     console.log('[Geo] Cidade definida manualmente:', cidade, estado);
     
     setCidadeData({ cidade, estado, origem: 'manual' });
-    salvarCache(cidade, estado, 'manual');
+    saveToCache(cidade, estado, 'manual');
     
     const qtd = await verificarEstabelecimentos(cidade, estado);
     setQuantidadeEstabelecimentos(qtd);
     setTemEstabelecimentos(qtd > 0);
-  }, [salvarCache]);
+  }, []);
 
   // Limpar cidade (forçar nova seleção)
   const limparCidade = useCallback(() => {
@@ -333,13 +332,70 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
   // Redetectar cidade
   const redetectar = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
-    detectarCidade();
-  }, [detectarCidade]);
+    setIsLoading(true);
+    hasInitialized.current = false;
+    
+    // Re-executar detecção
+    const cached = getCachedCity();
+    if (cached && cached.cidade && cached.estado) {
+      setCidadeData(cached);
+      setIsLoading(false);
+      verificarEstabelecimentos(cached.cidade, cached.estado).then(qtd => {
+        setQuantidadeEstabelecimentos(qtd);
+        setTemEstabelecimentos(qtd > 0);
+      });
+    } else {
+      detectarCidadeAsync();
+    }
+  }, [detectarCidadeAsync]);
 
-  // Detectar ao montar
+  // Efeito de inicialização - executa APENAS uma vez
   useEffect(() => {
-    detectarCidade();
-  }, [detectarCidade]);
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    console.log('[Geo] Inicializando hook de cidade...');
+
+    // Timeout de segurança - forçar fim do loading após 15s
+    safetyTimeoutRef.current = setTimeout(() => {
+      console.warn('[Geo] Safety timeout - forçando fim do loading');
+      setIsLoading(false);
+      setIsDetecting(false);
+    }, SAFETY_TIMEOUT);
+
+    // 1. Tentar carregar do cache SINCRONAMENTE primeiro
+    const cached = getCachedCity();
+    
+    if (cached && cached.cidade && cached.estado) {
+      console.log('[Geo] Cidade encontrada no cache:', cached.cidade);
+      setCidadeData(cached);
+      setIsLoading(false); // Libera a tela IMEDIATAMENTE
+      
+      // Verificar estabelecimentos em BACKGROUND (não bloqueia UI)
+      verificarEstabelecimentos(cached.cidade, cached.estado).then(qtd => {
+        setQuantidadeEstabelecimentos(qtd);
+        setTemEstabelecimentos(qtd > 0);
+      });
+      
+      // Limpar timeout de segurança já que carregou
+      if (safetyTimeoutRef.current) {
+        clearTimeout(safetyTimeoutRef.current);
+        safetyTimeoutRef.current = null;
+      }
+      
+      return;
+    }
+
+    // 2. Sem cache - fazer detecção assíncrona
+    detectarCidadeAsync();
+
+    // Cleanup
+    return () => {
+      if (safetyTimeoutRef.current) {
+        clearTimeout(safetyTimeoutRef.current);
+      }
+    };
+  }, [detectarCidadeAsync]);
 
   return {
     cidade: cidadeData.cidade,

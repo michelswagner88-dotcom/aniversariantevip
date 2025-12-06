@@ -1,5 +1,5 @@
 // src/constants/categorySubcategories.ts
-// Mapeamento de categorias para subcategorias
+// Mapeamento de categorias para subcategorias - 157 subcategorias no total
 
 export const CATEGORY_SUBCATEGORIES: Record<string, string[]> = {
   'Academia': [
@@ -37,7 +37,8 @@ export const CATEGORY_SUBCATEGORIES: Record<string, string[]> = {
   ],
   'Loja': [
     'Roupas', 'Calçados', 'Cosméticos', 'Acessórios', 'Presentes', 
-    'Eletrônicos', 'Decoração', 'Joias', 'Bolsas', 'Óculos', 'Perfumaria', 'Suplementos', 'Chocolates', 'Outros'
+    'Eletrônicos', 'Decoração', 'Joias', 'Bolsas', 'Óculos', 
+    'Perfumaria', 'Chocolates', 'Flores', 'Pet Shop', 'Outros'
   ],
   'Restaurante': [
     'Pizzaria', 'Churrascaria', 'Sushi/Japonês', 'Hambúrguer', 'Italiana', 
@@ -50,6 +51,10 @@ export const CATEGORY_SUBCATEGORIES: Record<string, string[]> = {
     'Sobrancelha', 'Depilação', 'Tratamentos Capilares', 'Escova', 
     'Penteado', 'Extensão de Cílios', 'Design de Sobrancelha', 'Outros'
   ],
+  'Saúde e Suplementos': [
+    'Suplementos', 'Produtos Naturais', 'Vitaminas', 'Fitness',
+    'Proteínas', 'Emagrecedores', 'Energéticos', 'Orgânicos', 'Veganos', 'Outros'
+  ],
   'Serviços': [
     'Estética', 'Massagem', 'Spa Day', 'Bronzeamento', 'Tatuagem', 
     'Piercing', 'Limpeza de Pele', 'Drenagem', 'Harmonização Facial', 
@@ -58,7 +63,8 @@ export const CATEGORY_SUBCATEGORIES: Record<string, string[]> = {
     'Espaço para Eventos', 'Outros'
   ],
   'Sorveteria': [
-    'Sorvete Artesanal', 'Açaí e Frozen', 'Paletas e Picolés', 'Outros'
+    'Sorvete Artesanal', 'Gelato', 'Açaí', 'Milkshake', 
+    'Picolé', 'Frozen', 'Outros'
   ],
   'Outros': [
     'Outros'

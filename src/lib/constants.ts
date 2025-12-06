@@ -1,19 +1,20 @@
 // Constantes do sistema Aniversariante VIP
 
 export const CATEGORIAS_ESTABELECIMENTO = [
-  { value: "Academia", label: "Academia", icon: "🏋️" },
-  { value: "Bar", label: "Bar", icon: "🍺" },
-  { value: "Barbearia", label: "Barbearia", icon: "✂️" },
-  { value: "Cafeteria", label: "Cafeteria", icon: "☕" },
-  { value: "Casa Noturna", label: "Casa Noturna", icon: "🎉" },
-  { value: "Confeitaria", label: "Confeitaria", icon: "🧁" },
-  { value: "Entretenimento", label: "Entretenimento", icon: "🎬" },
+  { value: "Academia", label: "Academias", icon: "💪" },
+  { value: "Bar", label: "Bares", icon: "🍻" },
+  { value: "Barbearia", label: "Barbearias", icon: "💈" },
+  { value: "Cafeteria", label: "Cafeterias", icon: "☕" },
+  { value: "Casa Noturna", label: "Casas Noturnas", icon: "🎉" },
+  { value: "Confeitaria", label: "Confeitarias", icon: "🎂" },
+  { value: "Entretenimento", label: "Entretenimento", icon: "🎮" },
   { value: "Hospedagem", label: "Hospedagem", icon: "🏨" },
-  { value: "Loja", label: "Loja", icon: "🛍️" },
-  { value: "Restaurante", label: "Restaurante", icon: "🍽️" },
-  { value: "Salão de Beleza", label: "Salão de Beleza", icon: "💅" },
-  { value: "Serviços", label: "Serviços", icon: "🔧" },
-  { value: "Sorveteria", label: "Sorveteria", icon: "🍦" },
+  { value: "Loja", label: "Lojas", icon: "🛍️" },
+  { value: "Restaurante", label: "Restaurantes", icon: "🍽️" },
+  { value: "Salão de Beleza", label: "Salões de Beleza", icon: "💇" },
+  { value: "Saúde e Suplementos", label: "Saúde e Suplementos", icon: "💊" },
+  { value: "Serviços", label: "Serviços", icon: "⭐" },
+  { value: "Sorveteria", label: "Sorveterias", icon: "🍦" },
   { value: "Outros", label: "Outros", icon: "🏪" },
 ] as const;
 

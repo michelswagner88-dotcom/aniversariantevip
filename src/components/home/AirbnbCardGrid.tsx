@@ -183,23 +183,14 @@ const AirbnbCard = ({
           onClick={handleFavorite}
           aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
           aria-pressed={isFavorited}
-          className={cn(
-            "absolute top-3 right-3 z-10 rounded-full",
-            "flex items-center justify-center",
-            "w-9 h-9",
-            "bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm",
-            "transition-all duration-200",
-            "hover:bg-white dark:hover:bg-slate-900 hover:scale-110",
-            "active:scale-95",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          )}
+          className="absolute top-2 right-2 z-10 transition-transform duration-200 hover:scale-110 active:scale-95"
         >
           <Heart 
             className={cn(
-              "w-5 h-5 transition-all duration-200",
+              "w-5 h-5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] transition-all duration-200",
               isFavorited 
                 ? "fill-red-500 text-red-500" 
-                : "text-muted-foreground",
+                : "text-white fill-white/30",
               isAnimating && "animate-[heart-pop_0.4s_ease]"
             )} 
           />

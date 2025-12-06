@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import ProtectedEstabelecimentoRoute from "@/components/auth/ProtectedEstabelecimentoRoute";
 import ProtectedAniversarianteRoute from "@/components/auth/ProtectedAniversarianteRoute";
 import ProtectedAdminRoute from "@/components/auth/ProtectedAdminRoute";
-import Carol from "@/components/ChatBot/Carol";
+import { CarolProvider } from "@/components/ChatBot/CarolProvider";
 import { useAppUpdate } from "@/hooks/useAppUpdate";
 import ScrollToTop from "@/components/ScrollToTop";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
@@ -100,9 +100,9 @@ const App = () => (
       >
         <BrowserRouter>
             <ScrollToTop />
+            <CarolProvider>
             <AnalyticsProvider>
               <AppContent />
-              <Carol />
           <ErrorBoundary>
               <PageTransition>
                 <BottomNav />
@@ -219,6 +219,7 @@ const App = () => (
             <CookieConsent />
           </ErrorBoundary>
           </AnalyticsProvider>
+          </CarolProvider>
         </BrowserRouter>
       </Sentry.ErrorBoundary>
     </TooltipProvider>

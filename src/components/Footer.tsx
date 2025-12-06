@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
-import { Globe } from "lucide-react";
+import { Globe, MessageCircle } from "lucide-react";
+import { useCarol } from "./ChatBot/CarolProvider";
 
 export const Footer = () => {
+  const { abrirCarol } = useCarol();
   const currentYear = new Date().getFullYear();
   
   return (
@@ -75,6 +77,13 @@ export const Footer = () => {
               Suporte
             </h3>
             <nav className="flex flex-col gap-3">
+              <button 
+                onClick={abrirCarol}
+                className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline transition-colors text-left"
+              >
+                <MessageCircle size={14} />
+                Fale com a Carol
+              </button>
               <Link 
                 to="/faq" 
                 className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline transition-colors"

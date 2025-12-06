@@ -15,9 +15,14 @@ interface Message {
   timestamp: Date;
 }
 
+interface CarolProps {
+  modoSuporte?: boolean;
+  onClose?: () => void;
+  podeFechar?: boolean;
+}
 
 // ==================== COMPONENTE PRINCIPAL ====================
-const Carol = () => {
+const Carol = ({ modoSuporte = false, onClose, podeFechar = true }: CarolProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -214,9 +219,17 @@ const Carol = () => {
     return hasFooterButton ? 'bottom-28' : 'bottom-6';
   };
 
+  const handleClose = () => {
+    if (podeFechar && onClose) {
+      onClose();
+    } else {
+      setIsOpen(false);
+    }
+  };
+
   return (
     <>
-      {/* Botão flutuante */}
+      {/* Botão flutuante - só aparece se não está aberto */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -248,12 +261,14 @@ const Carol = () => {
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
-            >
-              <X className="w-5 h-5 text-white" />
-            </button>
+            {podeFechar && (
+              <button
+                onClick={handleClose}
+                className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            )}
           </div>
 
           {/* Mensagens */}

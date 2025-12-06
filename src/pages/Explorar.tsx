@@ -496,7 +496,7 @@ const Explorar = () => {
         <EstablishmentCTABar />
 
         {loadingEstabelecimentos && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in duration-300">
             {Array.from({ length: 8 }).map((_, i) => (
               <EstabelecimentoCardSkeleton key={i} />
             ))}
@@ -508,7 +508,7 @@ const Explorar = () => {
         )}
 
         {!loadingEstabelecimentos && estabelecimentos.length > 0 && (
-          <>
+          <div className="animate-in fade-in duration-500">
             {/* Banner Premium quando cidade não tem estabelecimentos */}
             {mostrandoOutrasCidades && (
               <motion.div
@@ -649,7 +649,7 @@ const Explorar = () => {
                 </AirbnbMapLayout>
               )
             )}
-          </>
+          </div>
         )}
       </div>
 

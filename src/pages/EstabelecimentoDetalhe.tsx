@@ -33,6 +33,7 @@ import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { useSEO } from '@/hooks/useSEO';
 import { getEstabelecimentoSEO } from '@/constants/seo';
+import { SkeletonEstablishmentPage } from '@/components/skeletons';
 
 interface EstabelecimentoDetalheProps {
   estabelecimentoIdProp?: string | null;
@@ -336,8 +337,8 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background">
+        <SkeletonEstablishmentPage />
       </div>
     );
   }
@@ -351,7 +352,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   const temFotos = fotosParaExibir.length > 0 || estabelecimento.logo_url;
 
   return (
-    <div className="min-h-screen bg-slate-950 pb-24 md:pb-8">
+    <div className="min-h-screen bg-slate-950 pb-24 md:pb-8 animate-in fade-in duration-500">
       
       {/* ========== HERO SECTION IMERSIVA ========== */}
       <div className="relative h-[45vh] md:h-[55vh] w-full overflow-hidden">

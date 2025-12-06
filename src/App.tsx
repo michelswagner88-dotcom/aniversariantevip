@@ -107,7 +107,8 @@ const App = () => (
                 <BottomNav />
                 <Routes>
                 <Route path="/" element={<LazyRoute><Index /></LazyRoute>} />
-                <Route path="/explorar" element={<LazyRoute><Explorar /></LazyRoute>} />
+                {/* /explorar agora redireciona para / */}
+                <Route path="/explorar" element={<Navigate to="/" replace />} />
                 <Route path="/flash-deals" element={<LazyRoute><FlashDeals /></LazyRoute>} />
                 <Route path="/feed" element={<LazyRoute><Feed /></LazyRoute>} />
                 

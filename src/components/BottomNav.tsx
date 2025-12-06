@@ -84,12 +84,6 @@ const BottomNav = () => {
       activeColor: "text-violet-400",
     },
     {
-      icon: Search,
-      label: "Explorar",
-      path: "/explorar",
-      activeColor: "text-violet-400",
-    },
-    {
       icon: Newspaper,
       label: "Feed",
       path: "/feed",
@@ -100,7 +94,7 @@ const BottomNav = () => {
       label: "Ofertas",
       path: "/flash-deals",
       activeColor: "text-orange-400",
-      highlight: true, // Destaque especial para flash deals
+      highlight: true,
     },
     {
       icon: User,

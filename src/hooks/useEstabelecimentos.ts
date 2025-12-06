@@ -13,6 +13,7 @@ interface EstabelecimentoFilters {
   categoria?: string[];
   search?: string;
   showAll?: boolean;
+  enabled?: boolean;
 }
 
 // Hook otimizado para listar estabelecimentos com cache, filtros e REALTIME
@@ -61,6 +62,7 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
     staleTime: 0, // Sempre considerar stale
     refetchOnMount: true,
     refetchOnWindowFocus: true,
+    enabled: filters.enabled !== false, // Desabilitar query quando enabled=false
   });
 
   // REALTIME: Escutar mudanças na tabela estabelecimentos

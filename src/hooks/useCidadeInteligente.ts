@@ -186,9 +186,17 @@ const getCachedCity = (): CidadeDetectada | null => {
     
     const data = JSON.parse(cached);
     
+    // Verificar expiração do cache
     if (Date.now() - data.timestamp > CACHE_DURATION) {
       localStorage.removeItem(STORAGE_KEY);
       return null;
+    }
+    
+    // VALIDAR: Verificar se a cidade em cache é brasileira
+    if (data.estado && !isBrazilianLocation(data.estado)) {
+      console.log('[Geo] Cidade ESTRANGEIRA em cache detectada e REMOVIDA:', data.cidade, data.estado);
+      localStorage.removeItem(STORAGE_KEY);
+      return null; // Forçar nova detecção
     }
     
     return {

@@ -432,25 +432,6 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
             {estabelecimento.nome_fantasia || estabelecimento.razao_social}
           </motion.h1>
           
-          {/* Especialidades */}
-          {estabelecimento.especialidades?.length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="flex flex-wrap gap-1.5 mb-3"
-            >
-              {estabelecimento.especialidades.slice(0, 3).map((spec: string, i: number) => (
-                <span 
-                  key={spec} 
-                  className="px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs text-white border border-white/20"
-                >
-                  {spec}
-                </span>
-              ))}
-            </motion.div>
-          )}
-          
         </motion.div>
       </div>
 
@@ -489,14 +470,26 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
             </div>
           </motion.div>
           
-          <div className="flex-1 pb-2">
-            {/* Localização movida para aqui */}
-            <div className="flex items-center gap-1.5 text-gray-400 text-sm mb-1">
+          <div className="flex-1 pb-1">
+            {/* Localização */}
+            <div className="flex items-center gap-1.5 text-gray-400 text-sm">
               <MapPin className="w-3.5 h-3.5" />
               <span>{estabelecimento.cidade}/{estabelecimento.estado}</span>
             </div>
-            <p className="text-gray-500 text-xs">Parceiro Aniversariante VIP</p>
-            <p className="text-purple-400 text-sm mt-0.5">Benefício exclusivo</p>
+            
+            {/* Especialidades/Subcategorias */}
+            {estabelecimento.especialidades?.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {estabelecimento.especialidades.slice(0, 3).map((spec: string) => (
+                  <span 
+                    key={spec} 
+                    className="px-2 py-0.5 rounded-full bg-purple-500/20 text-xs text-purple-300 border border-purple-500/30"
+                  >
+                    {spec}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

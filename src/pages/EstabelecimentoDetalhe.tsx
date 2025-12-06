@@ -7,6 +7,14 @@ import {
   UtensilsCrossed, Copy, Send, Linkedin, Facebook,
   Camera, X, ChevronLeft, ChevronRight, Check, Sparkles, ZoomIn, Store, ArrowRight, BadgeCheck
 } from 'lucide-react';
+import { 
+  getValidatedContacts, 
+  formatWhatsApp, 
+  formatInstagram, 
+  formatPhoneLink, 
+  formatWebsite,
+  getWhatsAppMessage 
+} from '@/lib/contactUtils';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import CupomModal from '@/components/CupomModal';
@@ -235,27 +243,44 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
 
   const handleWhatsApp = () => {
     const numero = estabelecimento.whatsapp || estabelecimento.telefone;
-    if (!numero) { toast.error('WhatsApp não disponível'); return; }
+    const formattedNumber = formatWhatsApp(numero);
+    if (!formattedNumber) { 
+      toast.error('WhatsApp não disponível'); 
+      return; 
+    }
     // Rastrear clique no WhatsApp
     if (id) trackWhatsAppClick(id);
-    window.open(`https://wa.me/55${numero.replace(/\D/g, '')}`, '_blank');
+    const message = getWhatsAppMessage(estabelecimento.nome_fantasia, estabelecimento.categoria);
+    window.open(`https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleInstagram = () => {
-    if (!estabelecimento.instagram) { toast.error('Instagram não disponível'); return; }
-    window.open(`https://instagram.com/${estabelecimento.instagram.replace('@', '')}`, '_blank');
+    const instagramUrl = formatInstagram(estabelecimento.instagram);
+    if (!instagramUrl) { 
+      toast.error('Instagram não disponível'); 
+      return; 
+    }
+    window.open(instagramUrl, '_blank');
   };
 
   const handleLigar = () => {
-    if (!estabelecimento.telefone) { toast.error('Telefone não disponível'); return; }
+    const phoneLink = formatPhoneLink(estabelecimento.telefone);
+    if (!phoneLink) { 
+      toast.error('Telefone não disponível'); 
+      return; 
+    }
     // Rastrear clique no telefone
     if (id) trackPhoneClick(id);
-    window.open(`tel:${estabelecimento.telefone.replace(/\D/g, '')}`);
+    window.location.href = phoneLink;
   };
 
   const handleSite = () => {
-    if (!estabelecimento.site) { toast.error('Site não disponível'); return; }
-    window.open(estabelecimento.site, '_blank');
+    const siteUrl = formatWebsite(estabelecimento.site);
+    if (!siteUrl) { 
+      toast.error('Site não disponível'); 
+      return; 
+    }
+    window.open(siteUrl, '_blank');
   };
 
   const handleCardapio = () => {
@@ -532,48 +557,70 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
       </motion.div>
 
       {/* ========== SEÇÃO DE AÇÕES RÁPIDAS ========== */}
-      <motion.section 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="mx-4 mt-6"
-      >
-        <div className={`grid ${mostraCardapio ? 'grid-cols-5' : 'grid-cols-4'} gap-2`}>
-          {/* WhatsApp */}
-          <motion.button
-            onClick={handleWhatsApp}
-            disabled={!estabelecimento.whatsapp && !estabelecimento.telefone}
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-green-500/20 to-green-600/20 border-green-500/30 text-green-400 hover:bg-green-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+      {(() => {
+        // Calcular quantos botões válidos temos
+        const hasWhatsApp = !!formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone);
+        const hasInstagram = !!formatInstagram(estabelecimento.instagram);
+        const hasPhone = !!formatPhoneLink(estabelecimento.telefone);
+        const hasCardapio = mostraCardapio && !!estabelecimento.link_cardapio;
+        const hasSite = !!formatWebsite(estabelecimento.site);
+        
+        const validButtonsCount = [hasWhatsApp, hasInstagram, hasPhone, hasCardapio, hasSite].filter(Boolean).length;
+        
+        // Se não tem nenhum botão válido, não renderiza a seção
+        if (validButtonsCount === 0) return null;
+        
+        // Determinar número de colunas baseado na quantidade de botões
+        const gridCols = validButtonsCount <= 2 ? 'grid-cols-2' : 
+                        validButtonsCount === 3 ? 'grid-cols-3' :
+                        validButtonsCount === 4 ? 'grid-cols-4' : 'grid-cols-5';
+        
+        return (
+          <motion.section 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="mx-4 mt-6"
           >
-            <MessageCircle className="w-5 h-5" />
-            <span className="text-[10px] font-medium text-gray-300">WhatsApp</span>
-          </motion.button>
+            <div className={`grid ${gridCols} gap-2`}>
+          {/* WhatsApp - só mostra se válido */}
+          {formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone) && (
+            <motion.button
+              onClick={handleWhatsApp}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-green-500/20 to-green-600/20 border-green-500/30 text-green-400 hover:bg-green-500/30"
+            >
+              <MessageCircle className="w-5 h-5" />
+              <span className="text-[10px] font-medium text-gray-300">WhatsApp</span>
+            </motion.button>
+          )}
 
-          {/* Instagram */}
-          <motion.button
-            onClick={handleInstagram}
-            disabled={!estabelecimento.instagram}
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-pink-500/20 to-pink-600/20 border-pink-500/30 text-pink-400 hover:bg-pink-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Instagram className="w-5 h-5" />
-            <span className="text-[10px] font-medium text-gray-300">Instagram</span>
-          </motion.button>
+          {/* Instagram - só mostra se válido */}
+          {formatInstagram(estabelecimento.instagram) && (
+            <motion.button
+              onClick={handleInstagram}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-pink-500/20 to-pink-600/20 border-pink-500/30 text-pink-400 hover:bg-pink-500/30"
+            >
+              <Instagram className="w-5 h-5" />
+              <span className="text-[10px] font-medium text-gray-300">Instagram</span>
+            </motion.button>
+          )}
 
-          {/* Ligar */}
-          <motion.button
-            onClick={handleLigar}
-            disabled={!estabelecimento.telefone}
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-blue-500/20 to-blue-600/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Phone className="w-5 h-5" />
-            <span className="text-[10px] font-medium text-gray-300">Ligar</span>
-          </motion.button>
+          {/* Ligar - só mostra se válido */}
+          {formatPhoneLink(estabelecimento.telefone) && (
+            <motion.button
+              onClick={handleLigar}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-blue-500/20 to-blue-600/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/30"
+            >
+              <Phone className="w-5 h-5" />
+              <span className="text-[10px] font-medium text-gray-300">Ligar</span>
+            </motion.button>
+          )}
 
           {/* Cardápio */}
           {mostraCardapio && (
@@ -589,19 +636,22 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
             </motion.button>
           )}
 
-          {/* Site */}
-          <motion.button
-            onClick={handleSite}
-            disabled={!estabelecimento.site}
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-purple-500/20 to-purple-600/20 border-purple-500/30 text-purple-400 hover:bg-purple-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Globe className="w-5 h-5" />
-            <span className="text-[10px] font-medium text-gray-300">Site</span>
-          </motion.button>
-        </div>
-      </motion.section>
+          {/* Site - só mostra se válido */}
+          {formatWebsite(estabelecimento.site) && (
+            <motion.button
+              onClick={handleSite}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-purple-500/20 to-purple-600/20 border-purple-500/30 text-purple-400 hover:bg-purple-500/30"
+            >
+              <Globe className="w-5 h-5" />
+              <span className="text-[10px] font-medium text-gray-300">Site</span>
+            </motion.button>
+          )}
+            </div>
+          </motion.section>
+        );
+      })()}
 
       {/* ========== GALERIA DE FOTOS PREMIUM ========== */}
       {temFotos && fotosParaExibir.length > 0 && (

@@ -54,7 +54,8 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
         <SafeImage
           src={est.logo_url || est.galeria_fotos?.[0]}
           alt={est.nome_fantasia || 'Estabelecimento'}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="w-full h-full"
+          enableParallax
         />
         
         {/* Badge de benefício */}

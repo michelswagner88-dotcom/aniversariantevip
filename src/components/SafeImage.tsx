@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface SafeImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallbackSrc?: string;
   showSkeleton?: boolean;
+  enableParallax?: boolean;
+  parallaxStrength?: number;
 }
 
 export const SafeImage = ({ 
@@ -12,22 +15,76 @@ export const SafeImage = ({
   fallbackSrc = '/placeholder-estabelecimento.png',
   className,
   showSkeleton = true,
+  enableParallax = false,
+  parallaxStrength = 0.1,
   ...props 
 }: SafeImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const imageSrc = hasError ? fallbackSrc : src;
 
+  // Intersection Observer para lazy loading
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '100px', threshold: 0.01 }
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  // Parallax com Framer Motion
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  });
+
+  const y = useTransform(
+    scrollYProgress, 
+    [0, 1], 
+    enableParallax ? [-30 * parallaxStrength, 30 * parallaxStrength] : [0, 0]
+  );
+
+  const scale = useTransform(
+    scrollYProgress,
+    [0, 0.5, 1],
+    enableParallax ? [1.05, 1, 1.05] : [1, 1, 1]
+  );
+
   if (showSkeleton) {
     return (
-      <div className={cn('relative overflow-hidden bg-slate-800', className)}>
-        {/* Skeleton com animação pulse */}
+      <div 
+        ref={containerRef}
+        className={cn('relative overflow-hidden bg-slate-200 dark:bg-slate-800', className)}
+      >
+        {/* Blur placeholder + skeleton */}
         {!isLoaded && (
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 animate-pulse">
-            <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-200 via-slate-300 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800">
+            {/* Animated shimmer overlay */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div 
+                className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite]"
+                style={{
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)'
+                }}
+              />
+            </div>
+            {/* Blurred preview icon */}
+            <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm">
               <svg 
-                className="w-10 h-10 text-slate-600" 
+                className="w-10 h-10 text-slate-400 dark:text-slate-600 opacity-50" 
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
@@ -43,32 +100,39 @@ export const SafeImage = ({
           </div>
         )}
 
-        <img
-          src={imageSrc}
-          alt={alt}
-          onLoad={() => setIsLoaded(true)}
-          onError={() => { setHasError(true); setIsLoaded(true); }}
-          loading="lazy"
-          decoding="async"
-          className={cn(
-            'w-full h-full object-cover transition-opacity duration-500',
-            isLoaded ? 'opacity-100' : 'opacity-0'
-          )}
-          {...props}
-        />
+        {/* Actual image with parallax */}
+        {isInView && (
+          <motion.img
+            src={imageSrc}
+            alt={alt}
+            onLoad={() => setIsLoaded(true)}
+            onError={() => { setHasError(true); setIsLoaded(true); }}
+            loading="lazy"
+            decoding="async"
+            style={{ y, scale }}
+            className={cn(
+              'w-full h-full object-cover transition-opacity duration-500',
+              isLoaded ? 'opacity-100' : 'opacity-0'
+            )}
+          />
+        )}
       </div>
     );
   }
 
   return (
-    <img
-      src={imageSrc}
-      alt={alt}
-      onError={() => setHasError(true)}
-      loading="lazy"
-      decoding="async"
-      className={className}
-      {...props}
-    />
+    <div ref={containerRef} className={cn('relative overflow-hidden', className)}>
+      {isInView && (
+        <motion.img
+          src={imageSrc}
+          alt={alt}
+          onError={() => setHasError(true)}
+          loading="lazy"
+          decoding="async"
+          style={enableParallax ? { y, scale } : undefined}
+          className="w-full h-full object-cover"
+        />
+      )}
+    </div>
   );
 };

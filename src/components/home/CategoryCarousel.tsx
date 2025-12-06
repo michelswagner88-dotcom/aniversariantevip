@@ -60,10 +60,10 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
   return (
     <article
       onClick={handleClick}
-      className="group cursor-pointer flex-shrink-0 w-[280px] md:w-[300px] transition-all duration-200 hover:scale-[1.02]"
+      className="group cursor-pointer flex-shrink-0 w-[280px] md:w-[300px] transition-all duration-300 hover:scale-[1.02]"
     >
-      {/* Container da imagem */}
-      <div className="relative aspect-[4/3] overflow-hidden rounded-xl mb-3 shadow-sm group-hover:shadow-lg group-hover:shadow-violet-500/10 transition-shadow">
+      {/* Container da imagem com glassmorphism */}
+      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl mb-3 shadow-lg shadow-black/5 dark:shadow-black/20 group-hover:shadow-xl group-hover:shadow-violet-500/15 transition-all duration-300 ring-1 ring-white/10 dark:ring-white/5 backdrop-blur-sm bg-white/5 dark:bg-slate-800/30">
         <SafeImage
           src={est.logo_url || est.galeria_fotos?.[0]}
           alt={est.nome_fantasia || 'Estabelecimento'}

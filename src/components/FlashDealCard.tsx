@@ -64,9 +64,9 @@ export const FlashDealCard = ({ promo }: FlashDealCardProps) => {
   };
 
   return (
-    <Card className="relative overflow-hidden border-2 border-transparent bg-gradient-to-br from-orange-500/10 via-violet-500/10 to-pink-500/10 hover:border-orange-500/50 transition-all duration-300 shadow-lg hover:shadow-orange-500/25">
+    <Card className="relative overflow-hidden border-2 border-yellow-500/30 bg-gradient-to-br from-yellow-500/10 via-orange-500/10 to-red-500/10 hover:border-yellow-500/50 transition-all duration-300 shadow-lg hover:shadow-yellow-500/25">
       {/* Animated Border Glow */}
-      <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-violet-500 to-pink-500 opacity-20 blur-xl" />
+      <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 opacity-20 blur-xl" />
       
       <CardHeader className="relative z-10 pb-3">
         <div className="flex items-start justify-between gap-3">
@@ -93,12 +93,12 @@ export const FlashDealCard = ({ promo }: FlashDealCardProps) => {
             variant="outline" 
             className={`${
               isUrgent 
-                ? "bg-orange-500/20 text-orange-300 border-orange-500/50 animate-pulse" 
-                : "bg-violet-500/20 text-violet-300 border-violet-500/50"
+                ? "bg-red-500/20 text-red-300 border-red-500/50 animate-pulse" 
+                : "bg-yellow-500/20 text-yellow-300 border-yellow-500/50"
             } font-bold whitespace-nowrap`}
           >
             <Zap className="w-3 h-3 mr-1" />
-            FLASH
+            RELÂMPAGO
           </Badge>
         </div>
       </CardHeader>
@@ -117,12 +117,12 @@ export const FlashDealCard = ({ promo }: FlashDealCardProps) => {
         {/* Countdown Timer - ELEMENTO CRÍTICO */}
         <div className={`flex items-center justify-center gap-2 py-3 px-4 rounded-lg ${
           isUrgent 
-            ? "bg-orange-500/20 border border-orange-500/50" 
-            : "bg-violet-500/20 border border-violet-500/50"
+            ? "bg-red-500/20 border border-red-500/50" 
+            : "bg-yellow-500/20 border border-yellow-500/50"
         }`}>
-          <Clock className={`w-5 h-5 ${isUrgent ? "text-orange-400" : "text-violet-400"}`} />
+          <Clock className={`w-5 h-5 ${isUrgent ? "text-red-400" : "text-yellow-400"}`} />
           <span className={`font-mono font-bold text-lg ${
-            isUrgent ? "text-orange-300" : "text-violet-300"
+            isUrgent ? "text-red-300" : "text-yellow-300"
           }`}>
             {timeLeft}
           </span>
@@ -131,7 +131,7 @@ export const FlashDealCard = ({ promo }: FlashDealCardProps) => {
         {/* CTA Button */}
         <Button 
           onClick={handleClaim}
-          className="w-full bg-gradient-to-r from-orange-500 via-violet-500 to-pink-500 hover:from-orange-600 hover:via-violet-600 hover:to-pink-600 text-white font-bold py-6 text-lg shadow-lg shadow-orange-500/25"
+          className="w-full bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 hover:from-yellow-600 hover:via-orange-600 hover:to-red-600 text-black font-bold py-6 text-lg shadow-lg shadow-yellow-500/25"
         >
           ⚡ Pegar Agora
         </Button>

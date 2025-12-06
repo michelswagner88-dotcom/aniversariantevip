@@ -1,4 +1,4 @@
-import { Home, Search, Heart, User } from "lucide-react";
+import { Home, Zap, Heart, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -65,11 +65,11 @@ const BottomNav = () => {
       activeColor: "text-violet-400",
     },
     {
-      id: 'explorar',
-      icon: Search,
-      label: "Explorar",
-      path: "/explorar",
-      activeColor: "text-violet-400",
+      id: 'relampago',
+      icon: Zap,
+      label: "Relâmpago",
+      path: "/relampago",
+      activeColor: "text-yellow-400",
     },
     {
       id: 'favoritos',
@@ -148,7 +148,9 @@ const BottomNav = () => {
                       "absolute top-0 left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-b-full",
                       isFavorite
                         ? "bg-gradient-to-r from-rose-400 to-pink-400"
-                        : "bg-violet-500"
+                        : item.id === 'relampago'
+                          ? "bg-gradient-to-r from-yellow-400 to-orange-400"
+                          : "bg-violet-500"
                     )}
                   />
                 )}
@@ -160,7 +162,9 @@ const BottomNav = () => {
                 isActive 
                   ? isFavorite 
                     ? "bg-rose-500/15 shadow-[0_0_15px_rgba(244,63,94,0.2)]" 
-                    : "bg-violet-500/15 shadow-[0_0_15px_rgba(139,92,246,0.2)]"
+                    : item.id === 'relampago'
+                      ? "bg-yellow-500/15 shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                      : "bg-violet-500/15 shadow-[0_0_15px_rgba(139,92,246,0.2)]"
                   : "bg-transparent"
               )}>
                 <Icon 
@@ -169,7 +173,9 @@ const BottomNav = () => {
                     isActive 
                       ? isFavorite
                         ? "text-rose-400"
-                        : "text-violet-400"
+                        : item.id === 'relampago'
+                          ? "text-yellow-400"
+                          : "text-violet-400"
                       : "text-slate-400"
                   )}
                   strokeWidth={isActive ? 2.5 : 2}
@@ -183,7 +189,9 @@ const BottomNav = () => {
                 isActive 
                   ? isFavorite
                     ? "text-rose-400 font-semibold"
-                    : "text-violet-400 font-semibold"
+                    : item.id === 'relampago'
+                      ? "text-yellow-400 font-semibold"
+                      : "text-violet-400 font-semibold"
                   : "text-slate-500"
               )}>
                 {item.label}

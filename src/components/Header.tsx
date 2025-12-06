@@ -107,26 +107,25 @@ export const Header = () => {
           {/* Links Centro - Desktop Premium */}
           <div className="hidden lg:flex items-center justify-center flex-1 gap-0.5 min-w-0 mx-2">
             <NavLink 
-              to="/" 
-              end
-              className="text-[11px] font-medium text-slate-300 hover:text-white transition-all duration-180 px-2 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
-              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
-            >
-              Explorar
-            </NavLink>
-            <NavLink 
-              to="/feed" 
-              className="text-[11px] font-medium text-slate-300 hover:text-white transition-all duration-180 px-2 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
-              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
-            >
-              Feed
-            </NavLink>
-            <NavLink 
               to="/como-funciona" 
               className="text-[11px] font-medium text-slate-300 hover:text-white transition-all duration-180 px-2 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
               activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
             >
               Como Funciona
+            </NavLink>
+            <NavLink 
+              to="/relampago" 
+              className="text-[11px] font-medium text-slate-300 hover:text-white transition-all duration-180 px-2 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap flex items-center gap-1"
+              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-white/5"
+            >
+              <span className="text-yellow-400">⚡</span> Relâmpago
+            </NavLink>
+            <NavLink 
+              to="/seja-parceiro" 
+              className="text-[11px] font-medium text-slate-300 hover:text-white transition-all duration-180 px-2 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
+              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
+            >
+              Seja Parceiro
             </NavLink>
           </div>
 
@@ -210,29 +209,28 @@ export const Header = () => {
           <div className="lg:hidden fixed inset-x-4 top-20 bg-slate-900/95 backdrop-blur-xl rounded-2xl p-3 shadow-premium-lg border border-white/10 animate-slide-in-right">
             <div className="flex flex-col gap-1">
               <NavLink
-                to="/"
-                end
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-180 active:scale-98"
-                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
-              >
-                Explorar
-              </NavLink>
-              <NavLink
-                to="/feed"
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-180 active:scale-98"
-                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
-              >
-                Feed
-              </NavLink>
-              <NavLink
                 to="/como-funciona"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-180 active:scale-98"
                 activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
               >
                 Como Funciona
+              </NavLink>
+              <NavLink
+                to="/relampago"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-180 active:scale-98 flex items-center gap-2"
+                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-white/5"
+              >
+                <span className="text-yellow-400">⚡</span> Relâmpago
+              </NavLink>
+              <NavLink
+                to="/seja-parceiro"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-180 active:scale-98"
+                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
+              >
+                Seja Parceiro
               </NavLink>
               
               <div className="h-px bg-slate-700 my-2" />

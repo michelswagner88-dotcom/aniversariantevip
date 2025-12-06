@@ -19,6 +19,7 @@ import { CarolProvider } from "@/components/ChatBot/CarolProvider";
 import { useAppUpdate } from "@/hooks/useAppUpdate";
 import ScrollToTop from "@/components/ScrollToTop";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
+import VersionBadge from "@/components/debug/VersionBadge";
 
 // Lazy load das páginas principais
 const Index = lazy(() => import("./pages/Index"));
@@ -217,6 +218,7 @@ const App = () => (
               </Routes>
             </PageTransition>
             <CookieConsent />
+            <VersionBadge />
           </ErrorBoundary>
           </AnalyticsProvider>
           </CarolProvider>

@@ -2,11 +2,22 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
+type AspectRatioType = '4:3' | '16:9' | '1:1' | '3:4' | 'auto';
+
+const aspectRatioClasses: Record<AspectRatioType, string> = {
+  '4:3': 'aspect-[4/3]',
+  '16:9': 'aspect-[16/9]',
+  '1:1': 'aspect-square',
+  '3:4': 'aspect-[3/4]',
+  'auto': '',
+};
+
 interface SafeImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallbackSrc?: string;
   showSkeleton?: boolean;
   enableParallax?: boolean;
   parallaxStrength?: number;
+  aspectRatio?: AspectRatioType;
 }
 
 export const SafeImage = ({ 
@@ -17,6 +28,7 @@ export const SafeImage = ({
   showSkeleton = true,
   enableParallax = false,
   parallaxStrength = 0.1,
+  aspectRatio = 'auto',
   ...props 
 }: SafeImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -67,7 +79,7 @@ export const SafeImage = ({
     return (
       <div 
         ref={containerRef}
-        className={cn('relative overflow-hidden bg-slate-200 dark:bg-slate-800', className)}
+        className={cn('relative overflow-hidden bg-slate-800', aspectRatioClasses[aspectRatio], className)}
       >
         {/* Blur placeholder + skeleton */}
         {!isLoaded && (
@@ -111,7 +123,7 @@ export const SafeImage = ({
             decoding="async"
             style={{ y, scale }}
             className={cn(
-              'w-full h-full object-cover transition-opacity duration-500',
+              'absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500',
               isLoaded ? 'opacity-100' : 'opacity-0'
             )}
           />
@@ -121,7 +133,7 @@ export const SafeImage = ({
   }
 
   return (
-    <div ref={containerRef} className={cn('relative overflow-hidden', className)}>
+    <div ref={containerRef} className={cn('relative overflow-hidden', aspectRatioClasses[aspectRatio], className)}>
       {isInView && (
         <motion.img
           src={imageSrc}
@@ -130,7 +142,7 @@ export const SafeImage = ({
           loading="lazy"
           decoding="async"
           style={enableParallax ? { y, scale } : undefined}
-          className="w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover object-center"
         />
       )}
     </div>

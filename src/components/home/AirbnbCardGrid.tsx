@@ -7,7 +7,7 @@ import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { getFotoEstabelecimento, getPlaceholderPorCategoria } from '@/lib/photoUtils';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/EmptyState';
-import { getCategoriaIcon, getCategoriaSingular } from '@/lib/constants';
+import { getCategoriaIcon, getCategoriaSingular, getSubcategoriaBadgeData, getCategoriaById } from '@/constants/categories';
 
 // Variantes de animação para o grid
 const containerVariants = {
@@ -116,9 +116,22 @@ const AirbnbCard = ({
   const categoria = Array.isArray(est.categoria) ? est.categoria[0] : est.categoria;
   const temBeneficio = !!est.descricao_beneficio;
   
-  // Badge de categoria - usa SINGULAR
-  const categoriaIcon = getCategoriaIcon(categoria);
-  const categoriaSingular = getCategoriaSingular(categoria) || categoria || 'Estabelecimento';
+  // Tenta pegar subcategoria primeiro, senão usa categoria
+  const especialidades = est.especialidades || [];
+  const primeiraSubcategoria = especialidades[0];
+  
+  // Se tem subcategoria, usa ela; senão usa categoria
+  let badgeIcon: string;
+  let badgeLabel: string;
+  
+  if (primeiraSubcategoria && categoria) {
+    const subData = getSubcategoriaBadgeData(categoria, primeiraSubcategoria);
+    badgeIcon = subData.icon;
+    badgeLabel = subData.label;
+  } else {
+    badgeIcon = getCategoriaIcon(categoria);
+    badgeLabel = getCategoriaSingular(categoria) || categoria || 'Estabelecimento';
+  }
   
   // Calcular distância se tiver localização do usuário
   let distancia: string | null = null;
@@ -157,11 +170,11 @@ const AirbnbCard = ({
           className="transition-transform duration-300 group-hover:scale-105"
         />
         
-        {/* Badge categoria - canto superior esquerdo */}
-        <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-full shadow-sm">
-          <span className="text-sm">{categoriaIcon}</span>
-          <span className="text-sm font-medium text-foreground">
-            {categoriaSingular}
+        {/* Badge subcategoria/categoria - canto superior esquerdo */}
+        <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2.5 py-1 bg-black/60 backdrop-blur-sm rounded-lg">
+          <span className="text-xs">{badgeIcon}</span>
+          <span className="text-xs font-medium text-white">
+            {badgeLabel}
           </span>
         </div>
         
@@ -194,27 +207,27 @@ const AirbnbCard = ({
       </div>
     
       {/* Info do estabelecimento */}
-      <div className="pt-3 flex flex-col gap-1">
-        {/* Nome */}
-        <h3 className="font-semibold text-base leading-snug truncate text-foreground">
+      <div className="pt-3 space-y-1">
+        {/* Nome COMPLETO (sem truncar) */}
+        <h3 className="font-semibold text-base leading-tight text-foreground">
           {est.nome_fantasia || est.razao_social || 'Estabelecimento'}
         </h3>
         
-        {/* Localização */}
-        <p className="text-sm text-muted-foreground flex items-center gap-1">
-          <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-          <span className="truncate">{est.bairro || est.cidade}</span>
-          {distancia && (
-            <span className="flex-shrink-0">• {distancia}</span>
-          )}
+        {/* Bairro */}
+        <p className="text-sm text-muted-foreground">
+          {est.bairro || est.cidade}
         </p>
         
-        {/* Benefício - discreto */}
+        {/* Benefício - estilizado */}
         {temBeneficio && (
-          <p className="text-sm text-primary flex items-center gap-1.5">
-            <Gift className="w-3.5 h-3.5" />
-            <span>Tem benefício exclusivo</span>
-          </p>
+          <div className="flex items-center gap-1.5 mt-2">
+            <div className="p-1 rounded-md bg-purple-500/20">
+              <Gift size={14} className="text-purple-400" />
+            </div>
+            <span className="text-sm font-medium text-purple-400">
+              Tem benefício
+            </span>
+          </div>
         )}
       </div>
     </article>

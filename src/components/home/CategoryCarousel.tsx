@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Heart, Gift, Star } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { ChevronLeft, ChevronRight as ChevronRightIcon, Heart, Gift, Star } from 'lucide-react';
 import { motion, useInView } from 'framer-motion';
 import { SafeImage } from '@/components/SafeImage';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
@@ -11,6 +11,7 @@ import { getFotoEstabelecimento, getPlaceholderPorCategoria } from '@/lib/photoU
 interface CategoryCarouselProps {
   title: string;
   estabelecimentos: any[];
+  linkHref?: string;
   onVerTodos?: () => void;
 }
 
@@ -141,6 +142,7 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
 export const CategoryCarousel = ({
   title,
   estabelecimentos,
+  linkHref,
   onVerTodos
 }: CategoryCarouselProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -217,7 +219,7 @@ export const CategoryCarousel = ({
   
   return (
     <section className="relative group/section">
-      {/* Header da seção com animação de entrada */}
+      {/* Header da seção com storytelling e link animado */}
       <motion.div 
         ref={titleRef}
         className="flex items-center justify-between mb-6 md:mb-8"
@@ -228,16 +230,36 @@ export const CategoryCarousel = ({
         <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
           {title}
         </h2>
-        {onVerTodos && estabelecimentos.length > 4 && (
-          <motion.button 
-            onClick={onVerTodos}
-            className="text-sm font-medium text-slate-900 dark:text-white underline underline-offset-4 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+        {(linkHref || onVerTodos) && estabelecimentos.length > 4 && (
+          <motion.div
             initial={{ opacity: 0 }}
             animate={isInView ? { opacity: 1 } : { opacity: 0 }}
             transition={{ delay: 0.3 }}
           >
-            Ver todos
-          </motion.button>
+            {linkHref ? (
+              <Link 
+                to={linkHref}
+                className="group/link flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Ver todos
+                <ChevronRightIcon 
+                  size={16} 
+                  className="transition-transform group-hover/link:translate-x-1" 
+                />
+              </Link>
+            ) : onVerTodos ? (
+              <button 
+                onClick={onVerTodos}
+                className="group/link flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Ver todos
+                <ChevronRightIcon 
+                  size={16} 
+                  className="transition-transform group-hover/link:translate-x-1" 
+                />
+              </button>
+            ) : null}
+          </motion.div>
         )}
       </motion.div>
       
@@ -292,7 +314,7 @@ export const CategoryCarousel = ({
           onClick={() => scroll('right')}
           className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-opacity hover:scale-105 translate-x-1/2"
         >
-          <ChevronRight className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+          <ChevronRightIcon className="w-5 h-5 text-slate-700 dark:text-slate-300" />
         </button>
       </div>
       

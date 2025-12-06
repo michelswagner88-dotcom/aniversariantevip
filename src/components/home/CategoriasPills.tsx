@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
+import { CATEGORIAS, getCategoriaPlural } from '@/constants/categories';
 
 interface CategoriasPillsProps {
   categoriaAtiva: string | null;
@@ -34,13 +34,13 @@ export const CategoriasPills = ({
     return counts;
   }, [estabelecimentos]);
   
-  // Mapear categorias do sistema
+  // Mapear categorias do sistema - usando PLURAL para filtros
   const categoriasConfig = useMemo(() => {
     const configs = [
       { id: null, nome: 'Todos', icon: '🚀' },
-      ...CATEGORIAS_ESTABELECIMENTO.map(cat => ({
-        id: cat.value,
-        nome: cat.label,
+      ...CATEGORIAS.map(cat => ({
+        id: cat.label, // Usa label para filtrar (compatibilidade com dados)
+        nome: cat.plural, // PLURAL para exibição nos pills
         icon: cat.icon
       }))
     ];

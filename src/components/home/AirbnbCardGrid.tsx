@@ -93,15 +93,15 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
     >
       <article
         onClick={handleClick}
-        className="h-full flex flex-col transition-all duration-300"
+        className="h-full flex flex-col transition-all duration-300 active:scale-[0.98]"
       >
         {/* Container da imagem - PROPORÇÃO FIXA 4:3 - Foto domina o card */}
-        <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-slate-800 shadow-lg shadow-black/20 transition-all duration-300 ring-1 ring-white/5 group-hover:shadow-xl group-hover:shadow-violet-500/10">
+        <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-slate-800 shadow-lg shadow-black/20 transition-all duration-300 ring-1 ring-white/5 group-hover:shadow-xl group-hover:shadow-violet-500/15">
           <SafeImage
             src={fotoUrl}
             alt={est.nome_fantasia || 'Estabelecimento'}
             fallbackSrc={fallbackUrl}
-            className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-cover object-center transition-transform duration-400 ease-out group-hover:scale-[1.08]"
             enableParallax
           />
           
@@ -120,10 +120,13 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
             </div>
           )}
           
-          {/* Coração de favoritar - com background semi-transparente */}
+          {/* Coração de favoritar - aparece no hover (desktop), sempre visível no mobile */}
           <button 
             onClick={(e) => { e.stopPropagation(); }}
-            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 hover:scale-110 transition-all duration-200"
+            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 
+                       opacity-100 sm:opacity-0 sm:group-hover:opacity-100 
+                       hover:bg-black/60 hover:scale-110 
+                       transition-all duration-200"
           >
             <Heart className="w-[18px] h-[18px] text-white transition-colors hover:fill-white/50" />
           </button>
@@ -133,7 +136,7 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
         <div className="pt-3 flex flex-col gap-0.5">
           {/* Linha 1: Nome + Rating */}
           <div className="flex items-center justify-between gap-2">
-            <h3 className="font-semibold text-[15px] text-slate-900 dark:text-white truncate">
+            <h3 className="font-semibold text-[15px] text-slate-900 dark:text-white truncate transition-colors duration-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">
               {est.nome_fantasia || est.razao_social || 'Estabelecimento'}
             </h3>
             <div className="flex items-center gap-1 shrink-0">

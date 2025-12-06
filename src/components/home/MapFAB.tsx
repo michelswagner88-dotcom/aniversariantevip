@@ -30,7 +30,7 @@ export const MapFAB = ({ estabelecimentos, className }: MapFABProps) => {
           "rounded-full shadow-lg hover:shadow-xl",
           "font-medium text-sm",
           "transition-all hover:scale-105 active:scale-95",
-          "lg:hidden", // Oculto no desktop (onde temos split-screen)
+          "md:hidden", // Oculto no desktop
           className
         )}
       >

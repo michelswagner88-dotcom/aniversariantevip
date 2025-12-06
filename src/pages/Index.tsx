@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useSEO } from '@/hooks/useSEO';
 import { useCidadeInteligente } from '@/hooks/useCidadeInteligente';
 import { useEstabelecimentos } from '@/hooks/useEstabelecimentos';
@@ -17,7 +17,8 @@ import { AirbnbSearchBar } from '@/components/home/AirbnbSearchBar';
 import { AirbnbCategoryPills } from '@/components/home/AirbnbCategoryPills';
 import { AirbnbCardGrid } from '@/components/home/AirbnbCardGrid';
 import { CategoryCarousel } from '@/components/home/CategoryCarousel';
-import { MapFAB } from '@/components/home/MapFAB';
+import { AirbnbMapLayout } from '@/components/map/AirbnbMapLayout';
+import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { CarouselSkeleton } from '@/components/skeletons';
 import SubcategoryFilter from '@/components/SubcategoryFilter';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { SlidersHorizontal, MapPin, X } from 'lucide-react';
 
 const Index = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Estados de filtros avançados
@@ -127,6 +129,25 @@ const Index = () => {
     
     return filtrados;
   }, [estabelecimentos, cidadeFinal, estadoFinal, categoriaParam, buscaParam, selectedSubcategories, filterDistance, userLocation]);
+  
+  // Transformar estabelecimentos filtrados para o formato do mapa
+  const estabelecimentosParaMapa = useMemo(() => {
+    return estabelecimentosFiltrados
+      .filter(est => est.latitude && est.longitude && est.latitude !== 0 && est.longitude !== 0)
+      .map(est => ({
+        id: est.id,
+        nome_fantasia: est.nome_fantasia || '',
+        categoria: Array.isArray(est.categoria) ? est.categoria : [est.categoria].filter(Boolean),
+        endereco: `${est.logradouro || ''}, ${est.numero || ''} - ${est.bairro || ''}`,
+        latitude: Number(est.latitude),
+        longitude: Number(est.longitude),
+        logo_url: est.logo_url || null,
+        descricao_beneficio: est.descricao_beneficio || '',
+        cidade: est.cidade || '',
+        estado: est.estado || '',
+        slug: est.slug || null,
+      }));
+  }, [estabelecimentosFiltrados]);
   
   // Contagem de filtros ativos
   const activeFiltersCount = useMemo(() => {
@@ -334,40 +355,50 @@ const Index = () => {
               ))}
             </div>
           ) : (
-            /* MODO GRID: Quando há filtro de categoria ou busca */
-            <>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
-                    {categoriaParam ? getCategoryTitle(categoriaParam, cidadeFinal || undefined) : destaquesConfig.titulo}
-                  </h2>
-                  {categoriaParam && getCategorySubtitle(categoriaParam) && (
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {getCategorySubtitle(categoriaParam)}
-                    </p>
+            /* MODO GRID COM MAPA: Quando há filtro de categoria ou busca */
+            <AirbnbMapLayout
+              establishments={estabelecimentosParaMapa}
+              onEstablishmentClick={(establishment) => {
+                const url = getEstabelecimentoUrl({
+                  estado: establishment.estado,
+                  cidade: establishment.cidade,
+                  slug: establishment.slug,
+                  id: establishment.id
+                });
+                navigate(url);
+              }}
+              userLocation={userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : null}
+              listHeader={
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
+                      {categoriaParam ? getCategoryTitle(categoriaParam, cidadeFinal || undefined) : destaquesConfig.titulo}
+                    </h2>
+                    {categoriaParam && getCategorySubtitle(categoriaParam) && (
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {getCategorySubtitle(categoriaParam)}
+                      </p>
+                    )}
+                  </div>
+                  {estabelecimentosFiltrados.length > 0 && (
+                    <span className="text-sm text-muted-foreground">
+                      {estabelecimentosFiltrados.length} {estabelecimentosFiltrados.length === 1 ? 'lugar' : 'lugares'}
+                    </span>
                   )}
                 </div>
-                {estabelecimentosFiltrados.length > 0 && (
-                  <span className="text-sm text-muted-foreground">
-                    {estabelecimentosFiltrados.length} {estabelecimentosFiltrados.length === 1 ? 'lugar' : 'lugares'}
-                  </span>
-                )}
-              </div>
-              
+              }
+            >
               <AirbnbCardGrid
                 estabelecimentos={estabelecimentosFiltrados}
                 isLoading={isLoadingEstabelecimentos}
               />
-            </>
+            </AirbnbMapLayout>
           )}
         </div>
       </main>
       
       <Footer />
       <BottomNav />
-      
-      {/* FAB de Mapa - Mobile only */}
-      <MapFAB estabelecimentos={estabelecimentosFiltrados} />
       
       {/* Modal de Filtros Avançados */}
       <Dialog open={showFilters} onOpenChange={setShowFilters}>

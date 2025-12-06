@@ -393,6 +393,7 @@ const Index = () => {
               <AirbnbCardGrid
                 estabelecimentos={estabelecimentosFiltrados}
                 isLoading={isLoadingEstabelecimentos}
+                userLocation={userLocation}
               />
             </AirbnbMapLayout>
           )}

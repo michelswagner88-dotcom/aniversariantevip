@@ -129,6 +129,10 @@ export default {
           "0%": { transform: "translateY(100%)" },
           "100%": { transform: "translateY(0)" }
         },
+        "shimmer": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" }
+        },
         "slide-in-right": {
           "0%": { 
             transform: "translateY(-8px)",

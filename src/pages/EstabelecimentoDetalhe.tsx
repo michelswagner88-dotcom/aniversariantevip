@@ -436,8 +436,8 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
       </div>
 
       {/* ========== AVATAR/LOGO FLUTUANTE ========== */}
-      <div className="relative z-20 px-4 -mt-10">
-        <div className="flex items-end gap-4">
+      <div className="relative z-20 px-4 -mt-6">
+        <div className="flex items-start gap-4">
           <motion.div 
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

@@ -139,7 +139,7 @@ const Index = () => {
     : 'Destaques no Brasil';
   
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <Header />
       
       <main className="pt-20 pb-24">
@@ -155,7 +155,7 @@ const Index = () => {
         </div>
         
         {/* Pills de categorias estilo Airbnb */}
-        <div className="border-b border-slate-200 dark:border-slate-800 sticky top-16 bg-white dark:bg-slate-950 z-30">
+        <div className="border-b border-slate-200 dark:border-slate-800 sticky top-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-lg z-30">
           <div className="max-w-7xl mx-auto px-6 md:px-20">
             <AirbnbCategoryPills
               categoriaAtiva={categoriaParam}

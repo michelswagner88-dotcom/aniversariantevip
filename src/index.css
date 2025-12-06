@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================================
+   MICRO-INTERAÇÕES E ANIMAÇÕES PREMIUM
+======================================== */
+
 /* Animação de glow para badge destaque */
 @keyframes badge-glow {
   0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
@@ -10,6 +14,78 @@
 
 .animate-badge-glow {
   animation: badge-glow 2s ease-in-out infinite;
+}
+
+/* Animação de heart beat para favoritar */
+@keyframes heart-beat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.animate-heart-beat {
+  animation: heart-beat 0.4s ease;
+}
+
+/* Skeleton shimmer premium */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--secondary)) 25%,
+    hsl(var(--muted)) 50%,
+    hsl(var(--secondary)) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+/* Underline animado para links */
+.animated-underline {
+  position: relative;
+}
+
+.animated-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: currentColor;
+  transition: width 0.2s ease;
+}
+
+.animated-underline:hover::after {
+  width: 100%;
+}
+
+/* Press effect para botões */
+.btn-press:active {
+  transform: scale(0.96);
+}
+
+/* Scroll suave global */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Respeitar preferência de movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 /* Garantir altura mínima para layout sticky footer */
 html, body, #root {

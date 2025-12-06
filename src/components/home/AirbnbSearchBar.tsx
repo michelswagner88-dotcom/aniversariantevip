@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Search, MapPin } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Search, MapPin, X } from 'lucide-react';
 import { CityCombobox } from '@/components/CityCombobox';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,8 @@ export const AirbnbSearchBar = ({
 }: AirbnbSearchBarProps) => {
   const [buscaInterna, setBuscaInterna] = useState(busca);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   
   const handleBuscaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,30 +40,52 @@ export const AirbnbSearchBar = ({
     setDialogOpen(false);
   };
 
+  const handleClear = () => {
+    setBuscaInterna('');
+    onBuscaChange('');
+    inputRef.current?.focus();
+  };
+
   const cidadeDisplay = cidade ? `${cidade}, ${estado}` : 'Qualquer lugar';
   
   return (
-    <div className="w-full">
-      {/* Search bar pill style Airbnb */}
-      <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full shadow-sm hover:shadow-md transition-all focus-within:border-violet-500 focus-within:ring-2 focus-within:ring-violet-500/20">
+    <div className="w-full max-w-3xl mx-auto p-1">
+      {/* Search bar pill style Airbnb Premium */}
+      <div 
+        className={cn(
+          // Base styles
+          "flex items-center rounded-full transition-all duration-200",
+          "bg-secondary/80 backdrop-blur-sm",
+          "border border-border/50",
+          // Shadow
+          "shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.05)]",
+          // Hover
+          "hover:border-border hover:shadow-[0_2px_4px_rgba(0,0,0,0.15),0_8px_24px_rgba(0,0,0,0.1)]",
+          // Focus state
+          isFocused && "border-primary ring-[3px] ring-primary/15 shadow-[0_0_0_3px_rgba(139,92,246,0.15),0_4px_16px_rgba(139,92,246,0.1)]"
+        )}
+      >
         
         {/* Botão de Localização */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <button className="flex items-center gap-2 px-6 py-4 border-r border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-l-full transition-colors min-w-[180px]">
-              <MapPin className="w-4 h-4 text-slate-400" />
-              <div className="text-left">
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Onde</p>
-                <p className="text-sm font-medium text-slate-900 dark:text-white truncate max-w-[120px]">
+            <button className="flex items-center gap-2.5 px-5 py-3.5 border-r border-border/50 hover:bg-accent/50 rounded-l-full transition-colors min-w-[160px] sm:min-w-[180px]">
+              <MapPin className={cn(
+                "w-5 h-5 transition-colors shrink-0",
+                isFocused ? "text-primary" : "text-muted-foreground"
+              )} />
+              <div className="text-left min-w-0">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Onde</p>
+                <p className="text-sm font-medium text-foreground truncate">
                   {cidadeDisplay}
                 </p>
               </div>
             </button>
           </DialogTrigger>
           
-          <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+          <DialogContent className="bg-card border-border">
             <DialogHeader>
-              <DialogTitle className="text-slate-900 dark:text-white">Escolha uma cidade</DialogTitle>
+              <DialogTitle className="text-foreground">Escolha uma cidade</DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <CityCombobox
@@ -72,21 +97,44 @@ export const AirbnbSearchBar = ({
         </Dialog>
         
         {/* Campo de busca */}
-        <form onSubmit={handleBuscaSubmit} className="flex-1 flex items-center">
+        <form onSubmit={handleBuscaSubmit} className="flex-1 flex items-center gap-2 min-w-0">
+          {/* Ícone de busca */}
+          <Search className={cn(
+            "w-5 h-5 ml-4 shrink-0 transition-colors",
+            isFocused ? "text-primary" : "text-muted-foreground"
+          )} />
+          
           <input
+            ref={inputRef}
             type="text"
             placeholder="Buscar restaurante, bar, academia..."
             value={buscaInterna}
             onChange={(e) => setBuscaInterna(e.target.value)}
-            className="flex-1 bg-transparent px-4 py-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            className="flex-1 bg-transparent py-3.5 text-[15px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none min-w-0"
           />
+          
+          {/* Botão limpar */}
+          {buscaInterna && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="flex items-center justify-center w-7 h-7 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all shrink-0"
+            >
+              <X size={14} />
+            </button>
+          )}
+          
+          {/* Divisor */}
+          <div className="w-px h-6 bg-border/50 shrink-0" />
           
           {/* Botão de busca */}
           <button
             type="submit"
-            className="flex items-center justify-center w-10 h-10 mr-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 rounded-full transition-all"
+            className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 mr-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 rounded-full transition-all hover:scale-105 active:scale-95 shadow-lg shadow-violet-500/25"
           >
-            <Search className="w-4 h-4 text-white" />
+            <Search className="w-[18px] h-[18px] text-white" />
           </button>
         </form>
       </div>

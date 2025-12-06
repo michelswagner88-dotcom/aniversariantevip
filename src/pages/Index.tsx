@@ -8,9 +8,9 @@ import { useEstabelecimentos } from '@/hooks/useEstabelecimentos';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import BottomNav from '@/components/BottomNav';
-import { HomeHeader } from '@/components/home/HomeHeader';
-import { CategoriasPills } from '@/components/home/CategoriasPills';
-import { EstabelecimentosGrid } from '@/components/home/EstabelecimentosGrid';
+import { AirbnbSearchBar } from '@/components/home/AirbnbSearchBar';
+import { AirbnbCategoryPills } from '@/components/home/AirbnbCategoryPills';
+import { AirbnbCardGrid } from '@/components/home/AirbnbCardGrid';
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -39,8 +39,8 @@ const Index = () => {
     data: estabelecimentos, 
     isLoading: isLoadingEstabelecimentos,
   } = useEstabelecimentos({
-    showAll: true,  // Carrega TODOS do Brasil
-    enabled: true,  // Sempre habilitado - nunca bloqueia
+    showAll: true,
+    enabled: true,
   });
   
   // Filtrar por cidade, categoria e busca (client-side, não bloqueia)
@@ -56,7 +56,6 @@ const Index = () => {
         est.estado?.toLowerCase() === estadoFinal.toLowerCase()
       );
       
-      // Se encontrou resultados na cidade, usar. Senão, mostrar todos (nunca tela vazia!)
       if (filtradosPorCidade.length > 0) {
         filtrados = filtradosPorCidade;
       }
@@ -132,46 +131,59 @@ const Index = () => {
       ? `Encontre ${estabelecimentosFiltrados.length} estabelecimentos com benefícios exclusivos para aniversariantes em ${cidadeFinal}. Restaurantes, bares, academias e muito mais!`
       : 'Descubra benefícios exclusivos para aniversariantes em restaurantes, bares, academias e mais de 50 categorias. Cadastre-se grátis!'
   });
+
+  // Título da seção baseado no contexto
+  const sectionTitle = cidadeFinal 
+    ? `Destaques em ${cidadeFinal}`
+    : 'Destaques no Brasil';
   
-  // SEMPRE RENDERIZA OS CARDS - NUNCA BLOQUEIA (estilo Airbnb)
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-white dark:bg-slate-950">
       <Header />
       
-      <main className="container mx-auto px-4 pt-20 pb-24">
-        {/* Header com cidade opcional + busca */}
-        <HomeHeader
-          cidade={cidadeFinal || ''}
-          estado={estadoFinal || ''}
-          origem={origem}
-          onMudarCidade={handleMudarCidade}
-          onCidadeSelect={handleCidadeChange}
-          onBusca={handleBuscaChange}
-          buscaAtual={buscaParam || ''}
-        />
-        
-        {/* Pills de categorias */}
-        <CategoriasPills
-          categoriaAtiva={categoriaParam}
-          onCategoriaChange={handleCategoriaChange}
-          estabelecimentos={estabelecimentos || []}
-        />
-        
-        {/* Contador de resultados */}
-        <div className="flex items-center justify-between my-4">
-          <p className="text-slate-400">
-            <span className="text-white font-semibold">{estabelecimentosFiltrados.length}</span>
-            {' '}estabelecimento{estabelecimentosFiltrados.length !== 1 ? 's' : ''}
-            {cidadeFinal && ` em ${cidadeFinal}`}
-            {!cidadeFinal && ' no Brasil'}
-          </p>
+      <main className="pt-20 pb-24">
+        {/* Search Bar Flutuante estilo Airbnb */}
+        <div className="max-w-3xl mx-auto px-6 md:px-20 mb-8">
+          <AirbnbSearchBar
+            cidade={cidadeFinal || ''}
+            estado={estadoFinal || ''}
+            busca={buscaParam || ''}
+            onBuscaChange={handleBuscaChange}
+            onCidadeSelect={handleCidadeChange}
+          />
         </div>
         
-        {/* Grid de estabelecimentos - SEMPRE RENDERIZADO */}
-        <EstabelecimentosGrid
-          estabelecimentos={estabelecimentosFiltrados}
-          isLoading={isLoadingEstabelecimentos}
-        />
+        {/* Pills de categorias estilo Airbnb */}
+        <div className="border-b border-slate-200 dark:border-slate-800 sticky top-16 bg-white dark:bg-slate-950 z-30">
+          <div className="max-w-7xl mx-auto px-6 md:px-20">
+            <AirbnbCategoryPills
+              categoriaAtiva={categoriaParam}
+              onCategoriaChange={handleCategoriaChange}
+              estabelecimentos={estabelecimentos || []}
+            />
+          </div>
+        </div>
+        
+        {/* Container principal com muito espaçamento */}
+        <div className="max-w-7xl mx-auto px-6 md:px-20 pt-8">
+          {/* Título da seção com storytelling */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
+              {sectionTitle}
+            </h2>
+            {estabelecimentosFiltrados.length > 0 && (
+              <span className="text-sm text-slate-500 dark:text-slate-400">
+                {estabelecimentosFiltrados.length} lugares
+              </span>
+            )}
+          </div>
+          
+          {/* Grid de cards estilo Airbnb */}
+          <AirbnbCardGrid
+            estabelecimentos={estabelecimentosFiltrados}
+            isLoading={isLoadingEstabelecimentos}
+          />
+        </div>
       </main>
       
       <Footer />

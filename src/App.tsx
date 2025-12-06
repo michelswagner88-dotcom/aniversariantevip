@@ -111,8 +111,11 @@ const App = () => (
                 <Route path="/" element={<LazyRoute><Index /></LazyRoute>} />
                 {/* /explorar agora redireciona para / */}
                 <Route path="/explorar" element={<Navigate to="/" replace />} />
-                <Route path="/flash-deals" element={<LazyRoute><FlashDeals /></LazyRoute>} />
-                <Route path="/feed" element={<LazyRoute><Feed /></LazyRoute>} />
+                {/* Relâmpago - ofertas por tempo limitado */}
+                <Route path="/relampago" element={<LazyRoute><FlashDeals /></LazyRoute>} />
+                {/* Redirects para rotas legadas */}
+                <Route path="/flash-deals" element={<Navigate to="/relampago" replace />} />
+                <Route path="/feed" element={<Navigate to="/relampago" replace />} />
                 
                 {/* URLs amigáveis - DEVEM VIR ANTES da rota antiga */}
                 <Route path="/:estado/:cidade/:slug" element={<LazyRoute><EstabelecimentoDetalheBySlug /></LazyRoute>} />

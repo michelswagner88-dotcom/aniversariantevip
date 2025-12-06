@@ -60,13 +60,14 @@ const FlashDeals = () => {
       {/* Hero com Busca Compacta */}
       <div className="pt-24 pb-8 px-6 bg-gradient-to-b from-slate-900 to-slate-950">
         <div className="max-w-4xl mx-auto text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-orange-500/50 bg-orange-500/10 backdrop-blur-sm">
-            <Zap className="w-4 h-4 text-orange-400" />
-            <span className="text-sm font-medium text-orange-300">Ofertas por Tempo Limitado</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-yellow-500/50 bg-yellow-500/10 backdrop-blur-sm">
+            <Zap className="w-4 h-4 text-yellow-400" />
+            <span className="text-sm font-medium text-yellow-300">Ofertas exclusivas que expiram em 24 horas</span>
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white">
-            Ofertas <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-violet-400 to-pink-400">Relâmpago</span> ⚡
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white flex items-center justify-center gap-3">
+            <Zap className="w-10 h-10 text-yellow-400" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400">Relâmpago</span>
           </h1>
 
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
@@ -74,7 +75,7 @@ const FlashDeals = () => {
           </p>
 
           {/* Busca por Cidade */}
-          <div className="backdrop-blur-2xl bg-white/5 rounded-2xl p-4 border border-white/10 max-w-xl mx-auto">
+          <div className="backdrop-blur-2xl bg-white/5 rounded-2xl p-4 border border-yellow-500/20 max-w-xl mx-auto">
             <div className="flex items-center gap-3">
               <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
               <CityCombobox
@@ -103,7 +104,7 @@ const FlashDeals = () => {
         <div className="max-w-4xl mx-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-violet-400" />
+              <Loader2 className="w-8 h-8 animate-spin text-yellow-400" />
             </div>
           ) : promos && promos.length > 0 ? (
             <div className="space-y-6">
@@ -112,22 +113,24 @@ const FlashDeals = () => {
               ))}
             </div>
           ) : (
-            /* Empty State com Carol */
+            /* Empty State */
             <div className="text-center py-20 space-y-6">
-              <div className="text-6xl">🕵️‍♀️</div>
+              <div className="w-20 h-20 mx-auto rounded-full bg-yellow-500/10 flex items-center justify-center">
+                <Zap className="w-10 h-10 text-yellow-400" />
+              </div>
               <h2 className="text-2xl font-bold text-white">
-                Nenhuma oferta relâmpago agora...
+                Nenhuma oferta no momento
               </h2>
               <p className="text-slate-400 max-w-md mx-auto">
-                Mas nossos parceiros estão preparando surpresas! Ative as notificações para ser o primeiro a saber.
+                Volte em breve! Novas ofertas relâmpago aparecem a qualquer momento.
               </p>
               
               <div className="pt-6">
                 <Button 
-                  onClick={() => navigate("/explorar")}
-                  className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white font-semibold px-8 py-6 text-lg"
+                  onClick={() => navigate("/")}
+                  className="bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 hover:from-yellow-600 hover:via-orange-600 hover:to-red-600 text-black font-bold px-8 py-6 text-lg"
                 >
-                  Ver Lugares Recomendados
+                  ⚡ Ver Lugares Recomendados
                 </Button>
               </div>
             </div>

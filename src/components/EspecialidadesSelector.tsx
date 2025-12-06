@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react';
 import { Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { 
+  getCategoriaByLabel, 
+  getCategoriaById,
+  type Subcategoria as LocalSubcategoria 
+} from '@/constants/categories';
 
 interface Especialidade {
   id: string;
@@ -14,13 +19,15 @@ interface Props {
   selected: string[];
   onChange: (especialidades: string[]) => void;
   maxSelection?: number;
+  useLocalData?: boolean; // Se true, usa dados locais ao invés do banco
 }
 
 const EspecialidadesSelector = ({ 
   categoria, 
   selected, 
   onChange, 
-  maxSelection = 3 
+  maxSelection = 3,
+  useLocalData = false
 }: Props) => {
   const [especialidades, setEspecialidades] = useState<Especialidade[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,9 +36,28 @@ const EspecialidadesSelector = ({
     const fetchEspecialidades = async () => {
       if (!categoria) {
         setEspecialidades([]);
+        setLoading(false);
         return;
       }
 
+      // Se useLocalData, buscar das constantes locais
+      if (useLocalData) {
+        const cat = getCategoriaByLabel(categoria) || getCategoriaById(categoria);
+        if (cat) {
+          const localEspecialidades: Especialidade[] = cat.subcategorias.map(sub => ({
+            id: sub.id,
+            nome: sub.label,
+            icone: sub.icon
+          }));
+          setEspecialidades(localEspecialidades);
+        } else {
+          setEspecialidades([]);
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Senão, buscar do banco de dados
       setLoading(true);
       const { data, error } = await supabase
         .from('especialidades')
@@ -40,14 +66,27 @@ const EspecialidadesSelector = ({
         .eq('ativo', true)
         .order('ordem');
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         setEspecialidades(data);
+      } else {
+        // Fallback para dados locais se banco estiver vazio
+        const cat = getCategoriaByLabel(categoria) || getCategoriaById(categoria);
+        if (cat) {
+          const localEspecialidades: Especialidade[] = cat.subcategorias.map(sub => ({
+            id: sub.id,
+            nome: sub.label,
+            icone: sub.icon
+          }));
+          setEspecialidades(localEspecialidades);
+        } else {
+          setEspecialidades([]);
+        }
       }
       setLoading(false);
     };
 
     fetchEspecialidades();
-  }, [categoria]);
+  }, [categoria, useLocalData]);
 
   const toggleEspecialidade = (nome: string) => {
     if (selected.includes(nome)) {
@@ -130,6 +169,12 @@ const EspecialidadesSelector = ({
           );
         })}
       </div>
+
+      {selected.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          💡 A primeira especialidade selecionada será exibida no card do estabelecimento
+        </p>
+      )}
     </div>
   );
 };

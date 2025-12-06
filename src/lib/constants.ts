@@ -1,30 +1,33 @@
 // Constantes do sistema Aniversariante VIP
+// IMPORTANTE: Para categorias e subcategorias, usar src/constants/categories.ts
 
-export const CATEGORIAS_ESTABELECIMENTO = [
-  { value: "Academia", label: "Academias", icon: "💪" },
-  { value: "Bar", label: "Bares", icon: "🍻" },
-  { value: "Barbearia", label: "Barbearias", icon: "💈" },
-  { value: "Cafeteria", label: "Cafeterias", icon: "☕" },
-  { value: "Casa Noturna", label: "Casas Noturnas", icon: "🎉" },
-  { value: "Confeitaria", label: "Confeitarias", icon: "🎂" },
-  { value: "Entretenimento", label: "Entretenimento", icon: "🎮" },
-  { value: "Hospedagem", label: "Hospedagem", icon: "🏨" },
-  { value: "Loja", label: "Lojas", icon: "🛍️" },
-  { value: "Restaurante", label: "Restaurantes", icon: "🍽️" },
-  { value: "Salão de Beleza", label: "Salões de Beleza", icon: "💇" },
-  { value: "Serviços", label: "Serviços", icon: "⭐" },
-  { value: "Sorveteria", label: "Sorveterias", icon: "🍦" },
-  { value: "Outros", label: "Outros", icon: "🏪" },
-] as const;
+import { CATEGORIAS, getCategoriaIcon as getIcon, getCategoriasOptions } from '@/constants/categories';
 
-// Helper functions
+// Re-exportar categorias do novo sistema para compatibilidade
+export const CATEGORIAS_ESTABELECIMENTO = CATEGORIAS.map(c => ({
+  value: c.label,
+  label: c.label + (c.label.endsWith('s') ? '' : 's'),
+  icon: c.icon,
+  id: c.id,
+}));
+
+// Helper functions - delegam para o novo sistema
 export const getCategoriaIcon = (categoria: string): string => {
-  const cat = CATEGORIAS_ESTABELECIMENTO.find(c => c.value === categoria);
+  // Busca por label ou id
+  const cat = CATEGORIAS.find(c => 
+    c.label === categoria || 
+    c.id === categoria ||
+    c.label.toLowerCase() === categoria.toLowerCase()
+  );
   return cat?.icon || '📍';
 };
 
 export const getCategoriasValues = (): string[] => {
-  return CATEGORIAS_ESTABELECIMENTO.map(c => c.value);
+  return CATEGORIAS.map(c => c.label);
+};
+
+export const getCategoriasIds = (): string[] => {
+  return CATEGORIAS.map(c => c.id);
 };
 
 export const PERIODOS_VALIDADE = [
@@ -95,8 +98,8 @@ export const ESTADOS = [
 
 export const CONTATOS = {
   email: "contato@aniversariantevip.com.br",
-  telefoneProprietario: "(48) 99999-0000", // Atualizar com o número real
-  telefonePai: "(48) 99999-0001", // Atualizar com o número real
+  telefoneProprietario: "(48) 99999-0000",
+  telefonePai: "(48) 99999-0001",
   instagram: "https://instagram.com/aniversariantevip",
-  whatsapp: "(48) 99999-0000", // Atualizar com o número real
+  whatsapp: "(48) 99999-0000",
 } as const;

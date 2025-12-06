@@ -125,6 +125,11 @@ export const HomeHeader = ({
           </button>
         )}
       </form>
+      
+      {/* Slogan */}
+      <p className="text-center text-xs font-medium tracking-[0.08em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-slate-400 via-violet-400 to-slate-400 mt-4 opacity-0 animate-[fadeInSlide_0.8s_ease-out_0.5s_forwards]">
+        ✨ O maior guia de benefícios para aniversariantes do Brasil ✨
+      </p>
     </div>
   );
 };

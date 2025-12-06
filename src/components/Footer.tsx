@@ -6,7 +6,7 @@ export const Footer = () => {
   
   return (
     <footer className="bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
-      <div className="container mx-auto px-6 py-8">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 py-8">
         {/* Links organizados em colunas estilo Airbnb */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           {/* Coluna 1 - Descubra */}

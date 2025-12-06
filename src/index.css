@@ -81,6 +81,13 @@ All colors MUST be HSL.
     --blur-md: 12px;
     --blur-lg: 24px;
     
+    /* Container padding tokens (Airbnb-style) */
+    --container-padding-desktop: 80px;
+    --container-padding-tablet: 48px;
+    --container-padding-mobile: 24px;
+    --container-padding-small: 16px;
+    --container-max-width: 1920px;
+    
     /* Spacing scale */
     --space-xs: 0.5rem;
     --space-sm: 0.75rem;

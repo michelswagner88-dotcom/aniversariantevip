@@ -200,7 +200,7 @@ const Index = () => {
       
       <main className="pt-20 pb-24">
         {/* Search Bar Flutuante estilo Airbnb */}
-        <div className="max-w-3xl mx-auto px-6 md:px-20 mb-8">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 mb-8">
           <AirbnbSearchBar
             cidade={cidadeFinal || ''}
             estado={estadoFinal || ''}
@@ -212,7 +212,7 @@ const Index = () => {
         
         {/* Pills de categorias estilo Airbnb */}
         <div className="border-b border-slate-200 dark:border-slate-800 sticky top-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-lg z-30">
-          <div className="max-w-7xl mx-auto px-6 md:px-20">
+          <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
             <AirbnbCategoryPills
               categoriaAtiva={categoriaParam}
               onCategoriaChange={handleCategoriaChange}
@@ -221,8 +221,8 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Container principal */}
-        <div className="max-w-7xl mx-auto px-6 md:px-20 pt-8 pb-16">
+        {/* Container principal com padding respirado */}
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-8 pb-16">
           
           {/* MODO CARROSSÉIS: Quando não há filtro ativo */}
           {mostrarCarrosseis ? (

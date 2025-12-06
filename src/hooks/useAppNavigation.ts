@@ -8,7 +8,7 @@ import { getExplorarUrl, getEstabelecimentoUrl } from '@/utils/urls';
 export const useAppNavigation = () => {
   const navigate = useNavigate();
 
-  // Navegar para explorar com filtros
+  // Navegar para explorar com filtros (agora é a home /)
   const goToExplorar = useCallback((params?: {
     cidade?: string;
     estado?: string;
@@ -17,16 +17,21 @@ export const useAppNavigation = () => {
     q?: string;
   }) => {
     try {
-      const url = getExplorarUrl(params || {});
-      console.log('[Navigation] goToExplorar - Params:', params);
-      console.log('[Navigation] goToExplorar - URL gerada:', url);
-      console.log('[Navigation] goToExplorar - Executando navigate()...');
+      // Construir URL para a home com parâmetros
+      const searchParams = new URLSearchParams();
+      if (params?.cidade) searchParams.set('cidade', params.cidade);
+      if (params?.estado) searchParams.set('estado', params.estado);
+      if (params?.categoria) searchParams.set('categoria', params.categoria);
+      if (params?.q) searchParams.set('q', params.q);
+      
+      const queryString = searchParams.toString();
+      const url = queryString ? `/?${queryString}` : '/';
+      
+      console.log('[Navigation] goToExplorar - URL:', url);
       navigate(url, { replace: false });
-      console.log('[Navigation] goToExplorar - navigate() concluído');
     } catch (error) {
       console.error('[Navigation] ERRO em goToExplorar:', error);
-      // Fallback: navegar direto para /explorar sem params
-      navigate('/explorar');
+      navigate('/');
     }
   }, [navigate]);
 

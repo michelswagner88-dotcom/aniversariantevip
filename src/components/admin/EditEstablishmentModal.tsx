@@ -375,12 +375,12 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
                 <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-3 bg-muted/30 rounded-lg border">
                   {getSubcategoriesForCategory(formData.categoria[0]).map(subcategory => {
                     const currentSubs = formData.especialidades || [];
-                    const isSelected = currentSubs.includes(subcategory);
+                    const isSelected = currentSubs.includes(subcategory.label);
                     const isDisabled = currentSubs.length >= 3 && !isSelected;
                     
                     return (
                       <Badge
-                        key={subcategory}
+                        key={subcategory.id}
                         variant={isSelected ? "default" : "outline"}
                         className={`
                           cursor-pointer transition-all
@@ -393,12 +393,13 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
                         onClick={() => {
                           if (isDisabled) return;
                           const newSubs = isSelected 
-                            ? currentSubs.filter(s => s !== subcategory)
-                            : [...currentSubs, subcategory];
+                            ? currentSubs.filter(s => s !== subcategory.label)
+                            : [...currentSubs, subcategory.label];
                           setFormData({...formData, especialidades: newSubs});
                         }}
                       >
-                        {subcategory}
+                        <span className="mr-1">{subcategory.icon}</span>
+                        {subcategory.label}
                       </Badge>
                     );
                   })}

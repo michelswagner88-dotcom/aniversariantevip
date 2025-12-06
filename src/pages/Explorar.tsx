@@ -662,8 +662,57 @@ const Explorar = () => {
               <button onClick={() => setShowFilters(false)} className="p-2 text-slate-400 hover:text-white transition-colors"><X size={24}/></button>
             </div>
             
-            <div className="space-y-8 overflow-y-auto pb-24 scrollbar-hide flex-1">
+            <div className="space-y-6 overflow-y-auto pb-24 scrollbar-hide flex-1">
+              {/* Seção: Categorias */}
               <div className="space-y-3">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                  🏷️ Categoria
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => selectCategory(null)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                      !categoryToFilter
+                        ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20'
+                        : 'bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10'
+                    }`}
+                  >
+                    <span>✨</span> Todos
+                  </button>
+                  {CATEGORIAS_ESTABELECIMENTO.map((cat) => (
+                    <button
+                      key={cat.value}
+                      onClick={() => selectCategory(cat.value)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                        categoryToFilter === cat.value
+                          ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20'
+                          : 'bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10'
+                      }`}
+                    >
+                      <span>{cat.icon}</span> {cat.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Seção: Subcategorias (aparece quando categoria selecionada) */}
+              {categoryToFilter && (
+                <div className="space-y-3 border-t border-white/10 pt-4">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                    🔖 Tipo de {categoryToFilter}
+                  </label>
+                  <SubcategoryFilter
+                    category={categoryToFilter}
+                    selectedSubcategories={selectedSubcategories}
+                    onSubcategoriesChange={setSelectedSubcategories}
+                    cidade={cidadeParam || selectedCity?.nome || null}
+                    estado={estadoParam || selectedCity?.estado || null}
+                  />
+                </div>
+              )}
+
+              {/* Seção: Dia da festa */}
+              <div className="space-y-3 border-t border-white/10 pt-4">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
                   <CalendarDays size={14} /> Planejar Dia da Festa
                 </label>
@@ -680,8 +729,9 @@ const Explorar = () => {
                 </div>
               </div>
 
+              {/* Seção: Distância */}
               {userLocation && (
-                <div className="space-y-3">
+                <div className="space-y-3 border-t border-white/10 pt-4">
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
                     <Navigation size={14} /> Distância Máxima
                   </label>
@@ -697,7 +747,8 @@ const Explorar = () => {
                 </div>
               )}
 
-              <div className="space-y-3">
+              {/* Seção: Validade */}
+              <div className="space-y-3 border-t border-white/10 pt-4">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Validade do Benefício</label>
                 <div className="grid grid-cols-3 gap-2">
                   <FilterOption label="No Dia" selected={filterValidity === 'day'} onClick={() => setFilterValidity('day')} />
@@ -707,10 +758,28 @@ const Explorar = () => {
               </div>
             </div>
 
+            {/* Footer com contador de filtros */}
             <div className="absolute bottom-0 left-0 right-0 border-t border-white/10 bg-slate-950 p-4 pb-8">
-              <button onClick={() => setShowFilters(false)} className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 py-4 font-bold text-white shadow-lg shadow-violet-500/20 transition-transform active:scale-95 hover:brightness-110">
-                Ver {filteredPlaces.length} Resultados
-              </button>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => {
+                    setFilterDay('any');
+                    setFilterDistance(undefined);
+                    setFilterValidity('month');
+                    selectCategory(null);
+                    setSelectedSubcategories([]);
+                  }}
+                  className="flex-1 rounded-xl border border-white/20 bg-white/5 py-4 font-semibold text-white transition-all hover:bg-white/10"
+                >
+                  Limpar
+                </button>
+                <button 
+                  onClick={() => setShowFilters(false)} 
+                  className="flex-[2] rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 py-4 font-bold text-white shadow-lg shadow-violet-500/20 transition-transform active:scale-95 hover:brightness-110"
+                >
+                  Ver {filteredPlaces.length} Resultados
+                </button>
+              </div>
             </div>
           </div>
         </div>

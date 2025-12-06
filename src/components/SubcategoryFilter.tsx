@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useAvailableSubcategories } from '@/hooks/useAvailableSubcategories';
+import { getSubcategoryIcon } from '@/constants/categorySubcategories';
 import { X, Loader2 } from 'lucide-react';
 
 interface SubcategoryFilterProps {
@@ -78,12 +79,14 @@ export const SubcategoryFilter = ({
         <div className="flex gap-2 pb-2 px-1">
           {availableSubcategories.map((subcategory) => {
             const isSelected = selectedSubcategories.includes(subcategory);
+            const icon = getSubcategoryIcon(category, subcategory);
+            
             return (
               <Badge
                 key={subcategory}
                 variant={isSelected ? "default" : "outline"}
                 className={`
-                  cursor-pointer shrink-0 transition-all duration-200 text-xs py-1.5 px-3
+                  cursor-pointer shrink-0 transition-all duration-200 text-xs py-1.5 px-3 flex items-center gap-1.5
                   ${isSelected 
                     ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white border-transparent shadow-lg shadow-violet-500/20' 
                     : 'bg-transparent hover:bg-violet-600/20 text-slate-300 border-slate-600 hover:border-violet-500'
@@ -91,7 +94,8 @@ export const SubcategoryFilter = ({
                 `}
                 onClick={() => toggleSubcategory(subcategory)}
               >
-                {subcategory}
+                <span className="text-sm">{icon}</span>
+                <span>{subcategory}</span>
               </Badge>
             );
           })}

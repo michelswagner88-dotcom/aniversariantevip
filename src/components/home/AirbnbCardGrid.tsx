@@ -80,7 +80,14 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
   };
 
   const handleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
+    
+    // Feedback tátil no mobile (se suportado)
+    if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+    
     setIsFavorited(!isFavorited);
     setIsAnimating(true);
     setTimeout(() => setIsAnimating(false), 400);
@@ -150,22 +157,44 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
             </div>
           )}
           
-          {/* Coração de favoritar - aparece no hover (desktop), sempre visível no mobile */}
+          {/* Coração de favoritar - SEMPRE visível no mobile, hover no desktop */}
           <button 
             onClick={handleFavorite}
+            aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+            aria-pressed={isFavorited}
             className={cn(
-              "absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full",
-              "bg-black/40 hover:bg-black/60",
-              "opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
-              "transition-all duration-200 btn-press",
-              isFavorited && "bg-black/60"
+              // Base - posição e tamanho
+              "absolute top-2 right-2 z-10 rounded-full",
+              "flex items-center justify-center",
+              // Visual - fundo com blur
+              "bg-black/50 backdrop-blur-sm",
+              "border border-white/10",
+              // Transições
+              "transition-all duration-200",
+              // Touch target - área mínima de 44x44 no mobile
+              "w-11 h-11 md:w-9 md:h-9",
+              // MOBILE: sempre visível (opacity-100)
+              // DESKTOP: escondido por padrão, aparece no hover do grupo
+              "opacity-100 scale-100",
+              "md:opacity-0 md:scale-90",
+              "md:group-hover:opacity-100 md:group-hover:scale-100",
+              // Se favoritado: sempre visível em ambos
+              isFavorited && "!opacity-100 !scale-100 bg-black/60",
+              // Hover no próprio botão
+              "hover:bg-black/70 hover:scale-110 md:group-hover:hover:scale-110",
+              // Active state
+              "active:scale-95",
+              // Focus visible para acessibilidade
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
             )}
           >
             <Heart 
               className={cn(
-                "w-[18px] h-[18px] transition-all",
-                isFavorited ? "fill-red-500 text-red-500" : "text-white hover:fill-white/50",
-                isAnimating && "animate-heart-beat"
+                "w-5 h-5 md:w-[18px] md:h-[18px] transition-all duration-200",
+                isFavorited 
+                  ? "fill-red-500 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" 
+                  : "text-white",
+                isAnimating && "animate-[heart-pop_0.4s_ease]"
               )} 
             />
           </button>

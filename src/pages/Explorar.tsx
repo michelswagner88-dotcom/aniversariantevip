@@ -292,13 +292,21 @@ const Explorar = () => {
   // Usar cidadeParam diretamente para evitar race condition com setState
   const cidadeSelecionada = cidadeParam || selectedCity?.nome;
   
-  // Prioriza estabelecimentos da cidade, senão mostra todos
-  const estabelecimentos = cidadeSelecionada && estabelecimentosCidade.length > 0 
+  // SEMPRE usar estabelecimentos da cidade - NÃO fazer fallback
+  // Se cidade selecionada não tem resultados, mostrar lista vazia
+  const estabelecimentos = cidadeSelecionada 
     ? estabelecimentosCidade 
     : todosEstabelecimentos;
 
   const mostrandoOutrasCidades = cidadeSelecionada && estabelecimentosCidade.length === 0 && todosEstabelecimentos.length > 0;
-  const loadingEstabelecimentos = loadingCidade || loadingTodos;
+  const loadingEstabelecimentos = cidadeSelecionada ? loadingCidade : loadingTodos;
+  
+  console.log('[Explorar] Filtro aplicado:', { 
+    cidadeSelecionada, 
+    totalCidade: estabelecimentosCidade.length,
+    totalTodos: todosEstabelecimentos.length,
+    usandoFiltro: !!cidadeSelecionada
+  });
 
   // --- ESTADOS DOS FILTROS ---
   const [filterDay, setFilterDay] = useState("any");

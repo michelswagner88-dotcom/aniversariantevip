@@ -1,8 +1,32 @@
 import { useNavigate } from 'react-router-dom';
 import { Heart, Gift, MapPin, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { SafeImage } from '@/components/SafeImage';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { cn } from '@/lib/utils';
+
+// Variantes de animação para o grid
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08
+    }
+  }
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: "easeOut" as const
+    }
+  }
+};
 
 interface AirbnbCardGridProps {
   estabelecimentos: any[];
@@ -141,10 +165,17 @@ export const AirbnbCardGrid = ({
   }
   
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+    <motion.div 
+      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {estabelecimentos.map((est) => (
-        <AirbnbCard key={est.id} estabelecimento={est} />
+        <motion.div key={est.id} variants={cardVariants}>
+          <AirbnbCard estabelecimento={est} />
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 };

@@ -1,6 +1,7 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Heart, Gift, MapPin, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { SafeImage } from '@/components/SafeImage';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { cn } from '@/lib/utils';
@@ -10,6 +11,20 @@ interface CategoryCarouselProps {
   estabelecimentos: any[];
   onVerTodos?: () => void;
 }
+
+// Variantes de animação
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.1,
+      duration: 0.4,
+      ease: "easeOut" as const
+    }
+  })
+};
 
 // Card individual compacto para carrossel
 const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
@@ -98,11 +113,41 @@ export const CategoryCarousel = ({
   onVerTodos
 }: CategoryCarouselProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [totalDots, setTotalDots] = useState(1);
+  
+  // Calcular número de dots baseado no scroll
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    
+    const updateDots = () => {
+      const scrollWidth = container.scrollWidth;
+      const clientWidth = container.clientWidth;
+      const maxScroll = scrollWidth - clientWidth;
+      const dots = Math.ceil(maxScroll / 320) + 1;
+      setTotalDots(Math.max(dots, 1));
+      
+      const scrollLeft = container.scrollLeft;
+      const index = Math.round(scrollLeft / 320);
+      setActiveIndex(Math.min(index, dots - 1));
+    };
+    
+    updateDots();
+    container.addEventListener('scroll', updateDots);
+    return () => container.removeEventListener('scroll', updateDots);
+  }, [estabelecimentos]);
   
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
       const scrollAmount = direction === 'left' ? -320 : 320;
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const scrollToIndex = (index: number) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ left: index * 320, behavior: 'smooth' });
     }
   };
 
@@ -141,10 +186,17 @@ export const CategoryCarousel = ({
           className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-2 px-2"
           style={{ scrollSnapType: 'x mandatory' }}
         >
-          {estabelecimentos.map((est) => (
-            <div key={est.id} style={{ scrollSnapAlign: 'start' }}>
+          {estabelecimentos.map((est, index) => (
+            <motion.div 
+              key={est.id} 
+              style={{ scrollSnapAlign: 'start' }}
+              custom={index}
+              initial="hidden"
+              animate="visible"
+              variants={cardVariants}
+            >
               <CarouselCard estabelecimento={est} />
-            </div>
+            </motion.div>
           ))}
         </div>
         
@@ -156,6 +208,27 @@ export const CategoryCarousel = ({
           <ChevronRight className="w-5 h-5 text-slate-700 dark:text-slate-300" />
         </button>
       </div>
+      
+      {/* Indicadores de progresso (dots) */}
+      {totalDots > 1 && (
+        <div className="flex items-center justify-center gap-1.5 mt-4">
+          {Array.from({ length: Math.min(totalDots, 5) }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => scrollToIndex(i)}
+              className={cn(
+                'w-2 h-2 rounded-full transition-all duration-300',
+                activeIndex === i 
+                  ? 'bg-violet-500 w-4' 
+                  : 'bg-slate-300 dark:bg-slate-600 hover:bg-slate-400'
+              )}
+            />
+          ))}
+          {totalDots > 5 && (
+            <span className="text-xs text-slate-400 ml-1">+{totalDots - 5}</span>
+          )}
+        </div>
+      )}
     </section>
   );
 };

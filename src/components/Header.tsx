@@ -173,14 +173,6 @@ export const Header = () => {
                   asChild
                   className="text-white hover:bg-white/10 whitespace-nowrap text-[11px] px-2 h-8"
                 >
-                  <Link to="/seja-parceiro">Parceiro</Link>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                  className="text-white hover:bg-white/10 whitespace-nowrap text-[11px] px-2 h-8"
-                >
                   <Link to="/selecionar-perfil">Entrar</Link>
                 </Button>
                 <Button

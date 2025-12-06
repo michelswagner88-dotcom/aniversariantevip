@@ -12,6 +12,7 @@ import { AirbnbSearchBar } from '@/components/home/AirbnbSearchBar';
 import { AirbnbCategoryPills } from '@/components/home/AirbnbCategoryPills';
 import { AirbnbCardGrid } from '@/components/home/AirbnbCardGrid';
 import { MapFAB } from '@/components/home/MapFAB';
+import { MapaEstabelecimentos } from '@/components/MapaEstabelecimentos';
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -165,25 +166,42 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Container principal com muito espaçamento */}
+        {/* Container principal - Split Screen no Desktop */}
         <div className="max-w-7xl mx-auto px-6 md:px-20 pt-8">
-          {/* Título da seção com storytelling */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
-              {sectionTitle}
-            </h2>
-            {estabelecimentosFiltrados.length > 0 && (
-              <span className="text-sm text-slate-500 dark:text-slate-400">
-                {estabelecimentosFiltrados.length} lugares
-              </span>
-            )}
+          <div className="flex gap-6">
+            {/* Coluna Esquerda - Cards (scrollável) */}
+            <div className="w-full lg:w-[60%]">
+              {/* Título da seção com storytelling */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
+                  {sectionTitle}
+                </h2>
+                {estabelecimentosFiltrados.length > 0 && (
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {estabelecimentosFiltrados.length} lugares
+                  </span>
+                )}
+              </div>
+              
+              {/* Grid de cards estilo Airbnb */}
+              <AirbnbCardGrid
+                estabelecimentos={estabelecimentosFiltrados}
+                isLoading={isLoadingEstabelecimentos}
+              />
+            </div>
+            
+            {/* Coluna Direita - Mapa Sticky (apenas desktop) */}
+            <div className="hidden lg:block lg:w-[40%]">
+              <div className="sticky top-36 h-[calc(100vh-10rem)] rounded-xl overflow-hidden shadow-lg">
+                <MapaEstabelecimentos
+                  estabelecimentos={estabelecimentosFiltrados.filter(
+                    est => est.latitude && est.longitude && est.latitude !== 0
+                  )}
+                  height="100%"
+                />
+              </div>
+            </div>
           </div>
-          
-          {/* Grid de cards estilo Airbnb */}
-          <AirbnbCardGrid
-            estabelecimentos={estabelecimentosFiltrados}
-            isLoading={isLoadingEstabelecimentos}
-          />
         </div>
       </main>
       

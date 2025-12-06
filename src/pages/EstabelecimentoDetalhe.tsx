@@ -464,10 +464,6 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                 <ZoomIn className="w-6 h-6 text-white drop-shadow-lg" />
               </div>
             </motion.button>
-            
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-500 border-2 border-slate-900 flex items-center justify-center pointer-events-none">
-              <Check className="w-3 h-3 text-white" />
-            </div>
           </motion.div>
           
           <div className="flex-1 pb-1">

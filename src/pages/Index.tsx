@@ -265,6 +265,8 @@ const Index = () => {
             busca={buscaParam || ''}
             onBuscaChange={handleBuscaChange}
             onCidadeSelect={handleCidadeChange}
+            onCategoriaChange={handleCategoriaChange}
+            onUseLocation={requestLocation}
           />
           
           {/* Slogan */}

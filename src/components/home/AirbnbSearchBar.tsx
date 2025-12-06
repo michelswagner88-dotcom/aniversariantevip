@@ -1,7 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Search, MapPin, X } from 'lucide-react';
 import { CityCombobox } from '@/components/CityCombobox';
 import { cn } from '@/lib/utils';
+import { useVoiceSearch } from '@/hooks/useVoiceSearch';
+import { VoiceSearchButton } from '@/components/VoiceSearchButton';
+import { VoiceSearchModal } from '@/components/VoiceSearchModal';
+import { parseVoiceSearch } from '@/utils/voiceSearchParser';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +20,8 @@ interface AirbnbSearchBarProps {
   busca: string;
   onBuscaChange: (termo: string) => void;
   onCidadeSelect: (cidade: string, estado: string) => void;
+  onCategoriaChange?: (categoria: string | null) => void;
+  onUseLocation?: () => void;
 }
 
 export const AirbnbSearchBar = ({
@@ -23,13 +29,65 @@ export const AirbnbSearchBar = ({
   estado,
   busca,
   onBuscaChange,
-  onCidadeSelect
+  onCidadeSelect,
+  onCategoriaChange,
+  onUseLocation,
 }: AirbnbSearchBarProps) => {
   const [buscaInterna, setBuscaInterna] = useState(busca);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   
+  // Handler quando voz é reconhecida
+  const handleVoiceResult = useCallback((transcriptResult: string) => {
+    // Fechar modal após pequeno delay
+    setTimeout(() => setShowVoiceModal(false), 600);
+    
+    // Parser inteligente
+    const parsed = parseVoiceSearch(transcriptResult);
+    
+    // Aplicar resultados
+    if (parsed.searchText) {
+      setBuscaInterna(parsed.searchText);
+      onBuscaChange(parsed.searchText);
+    }
+    
+    if (parsed.categoria && onCategoriaChange) {
+      onCategoriaChange(parsed.categoria);
+    }
+    
+    if (parsed.usarLocalizacao && onUseLocation) {
+      onUseLocation();
+    }
+  }, [onBuscaChange, onCategoriaChange, onUseLocation]);
+
+  const {
+    isListening,
+    isSupported,
+    transcript,
+    error: voiceError,
+    startListening,
+    stopListening,
+    resetTranscript,
+  } = useVoiceSearch(handleVoiceResult, { language: 'pt-BR' });
+
+  const handleVoiceClick = () => {
+    if (isListening) {
+      stopListening();
+      setShowVoiceModal(false);
+    } else {
+      resetTranscript();
+      setShowVoiceModal(true);
+      startListening();
+    }
+  };
+
+  const handleRetry = () => {
+    resetTranscript();
+    startListening();
+  };
+
   const handleBuscaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onBuscaChange(buscaInterna);
@@ -126,6 +184,13 @@ export const AirbnbSearchBar = ({
             </button>
           )}
           
+          {/* Botão de voz */}
+          <VoiceSearchButton
+            isListening={isListening}
+            isSupported={isSupported}
+            onClick={handleVoiceClick}
+          />
+          
           {/* Divisor */}
           <div className="w-px h-6 bg-border/50 shrink-0" />
           
@@ -138,6 +203,19 @@ export const AirbnbSearchBar = ({
           </button>
         </form>
       </div>
+      
+      {/* Modal de feedback visual para busca por voz */}
+      <VoiceSearchModal
+        isOpen={showVoiceModal}
+        isListening={isListening}
+        transcript={transcript}
+        error={voiceError}
+        onClose={() => {
+          setShowVoiceModal(false);
+          stopListening();
+        }}
+        onRetry={handleRetry}
+      />
     </div>
   );
 };

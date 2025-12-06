@@ -41,13 +41,14 @@ const Index = () => {
   const cidadeFinal = cidadeParam || cidadeDetectada;
   const estadoFinal = estadoParam || estadoDetectado;
   
-  // Buscar estabelecimentos da cidade
+  // Buscar estabelecimentos da cidade (só quando tiver cidade definida)
   const { 
     data: estabelecimentos, 
     isLoading: isLoadingEstabelecimentos,
   } = useEstabelecimentos({
     cidade: cidadeFinal || '',
     estado: estadoFinal || '',
+    enabled: !!cidadeFinal, // Só buscar quando tiver cidade
   });
   
   // Filtrar por categoria e busca
@@ -127,8 +128,8 @@ const Index = () => {
       : 'Descubra benefícios exclusivos para aniversariantes em restaurantes, bares, academias e mais de 50 categorias. Cadastre-se grátis!'
   });
   
-  // Estados de loading
-  const isLoading = isLoadingCidade || isDetecting;
+  // Estados de loading - priorizar URL sobre detecção
+  const isLoading = !cidadeParam && (isLoadingCidade || isDetecting);
   
   // Renderização condicional
   if (isLoading) {

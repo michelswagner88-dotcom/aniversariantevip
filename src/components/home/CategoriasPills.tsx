@@ -137,7 +137,7 @@ export const CategoriasPills = ({
       {/* Container scrollável */}
       <div 
         ref={scrollRef}
-        className="flex gap-2 overflow-x-auto py-2 scroll-smooth scrollbar-hide"
+        className="flex gap-2 overflow-x-auto py-2 px-4 scroll-smooth scrollbar-hide"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {categoriasConfig.map((cat, index) => {

@@ -63,7 +63,7 @@ const AirbnbCardSkeleton = () => (
 );
 
 // Card individual estilo Airbnb
-const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
+const AirbnbCard = ({ estabelecimento, priority = false }: { estabelecimento: any; priority?: boolean }) => {
   const navigate = useNavigate();
   const est = estabelecimento;
   const [isFavorited, setIsFavorited] = useState(false);
@@ -132,8 +132,9 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
             alt={est.nome_fantasia || 'Estabelecimento'}
             fallbackSrc={fallbackUrl}
             aspectRatio="4:3"
+            priority={priority}
             className="transition-transform duration-400 ease-out group-hover:scale-[1.08]"
-            enableParallax
+            enableParallax={!priority}
           />
           
           {/* Overlay gradient sutil */}
@@ -244,9 +245,9 @@ export const AirbnbCardGrid = ({
       initial="hidden"
       animate="visible"
     >
-      {estabelecimentos.map((est) => (
+      {estabelecimentos.map((est, index) => (
         <motion.div key={est.id} variants={cardVariants} className="h-full">
-          <AirbnbCard estabelecimento={est} />
+          <AirbnbCard estabelecimento={est} priority={index < 6} />
         </motion.div>
       ))}
     </motion.div>

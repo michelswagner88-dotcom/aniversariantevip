@@ -87,7 +87,7 @@ export const Header = () => {
           <span className="font-display font-extrabold text-base lg:text-lg text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 tracking-tight inline-block transition-all duration-500 ease-out group-hover:scale-105 group-hover:from-cyan-400 group-hover:via-violet-400 group-hover:to-fuchsia-400">
             ANIVERSARIANTE VIP
           </span>
-          <span className="hidden lg:block text-[9px] font-medium tracking-[0.05em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-slate-400 via-violet-400/80 to-slate-400 opacity-80 group-hover:opacity-100 transition-opacity">
+          <span className="hidden lg:block text-[9px] font-medium tracking-[0.05em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-slate-400 via-violet-400/80 to-slate-400 opacity-0 group-hover:opacity-100 transition-opacity animate-[fadeInSlide_0.8s_ease-out_0.3s_forwards]">
             O maior guia de benefícios para aniversariantes do Brasil
           </span>
         </Link>

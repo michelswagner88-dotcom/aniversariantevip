@@ -86,8 +86,8 @@ export const AirbnbCategoryPills = ({
   return (
     <div className="relative">
       {/* Scroll horizontal estilo Airbnb */}
-      <div className="flex gap-6 sm:gap-8 overflow-x-auto py-4 scrollbar-hide">
-        {categoriasConfig.map((cat) => {
+      <div className="flex gap-6 sm:gap-8 overflow-x-auto py-4 scrollbar-hide scroll-smooth">
+        {categoriasConfig.map((cat, index) => {
           const isActive = categoriaAtiva === cat.id;
           const IconComponent = cat.Icon;
           
@@ -95,11 +95,13 @@ export const AirbnbCategoryPills = ({
             <button
               key={cat.id || 'todos'}
               onClick={() => onCategoriaChange(cat.id)}
+              style={{ animationDelay: `${index * 30}ms` }}
               className={cn(
-                'group flex flex-col items-center gap-2 min-w-[56px] pb-3 border-b-2 transition-all',
+                'group flex flex-col items-center gap-2 min-w-[56px] pb-3 border-b-2 transition-all duration-200 btn-press',
+                'animate-fade-in opacity-0',
                 isActive
-                  ? 'border-foreground opacity-100'
-                  : 'border-transparent opacity-60 hover:opacity-100 hover:border-muted-foreground/30'
+                  ? 'border-foreground !opacity-100'
+                  : 'border-transparent hover:border-muted-foreground/30'
               )}
             >
               {/* Ícone com container */}

@@ -29,12 +29,12 @@ const SectionHeader = ({
       {linkHref && (
         <Link 
           to={linkHref} 
-          className="group flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+          className="group flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors animated-underline"
         >
           {linkText}
           <ChevronRight 
             size={16} 
-            className="transition-transform group-hover:translate-x-1" 
+            className="transition-transform duration-200 group-hover:translate-x-1" 
           />
         </Link>
       )}

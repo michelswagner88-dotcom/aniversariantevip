@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Gift, Star } from 'lucide-react';
+import { Heart, Gift } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SafeImage } from '@/components/SafeImage';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { TiltCard } from '@/components/ui/tilt-card';
 import { getFotoEstabelecimento, getPlaceholderPorCategoria } from '@/lib/photoUtils';
 import { EstablishmentBadge, getEstablishmentBadges, getPrimaryBadge } from '@/components/ui/establishment-badge';
+import { cn } from '@/lib/utils';
 
 // Variantes de animação para o grid
 const containerVariants = {
@@ -63,6 +65,8 @@ const AirbnbCardSkeleton = () => (
 const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
   const navigate = useNavigate();
   const est = estabelecimento;
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   
   const handleClick = () => {
     const url = getEstabelecimentoUrl({
@@ -72,6 +76,13 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
       id: est.id
     });
     navigate(url);
+  };
+
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFavorited(!isFavorited);
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 400);
   };
 
   const categoria = Array.isArray(est.categoria) ? est.categoria[0] : est.categoria;
@@ -140,13 +151,22 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
           
           {/* Coração de favoritar - aparece no hover (desktop), sempre visível no mobile */}
           <button 
-            onClick={(e) => { e.stopPropagation(); }}
-            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 
-                       opacity-100 sm:opacity-0 sm:group-hover:opacity-100 
-                       hover:bg-black/60 hover:scale-110 
-                       transition-all duration-200"
+            onClick={handleFavorite}
+            className={cn(
+              "absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full",
+              "bg-black/40 hover:bg-black/60",
+              "opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
+              "transition-all duration-200 btn-press",
+              isFavorited && "bg-black/60"
+            )}
           >
-            <Heart className="w-[18px] h-[18px] text-white transition-colors hover:fill-white/50" />
+            <Heart 
+              className={cn(
+                "w-[18px] h-[18px] transition-all",
+                isFavorited ? "fill-red-500 text-red-500" : "text-white hover:fill-white/50",
+                isAnimating && "animate-heart-beat"
+              )} 
+            />
           </button>
         </div>
       

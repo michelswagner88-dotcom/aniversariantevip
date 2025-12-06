@@ -18,6 +18,7 @@ import ProtectedAdminRoute from "@/components/auth/ProtectedAdminRoute";
 import Carol from "@/components/ChatBot/Carol";
 import { useAppUpdate } from "@/hooks/useAppUpdate";
 import ScrollToTop from "@/components/ScrollToTop";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 
 // Lazy load das páginas principais
 const Index = lazy(() => import("./pages/Index"));
@@ -102,9 +103,10 @@ const App = () => (
             <AnalyticsProvider>
               <AppContent />
               <Carol />
-            <ErrorBoundary>
+          <ErrorBoundary>
               <PageTransition>
                 <BottomNav />
+                <ScrollToTopButton showAfter={400} />
                 <Routes>
                 <Route path="/" element={<LazyRoute><Index /></LazyRoute>} />
                 {/* /explorar agora redireciona para / */}

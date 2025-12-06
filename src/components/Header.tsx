@@ -83,11 +83,14 @@ export const Header = () => {
         <nav className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
         <div className="flex items-center justify-between h-16">
           {/* Logo - Esquerda com animação hover e transição de cores */}
-          <Link to="/" className="flex-shrink-0 group">
-            <span className="font-display font-extrabold text-base lg:text-lg text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 tracking-tight inline-block transition-all duration-500 ease-out group-hover:scale-105 group-hover:from-cyan-400 group-hover:via-violet-400 group-hover:to-fuchsia-400">
-              ANIVERSARIANTE VIP
-            </span>
-          </Link>
+        <Link to="/" className="flex-shrink-0 group flex flex-col gap-0.5">
+          <span className="font-display font-extrabold text-base lg:text-lg text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 tracking-tight inline-block transition-all duration-500 ease-out group-hover:scale-105 group-hover:from-cyan-400 group-hover:via-violet-400 group-hover:to-fuchsia-400">
+            ANIVERSARIANTE VIP
+          </span>
+          <span className="hidden lg:block text-[9px] font-medium tracking-[0.05em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-slate-400 via-violet-400/80 to-slate-400 opacity-80 group-hover:opacity-100 transition-opacity">
+            O maior guia de benefícios para aniversariantes do Brasil
+          </span>
+        </Link>
 
           {/* Links Centro - Desktop Premium */}
           <div className="hidden lg:flex items-center justify-center flex-1 gap-0.5 min-w-0 mx-2">

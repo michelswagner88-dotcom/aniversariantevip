@@ -82,9 +82,9 @@ export const Header = () => {
       <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/[0.08]" style={{ top: isBirthday && userName ? '48px' : '0' }}>
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo - Esquerda */}
-          <Link to="/" className="flex-shrink-0">
-            <span className="font-display font-extrabold text-base lg:text-lg text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 tracking-tight">
+          {/* Logo - Esquerda com animação hover */}
+          <Link to="/" className="flex-shrink-0 group">
+            <span className="font-display font-extrabold text-base lg:text-lg text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 tracking-tight inline-block transition-transform duration-300 ease-out group-hover:scale-105">
               ANIVERSARIANTE VIP
             </span>
           </Link>

@@ -131,34 +131,62 @@ export const CategoryCarousel = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [totalDots, setTotalDots] = useState(1);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
   
-  // Calcular número de dots baseado no scroll
+  // Calcular número de dots e estado de scroll
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
     
-    const updateDots = () => {
+    const updateScrollState = () => {
       const scrollWidth = container.scrollWidth;
       const clientWidth = container.clientWidth;
+      const scrollLeft = container.scrollLeft;
       const maxScroll = scrollWidth - clientWidth;
+      
+      // Atualizar capacidade de scroll
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft < maxScroll - 10);
+      
+      // Calcular dots
       const dots = Math.ceil(maxScroll / 320) + 1;
       setTotalDots(Math.max(dots, 1));
       
-      const scrollLeft = container.scrollLeft;
       const index = Math.round(scrollLeft / 320);
       setActiveIndex(Math.min(index, dots - 1));
     };
     
-    updateDots();
-    container.addEventListener('scroll', updateDots);
-    return () => container.removeEventListener('scroll', updateDots);
+    updateScrollState();
+    container.addEventListener('scroll', updateScrollState);
+    return () => container.removeEventListener('scroll', updateScrollState);
   }, [estabelecimentos]);
   
   const scroll = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const scrollAmount = direction === 'left' ? -320 : 320;
-      scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    if (!scrollRef.current) return;
+    
+    const container = scrollRef.current;
+    const scrollWidth = container.scrollWidth;
+    const clientWidth = container.clientWidth;
+    const scrollLeft = container.scrollLeft;
+    const maxScroll = scrollWidth - clientWidth;
+    
+    let scrollAmount = direction === 'left' ? -320 : 320;
+    
+    // Scroll infinito: volta ao início/fim
+    if (direction === 'right' && scrollLeft >= maxScroll - 10) {
+      // Chegou no final, volta ao início
+      container.scrollTo({ left: 0, behavior: 'smooth' });
+      return;
     }
+    
+    if (direction === 'left' && scrollLeft <= 10) {
+      // Chegou no início, vai para o final
+      container.scrollTo({ left: maxScroll, behavior: 'smooth' });
+      return;
+    }
+    
+    container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
   };
 
   const scrollToIndex = (index: number) => {

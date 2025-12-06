@@ -157,14 +157,9 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
             {est.nome_fantasia || est.razao_social || 'Estabelecimento'}
           </h3>
           
-          {/* Bairro + Rating - Hierarquia 2 (secundário) */}
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="truncate">{est.bairro || est.cidade}</span>
-            <span className="w-[3px] h-[3px] rounded-full bg-muted-foreground/50 shrink-0" />
-            <span className="flex items-center gap-1 shrink-0">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              <span className="font-medium text-foreground">4.9</span>
-            </span>
+          {/* Bairro - Hierarquia 2 (secundário) */}
+          <p className="text-sm text-muted-foreground truncate">
+            {est.bairro || est.cidade}
           </p>
         </div>
       </article>

@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Heart, Gift, MapPin, Star } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import { SafeImage } from '@/components/SafeImage';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,19 @@ const cardVariants = {
       ease: "easeOut" as const
     }
   })
+};
+
+// Animação para títulos das seções
+const titleVariants = {
+  hidden: { opacity: 0, x: -30 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut" as const
+    }
+  }
 };
 
 // Card individual compacto para carrossel
@@ -156,22 +169,34 @@ export const CategoryCarousel = ({
 
   if (estabelecimentos.length === 0) return null;
   
+  const titleRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(titleRef, { once: true, margin: "-50px" });
+  
   return (
     <section className="relative group/section">
-      {/* Header da seção */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Header da seção com animação de entrada */}
+      <motion.div 
+        ref={titleRef}
+        className="flex items-center justify-between mb-4"
+        initial="hidden"
+        animate={isInView ? "visible" : "hidden"}
+        variants={titleVariants}
+      >
         <h2 className="text-lg md:text-xl font-semibold text-slate-900 dark:text-white">
           {title}
         </h2>
         {onVerTodos && estabelecimentos.length > 4 && (
-          <button 
+          <motion.button 
             onClick={onVerTodos}
             className="text-sm font-medium text-slate-900 dark:text-white underline underline-offset-4 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ delay: 0.3 }}
           >
             Ver todos
-          </button>
+          </motion.button>
         )}
-      </div>
+      </motion.div>
       
       {/* Container do carrossel */}
       <div className="relative">

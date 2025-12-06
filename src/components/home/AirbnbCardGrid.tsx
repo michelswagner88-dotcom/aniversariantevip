@@ -123,8 +123,8 @@ const AirbnbCard = ({ estabelecimento, priority = false }: { estabelecimento: an
   
   return (
     <TiltCard 
-      tiltAmount={8} 
-      shadowAmount={15}
+      tiltAmount={10} 
+      shadowAmount={20}
       className="group cursor-pointer h-full"
     >
       <article
@@ -132,40 +132,62 @@ const AirbnbCard = ({ estabelecimento, priority = false }: { estabelecimento: an
         className="h-full flex flex-col transition-all duration-300 active:scale-[0.98]"
       >
         {/* Container da imagem - PROPORÇÃO FIXA 4:3 - Foto domina o card */}
-        <div className="relative w-full overflow-hidden rounded-xl bg-slate-800 shadow-lg shadow-black/20 transition-all duration-300 ring-1 ring-white/5 group-hover:shadow-xl group-hover:shadow-violet-500/15">
+        <div className={cn(
+          "relative w-full overflow-hidden rounded-xl bg-slate-800",
+          // Shadow base e transição
+          "shadow-lg shadow-black/20",
+          // Ring/border com gradiente no hover
+          "ring-1 ring-white/5",
+          // Hover effects elaborados
+          "transition-all duration-500 ease-out",
+          "group-hover:shadow-2xl group-hover:shadow-violet-500/25",
+          "group-hover:ring-violet-500/30 group-hover:ring-2",
+          // Glow effect no hover
+          "after:absolute after:inset-0 after:rounded-xl after:opacity-0 after:transition-opacity after:duration-500",
+          "after:bg-gradient-to-t after:from-violet-500/20 after:via-transparent after:to-fuchsia-500/10",
+          "group-hover:after:opacity-100"
+        )}>
           <SafeImage
             src={fotoUrl}
             alt={est.nome_fantasia || 'Estabelecimento'}
             fallbackSrc={fallbackUrl}
             aspectRatio="4:3"
             priority={priority}
-            className="transition-transform duration-400 ease-out group-hover:scale-[1.08]"
+            className="transition-all duration-500 ease-out group-hover:scale-[1.08] group-hover:brightness-110"
             enableParallax={!priority}
           />
           
-          {/* Overlay gradient sutil */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+          {/* Overlay gradient sutil com animação */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none transition-opacity duration-500 group-hover:from-black/50" />
           
           {/* Badge de status (canto superior esquerdo) */}
           {primaryBadge && (
-            <div className="absolute top-3 left-3 z-10">
+            <div className="absolute top-3 left-3 z-10 transition-transform duration-300 group-hover:scale-105">
               <EstablishmentBadge type={primaryBadge} size="sm" />
             </div>
           )}
           
           {/* Badge de categoria + subcategoria - posição inferior esquerda */}
-          <div className="absolute bottom-3 left-3 flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg">
+          <div className="absolute bottom-3 left-3 flex items-center gap-2 z-10">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg transition-all duration-300 group-hover:bg-black/70 group-hover:scale-105">
               <span className="text-sm">{categoriaIcon}</span>
               <span className="text-xs font-medium text-white truncate max-w-[100px]">
                 {categoryLabel}
               </span>
             </div>
             
-            {/* Badge de benefício */}
+            {/* Badge de benefício com animação */}
             {temBeneficio && (
-              <div className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-lg shadow-lg transition-all duration-300 group-hover:shadow-[0_4px_20px_rgba(139,92,246,0.5)]">
-                <Gift className="w-3.5 h-3.5 text-white" />
+              <div className={cn(
+                "flex items-center gap-1 px-2.5 py-1.5 rounded-lg shadow-lg",
+                "bg-gradient-to-r from-violet-600 to-fuchsia-600",
+                "transition-all duration-300",
+                "group-hover:shadow-[0_4px_25px_rgba(139,92,246,0.6)]",
+                "group-hover:scale-110",
+                // Pulse animation no hover
+                "group-hover:animate-[pulse_1.5s_ease-in-out_infinite]"
+              )}>
+                <Gift className="w-3.5 h-3.5 text-white transition-transform duration-300 group-hover:rotate-12" />
                 <span className="text-xs font-semibold text-white hidden sm:inline">
                   Benefício
                 </span>
@@ -186,7 +208,7 @@ const AirbnbCard = ({ estabelecimento, priority = false }: { estabelecimento: an
               "bg-black/50 backdrop-blur-sm",
               "border border-white/10",
               // Transições
-              "transition-all duration-200",
+              "transition-all duration-300",
               // Touch target - área mínima de 44x44 no mobile
               "w-11 h-11 md:w-9 md:h-9",
               // MOBILE: sempre visível (opacity-100)
@@ -216,15 +238,21 @@ const AirbnbCard = ({ estabelecimento, priority = false }: { estabelecimento: an
           </button>
         </div>
       
-        {/* Info do estabelecimento - Hierarquia clara */}
-        <div className="pt-3 flex flex-col gap-1">
+        {/* Info do estabelecimento - Hierarquia clara com animações */}
+        <div className="pt-3 flex flex-col gap-1 transition-transform duration-300 group-hover:translate-x-1">
           {/* Nome - Hierarquia 1 (mais importante) */}
-          <h3 className="font-semibold text-base sm:text-[16px] leading-snug text-slate-900 dark:text-white truncate transition-colors duration-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">
+          <h3 className={cn(
+            "font-semibold text-base sm:text-[16px] leading-snug truncate",
+            "text-slate-900 dark:text-white",
+            "transition-all duration-300",
+            "group-hover:text-transparent group-hover:bg-clip-text",
+            "group-hover:bg-gradient-to-r group-hover:from-violet-500 group-hover:via-fuchsia-500 group-hover:to-pink-500"
+          )}>
             {est.nome_fantasia || est.razao_social || 'Estabelecimento'}
           </h3>
           
           {/* Bairro - Hierarquia 2 (secundário) */}
-          <p className="text-sm text-muted-foreground truncate">
+          <p className="text-sm text-muted-foreground truncate transition-colors duration-300 group-hover:text-slate-400">
             {est.bairro || est.cidade}
           </p>
         </div>

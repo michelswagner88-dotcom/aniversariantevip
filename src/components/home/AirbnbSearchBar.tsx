@@ -42,7 +42,7 @@ export const AirbnbSearchBar = ({
   return (
     <div className="w-full">
       {/* Search bar pill style Airbnb */}
-      <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full shadow-sm hover:shadow-md transition-all focus-within:border-violet-500 focus-within:ring-2 focus-within:ring-violet-500/20">
         
         {/* Botão de Localização */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

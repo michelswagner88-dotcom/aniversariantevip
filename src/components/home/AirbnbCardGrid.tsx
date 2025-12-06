@@ -42,10 +42,10 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
   return (
     <article
       onClick={handleClick}
-      className="group cursor-pointer"
+      className="group cursor-pointer transition-all duration-200 hover:scale-[1.02]"
     >
       {/* Container da imagem */}
-      <div className="relative aspect-square overflow-hidden rounded-xl mb-3">
+      <div className="relative aspect-square overflow-hidden rounded-xl mb-3 shadow-sm group-hover:shadow-lg group-hover:shadow-violet-500/10 transition-shadow">
         <SafeImage
           src={est.logo_url || est.galeria_fotos?.[0]}
           alt={est.nome_fantasia || 'Estabelecimento'}

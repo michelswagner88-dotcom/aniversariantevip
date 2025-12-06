@@ -119,15 +119,12 @@ export const Footer = () => {
               <Link to="/politica-privacidade" className="hover:underline">Privacidade</Link>
             </div>
             
-            {/* Idioma e moeda (estilo Airbnb) */}
-            <div className="flex items-center gap-4">
+            {/* Idioma (estilo Airbnb) */}
+            <div className="flex items-center">
               <button className="flex items-center gap-2 text-sm text-slate-900 dark:text-white hover:underline">
                 <Globe className="w-4 h-4" />
                 <span>Português (BR)</span>
               </button>
-              <span className="text-sm text-slate-900 dark:text-white font-medium">
-                R$ BRL
-              </span>
             </div>
           </div>
         </div>

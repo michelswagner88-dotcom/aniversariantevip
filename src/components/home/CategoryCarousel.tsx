@@ -10,6 +10,7 @@ import { getFotoEstabelecimento, getPlaceholderPorCategoria } from '@/lib/photoU
 
 interface CategoryCarouselProps {
   title: string;
+  subtitle?: string;
   estabelecimentos: any[];
   linkHref?: string;
   onVerTodos?: () => void;
@@ -135,6 +136,7 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
 
 export const CategoryCarousel = ({
   title,
+  subtitle,
   estabelecimentos,
   linkHref,
   onVerTodos
@@ -221,9 +223,14 @@ export const CategoryCarousel = ({
         animate={isInView ? "visible" : "hidden"}
         variants={titleVariants}
       >
-        <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
-          {title}
-        </h2>
+        <div>
+          <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
+            {title}
+          </h2>
+          {subtitle && (
+            <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
+          )}
+        </div>
         {(linkHref || onVerTodos) && estabelecimentos.length > 4 && (
           <motion.div
             initial={{ opacity: 0 }}

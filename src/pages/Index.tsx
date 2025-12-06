@@ -4,6 +4,7 @@ import { useSEO } from '@/hooks/useSEO';
 import { useCidadeInteligente } from '@/hooks/useCidadeInteligente';
 import { useEstabelecimentos } from '@/hooks/useEstabelecimentos';
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
+import { getSectionTitle, getCategoryTitle, getCategorySubtitle } from '@/utils/sectionTitles';
 
 // Components
 import { Header } from '@/components/Header';
@@ -15,28 +16,6 @@ import { AirbnbCardGrid } from '@/components/home/AirbnbCardGrid';
 import { CategoryCarousel } from '@/components/home/CategoryCarousel';
 import { MapFAB } from '@/components/home/MapFAB';
 import { CarouselSkeleton } from '@/components/skeletons';
-
-// Títulos com storytelling por categoria
-const getCategoryTitle = (categoria: string, cidade?: string | null): string => {
-  const titulos: Record<string, string> = {
-    'Restaurante': 'Restaurantes para comemorar',
-    'Bar': 'Bares populares',
-    'Academia': 'Academias com benefícios',
-    'Salão de Beleza': 'Salões de beleza',
-    'Barbearia': 'Barbearias estilosas',
-    'Cafeteria': 'Cafeterias aconchegantes',
-    'Casa Noturna': 'Noites inesquecíveis',
-    'Confeitaria': 'Confeitarias irresistíveis',
-    'Sorveteria': 'Sorveterias refrescantes',
-    'Hospedagem': 'Hotéis para celebrar',
-    'Entretenimento': 'Entretenimento garantido',
-    'Loja': 'Lojas com presentes especiais',
-    'Saúde e Suplementos': 'Saúde e bem-estar',
-    'Serviços': 'Serviços exclusivos',
-    'Pizzaria': 'Pizzarias bem avaliadas',
-  };
-  return titulos[categoria] || categoria;
-};
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -161,10 +140,8 @@ const Index = () => {
       : 'Descubra benefícios exclusivos para aniversariantes em restaurantes, bares, academias e mais de 50 categorias. Cadastre-se grátis!'
   });
 
-  // Título da seção baseado no contexto
-  const sectionTitle = cidadeFinal 
-    ? `Destaques em ${cidadeFinal}`
-    : 'Destaques no Brasil';
+  // Título e subtítulo da seção baseado no contexto
+  const destaquesConfig = getSectionTitle('destaques', cidadeFinal || undefined);
 
   // Agrupar estabelecimentos por categoria para carrosséis
   const estabelecimentosPorCategoria = useMemo(() => {
@@ -190,11 +167,15 @@ const Index = () => {
       .filter(([_, ests]) => ests.length >= 3)
       .sort((a, b) => b[1].length - a[1].length)
       .slice(0, 5)
-      .map(([cat, ests]) => ({
-        categoria: cat,
-        titulo: getCategoryTitle(cat, cidadeFinal),
-        estabelecimentos: ests
-      }));
+      .map(([cat, ests]) => {
+        const config = getSectionTitle(cat, cidadeFinal || undefined);
+        return {
+          categoria: cat,
+          titulo: config.titulo,
+          subtitulo: config.subtitulo,
+          estabelecimentos: ests
+        };
+      });
   }, [estabelecimentos, estabelecimentosFiltrados, categoriaParam, buscaParam, cidadeFinal]);
 
   // Mostrar carrosséis apenas quando não há filtro ativo
@@ -247,16 +228,18 @@ const Index = () => {
             <div className="space-y-16 md:space-y-20">
               {/* Destaques gerais primeiro */}
               <CategoryCarousel
-                title={sectionTitle}
+                title={destaquesConfig.titulo}
+                subtitle={destaquesConfig.subtitulo}
                 estabelecimentos={estabelecimentosFiltrados.slice(0, 10)}
                 linkHref={cidadeFinal ? `/explorar?cidade=${cidadeFinal}&estado=${estadoFinal}` : '/explorar'}
               />
               
               {/* Carrosséis por categoria */}
-              {estabelecimentosPorCategoria.map(({ categoria, titulo, estabelecimentos: ests }) => (
+              {estabelecimentosPorCategoria.map(({ categoria, titulo, subtitulo, estabelecimentos: ests }) => (
                 <CategoryCarousel
                   key={categoria}
                   title={titulo}
+                  subtitle={subtitulo}
                   estabelecimentos={ests}
                   linkHref={`/explorar?categoria=${encodeURIComponent(categoria)}${cidadeFinal ? `&cidade=${cidadeFinal}&estado=${estadoFinal}` : ''}`}
                 />
@@ -266,9 +249,16 @@ const Index = () => {
             /* MODO GRID: Quando há filtro de categoria ou busca */
             <>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
-                  {categoriaParam ? getCategoryTitle(categoriaParam, cidadeFinal) : sectionTitle}
-                </h2>
+                <div>
+                  <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
+                    {categoriaParam ? getCategoryTitle(categoriaParam, cidadeFinal || undefined) : destaquesConfig.titulo}
+                  </h2>
+                  {categoriaParam && getCategorySubtitle(categoriaParam) && (
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {getCategorySubtitle(categoriaParam)}
+                    </p>
+                  )}
+                </div>
                 {estabelecimentosFiltrados.length > 0 && (
                   <span className="text-sm text-muted-foreground">
                     {estabelecimentosFiltrados.length} {estabelecimentosFiltrados.length === 1 ? 'lugar' : 'lugares'}

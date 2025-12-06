@@ -863,11 +863,21 @@ const SmartAuth = () => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="seu@email.com"
-                        className="h-[52px] text-base bg-white/5 border-white/10 text-white pl-11 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                        className={`h-[52px] text-base bg-white/5 text-white pl-11 focus:ring-2 transition-all ${
+                          email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                            : 'border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20'
+                        }`}
                         required
                       />
                       <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                     </div>
+                    {email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && (
+                      <p className="text-sm text-red-400 flex items-center gap-1.5 mt-1">
+                        <AlertCircle className="h-4 w-4" />
+                        Digite um email válido
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -880,7 +890,11 @@ const SmartAuth = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="h-[52px] text-base bg-white/5 border-white/10 text-white pl-11 pr-12 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                        className={`h-[52px] text-base bg-white/5 text-white pl-11 pr-12 focus:ring-2 transition-all ${
+                          !isLogin && password && !isPasswordValid()
+                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                            : 'border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20'
+                        }`}
                         required
                         minLength={8}
                       />

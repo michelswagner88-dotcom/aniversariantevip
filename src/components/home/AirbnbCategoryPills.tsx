@@ -86,7 +86,7 @@ export const AirbnbCategoryPills = ({
   return (
     <div className="relative">
       {/* Scroll horizontal estilo Airbnb */}
-      <div className="flex gap-6 sm:gap-8 overflow-x-auto py-4 scrollbar-hide scroll-smooth">
+      <div className="flex gap-2 overflow-x-auto py-4 scrollbar-hide scroll-smooth">
         {categoriasConfig.map((cat, index) => {
           const isActive = categoriaAtiva === cat.id;
           const IconComponent = cat.Icon;

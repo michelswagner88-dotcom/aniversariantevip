@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { ImageOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -78,6 +78,32 @@ export const OptimizedImage = ({
 }: OptimizedImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isInView, setIsInView] = useState(priority); // Priority = já está em view
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Intersection Observer para lazy loading real
+  useEffect(() => {
+    if (priority || isInView) return; // Não precisa observar se é priority ou já está em view
+    
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { 
+        rootMargin: '200px', // Começa carregar 200px antes de aparecer
+        threshold: 0.01 
+      }
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [priority, isInView]);
 
   // Gerar srcsets memoizados
   const { webpSrcSet, jpegSrcSet, defaultSrc } = useMemo(() => ({
@@ -96,11 +122,14 @@ export const OptimizedImage = ({
   };
 
   return (
-    <div className={cn(
-      'relative overflow-hidden bg-slate-800 rounded-xl',
-      aspectRatioClasses[aspectRatio],
-      className
-    )}>
+    <div 
+      ref={containerRef}
+      className={cn(
+        'relative overflow-hidden bg-slate-800 rounded-xl',
+        aspectRatioClasses[aspectRatio],
+        className
+      )}
+    >
       {/* Skeleton com shimmer premium - mostra enquanto carrega */}
       {!isLoaded && (
         <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800">
@@ -140,8 +169,8 @@ export const OptimizedImage = ({
         </div>
       )}
 
-      {/* Picture com WebP + fallback JPEG */}
-      {!hasError && (
+      {/* Picture com WebP + fallback JPEG - só carrega quando está em view */}
+      {isInView && !hasError && (
         <picture>
           {/* WebP para navegadores modernos */}
           <source

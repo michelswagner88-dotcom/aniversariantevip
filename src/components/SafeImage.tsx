@@ -19,6 +19,7 @@ interface SafeImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   enableParallax?: boolean;
   parallaxStrength?: number;
   aspectRatio?: AspectRatioType;
+  priority?: boolean; // Carrega imediatamente (above the fold)
 }
 
 export const SafeImage = ({ 
@@ -30,18 +31,21 @@ export const SafeImage = ({
   enableParallax = false,
   parallaxStrength = 0.1,
   aspectRatio = 'auto',
+  priority = false,
   ...props 
 }: SafeImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [isInView, setIsInView] = useState(false);
+  const [isInView, setIsInView] = useState(priority); // Priority = já está em view
   const [showFallbackError, setShowFallbackError] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const imageSrc = hasError ? fallbackSrc : src;
 
-  // Intersection Observer para lazy loading - carrega 100px antes de aparecer
+  // Intersection Observer para lazy loading - carrega 200px antes de aparecer
   useEffect(() => {
+    if (priority || isInView) return; // Não precisa observar se é priority ou já está em view
+    
     const container = containerRef.current;
     if (!container) return;
 
@@ -52,12 +56,12 @@ export const SafeImage = ({
           observer.disconnect();
         }
       },
-      { rootMargin: '150px', threshold: 0.01 }
+      { rootMargin: '200px', threshold: 0.01 }
     );
 
     observer.observe(container);
     return () => observer.disconnect();
-  }, []);
+  }, [priority, isInView]);
 
   // Parallax com Framer Motion
   const { scrollYProgress } = useScroll({

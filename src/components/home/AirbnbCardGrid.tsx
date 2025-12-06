@@ -126,12 +126,13 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
         className="h-full flex flex-col transition-all duration-300 active:scale-[0.98]"
       >
         {/* Container da imagem - PROPORÇÃO FIXA 4:3 - Foto domina o card */}
-        <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-slate-800 shadow-lg shadow-black/20 transition-all duration-300 ring-1 ring-white/5 group-hover:shadow-xl group-hover:shadow-violet-500/15">
+        <div className="relative w-full overflow-hidden rounded-xl bg-slate-800 shadow-lg shadow-black/20 transition-all duration-300 ring-1 ring-white/5 group-hover:shadow-xl group-hover:shadow-violet-500/15">
           <SafeImage
             src={fotoUrl}
             alt={est.nome_fantasia || 'Estabelecimento'}
             fallbackSrc={fallbackUrl}
-            className="w-full h-full object-cover object-center transition-transform duration-400 ease-out group-hover:scale-[1.08]"
+            aspectRatio="4:3"
+            className="transition-transform duration-400 ease-out group-hover:scale-[1.08]"
             enableParallax
           />
           

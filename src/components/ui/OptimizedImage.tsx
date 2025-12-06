@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ImageOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -10,6 +10,8 @@ interface OptimizedImageProps {
   className?: string;
   fallbackSrc?: string;
   aspectRatio?: AspectRatioType;
+  sizes?: string;
+  priority?: boolean; // Para imagens above-the-fold
 }
 
 const FALLBACK_IMAGE = '/placeholder-estabelecimento.png';
@@ -21,15 +23,68 @@ const aspectRatioClasses: Record<AspectRatioType, string> = {
   '3:4': 'aspect-[3/4]',
 };
 
+/**
+ * Gera URL otimizada baseado no provider de imagens
+ */
+const getOptimizedUrl = (
+  url: string, 
+  width: number, 
+  format: 'webp' | 'jpeg' = 'webp'
+): string => {
+  if (!url) return '';
+  
+  // Se for Supabase Storage
+  if (url.includes('supabase.co') || url.includes('supabase.in')) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}width=${width}&format=${format}&quality=80`;
+  }
+  
+  // Se for Cloudinary
+  if (url.includes('cloudinary.com')) {
+    const formatStr = format === 'webp' ? 'f_webp' : 'f_jpg';
+    return url.replace('/upload/', `/upload/w_${width},${formatStr},q_80/`);
+  }
+  
+  // Se for Google Places
+  if (url.includes('googleusercontent.com') || url.includes('places.googleapis.com')) {
+    if (url.includes('maxwidth=')) {
+      return url.replace(/maxwidth=\d+/, `maxwidth=${width}`);
+    }
+    return `${url}${url.includes('?') ? '&' : '?'}maxwidth=${width}`;
+  }
+  
+  // URL genérica - retorna como está
+  return url;
+};
+
+/**
+ * Gera srcset para diferentes tamanhos de tela
+ */
+const generateSrcSet = (src: string, format: 'webp' | 'jpeg'): string => {
+  const widths = [320, 480, 640, 800, 1024, 1280];
+  return widths
+    .map(w => `${getOptimizedUrl(src, w, format)} ${w}w`)
+    .join(', ');
+};
+
 export const OptimizedImage = ({
   src,
   alt,
   className,
   fallbackSrc = FALLBACK_IMAGE,
   aspectRatio = '4:3',
+  sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw',
+  priority = false,
 }: OptimizedImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+
+  // Gerar srcsets memoizados
+  const { webpSrcSet, jpegSrcSet, defaultSrc } = useMemo(() => ({
+    webpSrcSet: generateSrcSet(src, 'webp'),
+    jpegSrcSet: generateSrcSet(src, 'jpeg'),
+    defaultSrc: getOptimizedUrl(src, 640, 'jpeg'),
+  }), [src]);
 
   const handleLoad = () => {
     setIsLoaded(true);
@@ -39,8 +94,6 @@ export const OptimizedImage = ({
     setHasError(true);
     setIsLoaded(true);
   };
-
-  const imageSrc = hasError ? fallbackSrc : src;
 
   return (
     <div className={cn(
@@ -54,9 +107,9 @@ export const OptimizedImage = ({
           {/* Shimmer animado */}
           <div className="absolute inset-0 overflow-hidden">
             <div 
-              className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite]"
+              className="absolute inset-0 -translate-x-full animate-shimmer"
               style={{
-                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)'
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)'
               }}
             />
           </div>
@@ -87,20 +140,37 @@ export const OptimizedImage = ({
         </div>
       )}
 
-      {/* Imagem real */}
+      {/* Picture com WebP + fallback JPEG */}
       {!hasError && (
-        <img
-          src={imageSrc}
-          alt={alt}
-          loading="lazy"
-          decoding="async"
-          onLoad={handleLoad}
-          onError={handleError}
-          className={cn(
-            'absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500',
-            isLoaded ? 'opacity-100' : 'opacity-0'
-          )}
-        />
+        <picture>
+          {/* WebP para navegadores modernos */}
+          <source
+            type="image/webp"
+            srcSet={webpSrcSet}
+            sizes={sizes}
+          />
+          
+          {/* JPEG como fallback */}
+          <source
+            type="image/jpeg"
+            srcSet={jpegSrcSet}
+            sizes={sizes}
+          />
+          
+          {/* Imagem padrão */}
+          <img
+            src={defaultSrc || fallbackSrc}
+            alt={alt}
+            loading={priority ? 'eager' : 'lazy'}
+            decoding={priority ? 'sync' : 'async'}
+            onLoad={handleLoad}
+            onError={handleError}
+            className={cn(
+              'absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500',
+              isLoaded ? 'opacity-100' : 'opacity-0'
+            )}
+          />
+        </picture>
       )}
     </div>
   );

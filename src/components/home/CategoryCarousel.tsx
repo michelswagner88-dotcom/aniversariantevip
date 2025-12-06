@@ -226,8 +226,24 @@ export const CategoryCarousel = ({
         )}
       </motion.div>
       
-      {/* Container do carrossel */}
+      {/* Container do carrossel com fade nas bordas */}
       <div className="relative">
+        {/* Fade esquerda */}
+        <div 
+          className={cn(
+            "absolute left-0 top-0 bottom-2 w-12 bg-gradient-to-r from-white dark:from-slate-950 to-transparent z-[5] pointer-events-none transition-opacity duration-300",
+            canScrollLeft ? "opacity-100" : "opacity-0"
+          )}
+        />
+        
+        {/* Fade direita */}
+        <div 
+          className={cn(
+            "absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-white dark:from-slate-950 to-transparent z-[5] pointer-events-none transition-opacity duration-300",
+            canScrollRight ? "opacity-100" : "opacity-0"
+          )}
+        />
+        
         {/* Botão esquerda */}
         <button
           onClick={() => scroll('left')}

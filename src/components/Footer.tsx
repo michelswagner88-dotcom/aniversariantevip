@@ -7,6 +7,18 @@ export const Footer = () => {
   return (
     <footer className="bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 py-8">
+        {/* Branding Section */}
+        <div className="flex flex-col gap-3 mb-8 pb-6 border-b border-slate-200 dark:border-slate-800">
+          <Link to="/" className="group inline-flex flex-col gap-1 w-fit">
+            <span className="font-display font-extrabold text-lg text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 group-hover:from-cyan-400 group-hover:via-violet-400 group-hover:to-fuchsia-400 transition-all duration-500">
+              ANIVERSARIANTE VIP
+            </span>
+          </Link>
+          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed">
+            O maior guia de benefícios para aniversariantes do Brasil
+          </p>
+        </div>
+
         {/* Links organizados em colunas estilo Airbnb */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           {/* Coluna 1 - Descubra */}

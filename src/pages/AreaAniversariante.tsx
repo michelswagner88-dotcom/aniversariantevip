@@ -310,8 +310,45 @@ const AreaAniversariante = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+      <div className="min-h-screen w-full bg-background pb-32 text-foreground font-inter">
+        {/* Header Fixo Mobile */}
+        <div className="sticky top-0 z-40 border-b border-border bg-background/80 px-6 py-4 backdrop-blur-xl">
+          <div className="flex items-center gap-3">
+            <BackButton to="/" />
+            <span className="font-plus-jakarta text-lg font-bold">Meu Perfil VIP</span>
+          </div>
+        </div>
+
+        <div className="px-6 pt-8 space-y-8">
+          {/* Profile skeleton */}
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="h-24 w-24 rounded-full bg-muted animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-6 w-40 mx-auto bg-muted rounded animate-pulse" />
+              <div className="h-4 w-24 mx-auto bg-muted rounded animate-pulse" />
+            </div>
+          </div>
+
+          {/* Card skeleton */}
+          <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+            <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+            <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+            <div className="h-2.5 w-full bg-muted rounded-full animate-pulse" />
+          </div>
+
+          {/* Menu skeleton */}
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card">
+                <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+                  <div className="h-3 w-24 bg-muted rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

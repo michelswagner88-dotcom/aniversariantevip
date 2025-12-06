@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
+import { CATEGORIAS } from '@/constants/categories';
 import { 
   Sparkles,
   Dumbbell,
@@ -20,22 +20,22 @@ import {
   type LucideIcon
 } from 'lucide-react';
 
-// Mapeamento categoria → ícone Lucide
+// Mapeamento categoria ID → ícone Lucide
 const CATEGORIA_ICONS: Record<string, LucideIcon> = {
-  'Academia': Dumbbell,
-  'Bar': Beer,
-  'Barbearia': Scissors,
-  'Cafeteria': Coffee,
-  'Casa Noturna': PartyPopper,
-  'Confeitaria': Cake,
-  'Entretenimento': Clapperboard,
-  'Hospedagem': Hotel,
-  'Loja': ShoppingBag,
-  'Restaurante': UtensilsCrossed,
-  'Salão de Beleza': Sparkle,
-  'Serviços': Wrench,
-  'Sorveteria': IceCream,
-  'Outros': Store,
+  'academia': Dumbbell,
+  'bar': Beer,
+  'barbearia': Scissors,
+  'cafeteria': Coffee,
+  'casa-noturna': PartyPopper,
+  'confeitaria': Cake,
+  'entretenimento': Clapperboard,
+  'hospedagem': Hotel,
+  'loja': ShoppingBag,
+  'restaurante': UtensilsCrossed,
+  'salao': Sparkle,
+  'servicos': Wrench,
+  'sorveteria': IceCream,
+  'outros': Store,
 };
 
 interface AirbnbCategoryPillsProps {
@@ -90,6 +90,7 @@ export const AirbnbCategoryPills = ({
       });
     }
   }, [categoriaAtiva]);
+  
   // Contar estabelecimentos por categoria
   const contagens = useMemo(() => {
     const counts: Record<string, number> = { todos: estabelecimentos.length };
@@ -106,14 +107,14 @@ export const AirbnbCategoryPills = ({
     return counts;
   }, [estabelecimentos]);
   
-  // Mapear categorias do sistema
+  // Mapear categorias do sistema - usando PLURAL para filtros
   const categoriasConfig = useMemo(() => {
     const configs: Array<{ id: string | null; nome: string; Icon: LucideIcon }> = [
       { id: null, nome: 'Todos', Icon: Sparkles },
-      ...CATEGORIAS_ESTABELECIMENTO.map(cat => ({
-        id: cat.value,
-        nome: cat.label,
-        Icon: CATEGORIA_ICONS[cat.value] || Store
+      ...CATEGORIAS.map(cat => ({
+        id: cat.label, // Usa label para filtrar (compatibilidade com dados)
+        nome: cat.plural, // PLURAL para exibição nos pills
+        Icon: CATEGORIA_ICONS[cat.id] || Store
       }))
     ];
     

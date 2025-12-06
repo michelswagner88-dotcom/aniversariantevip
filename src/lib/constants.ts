@@ -1,12 +1,13 @@
 // Constantes do sistema Aniversariante VIP
 // IMPORTANTE: Para categorias e subcategorias, usar src/constants/categories.ts
 
-import { CATEGORIAS, getCategoriaIcon as getIcon, getCategoriasOptions } from '@/constants/categories';
+import { CATEGORIAS, getCategoriaIcon as getIcon, getCategoriasOptions, getCategoriaPlural, getCategoriaSingular } from '@/constants/categories';
 
 // Re-exportar categorias do novo sistema para compatibilidade
 export const CATEGORIAS_ESTABELECIMENTO = CATEGORIAS.map(c => ({
   value: c.label,
-  label: c.label + (c.label.endsWith('s') ? '' : 's'),
+  label: c.plural, // Usa plural para o label de exibição
+  singular: c.label, // Singular para cards/perfil
   icon: c.icon,
   id: c.id,
 }));
@@ -21,6 +22,9 @@ export const getCategoriaIcon = (categoria: string): string => {
   );
   return cat?.icon || '📍';
 };
+
+// Re-exportar helpers de singular/plural
+export { getCategoriaPlural, getCategoriaSingular };
 
 export const getCategoriasValues = (): string[] => {
   return CATEGORIAS.map(c => c.label);

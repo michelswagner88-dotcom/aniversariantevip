@@ -9,7 +9,7 @@ import { getFotoEstabelecimento, getPlaceholderPorCategoria } from '@/lib/photoU
 import { EstablishmentBadge, getEstablishmentBadges, getPrimaryBadge } from '@/components/ui/establishment-badge';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/EmptyState';
-import { getCategoriaIcon } from '@/lib/constants';
+import { getCategoriaIcon, getCategoriaSingular } from '@/lib/constants';
 
 // Variantes de animação para o grid
 const containerVariants = {
@@ -97,10 +97,11 @@ const AirbnbCard = ({ estabelecimento, priority = false }: { estabelecimento: an
   const categoria = Array.isArray(est.categoria) ? est.categoria[0] : est.categoria;
   const temBeneficio = !!est.descricao_beneficio;
   
-  // Badge de categoria + subcategoria
+  // Badge de categoria + subcategoria - usa SINGULAR para cards
   const categoriaIcon = getCategoriaIcon(categoria);
   const subcategoria = est.especialidades?.[0];
-  const categoryLabel = subcategoria || categoria || 'Estabelecimento';
+  // Prioriza subcategoria, depois singular da categoria
+  const categoryLabel = subcategoria || getCategoriaSingular(categoria) || categoria || 'Estabelecimento';
   
   // Obter badges do estabelecimento
   const badges = getEstablishmentBadges({

@@ -8,7 +8,8 @@ export interface Subcategoria {
 
 export interface Categoria {
   id: string;
-  label: string;
+  label: string;        // Singular (para cards, perfil, cadastro)
+  plural: string;       // Plural (para filtros/pills)
   icon: string;
   subcategorias: Subcategoria[];
 }
@@ -17,6 +18,7 @@ export const CATEGORIAS: Categoria[] = [
   {
     id: 'academia',
     label: 'Academia',
+    plural: 'Academias',
     icon: '💪',
     subcategorias: [
       { id: 'musculacao', label: 'Musculação', icon: '🏋️' },
@@ -36,6 +38,7 @@ export const CATEGORIAS: Categoria[] = [
   {
     id: 'bar',
     label: 'Bar',
+    plural: 'Bares',
     icon: '🍻',
     subcategorias: [
       { id: 'cervejaria', label: 'Cervejaria', icon: '🍺' },
@@ -55,6 +58,7 @@ export const CATEGORIAS: Categoria[] = [
   {
     id: 'barbearia',
     label: 'Barbearia',
+    plural: 'Barbearias',
     icon: '💈',
     subcategorias: [
       { id: 'corte-masculino', label: 'Corte Masculino', icon: '✂️' },
@@ -70,6 +74,7 @@ export const CATEGORIAS: Categoria[] = [
   {
     id: 'cafeteria',
     label: 'Cafeteria',
+    plural: 'Cafeterias',
     icon: '☕',
     subcategorias: [
       { id: 'cafe-especial', label: 'Café Especial', icon: '☕' },
@@ -87,6 +92,7 @@ export const CATEGORIAS: Categoria[] = [
   {
     id: 'casa-noturna',
     label: 'Casa Noturna',
+    plural: 'Casas Noturnas',
     icon: '🎉',
     subcategorias: [
       { id: 'balada', label: 'Balada', icon: '🪩' },
@@ -106,6 +112,7 @@ export const CATEGORIAS: Categoria[] = [
   {
     id: 'confeitaria',
     label: 'Confeitaria',
+    plural: 'Confeitarias',
     icon: '🎂',
     subcategorias: [
       { id: 'bolos', label: 'Bolos', icon: '🎂' },
@@ -123,6 +130,7 @@ export const CATEGORIAS: Categoria[] = [
   {
     id: 'entretenimento',
     label: 'Entretenimento',
+    plural: 'Entretenimento',
     icon: '🎮',
     subcategorias: [
       { id: 'cinema', label: 'Cinema', icon: '🎬' },
@@ -142,6 +150,7 @@ export const CATEGORIAS: Categoria[] = [
   {
     id: 'hospedagem',
     label: 'Hospedagem',
+    plural: 'Hospedagem',
     icon: '🏨',
     subcategorias: [
       { id: 'hotel', label: 'Hotel', icon: '🏨' },
@@ -159,6 +168,7 @@ export const CATEGORIAS: Categoria[] = [
   {
     id: 'loja',
     label: 'Loja',
+    plural: 'Lojas',
     icon: '🛍️',
     subcategorias: [
       { id: 'roupas', label: 'Roupas', icon: '👗' },
@@ -182,6 +192,7 @@ export const CATEGORIAS: Categoria[] = [
   {
     id: 'restaurante',
     label: 'Restaurante',
+    plural: 'Restaurantes',
     icon: '🍽️',
     subcategorias: [
       { id: 'pizzaria', label: 'Pizzaria', icon: '🍕' },
@@ -208,6 +219,7 @@ export const CATEGORIAS: Categoria[] = [
   {
     id: 'salao',
     label: 'Salão de Beleza',
+    plural: 'Salões de Beleza',
     icon: '💇',
     subcategorias: [
       { id: 'corte', label: 'Corte', icon: '✂️' },
@@ -226,7 +238,8 @@ export const CATEGORIAS: Categoria[] = [
   },
   {
     id: 'servicos',
-    label: 'Serviços',
+    label: 'Serviço',
+    plural: 'Serviços',
     icon: '⭐',
     subcategorias: [
       { id: 'estetica', label: 'Estética', icon: '✨' },
@@ -253,6 +266,7 @@ export const CATEGORIAS: Categoria[] = [
   {
     id: 'sorveteria',
     label: 'Sorveteria',
+    plural: 'Sorveterias',
     icon: '🍦',
     subcategorias: [
       { id: 'sorvete-artesanal', label: 'Sorvete Artesanal', icon: '🍦' },
@@ -266,7 +280,8 @@ export const CATEGORIAS: Categoria[] = [
   },
   {
     id: 'outros',
-    label: 'Outros',
+    label: 'Outro',
+    plural: 'Outros',
     icon: '➕',
     subcategorias: [
       { id: 'outros-geral', label: 'Outros', icon: '➕' },
@@ -324,17 +339,35 @@ export const getCategoriaIcon = (categoriaId: string): string => {
   return cat?.icon || '📍';
 };
 
-// Obter label da categoria
+// Obter label da categoria (SINGULAR - para cards, perfil, cadastro)
 export const getCategoriaLabel = (categoriaId: string): string => {
   const cat = getCategoriaById(categoriaId);
   return cat?.label || categoriaId;
 };
 
-// Listar todas as categorias como opções para select
+// Alias para getCategoriaLabel (singular)
+export const getCategoriaSingular = getCategoriaLabel;
+
+// Obter label da categoria no PLURAL (para filtros/pills)
+export const getCategoriaPlural = (categoriaId: string): string => {
+  const cat = getCategoriaById(categoriaId);
+  return cat?.plural || cat?.label || categoriaId;
+};
+
+// Listar todas as categorias como opções para select (usa singular)
 export const getCategoriasOptions = () => {
   return CATEGORIAS.map(c => ({
     value: c.id,
-    label: c.label,
+    label: c.label, // Singular para dropdown
+    icon: c.icon,
+  }));
+};
+
+// Listar todas as categorias para pills de filtro (usa plural)
+export const getCategoriasFilterOptions = () => {
+  return CATEGORIAS.map(c => ({
+    value: c.id,
+    label: c.plural, // Plural para filtros
     icon: c.icon,
   }));
 };

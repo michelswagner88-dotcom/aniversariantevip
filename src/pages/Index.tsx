@@ -14,6 +14,7 @@ import { AirbnbCategoryPills } from '@/components/home/AirbnbCategoryPills';
 import { AirbnbCardGrid } from '@/components/home/AirbnbCardGrid';
 import { CategoryCarousel } from '@/components/home/CategoryCarousel';
 import { MapFAB } from '@/components/home/MapFAB';
+import { CarouselSkeleton } from '@/components/skeletons';
 
 // Títulos com storytelling por categoria
 const getCategoryTitle = (categoria: string, cidade?: string | null): string => {
@@ -234,8 +235,15 @@ const Index = () => {
         {/* Container principal com padding respirado */}
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-8 pb-16">
           
-          {/* MODO CARROSSÉIS: Quando não há filtro ativo */}
-          {mostrarCarrosseis ? (
+          {/* Loading state com skeletons */}
+          {isLoadingEstabelecimentos ? (
+            <div className="space-y-16 md:space-y-20">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <CarouselSkeleton key={i} />
+              ))}
+            </div>
+          ) : mostrarCarrosseis ? (
+            /* MODO CARROSSÉIS: Quando não há filtro ativo */
             <div className="space-y-16 md:space-y-20">
               {/* Destaques gerais primeiro */}
               <CategoryCarousel

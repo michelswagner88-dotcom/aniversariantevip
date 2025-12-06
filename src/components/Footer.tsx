@@ -1,99 +1,135 @@
 import { Link } from "react-router-dom";
-import { Mail, Phone } from "lucide-react";
-import { CONTATOS } from "@/lib/constants";
+import { Globe } from "lucide-react";
 
 export const Footer = () => {
+  const currentYear = new Date().getFullYear();
+  
   return (
-    <footer className="relative z-10 mt-auto bg-black/90 backdrop-blur-sm border-t border-white/20">
-      <div className="container mx-auto px-4 py-10 sm:py-12" style={{ paddingBottom: 'calc(140px + env(safe-area-inset-bottom, 0px))' }}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 gap-y-10">
-          {/* Coluna 1 - Marca */}
+    <footer className="bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="container mx-auto px-6 py-8">
+        {/* Links organizados em colunas estilo Airbnb */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+          {/* Coluna 1 - Descubra */}
           <div>
-            <Link to="/" className="inline-block mb-4 group">
-              <h2 className="font-display font-extrabold text-xl md:text-2xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 transition-all duration-300 group-hover:scale-105">
-                ANIVERSARIANTE VIP
-              </h2>
-            </Link>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Guia de benefícios para aniversariantes em todo o Brasil.
-            </p>
-          </div>
-
-          {/* Coluna 2 - Aniversariantes */}
-          <div>
-            <h3 className="font-bold mb-4 text-xs uppercase tracking-wider bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
-              Para Você
+            <h3 className="font-semibold text-sm text-slate-900 dark:text-white mb-4">
+              Descubra
             </h3>
-            <nav className="flex flex-col gap-2.5">
+            <nav className="flex flex-col gap-3">
               <Link 
                 to="/como-funciona" 
-                className="text-sm text-white/85 hover:text-violet-400 transition-all duration-180 hover:translate-x-0.5"
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline transition-colors"
               >
                 Como Funciona
               </Link>
               <Link 
                 to="/explorar" 
-                className="text-sm text-white/85 hover:text-violet-400 transition-all duration-180 hover:translate-x-0.5"
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline transition-colors"
               >
                 Explorar
               </Link>
               <Link 
                 to="/faq" 
-                className="text-sm text-white/85 hover:text-violet-400 transition-all duration-180 hover:translate-x-0.5"
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline transition-colors"
               >
-                FAQ
+                Central de Ajuda
               </Link>
             </nav>
           </div>
 
-          {/* Coluna 3 - Estabelecimentos */}
+          {/* Coluna 2 - Parceiros */}
           <div>
-            <h3 className="font-bold mb-3 text-sm uppercase tracking-wider bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
-              Para Estabelecimentos
+            <h3 className="font-semibold text-sm text-slate-900 dark:text-white mb-4">
+              Parceiros
             </h3>
-            <nav className="flex flex-col gap-2">
+            <nav className="flex flex-col gap-3">
               <Link 
                 to="/seja-parceiro" 
-                className="text-sm text-white/85 hover:text-violet-400 transition-all hover:translate-x-1"
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline transition-colors"
               >
                 Seja Parceiro
               </Link>
               <Link 
                 to="/login/estabelecimento" 
-                className="text-sm text-white/85 hover:text-violet-400 transition-all hover:translate-x-1"
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline transition-colors"
               >
-                Área do Estabelecimento
+                Área do Parceiro
               </Link>
             </nav>
           </div>
 
-          {/* Coluna 4 - Legal */}
+          {/* Coluna 3 - Suporte */}
           <div>
-            <h3 className="font-bold mb-3 text-sm uppercase tracking-wider bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
-              Legal
+            <h3 className="font-semibold text-sm text-slate-900 dark:text-white mb-4">
+              Suporte
             </h3>
-            <nav className="flex flex-col gap-2">
+            <nav className="flex flex-col gap-3">
               <Link 
-                to="/termos-uso" 
-                className="text-sm text-white/85 hover:text-violet-400 transition-all hover:translate-x-1"
+                to="/faq" 
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline transition-colors"
               >
-                Termos de Uso
+                FAQ
               </Link>
               <Link 
                 to="/politica-privacidade" 
-                className="text-sm text-white/85 hover:text-violet-400 transition-all hover:translate-x-1"
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline transition-colors"
               >
-                Política de Privacidade
+                Privacidade
+              </Link>
+              <Link 
+                to="/termos-uso" 
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline transition-colors"
+              >
+                Termos
+              </Link>
+            </nav>
+          </div>
+
+          {/* Coluna 4 - Aniversariante VIP */}
+          <div>
+            <h3 className="font-semibold text-sm text-slate-900 dark:text-white mb-4">
+              Aniversariante VIP
+            </h3>
+            <nav className="flex flex-col gap-3">
+              <Link 
+                to="/auth" 
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline transition-colors"
+              >
+                Criar Conta
+              </Link>
+              <Link 
+                to="/afiliado" 
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline transition-colors"
+              >
+                Indique e Ganhe
               </Link>
             </nav>
           </div>
         </div>
 
-        {/* Linha de Copyright Premium */}
-        <div className="border-t border-white/10 mt-10 pt-8">
-          <p className="text-center text-sm text-white/90 font-medium">
-            © {new Date().getFullYear()} Aniversariante VIP. Todos os direitos reservados.
-          </p>
+        {/* Divisor */}
+        <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
+          {/* Linha inferior */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            {/* Copyright e links legais */}
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <span>© {currentYear} Aniversariante VIP</span>
+              <span className="hidden md:inline">·</span>
+              <Link to="/termos-uso" className="hover:underline">Termos</Link>
+              <span>·</span>
+              <Link to="/politica-privacidade" className="hover:underline">Privacidade</Link>
+            </div>
+            
+            {/* Idioma e moeda (estilo Airbnb) */}
+            <div className="flex items-center gap-4">
+              <button className="flex items-center gap-2 text-sm text-slate-900 dark:text-white hover:underline">
+                <Globe className="w-4 h-4" />
+                <span>Português (BR)</span>
+              </button>
+              <span className="text-sm text-slate-900 dark:text-white font-medium">
+                R$ BRL
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

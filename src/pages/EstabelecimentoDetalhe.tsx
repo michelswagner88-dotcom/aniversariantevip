@@ -62,6 +62,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [showLogoExpanded, setShowLogoExpanded] = useState(false);
   
   const { width, height } = useWindowSize();
 
@@ -450,16 +451,6 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
             </motion.div>
           )}
           
-          {/* Localização */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="flex items-center gap-2 text-white/90 text-sm"
-          >
-            <MapPin className="w-4 h-4" />
-            <span>{estabelecimento.bairro} • {estabelecimento.cidade}/{estabelecimento.estado}</span>
-          </motion.div>
         </motion.div>
       </div>
 
@@ -472,7 +463,13 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
             transition={{ type: "spring", stiffness: 200, delay: 0.3 }}
             className="relative"
           >
-            <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-900 border-4 border-slate-900 shadow-2xl overflow-hidden">
+            <motion.button
+              onClick={() => setShowLogoExpanded(true)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-900 border-4 border-slate-900 shadow-2xl overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500"
+              aria-label="Ampliar foto de perfil"
+            >
               {estabelecimento.logo_url ? (
                 <img src={estabelecimento.logo_url} alt="Logo" loading="lazy" decoding="async" className="w-full h-full object-cover" />
               ) : (
@@ -482,19 +479,75 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                   </span>
                 </div>
               )}
-            </div>
+              <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                <ZoomIn className="w-6 h-6 text-white drop-shadow-lg" />
+              </div>
+            </motion.button>
             
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-500 border-2 border-slate-900 flex items-center justify-center">
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-500 border-2 border-slate-900 flex items-center justify-center pointer-events-none">
               <Check className="w-3 h-3 text-white" />
             </div>
           </motion.div>
           
           <div className="flex-1 pb-2">
-            <p className="text-gray-400 text-xs">Parceiro Aniversariante VIP</p>
-            <p className="text-purple-400 text-sm mt-1">Benefício exclusivo para aniversariantes</p>
+            {/* Localização movida para aqui */}
+            <div className="flex items-center gap-1.5 text-gray-400 text-sm mb-1">
+              <MapPin className="w-3.5 h-3.5" />
+              <span>{estabelecimento.cidade}/{estabelecimento.estado}</span>
+            </div>
+            <p className="text-gray-500 text-xs">Parceiro Aniversariante VIP</p>
+            <p className="text-purple-400 text-sm mt-0.5">Benefício exclusivo</p>
           </div>
         </div>
       </div>
+      
+      {/* ========== MODAL EXPANSÃO DO LOGO ========== */}
+      <AnimatePresence>
+        {showLogoExpanded && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
+            onClick={() => setShowLogoExpanded(false)}
+          >
+            <motion.button
+              className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              onClick={() => setShowLogoExpanded(false)}
+              aria-label="Fechar"
+            >
+              <X className="w-6 h-6 text-white" />
+            </motion.button>
+            
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="max-w-[90vw] max-h-[80vh] rounded-3xl overflow-hidden shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {estabelecimento.logo_url ? (
+                <img 
+                  src={estabelecimento.logo_url} 
+                  alt={estabelecimento.nome_fantasia || 'Logo'} 
+                  className="max-w-full max-h-[80vh] object-contain"
+                />
+              ) : (
+                <div className="w-64 h-64 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+                  <span className="text-7xl font-bold text-white">
+                    {estabelecimento.nome_fantasia?.charAt(0)}
+                  </span>
+                </div>
+              )}
+            </motion.div>
+            
+            <p className="absolute bottom-8 left-0 right-0 text-center text-white/70 text-sm">
+              {estabelecimento.nome_fantasia}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ========== GOLDEN TICKET - CARD DO BENEFÍCIO ========== */}
       <motion.div 

@@ -17,22 +17,24 @@ import { MapFAB } from '@/components/home/MapFAB';
 
 // Títulos com storytelling por categoria
 const getCategoryTitle = (categoria: string, cidade?: string | null): string => {
-  const sufixo = cidade ? ` em ${cidade}` : '';
   const titulos: Record<string, string> = {
-    'Restaurante': `Restaurantes para comemorar${sufixo}`,
-    'Bar': `Bares populares${sufixo}`,
-    'Academia': `Academias${sufixo}`,
-    'Salão de Beleza': `Salões de beleza${sufixo}`,
-    'Barbearia': `Barbearias${sufixo}`,
-    'Cafeteria': `Cafeterias aconchegantes${sufixo}`,
-    'Casa Noturna': `Vida noturna${sufixo}`,
-    'Confeitaria': `Confeitarias e doces${sufixo}`,
-    'Sorveteria': `Sorveterias${sufixo}`,
-    'Hospedagem': `Onde se hospedar${sufixo}`,
-    'Entretenimento': `Diversão e lazer${sufixo}`,
-    'Loja': `Lojas${sufixo}`,
+    'Restaurante': 'Restaurantes para comemorar',
+    'Bar': 'Bares populares',
+    'Academia': 'Academias com benefícios',
+    'Salão de Beleza': 'Salões de beleza',
+    'Barbearia': 'Barbearias estilosas',
+    'Cafeteria': 'Cafeterias aconchegantes',
+    'Casa Noturna': 'Noites inesquecíveis',
+    'Confeitaria': 'Confeitarias irresistíveis',
+    'Sorveteria': 'Sorveterias refrescantes',
+    'Hospedagem': 'Hotéis para celebrar',
+    'Entretenimento': 'Entretenimento garantido',
+    'Loja': 'Lojas com presentes especiais',
+    'Saúde e Suplementos': 'Saúde e bem-estar',
+    'Serviços': 'Serviços exclusivos',
+    'Pizzaria': 'Pizzarias bem avaliadas',
   };
-  return titulos[categoria] || `${categoria}${sufixo}`;
+  return titulos[categoria] || categoria;
 };
 
 const Index = () => {
@@ -231,7 +233,7 @@ const Index = () => {
               <CategoryCarousel
                 title={sectionTitle}
                 estabelecimentos={estabelecimentosFiltrados.slice(0, 10)}
-                onVerTodos={() => {}}
+                linkHref={cidadeFinal ? `/explorar?cidade=${cidadeFinal}&estado=${estadoFinal}` : '/explorar'}
               />
               
               {/* Carrosséis por categoria */}
@@ -240,7 +242,7 @@ const Index = () => {
                   key={categoria}
                   title={titulo}
                   estabelecimentos={ests}
-                  onVerTodos={() => handleCategoriaChange(categoria)}
+                  linkHref={`/explorar?categoria=${encodeURIComponent(categoria)}${cidadeFinal ? `&cidade=${cidadeFinal}&estado=${estadoFinal}` : ''}`}
                 />
               ))}
             </div>
@@ -249,11 +251,11 @@ const Index = () => {
             <>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
-                  {categoriaParam || sectionTitle}
+                  {categoriaParam ? getCategoryTitle(categoriaParam, cidadeFinal) : sectionTitle}
                 </h2>
                 {estabelecimentosFiltrados.length > 0 && (
-                  <span className="text-sm text-slate-500 dark:text-slate-400">
-                    {estabelecimentosFiltrados.length} lugares
+                  <span className="text-sm text-muted-foreground">
+                    {estabelecimentosFiltrados.length} {estabelecimentosFiltrados.length === 1 ? 'lugar' : 'lugares'}
                   </span>
                 )}
               </div>

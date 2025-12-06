@@ -66,13 +66,14 @@ const ContactButtons: React.FC<ContactButtonsProps> = ({
   
   const buttonBase = cn(
     "flex items-center justify-center gap-2",
-    "min-h-[48px] px-5 rounded-xl",
+    "min-h-[48px] min-w-[48px] px-5 rounded-xl",
     "font-medium text-sm",
     "transition-all duration-200",
     "active:scale-[0.98]",
+    "touch-manipulation",
     "-webkit-tap-highlight-color: transparent",
-    isCompact && "min-h-[44px] px-4",
-    isIconsOnly && "min-h-[44px] w-[44px] px-0 rounded-full"
+    isCompact && "min-h-[44px] min-w-[44px] px-4",
+    isIconsOnly && "min-h-[48px] w-[48px] px-0 rounded-full"
   );
   
   return (

@@ -29,6 +29,16 @@ const GPS_TIMEOUT = 10000; // 10 segundos
 const IP_API_TIMEOUT = 5000; // 5 segundos
 const SAFETY_TIMEOUT = 15000; // 15 segundos - timeout de segurança
 
+// Estados brasileiros válidos para validação de localização
+const ESTADOS_BR = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+
+// Função para verificar se é localização brasileira
+const isBrazilianLocation = (estado: string): boolean => {
+  if (!estado) return false;
+  const normalizado = estado.length === 2 ? estado.toUpperCase() : normalizarEstado(estado);
+  return ESTADOS_BR.includes(normalizado.toUpperCase());
+};
+
 // APIs de IP (fallback chain)
 const IP_APIS = [
   {
@@ -278,18 +288,26 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
       const cidadeIP = await detectarPorIP();
       
       if (cidadeIP && cidadeIP.cidade && cidadeIP.estado) {
-        setCidadeData(cidadeIP);
-        saveToCache(cidadeIP.cidade, cidadeIP.estado, 'ip');
-        
-        const qtd = await verificarEstabelecimentos(cidadeIP.cidade, cidadeIP.estado);
-        setQuantidadeEstabelecimentos(qtd);
-        setTemEstabelecimentos(qtd > 0);
-        return;
+        // VALIDAR: Verificar se é localização brasileira antes de aceitar
+        if (isBrazilianLocation(cidadeIP.estado)) {
+          console.log('[Geo] Localização brasileira confirmada:', cidadeIP.cidade, cidadeIP.estado);
+          setCidadeData(cidadeIP);
+          saveToCache(cidadeIP.cidade, cidadeIP.estado, 'ip');
+          
+          const qtd = await verificarEstabelecimentos(cidadeIP.cidade, cidadeIP.estado);
+          setQuantidadeEstabelecimentos(qtd);
+          setTemEstabelecimentos(qtd > 0);
+          return;
+        } else {
+          // Localização estrangeira detectada - ignorar e mostrar "Todo o Brasil"
+          console.log('[Geo] Localização ESTRANGEIRA detectada e IGNORADA:', cidadeIP.cidade, cidadeIP.estado);
+          // NÃO definir cidade - deixar como "Todo o Brasil"
+        }
       }
       
-      // 4. Nenhum método funcionou
-      console.log('[Geo] Nenhum método de detecção funcionou');
-      setError('Não foi possível detectar sua localização');
+      // 4. Nenhum método funcionou ou localização é estrangeira
+      console.log('[Geo] Sem cidade brasileira detectada - usuário verá "Todo o Brasil"');
+      // NÃO mostrar erro - apenas deixar cidade como null (Todo o Brasil)
       setCidadeData({ cidade: null, estado: null, origem: null });
       setTemEstabelecimentos(null);
       

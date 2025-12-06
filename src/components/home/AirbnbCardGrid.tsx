@@ -5,6 +5,7 @@ import { SafeImage } from '@/components/SafeImage';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { TiltCard } from '@/components/ui/tilt-card';
 import { getFotoEstabelecimento, getPlaceholderPorCategoria } from '@/lib/photoUtils';
+import { EstablishmentBadge, getEstablishmentBadges, getPrimaryBadge } from '@/components/ui/establishment-badge';
 
 // Variantes de animação para o grid
 const containerVariants = {
@@ -76,6 +77,16 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
   const categoria = Array.isArray(est.categoria) ? est.categoria[0] : est.categoria;
   const temBeneficio = !!est.descricao_beneficio;
   
+  // Obter badges do estabelecimento
+  const badges = getEstablishmentBadges({
+    is_verificado: est.is_verificado,
+    is_parceiro: est.is_parceiro,
+    is_destaque: est.is_destaque,
+    created_at: est.created_at,
+    descricao_beneficio: est.descricao_beneficio,
+  });
+  const primaryBadge = getPrimaryBadge(badges);
+  
   // Obter a melhor foto com fallback inteligente
   const fotoUrl = getFotoEstabelecimento(
     est.logo_url,
@@ -107,6 +118,13 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
           
           {/* Overlay gradient sutil */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+          
+          {/* Badge de status (canto superior esquerdo) */}
+          {primaryBadge && (
+            <div className="absolute top-3 left-3 z-10">
+              <EstablishmentBadge type={primaryBadge} size="sm" />
+            </div>
+          )}
           
           {/* Badge de benefício - posição inferior esquerda, estilo Airbnb */}
           {temBeneficio && (

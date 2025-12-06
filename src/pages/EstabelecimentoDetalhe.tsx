@@ -5,7 +5,7 @@ import {
   ArrowLeft, MapPin, Phone, Globe, Instagram, Clock, 
   Share2, Heart, Gift, MessageCircle, ExternalLink,
   UtensilsCrossed, Copy, Send, Linkedin, Facebook,
-  Camera, X, ChevronLeft, ChevronRight, Check, Sparkles, ZoomIn, Store, ArrowRight, BadgeCheck, Star
+  Camera, X, ChevronLeft, ChevronRight, Check, Sparkles, ZoomIn, Store, ArrowRight, BadgeCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -464,14 +464,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
           
           <div className="flex-1 pb-2">
             <p className="text-gray-400 text-xs">Parceiro Aniversariante VIP</p>
-            <div className="flex items-center gap-3 mt-1">
-              <div className="flex items-center gap-1 text-yellow-400">
-                <Star className="w-4 h-4 fill-current" />
-                <span className="text-sm font-medium text-white">4.8</span>
-              </div>
-              <span className="text-gray-600">•</span>
-              <span className="text-gray-400 text-sm">Benefício exclusivo</span>
-            </div>
+            <p className="text-purple-400 text-sm mt-1">Benefício exclusivo para aniversariantes</p>
           </div>
         </div>
       </div>

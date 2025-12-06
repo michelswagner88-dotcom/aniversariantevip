@@ -107,7 +107,7 @@ export const CategoriasPills = ({
   };
   
   return (
-    <div className="relative -mx-4 sm:-mx-6 lg:-mx-8">
+    <div className="relative">
       {/* Botão scroll esquerda (desktop) */}
       <button 
         onClick={() => scrollBy('left')}
@@ -124,11 +124,11 @@ export const CategoriasPills = ({
         <ChevronLeft size={18} />
       </button>
 
-      {/* Fade esquerda */}
+      {/* Fade esquerda - só aparece quando há scroll */}
       <div 
         className={cn(
-          'absolute left-0 top-0 bottom-0 w-12 sm:w-16 z-[5]',
-          'bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent',
+          'absolute left-0 top-0 bottom-0 w-8 z-[5]',
+          'bg-gradient-to-r from-slate-950 to-transparent',
           'pointer-events-none transition-opacity duration-300',
           showLeftFade ? 'opacity-100' : 'opacity-0'
         )} 
@@ -137,7 +137,7 @@ export const CategoriasPills = ({
       {/* Container scrollável */}
       <div 
         ref={scrollRef}
-        className="flex gap-2 overflow-x-auto px-4 sm:px-6 lg:px-8 py-2 scroll-smooth scrollbar-hide"
+        className="flex gap-2 overflow-x-auto py-2 scroll-smooth scrollbar-hide"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {categoriasConfig.map((cat, index) => {
@@ -180,8 +180,8 @@ export const CategoriasPills = ({
       {/* Fade direita */}
       <div 
         className={cn(
-          'absolute right-0 top-0 bottom-0 w-12 sm:w-16 z-[5]',
-          'bg-gradient-to-l from-slate-950 via-slate-950/80 to-transparent',
+          'absolute right-0 top-0 bottom-0 w-8 z-[5]',
+          'bg-gradient-to-l from-slate-950 to-transparent',
           'pointer-events-none transition-opacity duration-300',
           showRightFade ? 'opacity-100' : 'opacity-0'
         )} 

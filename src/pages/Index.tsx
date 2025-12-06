@@ -74,16 +74,13 @@ const Index = () => {
     
     let filtrados = [...estabelecimentos];
     
-    // Filtrar por cidade (se detectada/selecionada)
+    // Filtrar por cidade (se detectada/selecionada) - SEMPRE APLICAR
     if (cidadeFinal && estadoFinal) {
-      const filtradosPorCidade = filtrados.filter(est => 
+      filtrados = filtrados.filter(est => 
         est.cidade?.toLowerCase() === cidadeFinal.toLowerCase() &&
         est.estado?.toLowerCase() === estadoFinal.toLowerCase()
       );
-      
-      if (filtradosPorCidade.length > 0) {
-        filtrados = filtradosPorCidade;
-      }
+      // NÃO fazer fallback para todos - mostrar lista vazia se não houver na cidade
     }
     
     // Filtrar por categoria
@@ -108,6 +105,12 @@ const Index = () => {
         return nome.includes(termoBusca) || bairro.includes(termoBusca) || matchCat || matchSpec;
       });
     }
+    
+    console.log('[Index] Filtro aplicado:', { 
+      cidadeFinal, estadoFinal, categoriaParam, buscaParam,
+      totalBruto: estabelecimentos?.length,
+      totalFiltrado: filtrados.length 
+    });
     
     return filtrados;
   }, [estabelecimentos, cidadeFinal, estadoFinal, categoriaParam, buscaParam]);

@@ -6,6 +6,7 @@ import { SafeImage } from '@/components/SafeImage';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { cn } from '@/lib/utils';
 import { TiltCard } from '@/components/ui/tilt-card';
+import { getFotoEstabelecimento, getPlaceholderPorCategoria } from '@/lib/photoUtils';
 
 interface CategoryCarouselProps {
   title: string;
@@ -58,6 +59,15 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
   const categoria = Array.isArray(est.categoria) ? est.categoria[0] : est.categoria;
   const temBeneficio = !!est.descricao_beneficio;
   
+  // Obter a melhor foto com fallback inteligente
+  const fotoUrl = getFotoEstabelecimento(
+    est.logo_url,
+    null,
+    est.galeria_fotos,
+    est.categoria
+  );
+  const fallbackUrl = getPlaceholderPorCategoria(est.categoria);
+  
   return (
     <TiltCard 
       tiltAmount={6} 
@@ -66,66 +76,69 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
     >
       <article
         onClick={handleClick}
-        className="transition-all duration-300"
+        className="h-full flex flex-col transition-all duration-300"
       >
-        {/* Container da imagem com glassmorphism */}
-        <div className="relative aspect-[4/3] overflow-hidden rounded-2xl mb-3 shadow-lg shadow-black/5 dark:shadow-black/20 transition-all duration-300 ring-1 ring-white/10 dark:ring-white/5 backdrop-blur-sm bg-white/5 dark:bg-slate-800/30">
-        <SafeImage
-          src={est.logo_url || est.galeria_fotos?.[0]}
-          alt={est.nome_fantasia || 'Estabelecimento'}
-          className="w-full h-full"
-          enableParallax
-        />
-        
-        {/* Badge de benefício com pulse e glow no hover */}
-        {temBeneficio && (
-          <div className="absolute top-3 left-3">
-            <div className="relative flex items-center gap-1.5 px-2.5 py-1 bg-white/95 dark:bg-slate-900/95 rounded-full shadow-md backdrop-blur-sm transition-all duration-300 group-hover:shadow-[0_0_16px_rgba(139,92,246,0.5)] group-hover:ring-2 group-hover:ring-violet-400/50">
-              {/* Pulse ring */}
-              <span className="absolute inset-0 rounded-full bg-violet-400/20 animate-ping" />
-              <Gift className="relative w-3 h-3 text-violet-600 animate-pulse" />
-              <span className="relative text-[11px] font-semibold text-slate-900 dark:text-white">
-                Benefício
-              </span>
+        {/* Container da imagem - PROPORÇÃO FIXA 4:3 */}
+        <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-slate-800 shadow-lg shadow-black/20 transition-all duration-300 ring-1 ring-white/5 group-hover:shadow-xl group-hover:shadow-violet-500/10">
+          <SafeImage
+            src={fotoUrl}
+            alt={est.nome_fantasia || 'Estabelecimento'}
+            fallbackSrc={fallbackUrl}
+            className="w-full h-full object-cover object-center"
+            enableParallax
+          />
+          
+          {/* Overlay gradient para legibilidade dos badges */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+          
+          {/* Badge de benefício com pulse e glow no hover */}
+          {temBeneficio && (
+            <div className="absolute top-3 left-3">
+              <div className="relative flex items-center gap-1.5 px-2.5 py-1 bg-white/95 dark:bg-slate-900/95 rounded-full shadow-md backdrop-blur-sm transition-all duration-300 group-hover:shadow-[0_0_16px_rgba(139,92,246,0.5)] group-hover:ring-2 group-hover:ring-violet-400/50">
+                <span className="absolute inset-0 rounded-full bg-violet-400/20 animate-ping" />
+                <Gift className="relative w-3 h-3 text-violet-600 animate-pulse" />
+                <span className="relative text-[11px] font-semibold text-slate-900 dark:text-white">
+                  Benefício
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {/* Coração de favoritar */}
+          <button 
+            onClick={(e) => { e.stopPropagation(); }}
+            className="absolute top-3 right-3 p-1.5 hover:scale-110 transition-transform"
+          >
+            <Heart className="w-5 h-5 text-white drop-shadow-md hover:fill-white/50 transition-colors" />
+          </button>
+        </div>
+      
+        {/* Info do estabelecimento - ALTURA CONSISTENTE */}
+        <div className="pt-3 flex-1 flex flex-col gap-0.5">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-medium text-sm text-slate-900 dark:text-white line-clamp-1">
+              {est.nome_fantasia || est.razao_social || 'Estabelecimento'}
+            </h3>
+            <div className="flex items-center gap-0.5 shrink-0">
+              <Star className="w-3 h-3 fill-slate-900 dark:fill-white text-slate-900 dark:text-white" />
+              <span className="text-xs text-slate-900 dark:text-white">Novo</span>
             </div>
           </div>
-        )}
-        
-        {/* Coração de favoritar */}
-        <button 
-          onClick={(e) => { e.stopPropagation(); }}
-          className="absolute top-3 right-3 p-1.5 hover:scale-110 transition-transform"
-        >
-          <Heart className="w-5 h-5 text-white drop-shadow-md hover:fill-white/50 transition-colors" />
-        </button>
-      </div>
-      
-      {/* Info do estabelecimento */}
-      <div className="space-y-0.5">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-medium text-sm text-slate-900 dark:text-white line-clamp-1">
-            {est.nome_fantasia || est.razao_social || 'Estabelecimento'}
-          </h3>
-          <div className="flex items-center gap-0.5 shrink-0">
-            <Star className="w-3 h-3 fill-slate-900 dark:fill-white text-slate-900 dark:text-white" />
-            <span className="text-xs text-slate-900 dark:text-white">Novo</span>
+          
+          <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+            <MapPin className="w-3 h-3" />
+            <span className="text-xs line-clamp-1">
+              {est.bairro || est.cidade}
+            </span>
           </div>
+          
+          {temBeneficio && (
+            <p className="text-xs font-medium text-violet-600 dark:text-violet-400 line-clamp-1 mt-auto">
+              {est.descricao_beneficio}
+            </p>
+          )}
         </div>
-        
-        <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-          <MapPin className="w-3 h-3" />
-          <span className="text-xs line-clamp-1">
-            {est.bairro || est.cidade}
-          </span>
-        </div>
-        
-        {temBeneficio && (
-          <p className="text-xs font-medium text-violet-600 dark:text-violet-400 line-clamp-1">
-            {est.descricao_beneficio}
-          </p>
-        )}
-      </div>
-    </article>
+      </article>
     </TiltCard>
   );
 };

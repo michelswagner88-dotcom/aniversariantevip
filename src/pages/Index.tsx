@@ -11,6 +11,7 @@ import BottomNav from '@/components/BottomNav';
 import { AirbnbSearchBar } from '@/components/home/AirbnbSearchBar';
 import { AirbnbCategoryPills } from '@/components/home/AirbnbCategoryPills';
 import { AirbnbCardGrid } from '@/components/home/AirbnbCardGrid';
+import { MapFAB } from '@/components/home/MapFAB';
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -188,6 +189,9 @@ const Index = () => {
       
       <Footer />
       <BottomNav />
+      
+      {/* FAB de Mapa - Mobile only */}
+      <MapFAB estabelecimentos={estabelecimentosFiltrados} />
     </div>
   );
 };

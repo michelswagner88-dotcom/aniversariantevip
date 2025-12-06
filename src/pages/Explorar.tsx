@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { MapPin, Search, SlidersHorizontal, Map as MapIconLucide, List, X, Check, Share2, Heart, CalendarDays, Navigation, Store, Loader2 } from 'lucide-react';
+import { MapPin, Search, SlidersHorizontal, X, Check, Share2, Heart, CalendarDays, Navigation, Store, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
 import { motion, AnimatePresence } from 'framer-motion';
 import VoiceSearchBar from "@/components/VoiceSearchBar";
 import { SafeImage } from "@/components/SafeImage";
-import { GoogleMapView } from "@/components/GoogleMapView";
+import { AirbnbMapLayout } from "@/components/map/AirbnbMapLayout";
 
 import { BackButton } from "@/components/BackButton";
 import { EmptyState } from "@/components/EmptyState";
@@ -228,8 +228,7 @@ const Explorar = () => {
   // --- CIDADE SELECIONADA ---
   const [selectedCity, setSelectedCity] = useState<{ nome: string; estado: string } | null>(null);
   
-  // --- TOGGLE LISTA/MAPA ---
-  const [viewMode, setViewMode] = useState<'lista' | 'mapa'>('lista');
+  // viewMode removido - agora usamos AirbnbMapLayout que gerencia responsivamente
   
   // --- FILTROS DE DISTÂNCIA E ORDENAÇÃO ---
   const [raioKm, setRaioKm] = useState('all');
@@ -613,55 +612,14 @@ const Explorar = () => {
               </div>
             )}
 
-            {/* Toggle Lista/Mapa */}
-            {!mostrandoOutrasCidades && (
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-slate-400 text-sm">
-                  {filteredPlaces.length} estabelecimentos encontrados
-                  {selectedCity && <span className="text-violet-400"> em {selectedCity.nome}</span>}
-                </p>
-                
-                <div className="flex bg-white/5 rounded-lg p-1">
-                  <button
-                    onClick={() => setViewMode('lista')}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-                      viewMode === 'lista' 
-                        ? 'bg-violet-600 text-white' 
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    <List className="w-4 h-4" />
-                    Lista
-                  </button>
-                  <button
-                    onClick={() => setViewMode('mapa')}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-                      viewMode === 'mapa' 
-                        ? 'bg-violet-600 text-white' 
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    <MapIconLucide className="w-4 h-4" />
-                    Mapa
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Conteúdo: Lista ou Mapa */}
+            {/* Conteúdo com AirbnbMapLayout */}
             {!mostrandoOutrasCidades && (
               filteredPlaces.length === 0 ? (
                 <div className="col-span-full text-center py-12 text-slate-400">
                   Nenhum resultado encontrado com os filtros selecionados
                 </div>
-              ) : viewMode === 'lista' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {filteredPlaces.map((place) => (
-                    <PlaceCard key={place.id} place={place} />
-                  ))}
-                </div>
               ) : (
-                <GoogleMapView
+                <AirbnbMapLayout
                   establishments={estabelecimentosFormatados}
                   onEstablishmentClick={(establishment) => {
                     const url = getEstabelecimentoUrl({
@@ -676,7 +634,19 @@ const Explorar = () => {
                     lat: userLocation.lat,
                     lng: userLocation.lng
                   } : null}
-                />
+                  listHeader={
+                    <p className="text-slate-400 text-sm mb-4">
+                      {filteredPlaces.length} estabelecimentos encontrados
+                      {selectedCity && <span className="text-violet-400"> em {selectedCity.nome}</span>}
+                    </p>
+                  }
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
+                    {filteredPlaces.map((place) => (
+                      <PlaceCard key={place.id} place={place} />
+                    ))}
+                  </div>
+                </AirbnbMapLayout>
               )
             )}
           </>

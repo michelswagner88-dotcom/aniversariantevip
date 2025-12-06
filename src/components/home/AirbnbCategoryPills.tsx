@@ -62,15 +62,15 @@ export const AirbnbCategoryPills = ({
                 'flex flex-col items-center gap-2 min-w-[56px] pb-3 border-b-2 transition-all',
                 isActive
                   ? 'border-violet-500 opacity-100'
-                  : 'border-transparent opacity-60 hover:opacity-100 hover:border-slate-300 dark:hover:border-slate-600'
+                  : 'border-transparent opacity-70 hover:opacity-100 hover:border-slate-300 dark:hover:border-slate-600'
               )}
             >
               <span className="text-2xl">{cat.icon}</span>
               <span className={cn(
                 'text-xs font-medium whitespace-nowrap',
                 isActive 
-                  ? 'text-violet-600 dark:text-violet-400' 
-                  : 'text-slate-600 dark:text-slate-400'
+                  ? 'text-foreground' 
+                  : 'text-muted-foreground'
               )}>
                 {cat.nome}
               </span>

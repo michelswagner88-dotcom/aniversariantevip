@@ -98,9 +98,9 @@ export const AirbnbCategoryPills = ({
               style={{ animationDelay: `${index * 30}ms` }}
               className={cn(
                 'group flex flex-col items-center gap-2 min-w-[56px] pb-3 border-b-2 transition-all duration-200 btn-press',
-                'animate-fade-in opacity-0',
+                'animate-fade-in',
                 isActive
-                  ? 'border-foreground !opacity-100'
+                  ? 'border-foreground'
                   : 'border-transparent hover:border-muted-foreground/30'
               )}
             >

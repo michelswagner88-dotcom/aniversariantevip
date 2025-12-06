@@ -86,9 +86,12 @@ export const Header = () => {
       <header 
         className={`
           fixed left-0 right-0 z-50 
-          transition-all duration-300 ease-out
-          ${isMobile && !isVisible ? '-translate-y-full' : 'translate-y-0'}
-          ${isAtTop ? 'bg-transparent border-transparent' : 'bg-slate-950/95 backdrop-blur-xl border-b border-white/[0.08] shadow-lg shadow-black/20'}
+          transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+          ${isMobile && !isVisible ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'}
+          ${isAtTop 
+            ? 'bg-transparent border-transparent' 
+            : 'bg-slate-950/95 backdrop-blur-xl border-b border-white/[0.08] shadow-lg shadow-black/20'
+          }
         `}
         style={{ top: isBirthday && userName ? '48px' : '0' }}
       >

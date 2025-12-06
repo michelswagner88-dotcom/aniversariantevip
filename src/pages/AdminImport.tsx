@@ -390,7 +390,7 @@ export default function AdminImport() {
     }
   };
 
-  const getPlaceDetails = async (name: string, address: string, cidade: string, estado: string): Promise<{ photoUrl: string | null; rating: number | null; ratingsTotal: number | null }> => {
+  const getPlaceDetails = async (name: string, address: string, cidade: string, estado: string): Promise<{ photoUrl: string | null; rating: number | null; ratingsTotal: number | null; photoValidated: boolean }> => {
     try {
       const { data, error } = await supabase.functions.invoke('fetch-place-photo', {
         body: {
@@ -398,23 +398,51 @@ export default function AdminImport() {
           endereco: address,
           cidade: cidade,
           estado: estado,
+          skipValidation: false // Sempre validar fotos na importação
         }
       });
 
       if (error || !data?.success) {
         console.log(`❌ Foto não encontrada para ${name}:`, data?.error || error);
-        return { photoUrl: null, rating: null, ratingsTotal: null };
+        
+        // Se tem fotos mas nenhuma passou na validação, tentar sem validação
+        if (data?.photos_available > 0 && data?.validation_applied) {
+          console.log(`   ⚠️ Tentando sem validação (${data.photos_available} fotos disponíveis)...`);
+          
+          const { data: retryData, error: retryError } = await supabase.functions.invoke('fetch-place-photo', {
+            body: {
+              nome: name,
+              endereco: address,
+              cidade: cidade,
+              estado: estado,
+              skipValidation: true // Forçar qualquer foto como fallback
+            }
+          });
+          
+          if (!retryError && retryData?.success) {
+            console.log(`   ✅ Foto encontrada (sem validação) para ${name}`);
+            return {
+              photoUrl: retryData.photo_url,
+              rating: retryData.rating,
+              ratingsTotal: retryData.user_ratings_total,
+              photoValidated: false // Marcar que não passou na validação
+            };
+          }
+        }
+        
+        return { photoUrl: null, rating: null, ratingsTotal: null, photoValidated: false };
       }
 
-      console.log(`✅ Foto encontrada para ${name}`);
+      console.log(`✅ Foto validada encontrada para ${name} (${data.photo_dimensions?.width}x${data.photo_dimensions?.height})`);
       return {
         photoUrl: data.photo_url,
         rating: data.rating,
         ratingsTotal: data.user_ratings_total,
+        photoValidated: data.validation_applied ?? true
       };
     } catch (error) {
       console.error("Edge function error:", error);
-      return { photoUrl: null, rating: null, ratingsTotal: null };
+      return { photoUrl: null, rating: null, ratingsTotal: null, photoValidated: false };
     }
   };
 

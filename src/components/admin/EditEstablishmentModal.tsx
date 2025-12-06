@@ -10,12 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, MapPin, Camera } from "lucide-react";
+import { Loader2, MapPin, Camera, RefreshCw, Sparkles, AlertTriangle } from "lucide-react";
 import { processarImagemQuadrada, dataURLtoBlob } from "@/lib/imageUtils";
 import { CATEGORIAS_ESTABELECIMENTO, PERIODOS_VALIDADE } from "@/lib/constants";
 import { getSubcategoriesForCategory } from "@/constants/categorySubcategories";
 import { HorarioFuncionamentoEditor } from "./HorarioFuncionamentoEditor";
 import { Switch } from "@/components/ui/switch";
+import { getPlaceholderPorCategoria, validarUrlFoto } from "@/lib/photoUtils";
 
 interface Establishment {
   id: string;
@@ -103,7 +104,7 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
     }
   };
 
-  const handleFetchGooglePhoto = async () => {
+  const handleFetchGooglePhoto = async (forceAnyPhoto = false) => {
     if (!formData?.nome_fantasia && !formData?.razao_social) {
       toast.error("Nome do estabelecimento é necessário para buscar foto");
       return;
@@ -112,14 +113,23 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
     try {
       setFetchingPhoto(true);
       
+      const toastId = toast.loading(
+        forceAnyPhoto 
+          ? "Buscando qualquer foto disponível..." 
+          : "Buscando foto de qualidade no Google..."
+      );
+      
       const { data, error } = await supabase.functions.invoke('fetch-place-photo', {
         body: {
           nome: formData.nome_fantasia || formData.razao_social,
           endereco: formData.endereco,
           cidade: formData.cidade,
           estado: formData.estado,
+          skipValidation: forceAnyPhoto // Permite forçar qualquer foto
         }
       });
+
+      toast.dismiss(toastId);
 
       if (error) throw error;
 
@@ -128,9 +138,38 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
           ...formData,
           logo_url: data.photo_url,
         });
-        toast.success(`Foto encontrada! ${data.place_name || ''}`);
+        
+        const dimensions = data.photo_dimensions 
+          ? ` (${data.photo_dimensions.width}x${data.photo_dimensions.height})` 
+          : '';
+        
+        toast.success(
+          `✅ Foto encontrada! ${data.place_name || ''}${dimensions}`,
+          { duration: 4000 }
+        );
+        
+        if (data.validation_applied && data.photos_available > 1) {
+          toast.info(`📊 Selecionada melhor foto de ${data.photos_available} disponíveis`, { duration: 3000 });
+        }
       } else {
-        toast.error(data?.error || "Estabelecimento não encontrado no Google Places");
+        // Se falhou com validação, oferecer opção de tentar sem validação
+        if (data?.validation_applied && data?.photos_available > 0) {
+          toast.error(
+            <div>
+              <p className="font-medium">Fotos rejeitadas pela validação</p>
+              <p className="text-sm opacity-80">{data.photos_available} fotos disponíveis, mas nenhuma passou nos critérios de qualidade</p>
+              <button 
+                onClick={() => handleFetchGooglePhoto(true)}
+                className="mt-2 text-xs underline hover:no-underline"
+              >
+                Tentar buscar qualquer foto →
+              </button>
+            </div>,
+            { duration: 8000 }
+          );
+        } else {
+          toast.error(data?.error || "Estabelecimento não encontrado no Google Places");
+        }
       }
     } catch (error) {
       console.error("Erro ao buscar foto:", error);
@@ -139,6 +178,10 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
       setFetchingPhoto(false);
     }
   };
+
+  // Verificar se a foto atual é válida
+  const isFotoValida = formData?.logo_url && validarUrlFoto(formData.logo_url);
+  const placeholderUrl = getPlaceholderPorCategoria(formData?.categoria);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -587,16 +630,38 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
 
           {/* IMAGENS */}
           <TabsContent value="imagens" className="space-y-4">
+            {/* Alerta se foto atual parece inválida */}
+            {formData.logo_url && !isFotoValida && (
+              <div className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-amber-400">Foto possivelmente inadequada</p>
+                  <p className="text-xs text-amber-400/70">A URL sugere que pode ser um logo, ícone ou placeholder</p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleFetchGooglePhoto(false)}
+                  disabled={fetchingPhoto}
+                  className="shrink-0"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-1 ${fetchingPhoto ? 'animate-spin' : ''}`} />
+                  Buscar nova
+                </Button>
+              </div>
+            )}
+
             <div className="space-y-4">
               <Label>Foto do Estabelecimento</Label>
               
               <div className="flex items-start gap-6">
-                {/* Preview da foto */}
+                {/* Preview da foto com aspect-ratio 4:3 */}
                 <div className="relative">
                   <div 
-                    className={`w-32 h-32 rounded-xl overflow-hidden border-2 border-dashed 
+                    className={`w-40 aspect-[4/3] rounded-xl overflow-hidden border-2 border-dashed 
                       ${isProcessingImage ? 'border-violet-500' : 'border-white/20'} 
-                      bg-white/5 flex items-center justify-center cursor-pointer 
+                      bg-slate-800 flex items-center justify-center cursor-pointer 
                       hover:border-violet-500 transition-colors`}
                     onClick={() => !isProcessingImage && document.getElementById('fileUpload')?.click()}
                   >
@@ -611,7 +676,8 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
                         alt="Foto do estabelecimento" 
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          e.currentTarget.src = 'https://via.placeholder.com/400x400?text=Erro';
+                          // Fallback para placeholder da categoria
+                          e.currentTarget.src = placeholderUrl;
                         }}
                       />
                     ) : (
@@ -659,27 +725,43 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
                     className="w-full"
                   >
                     <Camera className="w-4 h-4 mr-2" />
-                    Enviar Foto
+                    Enviar Foto Manual
                   </Button>
                   
+                  {/* Botão principal de busca no Google */}
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="default"
                     size="sm"
-                    onClick={handleFetchGooglePhoto}
+                    onClick={() => handleFetchGooglePhoto(false)}
                     disabled={isProcessingImage || fetchingPhoto}
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700"
                   >
                     {fetchingPhoto ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     ) : (
-                      <Camera className="w-4 h-4 mr-2" />
+                      <Sparkles className="w-4 h-4 mr-2" />
                     )}
-                    Buscar do Google
+                    Buscar Melhor Foto (Google)
                   </Button>
                   
+                  {/* Botão secundário para forçar qualquer foto */}
+                  {formData.logo_url && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleFetchGooglePhoto(true)}
+                      disabled={isProcessingImage || fetchingPhoto}
+                      className="w-full text-xs text-muted-foreground"
+                    >
+                      <RefreshCw className="w-3 h-3 mr-1" />
+                      Tentar outra foto (ignorar validação)
+                    </Button>
+                  )}
+                  
                   <p className="text-xs text-gray-400">
-                    📱 Envie qualquer foto - ajustamos automaticamente!
+                    📸 A busca inteligente filtra logos e ícones automaticamente
                   </p>
                 </div>
               </div>
@@ -693,6 +775,12 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
                 placeholder="https://exemplo.com/foto.jpg"
                 disabled={isProcessingImage}
               />
+              {formData.logo_url && !isFotoValida && (
+                <p className="text-xs text-amber-500 mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  URL pode ser um logo ou placeholder
+                </p>
+              )}
             </div>
           </TabsContent>
 

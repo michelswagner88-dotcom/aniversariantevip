@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useSEO } from '@/hooks/useSEO';
 import { useCidadeInteligente } from '@/hooks/useCidadeInteligente';
 import { useEstabelecimentos } from '@/hooks/useEstabelecimentos';
+import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 
 // Components
 import { Header } from '@/components/Header';
@@ -11,7 +12,28 @@ import BottomNav from '@/components/BottomNav';
 import { AirbnbSearchBar } from '@/components/home/AirbnbSearchBar';
 import { AirbnbCategoryPills } from '@/components/home/AirbnbCategoryPills';
 import { AirbnbCardGrid } from '@/components/home/AirbnbCardGrid';
+import { CategoryCarousel } from '@/components/home/CategoryCarousel';
 import { MapFAB } from '@/components/home/MapFAB';
+
+// Títulos com storytelling por categoria
+const getCategoryTitle = (categoria: string, cidade?: string | null): string => {
+  const sufixo = cidade ? ` em ${cidade}` : '';
+  const titulos: Record<string, string> = {
+    'Restaurante': `Restaurantes para comemorar${sufixo}`,
+    'Bar': `Bares populares${sufixo}`,
+    'Academia': `Academias${sufixo}`,
+    'Salão de Beleza': `Salões de beleza${sufixo}`,
+    'Barbearia': `Barbearias${sufixo}`,
+    'Cafeteria': `Cafeterias aconchegantes${sufixo}`,
+    'Casa Noturna': `Vida noturna${sufixo}`,
+    'Confeitaria': `Confeitarias e doces${sufixo}`,
+    'Sorveteria': `Sorveterias${sufixo}`,
+    'Hospedagem': `Onde se hospedar${sufixo}`,
+    'Entretenimento': `Diversão e lazer${sufixo}`,
+    'Loja': `Lojas${sufixo}`,
+  };
+  return titulos[categoria] || `${categoria}${sufixo}`;
+};
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -137,6 +159,40 @@ const Index = () => {
   const sectionTitle = cidadeFinal 
     ? `Destaques em ${cidadeFinal}`
     : 'Destaques no Brasil';
+
+  // Agrupar estabelecimentos por categoria para carrosséis
+  const estabelecimentosPorCategoria = useMemo(() => {
+    if (!estabelecimentos || categoriaParam || buscaParam) return [];
+    
+    // Pegar as top 5 categorias com mais estabelecimentos
+    const contagem: Record<string, any[]> = {};
+    
+    estabelecimentosFiltrados.forEach(est => {
+      const cats = Array.isArray(est.categoria) ? est.categoria : [est.categoria];
+      cats.forEach((cat: string) => {
+        if (cat) {
+          if (!contagem[cat]) contagem[cat] = [];
+          if (contagem[cat].length < 10) {
+            contagem[cat].push(est);
+          }
+        }
+      });
+    });
+    
+    // Ordenar por quantidade e pegar top 5
+    return Object.entries(contagem)
+      .filter(([_, ests]) => ests.length >= 3)
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 5)
+      .map(([cat, ests]) => ({
+        categoria: cat,
+        titulo: getCategoryTitle(cat, cidadeFinal),
+        estabelecimentos: ests
+      }));
+  }, [estabelecimentos, estabelecimentosFiltrados, categoriaParam, buscaParam, cidadeFinal]);
+
+  // Mostrar carrosséis apenas quando não há filtro ativo
+  const mostrarCarrosseis = !categoriaParam && !buscaParam && estabelecimentosPorCategoria.length > 0;
   
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -165,25 +221,49 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Container principal com muito espaçamento */}
+        {/* Container principal */}
         <div className="max-w-7xl mx-auto px-6 md:px-20 pt-8">
-          {/* Título da seção com storytelling */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
-              {sectionTitle}
-            </h2>
-            {estabelecimentosFiltrados.length > 0 && (
-              <span className="text-sm text-slate-500 dark:text-slate-400">
-                {estabelecimentosFiltrados.length} lugares
-              </span>
-            )}
-          </div>
           
-          {/* Grid de cards estilo Airbnb */}
-          <AirbnbCardGrid
-            estabelecimentos={estabelecimentosFiltrados}
-            isLoading={isLoadingEstabelecimentos}
-          />
+          {/* MODO CARROSSÉIS: Quando não há filtro ativo */}
+          {mostrarCarrosseis ? (
+            <div className="space-y-12">
+              {/* Destaques gerais primeiro */}
+              <CategoryCarousel
+                title={sectionTitle}
+                estabelecimentos={estabelecimentosFiltrados.slice(0, 10)}
+                onVerTodos={() => {}}
+              />
+              
+              {/* Carrosséis por categoria */}
+              {estabelecimentosPorCategoria.map(({ categoria, titulo, estabelecimentos: ests }) => (
+                <CategoryCarousel
+                  key={categoria}
+                  title={titulo}
+                  estabelecimentos={ests}
+                  onVerTodos={() => handleCategoriaChange(categoria)}
+                />
+              ))}
+            </div>
+          ) : (
+            /* MODO GRID: Quando há filtro de categoria ou busca */
+            <>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
+                  {categoriaParam || sectionTitle}
+                </h2>
+                {estabelecimentosFiltrados.length > 0 && (
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {estabelecimentosFiltrados.length} lugares
+                  </span>
+                )}
+              </div>
+              
+              <AirbnbCardGrid
+                estabelecimentos={estabelecimentosFiltrados}
+                isLoading={isLoadingEstabelecimentos}
+              />
+            </>
+          )}
         </div>
       </main>
       

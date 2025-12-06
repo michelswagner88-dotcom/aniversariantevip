@@ -58,12 +58,14 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
           enableParallax
         />
         
-        {/* Badge de benefício */}
+        {/* Badge de benefício com pulse */}
         {temBeneficio && (
           <div className="absolute top-3 left-3">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/95 dark:bg-slate-900/95 rounded-full shadow-md backdrop-blur-sm">
-              <Gift className="w-3 h-3 text-violet-600" />
-              <span className="text-[11px] font-semibold text-slate-900 dark:text-white">
+            <div className="relative flex items-center gap-1.5 px-2.5 py-1 bg-white/95 dark:bg-slate-900/95 rounded-full shadow-md backdrop-blur-sm">
+              {/* Pulse ring */}
+              <span className="absolute inset-0 rounded-full bg-violet-400/20 animate-ping" />
+              <Gift className="relative w-3 h-3 text-violet-600 animate-pulse" />
+              <span className="relative text-[11px] font-semibold text-slate-900 dark:text-white">
                 Benefício
               </span>
             </div>

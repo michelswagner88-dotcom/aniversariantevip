@@ -33,14 +33,27 @@ interface AirbnbCardGridProps {
   isLoading: boolean;
 }
 
-// Skeleton Card estilo Airbnb
+// Skeleton Card premium com shimmer
 const AirbnbCardSkeleton = () => (
-  <div className="animate-pulse">
-    <div className="aspect-square rounded-xl bg-slate-200 dark:bg-slate-800 mb-3" />
+  <div className="space-y-3">
+    <div className="relative aspect-square rounded-xl bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 overflow-hidden">
+      <div 
+        className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite]"
+        style={{
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)'
+        }}
+      />
+    </div>
     <div className="space-y-2">
-      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
-      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
-      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
+      <div className="relative h-4 bg-gradient-to-r from-slate-100 via-slate-200 to-slate-100 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 rounded-full w-3/4 overflow-hidden">
+        <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite]" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }} />
+      </div>
+      <div className="relative h-3 bg-gradient-to-r from-slate-100 via-slate-200 to-slate-100 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 rounded-full w-1/2 overflow-hidden">
+        <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] delay-100" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }} />
+      </div>
+      <div className="relative h-3 bg-gradient-to-r from-slate-100 via-slate-200 to-slate-100 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 rounded-full w-1/3 overflow-hidden">
+        <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] delay-200" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }} />
+      </div>
     </div>
   </div>
 );
@@ -77,12 +90,14 @@ const AirbnbCard = ({ estabelecimento }: { estabelecimento: any }) => {
           enableParallax
         />
         
-        {/* Badge de benefício estilo Airbnb "Guest favorite" */}
+        {/* Badge de benefício estilo Airbnb "Guest favorite" com pulse */}
         {temBeneficio && (
           <div className="absolute top-3 left-3">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 rounded-full shadow-md">
-              <Gift className="w-3.5 h-3.5 text-violet-600" />
-              <span className="text-xs font-semibold text-slate-900 dark:text-white">
+            <div className="relative flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 rounded-full shadow-md">
+              {/* Pulse ring */}
+              <span className="absolute inset-0 rounded-full bg-violet-400/30 animate-ping" />
+              <Gift className="relative w-3.5 h-3.5 text-violet-600 animate-pulse" />
+              <span className="relative text-xs font-semibold text-slate-900 dark:text-white">
                 Tem benefício
               </span>
             </div>

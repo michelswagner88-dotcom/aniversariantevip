@@ -169,6 +169,7 @@ export default {
         "slide-in-bottom": "slide-in-bottom 0.24s cubic-bezier(0.4, 0, 0.2, 1)",
         "slide-in-right": "slide-in-right 0.24s cubic-bezier(0.4, 0, 0.2, 1)",
         "gift-open": "gift-open 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97)",
+        "shimmer": "shimmer 2s infinite",
       },
     },
   },

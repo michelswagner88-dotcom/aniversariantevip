@@ -380,8 +380,8 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   return (
     <div className="min-h-screen bg-slate-950 pb-24 md:pb-8 animate-in fade-in duration-500">
       
-      {/* ========== HERO SECTION IMERSIVA ========== */}
-      <div className="relative h-[45vh] md:h-[55vh] w-full overflow-hidden">
+      {/* ========== HERO SECTION IMERSIVA - WORLD CLASS ========== */}
+      <div className="relative h-[55vh] md:h-[65vh] w-full overflow-hidden">
         <motion.img
           src={fotoPrincipal || '/placeholder-estabelecimento.png'}
           style={{ y: headerY }}
@@ -389,32 +389,34 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
           alt={estabelecimento.nome_fantasia}
         />
         
-        {/* Overlays gradiente premium */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/20 to-pink-900/20" />
+        {/* Overlays gradiente premium - mais profundo */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-violet-900/10 via-transparent to-fuchsia-900/10" />
         
-        {/* Header com botões */}
+        {/* Header com botões glass */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
           className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10"
         >
           <motion.button 
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate(-1)}
-            className="p-2.5 rounded-full bg-black/30 backdrop-blur-md border border-white/10"
+            className="p-3 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
           </motion.button>
           
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <motion.button 
               id="favorito-btn"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleFavorito}
-              className="p-2.5 rounded-full bg-black/30 backdrop-blur-md border border-white/10"
+              className="p-3 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg"
             >
               <Heart className={`w-5 h-5 transition-colors ${id && isFavorito(id) ? 'fill-red-500 text-red-500' : 'text-white'}`} />
             </motion.button>
@@ -422,37 +424,55 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleShare}
-              className="p-2.5 rounded-full bg-black/30 backdrop-blur-md border border-white/10"
+              className="p-3 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg"
             >
               <Share2 className="w-5 h-5 text-white" />
             </motion.button>
           </div>
         </motion.div>
         
-        {/* Conteúdo sobre a imagem */}
+        {/* Scroll indicator animado */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, y: [0, 8, 0] }}
+          transition={{ delay: 1.5, duration: 1.5, repeat: Infinity }}
+          className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10"
+        >
+          <div className="w-6 h-10 rounded-full border-2 border-white/30 flex items-start justify-center p-2">
+            <div className="w-1.5 h-3 bg-white/60 rounded-full" />
+          </div>
+        </motion.div>
+        
+        {/* Conteúdo sobre a imagem - mais impactante */}
         <motion.div 
           style={{ opacity: headerOpacity }}
-          className="absolute bottom-0 left-0 right-0 p-5"
+          className="absolute bottom-0 left-0 right-0 p-6"
         >
-          {/* Selos */}
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="px-3 py-1 rounded-full bg-purple-600/90 backdrop-blur-sm text-xs font-semibold text-white flex items-center gap-1.5">
-              <span>{getCategoriaIcon(categoria)}</span>
+          {/* Selos premium */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex flex-wrap items-center gap-2 mb-4"
+          >
+            <span className="px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-600/90 to-fuchsia-600/90 backdrop-blur-sm text-xs font-bold text-white flex items-center gap-2 shadow-lg shadow-violet-500/20">
+              <span className="text-base">{getCategoriaIcon(categoria)}</span>
               {categoria}
             </span>
             
-            <span className="px-3 py-1 rounded-full bg-green-500/90 backdrop-blur-sm text-xs font-semibold text-white flex items-center gap-1.5">
-              <BadgeCheck className="w-3.5 h-3.5" />
+            <span className="px-4 py-1.5 rounded-full bg-gradient-to-r from-emerald-500/90 to-green-500/90 backdrop-blur-sm text-xs font-bold text-white flex items-center gap-2 shadow-lg shadow-green-500/20">
+              <BadgeCheck className="w-4 h-4" />
               Verificado
             </span>
-          </div>
+          </motion.div>
           
-          {/* Nome */}
+          {/* Nome - Typography premium */}
           <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-2xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg"
+            transition={{ delay: 0.4, type: "spring", stiffness: 100 }}
+            className="text-3xl md:text-5xl font-extrabold text-white mb-2 tracking-tight drop-shadow-2xl"
+            style={{ textShadow: '0 4px 30px rgba(0,0,0,0.5)' }}
           >
             {estabelecimento.nome_fantasia || estabelecimento.razao_social}
           </motion.h1>
@@ -585,70 +605,69 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
             transition={{ delay: 0.6 }}
             className="mx-4 mt-6"
           >
-            <div className={`grid ${gridCols} gap-2`}>
-          {/* WhatsApp - só mostra se válido */}
+            <div className={`grid ${gridCols} gap-3`}>
+          {/* WhatsApp */}
           {formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone) && (
             <motion.button
               onClick={handleWhatsApp}
-              whileHover={{ scale: 1.05, y: -2 }}
+              whileHover={{ scale: 1.05, y: -3 }}
               whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-green-500/20 to-green-600/20 border-green-500/30 text-green-400 hover:bg-green-500/30"
+              className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-green-500/15 to-green-600/25 border-green-500/30 hover:border-green-400/50 hover:shadow-lg hover:shadow-green-500/10"
             >
-              <MessageCircle className="w-5 h-5" />
-              <span className="text-[10px] font-medium text-gray-300">WhatsApp</span>
+              <MessageCircle className="w-6 h-6 text-green-400" />
+              <span className="text-xs font-medium text-gray-200">WhatsApp</span>
             </motion.button>
           )}
 
-          {/* Instagram - só mostra se válido */}
+          {/* Instagram */}
           {formatInstagram(estabelecimento.instagram) && (
             <motion.button
               onClick={handleInstagram}
-              whileHover={{ scale: 1.05, y: -2 }}
+              whileHover={{ scale: 1.05, y: -3 }}
               whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-pink-500/20 to-pink-600/20 border-pink-500/30 text-pink-400 hover:bg-pink-500/30"
+              className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-pink-500/15 to-pink-600/25 border-pink-500/30 hover:border-pink-400/50 hover:shadow-lg hover:shadow-pink-500/10"
             >
-              <Instagram className="w-5 h-5" />
-              <span className="text-[10px] font-medium text-gray-300">Instagram</span>
+              <Instagram className="w-6 h-6 text-pink-400" />
+              <span className="text-xs font-medium text-gray-200">Instagram</span>
             </motion.button>
           )}
 
-          {/* Ligar - só mostra se válido */}
+          {/* Ligar */}
           {formatPhoneLink(estabelecimento.telefone) && (
             <motion.button
               onClick={handleLigar}
-              whileHover={{ scale: 1.05, y: -2 }}
+              whileHover={{ scale: 1.05, y: -3 }}
               whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-blue-500/20 to-blue-600/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/30"
+              className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-blue-500/15 to-blue-600/25 border-blue-500/30 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/10"
             >
-              <Phone className="w-5 h-5" />
-              <span className="text-[10px] font-medium text-gray-300">Ligar</span>
+              <Phone className="w-6 h-6 text-blue-400" />
+              <span className="text-xs font-medium text-gray-200">Ligar</span>
             </motion.button>
           )}
 
           {/* Cardápio */}
-          {mostraCardapio && (
+          {mostraCardapio && estabelecimento.link_cardapio && (
             <motion.button
               onClick={handleCardapio}
-              disabled={!estabelecimento.link_cardapio}
-              whileHover={{ scale: 1.05, y: -2 }}
+              whileHover={{ scale: 1.05, y: -3 }}
               whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-orange-500/20 to-orange-600/20 border-orange-500/30 text-orange-400 hover:bg-orange-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-orange-500/15 to-orange-600/25 border-orange-500/30 hover:border-orange-400/50 hover:shadow-lg hover:shadow-orange-500/10"
             >
-              <UtensilsCrossed className="w-5 h-5" />
-              <span className="text-[10px] font-medium text-gray-300">Cardápio</span>
+              <UtensilsCrossed className="w-6 h-6 text-orange-400" />
+              <span className="text-xs font-medium text-gray-200">Cardápio</span>
             </motion.button>
           )}
 
-          {/* Site - só mostra se válido */}
+          {/* Site */}
           {formatWebsite(estabelecimento.site) && (
             <motion.button
               onClick={handleSite}
-              whileHover={{ scale: 1.05, y: -2 }}
+              whileHover={{ scale: 1.05, y: -3 }}
               whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all bg-gradient-to-b from-purple-500/20 to-purple-600/20 border-purple-500/30 text-purple-400 hover:bg-purple-500/30"
+              className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-violet-500/15 to-violet-600/25 border-violet-500/30 hover:border-violet-400/50 hover:shadow-lg hover:shadow-violet-500/10"
             >
-              <Globe className="w-5 h-5" />
-              <span className="text-[10px] font-medium text-gray-300">Site</span>
+              <Globe className="w-6 h-6 text-violet-400" />
+              <span className="text-xs font-medium text-gray-200">Site</span>
             </motion.button>
           )}
             </div>

@@ -496,12 +496,12 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                   </span>
                 </div>
               )}
-              
-              {/* Badge verificado no canto */}
-              <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 border-2 border-slate-900">
-                <BadgeCheck className="w-4 h-4 text-white" />
-              </div>
             </motion.div>
+            
+            {/* Badge verificado fora do avatar */}
+            <div className="absolute -bottom-2 -right-2 p-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 border-3 border-slate-950 shadow-lg">
+              <BadgeCheck className="w-5 h-5 text-white" />
+            </div>
           </motion.div>
           
           {/* Nome do estabelecimento */}

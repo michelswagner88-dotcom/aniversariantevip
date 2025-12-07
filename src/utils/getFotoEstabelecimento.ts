@@ -42,18 +42,17 @@ interface EstabelecimentoFoto {
 
 /**
  * Retorna a melhor foto disponível para o estabelecimento
- * Ordem de prioridade:
- * 1. logo_url (foto do Google já salva)
- * 2. Primeira foto da galeria
- * 3. Placeholder da categoria
+ * 
+ * PRIORIDADE CORRETA (fotos manuais PRIMEIRO):
+ * 1. galeria_fotos (fotos manuais enviadas pelo admin/estabelecimento) ✅
+ * 2. logo_url (pode ser foto do Google - MENOS CONFIÁVEL) ⚠️
+ * 3. Placeholder da categoria (SEGURO) 🔄
+ * 
+ * Fotos manuais SEMPRE têm prioridade sobre fotos automáticas do Google
+ * para evitar fotos erradas de estabelecimentos com nomes similares.
  */
 export const getFotoEstabelecimento = (estabelecimento: EstabelecimentoFoto): string => {
-  // 1º - Logo URL (já buscada e salva)
-  if (estabelecimento.logo_url && estabelecimento.logo_url.trim() !== '') {
-    return estabelecimento.logo_url;
-  }
-
-  // 2º - Galeria de fotos
+  // 1º - PRIORIDADE MÁXIMA: Galeria de fotos (manuais, mais confiáveis)
   if (estabelecimento.galeria_fotos && estabelecimento.galeria_fotos.length > 0) {
     const primeiraFoto = estabelecimento.galeria_fotos[0];
     if (primeiraFoto && primeiraFoto.trim() !== '') {
@@ -61,7 +60,12 @@ export const getFotoEstabelecimento = (estabelecimento: EstabelecimentoFoto): st
     }
   }
 
-  // 3º - Placeholder da categoria (GRATUITO)
+  // 2º - Logo URL (só se não tiver galeria)
+  if (estabelecimento.logo_url && estabelecimento.logo_url.trim() !== '') {
+    return estabelecimento.logo_url;
+  }
+
+  // 3º - Placeholder da categoria (FALLBACK SEGURO)
   return getPlaceholderCategoria(estabelecimento.categoria);
 };
 

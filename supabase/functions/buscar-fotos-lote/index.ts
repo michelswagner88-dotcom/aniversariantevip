@@ -17,6 +17,7 @@ interface Estabelecimento {
   categoria: string[];
   google_place_id?: string;
   endereco?: string;
+  galeria_fotos?: string[] | null;
 }
 
 // Buscar Place ID se não tiver
@@ -92,9 +93,10 @@ serve(async (req) => {
     console.log('🔍 Buscando estabelecimentos sem foto...');
 
     // Buscar estabelecimentos que ainda não tiveram foto buscada
+    // IMPORTANTE: Não buscar foto do Google se já tem galeria_fotos (fotos manuais)
     const { data: estabelecimentos, error } = await supabase
       .from('estabelecimentos')
-      .select('id, nome_fantasia, cidade, estado, categoria, google_place_id, endereco')
+      .select('id, nome_fantasia, cidade, estado, categoria, google_place_id, endereco, galeria_fotos')
       .eq('foto_buscada', false)
       .eq('ativo', true)
       .order('created_at', { ascending: false })
@@ -130,6 +132,23 @@ serve(async (req) => {
       try {
         console.log(`\n🏢 ${est.nome_fantasia} (${est.cidade})`);
 
+        // VERIFICAR SE JÁ TEM FOTOS MANUAIS - SE TEM, PULAR BUSCA NO GOOGLE
+        const temGaleriaFotos = est.galeria_fotos && est.galeria_fotos.length > 0 && 
+          est.galeria_fotos.some((foto: string) => foto && foto.trim() !== '');
+        
+        if (temGaleriaFotos) {
+          console.log('   ✅ Já tem fotos manuais na galeria - PULANDO busca no Google');
+          // Marcar como processado mas NÃO sobrescrever logo_url
+          await supabase
+            .from('estabelecimentos')
+            .update({ foto_buscada: true })
+            .eq('id', est.id);
+          
+          comFoto++;
+          processados++;
+          continue; // Próximo estabelecimento
+        }
+
         // 1. Buscar Place ID se não tiver
         let placeId = est.google_place_id;
 
@@ -155,11 +174,11 @@ serve(async (req) => {
           }
         }
 
-        // 2. Buscar foto
+        // 2. Buscar foto APENAS se não tem galeria
         let fotoUrl: string | null = null;
 
         if (placeId) {
-          console.log('   📷 Buscando foto...');
+          console.log('   📷 Buscando foto do Google...');
           fotoUrl = await buscarFotoGoogle(placeId, googleApiKey);
         }
 

@@ -134,6 +134,8 @@ export default function AdminDashboard() {
   const [emailAnalytics, setEmailAnalytics] = useState<any[]>([]);
   const [bulkFetchingPhotos, setBulkFetchingPhotos] = useState(false);
   const [photoProgress, setPhotoProgress] = useState({ current: 0, total: 0 });
+  const [buscandoGaleria, setBuscandoGaleria] = useState(false);
+  const [galeriaProgress, setGaleriaProgress] = useState({ success: 0, failed: 0, total: 0 });
   const [importingCSV, setImportingCSV] = useState(false);
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [buscandoHorarios, setBuscandoHorarios] = useState(false);
@@ -545,6 +547,10 @@ export default function AdminDashboard() {
     return establishments.filter(e => !e.logo_url || e.logo_url === '');
   }, [establishments]);
 
+  const estabelecimentosSemGaleria = useMemo(() => {
+    return establishments.filter(e => !e.galeria_fotos || e.galeria_fotos.length === 0);
+  }, [establishments]);
+
   const estabelecimentosSemHorario = useMemo(() => {
     return establishments.filter(e => !e.horario_funcionamento || e.horario_funcionamento === '');
   }, [establishments]);
@@ -631,6 +637,61 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error('Erro ao buscar foto:', err);
       toast.error('Erro ao buscar foto');
+    }
+  };
+
+  const handleBuscarGaleriaEmLote = async () => {
+    if (estabelecimentosSemGaleria.length === 0) {
+      toast.info('Todos os estabelecimentos já têm galeria de fotos!');
+      return;
+    }
+
+    setBuscandoGaleria(true);
+    setGaleriaProgress({ success: 0, failed: 0, total: estabelecimentosSemGaleria.length });
+
+    try {
+      // Processar em lotes de 10 para não sobrecarregar
+      const batchSize = 10;
+      let totalSuccess = 0;
+      let totalFailed = 0;
+
+      for (let i = 0; i < Math.ceil(estabelecimentosSemGaleria.length / batchSize); i++) {
+        toast.info(`📷 Processando lote ${i + 1}...`);
+        
+        const { data, error } = await supabase.functions.invoke('batch-fetch-photos', {
+          body: { limit: batchSize }
+        });
+
+        if (error) {
+          console.error('Erro no lote:', error);
+          totalFailed += batchSize;
+          continue;
+        }
+
+        if (data) {
+          totalSuccess += data.success || 0;
+          totalFailed += data.failed || 0;
+          setGaleriaProgress({
+            success: totalSuccess,
+            failed: totalFailed,
+            total: estabelecimentosSemGaleria.length
+          });
+        }
+
+        // Delay entre lotes para não exceder rate limits da API do Google
+        if (i < Math.ceil(estabelecimentosSemGaleria.length / batchSize) - 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+
+      toast.success(`✅ Galeria: ${totalSuccess} sucesso | ❌ ${totalFailed} falhas`);
+      loadData();
+
+    } catch (err) {
+      console.error('Erro ao buscar galeria:', err);
+      toast.error('Erro ao buscar galeria de fotos');
+    } finally {
+      setBuscandoGaleria(false);
     }
   };
 
@@ -876,7 +937,24 @@ export default function AdminDashboard() {
               ) : (
                 <>
                   <Camera className="w-4 h-4" />
-                  Buscar Fotos ({estabelecimentosSemFoto.length})
+                  Fotos Logo ({estabelecimentosSemFoto.length})
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleBuscarGaleriaEmLote}
+              disabled={buscandoGaleria || estabelecimentosSemGaleria.length === 0}
+              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-semibold flex items-center gap-2 transition-colors"
+            >
+              {buscandoGaleria ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Buscando... ({galeriaProgress.success}/{galeriaProgress.total})
+                </>
+              ) : (
+                <>
+                  <Camera className="w-4 h-4" />
+                  Galeria Fotos ({estabelecimentosSemGaleria.length})
                 </>
               )}
             </button>

@@ -36,6 +36,12 @@ verify_jwt = false
 [functions.fetch-place-photo]
 verify_jwt = false
 
+[functions.fetch-google-photos]
+verify_jwt = false
+
+[functions.batch-fetch-photos]
+verify_jwt = true
+
 [functions.fetch-business-hours]
 verify_jwt = false
 

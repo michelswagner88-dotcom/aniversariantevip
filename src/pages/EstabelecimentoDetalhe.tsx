@@ -35,6 +35,7 @@ import { useSEO } from '@/hooks/useSEO';
 import { getEstabelecimentoSEO } from '@/constants/seo';
 import { SkeletonEstablishmentPage } from '@/components/skeletons';
 import CardBeneficio from '@/components/estabelecimento/CardBeneficio';
+import { gerarBioAutomatica, separarBeneficio, getValidadeTexto } from '@/lib/bioUtils';
 
 interface EstabelecimentoDetalheProps {
   estabelecimentoIdProp?: string | null;
@@ -517,66 +518,54 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
           </div>
         </div>
       </div>
-      
-      {/* ========== MODAL EXPANSÃO DO LOGO ========== */}
-      <AnimatePresence>
-        {showLogoExpanded && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
-            onClick={() => setShowLogoExpanded(false)}
+
+      {/* ========== BIO DO ESTABELECIMENTO ========== */}
+      {(() => {
+        const bioExibir = estabelecimento.bio || gerarBioAutomatica({
+          categoria: estabelecimento.categoria,
+          bairro: estabelecimento.bairro,
+          cidade: estabelecimento.cidade,
+          descricao_beneficio: estabelecimento.descricao_beneficio,
+        });
+        
+        return (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mx-4 mt-4"
           >
-            <motion.button
-              className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-              onClick={() => setShowLogoExpanded(false)}
-              aria-label="Fechar"
-            >
-              <X className="w-6 h-6 text-white" />
-            </motion.button>
-            
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.5, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="max-w-[90vw] max-h-[80vh] rounded-3xl overflow-hidden shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {estabelecimento.logo_url ? (
-                <img 
-                  src={estabelecimento.logo_url} 
-                  alt={estabelecimento.nome_fantasia || 'Logo'} 
-                  className="max-w-full max-h-[80vh] object-contain"
-                />
-              ) : (
-                <div className="w-64 h-64 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-                  <span className="text-7xl font-bold text-white">
-                    {estabelecimento.nome_fantasia?.charAt(0)}
-                  </span>
-                </div>
-              )}
-            </motion.div>
-            
-            <p className="absolute bottom-8 left-0 right-0 text-center text-white/70 text-sm">
-              {estabelecimento.nome_fantasia}
+            <p className="text-gray-300 text-sm leading-relaxed">
+              {bioExibir}
             </p>
           </motion.div>
-        )}
-      </AnimatePresence>
+        );
+      })()}
 
       {/* ========== CARD DE BENEFÍCIO - SEMPRE VISÍVEL ========== */}
-      <div className="mx-4 mt-6">
-        <CardBeneficio
-          beneficio={estabelecimento.descricao_beneficio || 'Benefício exclusivo para aniversariantes!'}
-          validadeTexto={estabelecimento.periodo_validade_beneficio || 'mes_aniversario'}
-          regras={estabelecimento.regras_utilizacao}
-          estabelecimentoId={id!}
-          userId={userId}
-          onEmitirCupom={() => setShowCupomModal(true)}
-        />
-      </div>
+      {(() => {
+        // Usar novos campos estruturados se existirem, senão extrair do legado
+        const beneficioData = estabelecimento.beneficio_titulo
+          ? {
+              titulo: estabelecimento.beneficio_titulo,
+              validade: estabelecimento.beneficio_validade || 'dia_aniversario',
+              detalhes: estabelecimento.beneficio_regras || estabelecimento.regras_utilizacao,
+            }
+          : separarBeneficio(estabelecimento.descricao_beneficio);
+
+        return (
+          <div className="mx-4 mt-6">
+            <CardBeneficio
+              beneficio={beneficioData.titulo}
+              validadeTexto={beneficioData.validade}
+              regras={beneficioData.detalhes}
+              estabelecimentoId={id!}
+              userId={userId}
+              onEmitirCupom={() => setShowCupomModal(true)}
+            />
+          </div>
+        );
+      })()}
 
 
       {/* ========== SEÇÃO DE AÇÕES RÁPIDAS ========== */}

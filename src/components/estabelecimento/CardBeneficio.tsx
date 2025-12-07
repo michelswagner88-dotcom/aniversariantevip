@@ -46,62 +46,33 @@ export const CardBeneficio = ({
 
   return (
     <>
-      {/* Card de Benefício - SEMPRE VISÍVEL */}
+      {/* Card de Benefício - Design Minimalista Glass Effect */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, type: 'spring' }}
-        className="relative overflow-hidden rounded-2xl"
+        className="relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-md border border-white/10"
       >
-        {/* Background com gradiente premium */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900" />
-        <div className="absolute inset-0 rounded-2xl border border-purple-500/30" />
-        <div className="absolute inset-0 shimmer-premium" />
+        <div className="p-5 md:p-6">
+          {/* Benefício - Grande e claro */}
+          <p className="text-lg md:text-xl text-white font-medium leading-relaxed text-center mb-3">
+            🎁 {beneficio || 'Benefício exclusivo para aniversariantes!'}
+          </p>
 
-        <div className="relative p-5 md:p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                <Gift className="w-5 h-5 text-white" />
-              </div>
-              <div className="text-left">
-                <p className="text-purple-300 text-xs font-medium uppercase tracking-wider">
-                  Benefício Exclusivo
-                </p>
-                <p className="text-white font-bold">Aniversariante VIP</p>
-              </div>
-            </div>
-            <Sparkles className="w-6 h-6 text-purple-400" />
-          </div>
-
-          {/* Linha tracejada decorativa */}
-          <div className="border-t border-dashed border-purple-500/30 my-4 relative">
-            <div className="absolute -left-7 -top-3 w-6 h-6 rounded-full bg-slate-950" />
-            <div className="absolute -right-7 -top-3 w-6 h-6 rounded-full bg-slate-950" />
-          </div>
-
-          {/* Benefício - SEMPRE VISÍVEL */}
-          <div className="bg-black/40 backdrop-blur-sm rounded-xl p-4 mb-4 border border-purple-500/20">
-            <p className="text-lg md:text-xl text-white font-medium leading-relaxed text-center">
-              🎁 {beneficio || 'Benefício exclusivo para aniversariantes!'}
-            </p>
-          </div>
-
-          {/* Validade - SEMPRE VISÍVEL */}
-          <div className="flex items-center justify-center gap-2 text-sm text-purple-300/90 mb-4">
+          {/* Validade - Discreta */}
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-400 mb-5">
             <Calendar className="w-4 h-4" />
             <span>Válido: {getValidadeTexto(validadeTexto)}</span>
           </div>
 
-          {/* Botão Ver Regras - REGISTRA CLIQUE */}
+          {/* Botão - Gradiente Cosmic */}
           <motion.button
             onClick={handleVerRegras}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full py-3.5 bg-white/10 hover:bg-white/20 rounded-xl font-medium transition-all flex items-center justify-center gap-2 text-white border border-white/10"
+            className="w-full py-3.5 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 rounded-xl font-semibold text-white flex items-center justify-center gap-2 shadow-lg shadow-fuchsia-500/25"
           >
-            <Eye className="w-5 h-5 text-purple-400" />
+            <Sparkles className="w-5 h-5" />
             Ver regras e como usar
           </motion.button>
         </div>
@@ -131,13 +102,13 @@ export const CardBeneficio = ({
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ type: 'spring', damping: 25 }}
-              className="relative w-full max-w-md bg-slate-900 rounded-2xl border border-purple-500/30 max-h-[85vh] overflow-hidden"
+              className="relative w-full max-w-md bg-slate-900 rounded-2xl border border-white/10 max-h-[85vh] overflow-hidden"
             >
               {/* Header */}
-              <div className="p-5 border-b border-white/10 bg-gradient-to-b from-purple-900/30 to-transparent">
+              <div className="p-5 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Info className="w-5 h-5 text-purple-400" />
+                    <Info className="w-5 h-5 text-fuchsia-400" />
                     Como usar seu benefício
                   </h2>
                   <button
@@ -152,8 +123,8 @@ export const CardBeneficio = ({
               {/* Conteúdo */}
               <div className="p-5 space-y-5 overflow-y-auto max-h-[60vh]">
                 {/* Benefício */}
-                <div className="bg-purple-500/20 rounded-xl p-4 text-center border border-purple-500/30">
-                  <p className="text-sm text-purple-300 mb-1">Você ganha:</p>
+                <div className="bg-gradient-to-r from-violet-500/20 via-fuchsia-500/20 to-pink-500/20 rounded-xl p-4 text-center border border-fuchsia-500/30">
+                  <p className="text-sm text-fuchsia-300 mb-1">Você ganha:</p>
                   <p className="text-lg font-bold text-white">
                     🎁 {beneficio || 'Benefício exclusivo para aniversariantes!'}
                   </p>
@@ -163,7 +134,7 @@ export const CardBeneficio = ({
                 {regras && (
                   <div>
                     <h3 className="font-bold text-white mb-3 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-purple-400" />
+                      <FileText className="w-4 h-4 text-fuchsia-400" />
                       Regras de uso
                     </h3>
                     <div className="text-gray-300 text-sm space-y-2 whitespace-pre-line bg-slate-800/50 p-4 rounded-xl">
@@ -173,8 +144,8 @@ export const CardBeneficio = ({
                 )}
 
                 {/* Dica */}
-                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
-                  <p className="text-sm text-yellow-200 flex items-start gap-2">
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+                  <p className="text-sm text-amber-200 flex items-start gap-2">
                     <span className="text-lg">💡</span>
                     <span>
                       <strong>Dica:</strong> Leve um documento com foto para confirmar sua data de nascimento no estabelecimento.
@@ -190,11 +161,11 @@ export const CardBeneficio = ({
                   <ul className="space-y-2 text-sm text-gray-300">
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-400" />
-                      Emita seu cupom abaixo
+                      Veja seu benefício abaixo
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-400" />
-                      Apresente o cupom no estabelecimento
+                      Apresente seu benefício no local
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-400" />
@@ -217,10 +188,10 @@ export const CardBeneficio = ({
                   }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25"
+                  className="w-full py-3.5 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-lg shadow-fuchsia-500/25"
                 >
                   <Gift className="w-5 h-5" />
-                  Emitir Meu Cupom
+                  Ver Meu Benefício
                 </motion.button>
 
                 <button

@@ -138,7 +138,11 @@ export const CategoriasPills = ({
       <div 
         ref={scrollRef}
         className="flex gap-2 overflow-x-auto py-2 px-4 scroll-smooth scrollbar-hide"
-        style={{ WebkitOverflowScrolling: 'touch' }}
+        style={{ 
+          scrollSnapType: 'x mandatory',
+          scrollPaddingLeft: '16px',
+          WebkitOverflowScrolling: 'touch'
+        }}
       >
         {categoriasConfig.map((cat, index) => {
           const isActive = categoriaAtiva === cat.id;
@@ -149,9 +153,9 @@ export const CategoriasPills = ({
               key={cat.id || 'todos'}
               data-category={cat.id ?? 'todos'}
               onClick={() => onCategoriaChange(cat.id)}
-              style={{ animationDelay: `${index * 30}ms` }}
+              style={{ animationDelay: `${index * 30}ms`, scrollSnapAlign: 'start' }}
               className={cn(
-                'flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-full whitespace-nowrap',
+                'flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-full whitespace-nowrap snap-start',
                 'border text-sm font-medium flex-shrink-0',
                 'transition-all duration-200 active:scale-[0.97] [-webkit-tap-highlight-color:transparent]',
                 'animate-fade-in opacity-0 [animation-fill-mode:forwards]',

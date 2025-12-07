@@ -129,19 +129,22 @@ export function getPlaceholderPorCategoria(categoria: string | string[] | null |
 
 /**
  * Obtém a melhor foto para um estabelecimento com fallback inteligente
+ * 
+ * PRIORIDADE CORRETA:
+ * 1. galeria_fotos (fotos manuais enviadas pelo admin/estabelecimento) ✅
+ * 2. logo_url (foto do Google - MENOS CONFIÁVEL) ⚠️
+ * 3. Placeholder da categoria 🔄
+ * 
+ * Fotos manuais SEMPRE têm prioridade sobre fotos automáticas do Google
+ * para evitar fotos erradas de estabelecimentos com nomes similares.
  */
 export function getFotoEstabelecimento(
-  fotoUpload: string | null | undefined,
+  logoUrl: string | null | undefined,
   fotoGoogle: string | null | undefined,
   galeriaFotos: string[] | null | undefined,
   categoria: string | string[] | null | undefined
 ): string {
-  // 1. Prioridade: foto que o estabelecimento fez upload (logo_url)
-  if (fotoUpload && validarUrlFoto(fotoUpload)) {
-    return fotoUpload;
-  }
-  
-  // 2. Primeira foto da galeria (se válida)
+  // 1. PRIORIDADE MÁXIMA: Galeria de fotos (manuais, mais confiáveis)
   if (galeriaFotos && galeriaFotos.length > 0) {
     const primeiraFotoValida = galeriaFotos.find(foto => validarUrlFoto(foto));
     if (primeiraFotoValida) {
@@ -149,12 +152,18 @@ export function getFotoEstabelecimento(
     }
   }
   
-  // 3. Foto do Google (se válida)
+  // 2. Logo URL (pode ser upload manual ou foto do Google)
+  // Só usa se não tiver galeria
+  if (logoUrl && validarUrlFoto(logoUrl)) {
+    return logoUrl;
+  }
+  
+  // 3. Foto do Google como parâmetro separado (compatibilidade)
   if (fotoGoogle && validarUrlFoto(fotoGoogle)) {
     return fotoGoogle;
   }
   
-  // 4. Fallback: placeholder da categoria
+  // 4. Fallback: placeholder da categoria (SEGURO)
   return getPlaceholderPorCategoria(categoria);
 }
 

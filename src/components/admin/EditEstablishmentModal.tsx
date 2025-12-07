@@ -763,6 +763,23 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
                     Buscar Melhor Foto (Google)
                   </Button>
                   
+                  {/* Botão para limpar foto do Google (quando há conflito) */}
+                  {formData.logo_url && formData.logo_url.includes('googleapis.com') && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        setFormData({ ...formData, logo_url: null });
+                        toast.success('Foto do Google removida. Será usado placeholder ou galeria.');
+                      }}
+                      className="w-full"
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      🗑️ Remover Foto do Google
+                    </Button>
+                  )}
+                  
                   {/* Botão secundário para forçar qualquer foto */}
                   {formData.logo_url && (
                     <Button

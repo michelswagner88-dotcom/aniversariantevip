@@ -34,6 +34,7 @@ import { useWindowSize } from '@/hooks/useWindowSize';
 import { useSEO } from '@/hooks/useSEO';
 import { getEstabelecimentoSEO } from '@/constants/seo';
 import { SkeletonEstablishmentPage } from '@/components/skeletons';
+import CardBeneficio from '@/components/estabelecimento/CardBeneficio';
 
 interface EstabelecimentoDetalheProps {
   estabelecimentoIdProp?: string | null;
@@ -75,6 +76,8 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
     trackBenefitClick, 
     trackWhatsAppClick, 
     trackPhoneClick, 
+    trackInstagramClick,
+    trackSiteClick,
     trackDirectionsClick, 
     trackShare, 
     trackFavorite 
@@ -265,6 +268,8 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
       toast.error('Instagram não disponível'); 
       return; 
     }
+    // Rastrear clique no Instagram
+    if (id) trackInstagramClick(id);
     window.open(instagramUrl, '_blank');
   };
 
@@ -285,6 +290,8 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
       toast.error('Site não disponível'); 
       return; 
     }
+    // Rastrear clique no site
+    if (id) trackSiteClick(id);
     window.open(siteUrl, '_blank');
   };
 
@@ -559,67 +566,18 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
         )}
       </AnimatePresence>
 
-      {/* ========== GOLDEN TICKET - CARD DO BENEFÍCIO ========== */}
-      <motion.div 
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, type: "spring" }}
-        className="mx-4 mt-6"
-      >
-        <motion.button
-          onClick={handleVerBeneficio}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="relative w-full overflow-hidden rounded-2xl"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900" />
-          <div className="absolute inset-0 rounded-2xl border border-purple-500/30" />
-          <div className="absolute inset-0 shimmer-premium" />
-          
-          <div className="relative p-5 md:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                  <Gift className="w-5 h-5 text-white" />
-                </div>
-                <div className="text-left">
-                  <p className="text-purple-300 text-xs font-medium uppercase tracking-wider">
-                    Benefício Exclusivo
-                  </p>
-                  <p className="text-white font-bold">Aniversariante VIP</p>
-                </div>
-              </div>
-              <Sparkles className="w-6 h-6 text-purple-400" />
-            </div>
-            
-            <div className="border-t border-dashed border-purple-500/30 my-4 relative">
-              <div className="absolute -left-7 -top-3 w-6 h-6 rounded-full bg-slate-950" />
-              <div className="absolute -right-7 -top-3 w-6 h-6 rounded-full bg-slate-950" />
-            </div>
-            
-            <div className="text-center py-2">
-              <p className="text-lg md:text-xl text-white font-medium leading-relaxed">
-                🎁 Toque para revelar seu benefício
-              </p>
-              <p className="text-purple-300/70 text-sm mt-2">
-                Exclusivo para aniversariantes
-              </p>
-            </div>
-            
-            <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-purple-500/20">
-              <motion.div
-                animate={{ x: [0, 5, 0] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-              >
-                <ChevronRight className="w-5 h-5 text-purple-400" />
-              </motion.div>
-              <span className="text-purple-400 text-sm font-medium">
-                Toque para ver
-              </span>
-            </div>
-          </div>
-        </motion.button>
-      </motion.div>
+      {/* ========== CARD DE BENEFÍCIO - SEMPRE VISÍVEL ========== */}
+      <div className="mx-4 mt-6">
+        <CardBeneficio
+          beneficio={estabelecimento.descricao_beneficio || 'Benefício exclusivo para aniversariantes!'}
+          validadeTexto={estabelecimento.periodo_validade_beneficio || 'mes_aniversario'}
+          regras={estabelecimento.regras_utilizacao}
+          estabelecimentoId={id!}
+          userId={userId}
+          onEmitirCupom={() => setShowCupomModal(true)}
+        />
+      </div>
+
 
       {/* ========== SEÇÃO DE AÇÕES RÁPIDAS ========== */}
       {(() => {

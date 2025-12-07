@@ -18,6 +18,8 @@ type EventType =
   | 'benefit_click' 
   | 'whatsapp_click' 
   | 'phone_click' 
+  | 'instagram_click'
+  | 'site_click'
   | 'directions_click' 
   | 'share' 
   | 'favorite_add'
@@ -75,12 +77,20 @@ export const useEstablishmentMetrics = () => {
   const trackFavorite = useCallback((establishmentId: string) => 
     trackEvent(establishmentId, 'favorite_add'), [trackEvent]);
 
+  const trackInstagramClick = useCallback((establishmentId: string) => 
+    trackEvent(establishmentId, 'instagram_click'), [trackEvent]);
+
+  const trackSiteClick = useCallback((establishmentId: string) => 
+    trackEvent(establishmentId, 'site_click'), [trackEvent]);
+
   return {
     trackEvent,
     trackPageView,
     trackBenefitClick,
     trackWhatsAppClick,
     trackPhoneClick,
+    trackInstagramClick,
+    trackSiteClick,
     trackDirectionsClick,
     trackShare,
     trackFavorite

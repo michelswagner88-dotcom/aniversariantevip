@@ -431,17 +431,6 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
           </div>
         </motion.div>
         
-        {/* Scroll indicator animado */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, y: [0, 8, 0] }}
-          transition={{ delay: 1.5, duration: 1.5, repeat: Infinity }}
-          className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10"
-        >
-          <div className="w-6 h-10 rounded-full border-2 border-white/30 flex items-start justify-center p-2">
-            <div className="w-1.5 h-3 bg-white/60 rounded-full" />
-          </div>
-        </motion.div>
         
         {/* Conteúdo sobre a imagem - mais impactante */}
         <motion.div 

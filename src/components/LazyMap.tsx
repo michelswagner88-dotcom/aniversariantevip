@@ -41,7 +41,7 @@ const LazyMap: React.FC<LazyMapProps> = ({
   // URL do mapa estático (preview) - usando Static Maps API
   const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const staticMapUrl = hasCoordinates && googleMapsApiKey
-    ? `https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&zoom=15&size=600x300&scale=2&markers=color:0x8B5CF6%7C${latitude},${longitude}&key=${googleMapsApiKey}&style=feature:all|element:geometry|color:0x1e293b&style=feature:all|element:labels.text.fill|color:0x94a3b8&style=feature:water|element:geometry|color:0x0f172a`
+    ? `https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&zoom=16&size=600x300&scale=2&markers=color:red%7C${latitude},${longitude}&key=${googleMapsApiKey}`
     : null;
   
   // URL para embed do mapa interativo
@@ -112,7 +112,7 @@ const LazyMap: React.FC<LazyMapProps> = ({
       </div>
       
       {/* Área do mapa - sob demanda */}
-      <div className="relative h-32 bg-gradient-to-br from-slate-800 to-slate-900">
+      <div className="relative h-48 bg-white rounded-lg overflow-hidden mx-4 mb-2 border border-slate-200">
         {!showMap ? (
           /* Preview / Placeholder com botão para carregar */
           <div className="relative w-full h-full cursor-pointer group" onClick={() => setShowMap(true)}>
@@ -126,13 +126,13 @@ const LazyMap: React.FC<LazyMapProps> = ({
                 onError={() => setStaticMapError(true)}
               />
             ) : (
-              /* Fallback visual com gradiente Cosmic */
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-900/40 to-pink-900/30">
+              /* Fallback visual clean */
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200">
                 <div 
-                  className="absolute inset-0 opacity-30" 
+                  className="absolute inset-0 opacity-40" 
                   style={{
-                    backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(139,92,246,0.15) 10px, rgba(139,92,246,0.15) 11px),
-                                      repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(139,92,246,0.15) 10px, rgba(139,92,246,0.15) 11px)`
+                    backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(0,0,0,0.05) 20px, rgba(0,0,0,0.05) 21px),
+                                      repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(0,0,0,0.05) 20px, rgba(0,0,0,0.05) 21px)`
                   }} 
                 />
               </div>
@@ -141,24 +141,20 @@ const LazyMap: React.FC<LazyMapProps> = ({
             {/* Marcador central animado */}
             <div className="absolute inset-0 flex items-center justify-center">
               <motion.div 
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="w-12 h-12 bg-violet-500 rounded-full flex items-center justify-center shadow-lg shadow-violet-500/50"
+                animate={{ y: [0, -4, 0] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+                className="flex flex-col items-center"
               >
-                <MapPin className="w-6 h-6 text-white" />
+                <MapPin className="w-10 h-10 text-red-500 drop-shadow-lg" fill="#ef4444" />
               </motion.div>
             </div>
             
             {/* Overlay com texto */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-              <motion.span 
-                initial={{ opacity: 0 }}
-                whileHover={{ opacity: 1 }}
-                className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium flex items-center gap-2 transition-opacity bg-violet-500/80 px-4 py-2 rounded-full"
-              >
-                <MapPin className="w-4 h-4" />
-                Ver no mapa
-              </motion.span>
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end justify-center pb-3">
+              <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium flex items-center gap-2 transition-opacity bg-black/60 px-4 py-2 rounded-full backdrop-blur-sm">
+                <Navigation className="w-4 h-4" />
+                Ver mapa interativo
+              </span>
             </div>
           </div>
         ) : (
@@ -166,10 +162,10 @@ const LazyMap: React.FC<LazyMapProps> = ({
           <div className="w-full h-full relative">
             {/* Loading state */}
             {!mapLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
                 <div className="flex flex-col items-center gap-2">
-                  <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-gray-400 text-xs">Carregando mapa...</span>
+                  <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-gray-500 text-xs">Carregando mapa...</span>
                 </div>
               </div>
             )}
@@ -191,17 +187,17 @@ const LazyMap: React.FC<LazyMapProps> = ({
             ) : (
               /* Fallback - botão para abrir Google Maps externamente */
               <div 
-                className="w-full h-full flex flex-col items-center justify-center cursor-pointer bg-gradient-to-br from-violet-900/40 to-pink-900/30 hover:from-violet-900/50 hover:to-pink-900/40 transition-colors"
+                className="w-full h-full flex flex-col items-center justify-center cursor-pointer bg-gray-100 hover:bg-gray-200 transition-colors"
                 onClick={openGoogleMaps}
               >
                 <motion.div
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                  className="w-10 h-10 bg-violet-500 rounded-full flex items-center justify-center shadow-lg shadow-violet-500/50 mb-2"
+                  animate={{ y: [0, -4, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                  className="mb-2"
                 >
-                  <MapPin className="w-5 h-5 text-white" />
+                  <MapPin className="w-10 h-10 text-red-500" fill="#ef4444" />
                 </motion.div>
-                <span className="text-white text-sm flex items-center gap-2 font-medium">
+                <span className="text-gray-700 text-sm flex items-center gap-2 font-medium">
                   <ExternalLink className="w-4 h-4" />
                   Abrir no Google Maps
                 </span>

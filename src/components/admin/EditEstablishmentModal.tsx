@@ -25,6 +25,7 @@ interface Establishment {
   cnpj: string;
   categoria: string[] | null;
   especialidades?: string[] | null;
+  bio?: string | null;
   cep: string | null;
   numero: string | null;
   complemento: string | null;
@@ -251,6 +252,7 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
           cnpj: formData.cnpj,
           categoria: formData.categoria,
           especialidades: formData.especialidades || [],
+          bio: formData.bio,
           cep: formData.cep,
           numero: formData.numero,
           complemento: formData.complemento,
@@ -418,6 +420,21 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
                 </p>
               </div>
             )}
+
+            {/* Bio */}
+            <div>
+              <Label>Bio / Descrição do Estabelecimento</Label>
+              <Textarea
+                value={formData.bio || ''}
+                onChange={(e) => setFormData({...formData, bio: e.target.value.slice(0, 500)})}
+                placeholder="Descreva o estabelecimento em até 500 caracteres. Ex: Há 15 anos transformando vidas através do fitness. Espaço climatizado com mais de 200 equipamentos."
+                rows={3}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {(formData.bio || '').length}/500 caracteres
+              </p>
+            </div>
           </TabsContent>
 
           {/* LOCALIZAÇÃO */}

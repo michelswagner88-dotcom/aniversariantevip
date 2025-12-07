@@ -1,114 +1,108 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { HelpCircle, Mail, Phone } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { CONTATOS } from "@/lib/constants";
+import { Mail, Phone } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useSEO } from "@/hooks/useSEO";
 import { SEO_CONTENT } from "@/constants/seo";
+import { CONTATOS } from "@/lib/constants";
 
 export default function FAQ() {
-  // SEO
   useSEO({
     title: SEO_CONTENT.faq.title,
     description: SEO_CONTENT.faq.description,
   });
-  const faqItems = [
+
+  const perguntas = [
     {
       pergunta: "Posso usar vários benefícios no mesmo mês?",
-      resposta: "Sim. Você pode emitir cupons para quantos estabelecimentos desejar, desde que respeite as regras de utilização de cada local.",
+      resposta: "Sim. Você pode aproveitar benefícios em quantos estabelecimentos quiser, desde que respeite as regras de uso de cada local (dia/semana/mês do aniversário, horários, consumo mínimo, etc.)."
     },
     {
       pergunta: "Preciso sempre reservar antes de usar o benefício?",
-      resposta: "Não necessariamente. Alguns estabelecimentos podem exigir reserva antecipada, enquanto outros funcionam por ordem de chegada. Sempre confira as condições de uso na descrição de cada benefício.",
+      resposta: "Não necessariamente. Alguns estabelecimentos exigem reserva antecipada, outros funcionam por ordem de chegada. Sempre confira as condições na página do benefício."
     },
     {
       pergunta: "Para o aniversariante é gratuito?",
-      resposta: "Sim, 100% gratuito! Acesse a plataforma e emita seus cupons sem pagar nada. Você só aproveita os benefícios.",
+      resposta: "Sim, 100% gratuito! Você só precisa acessar a plataforma, escolher o estabelecimento e seguir as regras do benefício."
     },
     {
       pergunta: "E para o estabelecimento, como funciona?",
-      resposta: "Para os estabelecimentos parceiros, existe uma mensalidade simbólica, com opções de planos trimestrais, semestrais e anuais.",
+      resposta: "Para os estabelecimentos parceiros, existe uma mensalidade, com opções de planos mensais, trimestrais, semestrais e anuais."
     },
     {
-      pergunta: "Posso usar o cupom em qualquer dia?",
-      resposta: "Depende das regras de utilização de cada estabelecimento. Alguns permitem uso apenas no dia do aniversário, outros na semana ou mês do aniversário. Sempre verifique as condições específicas antes de visitar.",
+      pergunta: "Posso usar o benefício em qualquer dia?",
+      resposta: "Depende das regras de cada estabelecimento. Alguns permitem somente no dia do aniversário, outros liberam na semana ou no mês. Verifique as condições específicas antes de ir."
     },
     {
       pergunta: "Preciso apresentar documento?",
-      resposta: "Isso varia conforme o estabelecimento parceiro. Para evitar qualquer problema, nossa recomendação é sempre levar um documento com foto. As regras específicas de cada benefício estão descritas no cupom.",
+      resposta: "Isso varia conforme o estabelecimento. Para evitar qualquer problema, recomendamos levar um documento com foto (alguns locais podem pedir para confirmar a data de nascimento)."
     },
     {
-      pergunta: "O que acontece se eu perder meu cupom?",
-      resposta: "Você pode acessar sua conta a qualquer momento e visualizar novamente todos os cupons emitidos. Recomendamos tirar um print ou salvar em seu celular para fácil acesso.",
+      pergunta: "Preciso mostrar algo no local?",
+      resposta: "Não precisa. Ao chegar, basta informar que você quer usar o benefício de aniversariante e seguir as condições descritas na página do benefício (regras de data, horários, consumo mínimo e demais exigências do local). Se preferir, deixe a página aberta no celular para facilitar."
     },
   ];
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      
       <div className="pt-16">
-      {/* Hero */}
-      <section className="relative bg-gradient-to-b from-primary/10 to-background py-20">
-        <div className="container mx-auto px-4 text-center">
-          <HelpCircle className="h-16 w-16 text-primary mx-auto mb-6 animate-fade-in" />
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 animate-fade-in">
-            Perguntas Frequentes
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in">
+        {/* Header */}
+        <div className="py-12 text-center">
+          <h1 className="text-3xl font-bold text-foreground">Perguntas Frequentes</h1>
+          <p className="text-muted-foreground mt-2">
             Tire suas dúvidas sobre o Aniversariante VIP
           </p>
         </div>
-      </section>
 
-      {/* FAQ */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <Card className="animate-fade-in">
-            <CardContent className="p-6 md:p-8">
-              <Accordion type="single" collapsible className="w-full space-y-4">
-                {faqItems.map((item, index) => (
-                  <AccordionItem key={index} value={`item-${index}`} className="border rounded-lg px-4">
-                    <AccordionTrigger className="text-left hover:no-underline py-4">
-                      <span className="font-semibold">{item.pergunta}</span>
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground pb-4">
-                      {item.resposta}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+        {/* Perguntas em acordeão */}
+        <div className="max-w-3xl mx-auto px-4 pb-12">
+          <Accordion type="single" collapsible className="space-y-4">
+            {perguntas.map((item, index) => (
+              <AccordionItem 
+                key={index} 
+                value={`item-${index}`}
+                className="bg-card border border-border/20 rounded-xl px-6"
+              >
+                <AccordionTrigger className="text-left font-medium py-4 hover:no-underline">
+                  <span className="text-foreground">{index + 1}. {item.pergunta}</span>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-4">
+                  {item.resposta}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
 
-      {/* Contact CTA */}
-      <section className="py-16 bg-gradient-to-t from-primary/10 to-background">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ainda Tem Dúvidas?</h2>
-          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Entre em contato conosco. Estamos aqui para ajudar!
-          </p>
-          <div className="flex flex-wrap gap-4 justify-center">
-            <a href={`mailto:${CONTATOS.email}`}>
-              <Button size="lg" className="text-lg px-8">
-                <Mail className="mr-2 h-5 w-5" />
+          {/* Contato */}
+          <div className="mt-12 text-center p-8 bg-card border border-border/20 rounded-2xl">
+            <h2 className="text-xl font-bold text-foreground mb-2">Ainda tem dúvidas?</h2>
+            <p className="text-muted-foreground mb-6">
+              Entre em contato conosco. Estamos aqui para ajudar!
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a 
+                href={`mailto:${CONTATOS.email}`}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition"
+              >
+                <Mail size={18} />
                 {CONTATOS.email}
-              </Button>
-            </a>
-            <a href={`https://wa.me/${CONTATOS.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-              <Button size="lg" variant="outline" className="text-lg px-8">
-                <Phone className="mr-2 h-5 w-5" />
+              </a>
+              <a 
+                href={`https://wa.me/${CONTATOS.whatsapp.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-xl transition"
+              >
+                <Phone size={18} />
                 {CONTATOS.whatsapp}
-              </Button>
-            </a>
+              </a>
+            </div>
           </div>
         </div>
-      </section>
       </div>
+      
       <Footer />
     </div>
   );

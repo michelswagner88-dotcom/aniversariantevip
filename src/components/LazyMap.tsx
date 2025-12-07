@@ -25,18 +25,33 @@ const LazyMap: React.FC<LazyMapProps> = ({
   estado,
   className = ''
 }) => {
-  const [zoomLevel, setZoomLevel] = useState(15); // Zoom inicial mais distante
+  const [zoomLevel, setZoomLevel] = useState(16); // Zoom para mostrar localização precisa
   const [staticMapError, setStaticMapError] = useState(false);
   
-  // Verificar se tem coordenadas válidas
-  const hasCoordinates = latitude && longitude && latitude !== 0 && longitude !== 0;
+  // Validar coordenadas - deve ser número válido dentro do Brasil
+  const temCoordenadasValidas = (lat: any, lng: any): boolean => {
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(lng);
+    
+    if (isNaN(latNum) || isNaN(lngNum)) return false;
+    if (latNum === 0 || lngNum === 0) return false;
+    
+    // Brasil: Lat -34 a +6, Lng -75 a -30
+    if (latNum < -34 || latNum > 6) return false;
+    if (lngNum < -75 || lngNum > -30) return false;
+    
+    return true;
+  };
   
-  // URL do Google Maps para abrir externamente
+  // Verificar se tem coordenadas EXATAS válidas
+  const hasCoordinates = temCoordenadasValidas(latitude, longitude);
+  
+  // URL do Google Maps para abrir externamente - usa coordenadas exatas se disponíveis
   const googleMapsUrl = hasCoordinates
     ? `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`;
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nomeEstabelecimento + ' ' + endereco)}`;
   
-  // URL do mapa estático - usando Static Maps API
+  // URL do mapa estático - SOMENTE se tiver coordenadas exatas válidas
   const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const staticMapUrl = hasCoordinates && googleMapsApiKey
     ? `https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&zoom=${zoomLevel}&size=600x300&scale=2&markers=color:red%7C${latitude},${longitude}&key=${googleMapsApiKey}`

@@ -1,5 +1,6 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { BackButton } from "@/components/BackButton";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useSEO } from "@/hooks/useSEO";
@@ -23,6 +24,10 @@ export default function TermosUso() {
       <Header />
       
       <main className="relative flex-1 container mx-auto px-6 py-12">
+        {/* Botão Voltar */}
+        <div className="max-w-4xl mx-auto mb-6">
+          <BackButton />
+        </div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -7,6 +7,7 @@ import {
   Smartphone, Zap, LayoutGrid, MapPin, Shield, Heart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BackButton } from '@/components/BackButton';
 import { useSEO } from '@/hooks/useSEO';
 import { SEO_CONTENT } from '@/constants/seo';
 
@@ -23,8 +24,13 @@ const ComoFunciona = () => {
   return (
     <div className="min-h-screen bg-background">
       
+      {/* Botão Voltar */}
+      <div className="max-w-5xl mx-auto px-4 pt-6">
+        <BackButton />
+      </div>
+
       {/* Hero */}
-      <section className="py-16 md:py-24 px-4">
+      <section className="py-12 md:py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
             Como Funciona

@@ -2,6 +2,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Mail, Phone } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { BackButton } from "@/components/BackButton";
 import { useSEO } from "@/hooks/useSEO";
 import { SEO_CONTENT } from "@/constants/seo";
 import { CONTATOS } from "@/lib/constants";
@@ -84,6 +85,10 @@ export default function FAQ() {
       <Header />
       
       <div className="pt-16">
+        {/* Botão Voltar */}
+        <div className="max-w-3xl mx-auto px-4 pt-4">
+          <BackButton />
+        </div>
         {/* Header */}
         <motion.div 
           className="py-12 text-center"

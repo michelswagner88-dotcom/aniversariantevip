@@ -69,6 +69,7 @@ import { EditUserModal } from '@/components/admin/EditUserModal';
 import { EditEstablishmentModal } from '@/components/admin/EditEstablishmentModal';
 import { MapaEstabelecimentos } from '@/components/MapaEstabelecimentos';
 import { SecurityDashboard } from '@/components/admin/SecurityDashboard';
+import { BotaoBuscarFotos } from '@/components/admin/BotaoBuscarFotos';
 import { geocodificarEndereco } from '@/lib/geoUtils';
 
 const COLORS = ['#94a3b8', '#8b5cf6', '#ec4899'];
@@ -788,6 +789,11 @@ export default function AdminDashboard() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Ferramentas de Fotos */}
+      <div className="mt-6">
+        <BotaoBuscarFotos />
       </div>
     </div>
   );

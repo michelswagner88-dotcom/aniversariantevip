@@ -92,7 +92,7 @@ export const CardBeneficio = ({
             className="w-full py-4 text-base"
           >
             <Sparkles className="w-5 h-5" />
-            Ver regras e como usar
+            Ver regras e como usar o benefício
           </ShimmerButton>
         </div>
       </motion.div>

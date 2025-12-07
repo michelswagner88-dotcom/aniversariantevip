@@ -519,28 +519,19 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
         </div>
       </div>
 
-      {/* ========== BIO DO ESTABELECIMENTO ========== */}
-      {(() => {
-        const bioExibir = estabelecimento.bio || gerarBioAutomatica({
-          categoria: estabelecimento.categoria,
-          bairro: estabelecimento.bairro,
-          cidade: estabelecimento.cidade,
-          descricao_beneficio: estabelecimento.descricao_beneficio,
-        });
-        
-        return (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mx-4 mt-4"
-          >
-            <p className="text-gray-300 text-sm leading-relaxed">
-              {bioExibir}
-            </p>
-          </motion.div>
-        );
-      })()}
+      {/* ========== BIO DO ESTABELECIMENTO (só exibe se tiver bio real) ========== */}
+      {estabelecimento.bio && estabelecimento.bio.trim() !== '' && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mx-4 mt-4"
+        >
+          <p className="text-gray-300 text-sm leading-relaxed">
+            {estabelecimento.bio}
+          </p>
+        </motion.div>
+      )}
 
       {/* ========== CARD DE BENEFÍCIO - SEMPRE VISÍVEL ========== */}
       {(() => {

@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { TOTAL_CATEGORIAS, TOTAL_SUBCATEGORIAS } from '@/constants/categories';
 import { RefreshCw, X } from 'lucide-react';
 
-const APP_VERSION = '2.13.0';
+const APP_VERSION = '2.14.0';
 
 const VersionBadge = () => {
   const [expanded, setExpanded] = useState(false);

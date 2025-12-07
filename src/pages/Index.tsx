@@ -270,7 +270,7 @@ const Index = () => {
           />
           
           {/* Slogan */}
-          <p className="text-center text-xs font-medium tracking-[0.08em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-slate-400 via-violet-400 to-slate-400 mt-4 opacity-0 animate-[fadeInSlide_0.8s_ease-out_0.5s_forwards] cursor-default transition-all duration-500 hover:from-violet-300 hover:via-fuchsia-300 hover:to-cyan-300 hover:scale-105">
+          <p className="text-center text-[9px] sm:text-xs font-medium tracking-[0.05em] sm:tracking-[0.08em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-slate-400 via-violet-400 to-slate-400 mt-4 opacity-0 animate-[fadeInSlide_0.8s_ease-out_0.5s_forwards] cursor-default transition-all duration-500 hover:from-violet-300 hover:via-fuchsia-300 hover:to-cyan-300 hover:scale-105 whitespace-nowrap">
             ✨ O maior guia de benefícios para aniversariantes do Brasil ✨
           </p>
         </div>

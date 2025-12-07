@@ -7,7 +7,7 @@ import App from "./App.tsx";
 import "./index.css";
 
 // Versão do app para controle de cache - INCREMENTAR A CADA DEPLOY
-const APP_VERSION = '2.13.0';
+const APP_VERSION = '2.14.0';
 
 // Verificação de versão - limpar caches se versão mudou
 const storedVersion = localStorage.getItem('app_version');

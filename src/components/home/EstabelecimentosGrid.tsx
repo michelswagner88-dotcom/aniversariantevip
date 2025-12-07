@@ -74,11 +74,12 @@ export const EstabelecimentosGrid = ({
             className="group cursor-pointer bg-white/5 rounded-2xl overflow-hidden border border-white/5 hover:border-violet-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-violet-500/10"
           >
             {/* Imagem */}
-            <div className="relative aspect-[4/3] overflow-hidden">
+            <div className="relative overflow-hidden">
               <SafeImage
                 src={est.logo_url || est.galeria_fotos?.[0]}
                 alt={est.nome_fantasia || 'Estabelecimento'}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                aspectRatio="4:3"
+                className="transition-transform duration-500 group-hover:scale-110"
               />
               
               {/* Badge de categoria + subcategoria */}

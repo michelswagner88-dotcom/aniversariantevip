@@ -17,6 +17,8 @@ import {
   Wrench,
   IceCream,
   Store,
+  ChevronLeft,
+  ChevronRight,
   type LucideIcon
 } from 'lucide-react';
 
@@ -90,6 +92,18 @@ export const AirbnbCategoryPills = ({
       });
     }
   }, [categoriaAtiva]);
+
+  // Scroll com botões (desktop)
+  const scrollBy = (direction: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    
+    const scrollAmount = 300;
+    el.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth'
+    });
+  };
   
   // Contar estabelecimentos por categoria
   const contagens = useMemo(() => {
@@ -126,8 +140,23 @@ export const AirbnbCategoryPills = ({
   }, [contagens]);
   
   return (
-    <div className="relative -mx-4 sm:-mx-6">
-      {/* Fade esquerda - dinâmico */}
+    <div className="relative">
+      {/* Botão esquerda - Desktop */}
+      <button
+        onClick={() => scrollBy('left')}
+        className={cn(
+          "absolute left-0 top-1/2 -translate-y-1/2 z-20 hidden md:flex",
+          "w-8 h-8 items-center justify-center rounded-full",
+          "bg-background border border-border shadow-md",
+          "hover:bg-muted transition-all duration-200",
+          showFadeLeft ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+        aria-label="Scroll para esquerda"
+      >
+        <ChevronLeft size={18} className="text-foreground" />
+      </button>
+
+      {/* Fade esquerda */}
       <div 
         className={cn(
           "absolute left-0 top-0 bottom-0 w-8 sm:w-12 z-10 pointer-events-none",
@@ -140,7 +169,7 @@ export const AirbnbCategoryPills = ({
       {/* Scroll container */}
       <div 
         ref={scrollRef}
-        className="flex gap-4 sm:gap-6 overflow-x-auto py-4 px-4 sm:px-6 scrollbar-hide scroll-smooth snap-x snap-proximity"
+        className="flex gap-4 sm:gap-6 overflow-x-auto py-4 px-2 md:px-10 scrollbar-hide scroll-smooth snap-x snap-proximity"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {categoriasConfig.map((cat, index) => {
@@ -185,7 +214,7 @@ export const AirbnbCategoryPills = ({
         })}
       </div>
       
-      {/* Fade direita - dinâmico */}
+      {/* Fade direita */}
       <div 
         className={cn(
           "absolute right-0 top-0 bottom-0 w-8 sm:w-12 z-10 pointer-events-none",
@@ -194,6 +223,21 @@ export const AirbnbCategoryPills = ({
           showFadeRight ? "opacity-100" : "opacity-0"
         )} 
       />
+
+      {/* Botão direita - Desktop */}
+      <button
+        onClick={() => scrollBy('right')}
+        className={cn(
+          "absolute right-0 top-1/2 -translate-y-1/2 z-20 hidden md:flex",
+          "w-8 h-8 items-center justify-center rounded-full",
+          "bg-background border border-border shadow-md",
+          "hover:bg-muted transition-all duration-200",
+          showFadeRight ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+        aria-label="Scroll para direita"
+      >
+        <ChevronRight size={18} className="text-foreground" />
+      </button>
     </div>
   );
 };

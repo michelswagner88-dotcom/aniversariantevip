@@ -158,7 +158,9 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
       }
 
       if (!data.galeria_fotos || data.galeria_fotos.length === 0) {
-        const endereco = `${data.logradouro}, ${data.numero} - ${data.bairro}, ${data.cidade}, ${data.estado}`;
+        const endereco = [data.logradouro, data.numero, data.bairro, data.cidade, data.estado]
+          .filter(Boolean)
+          .join(', ');
         await fetchGooglePlacesPhotos(data.id, data.nome_fantasia, endereco);
       }
       
@@ -291,8 +293,18 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
     window.open(estabelecimento.link_cardapio, '_blank');
   };
 
+  // Helper para montar endereço sem valores null/undefined
+  const formatarEndereco = (...partes: (string | null | undefined)[]) => 
+    partes.filter(Boolean).join(', ');
+
   const getEnderecoCompleto = () => 
-    `${estabelecimento.logradouro}, ${estabelecimento.numero} - ${estabelecimento.bairro}, ${estabelecimento.cidade}, ${estabelecimento.estado}`;
+    formatarEndereco(
+      estabelecimento.logradouro,
+      estabelecimento.numero,
+      estabelecimento.bairro,
+      estabelecimento.cidade,
+      estabelecimento.estado
+    );
 
   const handleGoogleMaps = () => {
     if (id) trackDirectionsClick(id, 'google_maps');
@@ -468,10 +480,14 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
           
           <div className="flex-1 pb-1">
             {/* Localização */}
-            <div className="flex items-center gap-1.5 text-gray-400 text-sm">
-              <MapPin className="w-3.5 h-3.5" />
-              <span>{estabelecimento.cidade}/{estabelecimento.estado}</span>
-            </div>
+            {(estabelecimento.cidade || estabelecimento.estado) && (
+              <div className="flex items-center gap-1.5 text-gray-400 text-sm">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>
+                  {[estabelecimento.cidade, estabelecimento.estado].filter(Boolean).join('/')}
+                </span>
+              </div>
+            )}
             
             {/* Especialidades/Subcategorias */}
             {estabelecimento.especialidades?.length > 0 && (
@@ -775,12 +791,14 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
         className="mx-4 mt-6"
       >
         <LazyMap
-          endereco={`${estabelecimento.logradouro}, ${estabelecimento.numero}${estabelecimento.complemento ? ` - ${estabelecimento.complemento}` : ''}`}
+          endereco={[estabelecimento.logradouro, estabelecimento.numero, estabelecimento.complemento].filter(Boolean).join(', ')}
           latitude={estabelecimento.latitude}
           longitude={estabelecimento.longitude}
           nomeEstabelecimento={estabelecimento.nome_fantasia}
           bairro={estabelecimento.bairro}
           cep={estabelecimento.cep}
+          cidade={estabelecimento.cidade}
+          estado={estabelecimento.estado}
         />
       </motion.section>
 

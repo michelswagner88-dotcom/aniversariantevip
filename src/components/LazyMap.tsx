@@ -9,6 +9,8 @@ interface LazyMapProps {
   nomeEstabelecimento: string;
   bairro?: string | null;
   cep?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
   className?: string;
 }
 
@@ -19,6 +21,8 @@ const LazyMap: React.FC<LazyMapProps> = ({
   nomeEstabelecimento,
   bairro,
   cep,
+  cidade,
+  estado,
   className = ''
 }) => {
   const [showMap, setShowMap] = useState(false);
@@ -71,6 +75,11 @@ const LazyMap: React.FC<LazyMapProps> = ({
     window.open(url99, '_blank', 'noopener,noreferrer');
   };
   
+  // Montar endereço formatado (sem null/undefined)
+  const enderecoFormatado = endereco && endereco.trim() ? endereco : null;
+  const cidadeEstado = [cidade, estado].filter(Boolean).join(' - ');
+  const temLocalizacao = enderecoFormatado || bairro || cidadeEstado;
+
   return (
     <div className={`bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 overflow-hidden ${className}`}>
       {/* Header com endereço */}
@@ -81,11 +90,20 @@ const LazyMap: React.FC<LazyMapProps> = ({
           </div>
           <div>
             <h4 className="font-semibold text-white">Como Chegar</h4>
-            <p className="text-gray-400 text-sm mt-1">{endereco}</p>
-            {(bairro || cep) && (
-              <p className="text-gray-500 text-xs mt-0.5">
-                {bairro && `${bairro}`}{bairro && cep && ' • '}{cep && `CEP: ${cep}`}
-              </p>
+            {enderecoFormatado && (
+              <p className="text-gray-400 text-sm mt-1">{enderecoFormatado}</p>
+            )}
+            {bairro && (
+              <p className="text-gray-500 text-sm mt-0.5">{bairro}</p>
+            )}
+            {cidadeEstado && (
+              <p className="text-gray-500 text-xs mt-0.5">{cidadeEstado}</p>
+            )}
+            {cep && (
+              <p className="text-gray-500 text-xs mt-0.5">CEP: {cep}</p>
+            )}
+            {!temLocalizacao && (
+              <p className="text-gray-500 text-sm mt-1 italic">Endereço não informado</p>
             )}
           </div>
         </div>

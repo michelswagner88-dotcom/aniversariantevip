@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, Navigation, ExternalLink } from 'lucide-react';
+import { MapPin, Plus, Minus } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface LazyMapProps {
@@ -25,10 +25,8 @@ const LazyMap: React.FC<LazyMapProps> = ({
   estado,
   className = ''
 }) => {
-  const [showMap, setShowMap] = useState(false);
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(15); // Zoom inicial mais distante
   const [staticMapError, setStaticMapError] = useState(false);
-  const [embedMapError, setEmbedMapError] = useState(false);
   
   // Verificar se tem coordenadas válidas
   const hasCoordinates = latitude && longitude && latitude !== 0 && longitude !== 0;
@@ -38,18 +36,15 @@ const LazyMap: React.FC<LazyMapProps> = ({
     ? `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`;
   
-  // URL do mapa estático (preview) - usando Static Maps API
+  // URL do mapa estático - usando Static Maps API
   const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const staticMapUrl = hasCoordinates && googleMapsApiKey
-    ? `https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&zoom=16&size=600x300&scale=2&markers=color:red%7C${latitude},${longitude}&key=${googleMapsApiKey}`
+    ? `https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&zoom=${zoomLevel}&size=600x300&scale=2&markers=color:red%7C${latitude},${longitude}&key=${googleMapsApiKey}`
     : null;
   
-  // URL para embed do mapa interativo
-  const embedMapUrl = hasCoordinates && googleMapsApiKey
-    ? `https://www.google.com/maps/embed/v1/place?key=${googleMapsApiKey}&q=${latitude},${longitude}&zoom=15`
-    : googleMapsApiKey 
-      ? `https://www.google.com/maps/embed/v1/place?key=${googleMapsApiKey}&q=${encodeURIComponent(endereco)}`
-      : null;
+  // Zoom controls
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 1, 20));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 1, 10));
   
   // Handlers para navegação
   const openGoogleMaps = () => {
@@ -111,100 +106,50 @@ const LazyMap: React.FC<LazyMapProps> = ({
         </div>
       </div>
       
-      {/* Área do mapa - sob demanda */}
+      {/* Área do mapa estático */}
       <div className="relative h-48 bg-white rounded-lg overflow-hidden mx-4 mb-2 border border-slate-200">
-        {!showMap ? (
-          /* Preview / Placeholder com botão para carregar */
-          <div className="relative w-full h-full cursor-pointer group" onClick={() => setShowMap(true)}>
-            {/* Imagem estática do mapa se disponível e sem erro */}
-            {staticMapUrl && !staticMapError ? (
-              <img
-                src={staticMapUrl}
-                alt={`Mapa de ${nomeEstabelecimento}`}
-                className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
-                loading="lazy"
-                onError={() => setStaticMapError(true)}
-              />
-            ) : (
-              /* Fallback visual clean */
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200">
-                <div 
-                  className="absolute inset-0 opacity-40" 
-                  style={{
-                    backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(0,0,0,0.05) 20px, rgba(0,0,0,0.05) 21px),
-                                      repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(0,0,0,0.05) 20px, rgba(0,0,0,0.05) 21px)`
-                  }} 
-                />
+        {/* Mapa estático clicável */}
+        <div 
+          className="relative w-full h-full cursor-pointer" 
+          onClick={openGoogleMaps}
+        >
+          {/* Imagem estática do mapa se disponível e sem erro */}
+          {staticMapUrl && !staticMapError ? (
+            <img
+              src={staticMapUrl}
+              alt={`Mapa de ${nomeEstabelecimento}`}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={() => setStaticMapError(true)}
+            />
+          ) : (
+            /* Fallback visual clean */
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <MapPin className="w-10 h-10 text-red-500" fill="#ef4444" />
+                <span className="text-gray-600 text-sm">Clique para abrir no Maps</span>
               </div>
-            )}
-            
-            {/* Marcador central animado */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <motion.div 
-                animate={{ y: [0, -4, 0] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-                className="flex flex-col items-center"
-              >
-                <MapPin className="w-10 h-10 text-red-500 drop-shadow-lg" fill="#ef4444" />
-              </motion.div>
             </div>
-            
-            {/* Overlay com texto */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end justify-center pb-3">
-              <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium flex items-center gap-2 transition-opacity bg-black/60 px-4 py-2 rounded-full backdrop-blur-sm">
-                <Navigation className="w-4 h-4" />
-                Ver mapa interativo
-              </span>
-            </div>
-          </div>
-        ) : (
-          /* Mapa interativo carregado sob demanda */
-          <div className="w-full h-full relative">
-            {/* Loading state */}
-            {!mapLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-gray-500 text-xs">Carregando mapa...</span>
-                </div>
-              </div>
-            )}
-            
-            {embedMapUrl && !embedMapError ? (
-              <iframe
-                src={embedMapUrl}
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title={`Mapa de ${nomeEstabelecimento}`}
-                onLoad={() => setMapLoaded(true)}
-                onError={() => setEmbedMapError(true)}
-                className={mapLoaded ? 'opacity-100' : 'opacity-0'}
-              />
-            ) : (
-              /* Fallback - botão para abrir Google Maps externamente */
-              <div 
-                className="w-full h-full flex flex-col items-center justify-center cursor-pointer bg-gray-100 hover:bg-gray-200 transition-colors"
-                onClick={openGoogleMaps}
-              >
-                <motion.div
-                  animate={{ y: [0, -4, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                  className="mb-2"
-                >
-                  <MapPin className="w-10 h-10 text-red-500" fill="#ef4444" />
-                </motion.div>
-                <span className="text-gray-700 text-sm flex items-center gap-2 font-medium">
-                  <ExternalLink className="w-4 h-4" />
-                  Abrir no Google Maps
-                </span>
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
+        
+        {/* Botões de Zoom */}
+        <div className="absolute top-2 right-2 flex flex-col gap-1">
+          <motion.button
+            onClick={(e) => { e.stopPropagation(); handleZoomIn(); }}
+            whileTap={{ scale: 0.9 }}
+            className="w-8 h-8 bg-white rounded shadow-md flex items-center justify-center border border-gray-200 hover:bg-gray-50"
+          >
+            <Plus className="w-4 h-4 text-gray-700" />
+          </motion.button>
+          <motion.button
+            onClick={(e) => { e.stopPropagation(); handleZoomOut(); }}
+            whileTap={{ scale: 0.9 }}
+            className="w-8 h-8 bg-white rounded shadow-md flex items-center justify-center border border-gray-200 hover:bg-gray-50"
+          >
+            <Minus className="w-4 h-4 text-gray-700" />
+          </motion.button>
+        </div>
       </div>
       
       {/* Botões de navegação */}

@@ -73,11 +73,14 @@ export const formatInstagram = (instagram: string | null | undefined): string | 
   // Remover @ se tiver
   username = username.replace('@', '');
   
+  // Remover acentos para validação (Instagram não aceita acentos, mas vamos ser permissivos)
+  const usernameNormalized = username.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  
   // Validar formato do username (letras, números, pontos, underscores)
-  if (!/^[a-zA-Z0-9._]+$/.test(username)) return null;
+  if (!/^[a-zA-Z0-9._]+$/.test(usernameNormalized)) return null;
   
   // Username muito curto ou muito longo
-  if (username.length < 1 || username.length > 30) return null;
+  if (usernameNormalized.length < 1 || usernameNormalized.length > 30) return null;
   
   return `https://instagram.com/${username}`;
 };

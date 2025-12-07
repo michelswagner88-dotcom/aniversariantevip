@@ -369,30 +369,61 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   const categoria = estabelecimento.categoria?.[0] || 'Estabelecimento';
   const mostraCardapio = ['Bar', 'Restaurante'].includes(categoria);
   
-  // Montar array de fotos: galeria + logo_url como fallback
+  // Montar array de fotos: APENAS galeria manual (sem fallback para logo_url errado)
   const galeriaFotos = estabelecimento?.galeria_fotos || [];
-  const fotosParaExibir = galeriaFotos.length > 0 
-    ? galeriaFotos 
-    : (estabelecimento.logo_url ? [estabelecimento.logo_url] : []);
-  const fotoPrincipal = fotosParaExibir.length > 0 ? fotosParaExibir[0] : '/placeholder-estabelecimento.png';
-  const temFotos = fotosParaExibir.length > 0;
+  const temFotosGaleria = galeriaFotos.length > 0;
+  
+  // Foto do avatar: galeria[0] > inicial do nome com gradient
+  const fotoAvatar = temFotosGaleria ? galeriaFotos[0] : null;
+  const inicialNome = (estabelecimento.nome_fantasia || 'E').charAt(0).toUpperCase();
 
   return (
     <div className="min-h-screen bg-slate-950 pb-24 md:pb-8 animate-in fade-in duration-500">
       
-      {/* ========== HERO SECTION IMERSIVA - WORLD CLASS ========== */}
-      <div className="relative h-[55vh] md:h-[65vh] w-full overflow-hidden">
-        <motion.img
-          src={fotoPrincipal || '/placeholder-estabelecimento.png'}
-          style={{ y: headerY }}
-          className="absolute inset-0 w-full h-full object-cover scale-110"
-          alt={estabelecimento.nome_fantasia}
+      {/* ========== HEADER ABSTRATO - NÍVEL MUNDIAL (SEM FOTO DE CAPA) ========== */}
+      <div className="relative h-56 md:h-64 w-full overflow-hidden">
+        {/* Gradient base - fundo tecnológico premium */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" />
+        
+        {/* Orbs flutuantes animados - efeito Stripe/Linear */}
+        <motion.div 
+          className="absolute top-0 left-1/4 w-80 h-80 rounded-full blur-[100px] opacity-40"
+          style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
+          animate={{ 
+            x: [0, 30, 0],
+            y: [0, -20, 0],
+            scale: [1, 1.1, 1]
+          }}
+          transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="absolute -bottom-20 right-1/4 w-96 h-96 rounded-full blur-[120px] opacity-30"
+          style={{ background: 'radial-gradient(circle, hsl(280, 80%, 60%) 0%, transparent 70%)' }}
+          animate={{ 
+            x: [0, -40, 0],
+            y: [0, 30, 0],
+            scale: [1, 1.15, 1]
+          }}
+          transition={{ repeat: Infinity, duration: 10, ease: "easeInOut", delay: 1 }}
+        />
+        <motion.div 
+          className="absolute top-1/3 right-1/3 w-64 h-64 rounded-full blur-[80px] opacity-25"
+          style={{ background: 'radial-gradient(circle, hsl(320, 80%, 60%) 0%, transparent 70%)' }}
+          animate={{ 
+            x: [0, 20, -20, 0],
+            y: [0, 20, 0],
+          }}
+          transition={{ repeat: Infinity, duration: 6, ease: "easeInOut", delay: 0.5 }}
         />
         
-        {/* Overlays gradiente premium - mais profundo */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/20" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-violet-900/10 via-transparent to-fuchsia-900/10" />
+        {/* Grid pattern sutil - toque tech */}
+        <div 
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `linear-gradient(hsl(var(--primary)/0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)/0.3) 1px, transparent 1px)`,
+            backgroundSize: '50px 50px'
+          }}
+        />
         
         {/* Header com botões glass */}
         <motion.div 
@@ -405,7 +436,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate(-1)}
-            className="p-3 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg"
+            className="p-3 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg hover:bg-white/10 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
           </motion.button>
@@ -416,7 +447,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleFavorito}
-              className="p-3 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg"
+              className="p-3 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg hover:bg-white/10 transition-colors"
             >
               <Heart className={`w-5 h-5 transition-colors ${id && isFavorito(id) ? 'fill-red-500 text-red-500' : 'text-white'}`} />
             </motion.button>
@@ -424,107 +455,103 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleShare}
-              className="p-3 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg"
+              className="p-3 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg hover:bg-white/10 transition-colors"
             >
               <Share2 className="w-5 h-5 text-white" />
             </motion.button>
           </div>
         </motion.div>
-        
-        
-        {/* Conteúdo sobre a imagem - mais impactante */}
-        <motion.div 
-          style={{ opacity: headerOpacity }}
-          className="absolute bottom-0 left-0 right-0 p-6"
-        >
-          {/* Selos premium */}
+      </div>
+
+      {/* ========== AVATAR + INFO CENTRALIZADO - DESIGN PREMIUM ========== */}
+      <div className="relative z-20 px-4 -mt-20">
+        <div className="flex flex-col items-center text-center">
+          {/* Avatar grande centralizado */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="flex flex-wrap items-center gap-2 mb-4"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+            className="relative mb-5"
           >
-            <span className="px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-600/90 to-fuchsia-600/90 backdrop-blur-sm text-xs font-bold text-white flex items-center gap-2 shadow-lg shadow-violet-500/20">
-              <span className="text-base">{getCategoriaIcon(categoria)}</span>
-              {categoria}
-            </span>
+            {/* Glow ring animado */}
+            <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 opacity-60 blur-lg animate-pulse" />
             
-            <span className="px-4 py-1.5 rounded-full bg-gradient-to-r from-emerald-500/90 to-green-500/90 backdrop-blur-sm text-xs font-bold text-white flex items-center gap-2 shadow-lg shadow-green-500/20">
-              <BadgeCheck className="w-4 h-4" />
-              Verificado
-            </span>
+            {/* Container do avatar */}
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              onClick={() => fotoAvatar && setShowLogoExpanded(true)}
+              className={`relative w-28 h-28 md:w-36 md:h-36 rounded-3xl border-4 border-slate-900 shadow-2xl overflow-hidden ${fotoAvatar ? 'cursor-pointer' : ''}`}
+            >
+              {fotoAvatar ? (
+                <img 
+                  src={fotoAvatar} 
+                  alt={estabelecimento.nome_fantasia}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                /* Inicial do nome com gradient premium */
+                <div className="w-full h-full bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 flex items-center justify-center">
+                  <span className="text-5xl md:text-6xl font-black text-white drop-shadow-lg">
+                    {inicialNome}
+                  </span>
+                </div>
+              )}
+              
+              {/* Badge verificado no canto */}
+              <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 border-2 border-slate-900">
+                <BadgeCheck className="w-4 h-4 text-white" />
+              </div>
+            </motion.div>
           </motion.div>
           
-          {/* Nome - Typography premium */}
+          {/* Nome do estabelecimento */}
           <motion.h1 
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, type: "spring", stiffness: 100 }}
-            className="text-3xl md:text-5xl font-extrabold text-white mb-2 tracking-tight drop-shadow-2xl"
-            style={{ textShadow: '0 4px 30px rgba(0,0,0,0.5)' }}
+            transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
+            className="text-2xl md:text-4xl font-extrabold text-white mb-3 tracking-tight max-w-md"
           >
             {estabelecimento.nome_fantasia || estabelecimento.razao_social}
           </motion.h1>
           
-        </motion.div>
-      </div>
-
-      {/* ========== AVATAR/LOGO FLUTUANTE ========== */}
-      <div className="relative z-20 px-4 -mt-6">
-        <div className="flex items-start gap-4">
+          {/* Badges de categoria e localização */}
           <motion.div 
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 200, delay: 0.3 }}
-            className="relative"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex flex-wrap items-center justify-center gap-2 mb-3"
           >
-            <motion.button
-              onClick={() => setShowLogoExpanded(true)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-900 border-4 border-slate-900 shadow-2xl overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500"
-              aria-label="Ampliar foto de perfil"
-            >
-              {estabelecimento.logo_url ? (
-                <img src={estabelecimento.logo_url} alt="Logo" loading="lazy" decoding="async" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-                  <span className="text-2xl md:text-3xl font-bold text-white">
-                    {estabelecimento.nome_fantasia?.charAt(0)}
-                  </span>
-                </div>
-              )}
-              <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
-                <ZoomIn className="w-6 h-6 text-white drop-shadow-lg" />
-              </div>
-            </motion.button>
+            <span className="px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-600/80 to-fuchsia-600/80 backdrop-blur-sm text-xs font-bold text-white flex items-center gap-2 shadow-lg">
+              <span className="text-base">{getCategoriaIcon(categoria)}</span>
+              {categoria}
+            </span>
+            
+            {(estabelecimento.cidade || estabelecimento.estado) && (
+              <span className="px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-xs font-medium text-white/90 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5" />
+                {[estabelecimento.cidade, estabelecimento.estado].filter(Boolean).join('/')}
+              </span>
+            )}
           </motion.div>
           
-          <div className="flex-1 pb-1">
-            {/* Localização */}
-            {(estabelecimento.cidade || estabelecimento.estado) && (
-              <div className="flex items-center gap-1.5 text-white/80 text-sm">
-                <MapPin className="w-3.5 h-3.5" />
-                <span>
-                  {[estabelecimento.cidade, estabelecimento.estado].filter(Boolean).join('/')}
+          {/* Especialidades/Subcategorias */}
+          {estabelecimento.especialidades?.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="flex flex-wrap justify-center gap-1.5"
+            >
+              {estabelecimento.especialidades.slice(0, 3).map((spec: string) => (
+                <span 
+                  key={spec} 
+                  className="px-3 py-1 rounded-full bg-purple-500/15 text-xs text-purple-300 border border-purple-500/25"
+                >
+                  {spec}
                 </span>
-              </div>
-            )}
-            
-            {/* Especialidades/Subcategorias */}
-            {estabelecimento.especialidades?.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {estabelecimento.especialidades.slice(0, 3).map((spec: string) => (
-                  <span 
-                    key={spec} 
-                    className="px-2 py-0.5 rounded-full bg-purple-500/20 text-xs text-purple-300 border border-purple-500/30"
-                  >
-                    {spec}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+              ))}
+            </motion.div>
+          )}
         </div>
       </div>
 
@@ -665,7 +692,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
       })()}
 
       {/* ========== GALERIA DE FOTOS PREMIUM ========== */}
-      {temFotos && fotosParaExibir.length > 0 && (
+      {temFotosGaleria && galeriaFotos.length > 0 && (
         <motion.section 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -675,14 +702,14 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
           <h3 className="text-base font-bold text-white mb-3 flex items-center gap-2">
             <Camera className="w-4 h-4 text-purple-400" />
             Fotos
-            <span className="text-white/60 text-sm font-normal">({fotosParaExibir.length})</span>
+            <span className="text-white/60 text-sm font-normal">({galeriaFotos.length})</span>
             {loadingPhotos && (
               <div className="ml-2 w-3 h-3 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
             )}
           </h3>
           
           <div className="grid grid-cols-4 gap-2">
-            {fotosParaExibir.slice(0, 4).map((photo: string, index: number) => (
+            {galeriaFotos.slice(0, 4).map((photo: string, index: number) => (
               <motion.button
                 key={index}
                 onClick={() => { setCurrentPhotoIndex(index); setLightboxOpen(true); }}
@@ -701,9 +728,9 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                   <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
                 
-                {index === 3 && fotosParaExibir.length > 4 && (
+                {index === 3 && galeriaFotos.length > 4 && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <span className="text-white font-bold">+{fotosParaExibir.length - 4}</span>
+                    <span className="text-white font-bold">+{galeriaFotos.length - 4}</span>
                   </div>
                 )}
               </motion.button>
@@ -832,7 +859,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               <X className="w-6 h-6 text-white" />
             </motion.button>
             
-            {fotosParaExibir.length > 1 && (
+            {galeriaFotos.length > 1 && (
               <>
                 <motion.button 
                   whileHover={{ scale: 1.1 }}
@@ -840,7 +867,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                   className="absolute left-4 p-3 rounded-full bg-white/10 backdrop-blur-sm"
                   onClick={(e) => { 
                     e.stopPropagation(); 
-                    setCurrentPhotoIndex(prev => prev === 0 ? fotosParaExibir.length - 1 : prev - 1);
+                    setCurrentPhotoIndex(prev => prev === 0 ? galeriaFotos.length - 1 : prev - 1);
                   }}
                 >
                   <ChevronLeft className="w-6 h-6 text-white" />
@@ -851,7 +878,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                   className="absolute right-4 p-3 rounded-full bg-white/10 backdrop-blur-sm"
                   onClick={(e) => { 
                     e.stopPropagation(); 
-                    setCurrentPhotoIndex(prev => prev === fotosParaExibir.length - 1 ? 0 : prev + 1);
+                    setCurrentPhotoIndex(prev => prev === galeriaFotos.length - 1 ? 0 : prev + 1);
                   }}
                 >
                   <ChevronRight className="w-6 h-6 text-white" />
@@ -864,13 +891,13 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              src={fotosParaExibir[currentPhotoIndex]} 
+              src={galeriaFotos[currentPhotoIndex]} 
               className="max-w-[90vw] max-h-[80vh] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
             />
             
             <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2">
-              {fotosParaExibir.map((_: string, index: number) => (
+              {galeriaFotos.map((_: string, index: number) => (
                 <button
                   key={index}
                   onClick={(e) => { e.stopPropagation(); setCurrentPhotoIndex(index); }}

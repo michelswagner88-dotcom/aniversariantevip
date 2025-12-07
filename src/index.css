@@ -102,6 +102,16 @@
   transform: scale(0.96);
 }
 
+/* Esconder scrollbar mantendo funcionalidade de scroll */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
 /* Scroll suave global */
 html {
   scroll-behavior: smooth;

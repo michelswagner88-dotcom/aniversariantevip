@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Heart, Users, Shield, Sparkles, Gift, Target } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { BackButton } from "@/components/BackButton";
 import { useSEO } from "@/hooks/useSEO";
 
 const Sobre = () => {
@@ -38,6 +39,10 @@ const Sobre = () => {
       <Header />
       
       <main className="pt-20">
+        {/* Botão Voltar */}
+        <div className="max-w-6xl mx-auto px-4 mb-4">
+          <BackButton />
+        </div>
         {/* Hero Section */}
         <section className="relative py-16 sm:py-24 overflow-hidden">
           {/* Background Effects */}

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ResponsiveContainer, AreaChart, Area } from "recharts";
-import { TrendingUp, Eye, Gift, CheckCircle, MessageCircle, Phone, Navigation, Share2, Heart, ArrowRight } from "lucide-react";
+import { TrendingUp, Eye, Gift, CheckCircle, MessageCircle, Phone, Navigation, Share2, Heart, ArrowRight, Instagram, Globe } from "lucide-react";
 import { useEstabelecimentoAnalytics } from "@/hooks/useEstabelecimentoAnalytics";
 
 interface EstabelecimentoAnalyticsProps {
@@ -144,7 +144,21 @@ export const EstabelecimentoAnalytics = ({ estabelecimentoId }: EstabelecimentoA
       </div>
 
       {/* KPIs Secundários */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <MetricCard
+          icon={Instagram}
+          label="Instagram"
+          value={analytics.cliquesInstagram}
+          subLabel="Cliques"
+          colorClass="from-pink-500/10 to-rose-500/10 border-pink-500"
+        />
+        <MetricCard
+          icon={Globe}
+          label="Site"
+          value={analytics.cliquesSite}
+          subLabel="Cliques"
+          colorClass="from-violet-500/10 to-purple-500/10 border-violet-500"
+        />
         <MetricCard
           icon={Navigation}
           label="Como Chegar"

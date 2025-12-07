@@ -13,6 +13,8 @@ export interface AnalyticsData {
   cliquesBeneficio: number;
   cliquesWhatsApp: number;
   cliquesTelefone: number;
+  cliquesInstagram: number;
+  cliquesSite: number;
   cliquesNavegacao: number;
   compartilhamentos: number;
   favoritosAdicionados: number;
@@ -86,6 +88,8 @@ export const useEstabelecimentoAnalytics = (estabelecimentoId: string | undefine
       const cliquesBeneficio = analytics?.filter(a => a.tipo_evento === 'benefit_click').length || 0;
       const cliquesWhatsApp = analytics?.filter(a => a.tipo_evento === 'whatsapp_click').length || 0;
       const cliquesTelefone = analytics?.filter(a => a.tipo_evento === 'phone_click').length || 0;
+      const cliquesInstagram = analytics?.filter(a => a.tipo_evento === 'instagram_click').length || 0;
+      const cliquesSite = analytics?.filter(a => a.tipo_evento === 'site_click').length || 0;
       const cliquesNavegacao = analytics?.filter(a => a.tipo_evento === 'directions_click').length || 0;
       const compartilhamentos = analytics?.filter(a => a.tipo_evento === 'share').length || 0;
       const favoritosAdicionados = analytics?.filter(a => a.tipo_evento === 'favorite_add').length || 0;
@@ -196,6 +200,8 @@ export const useEstabelecimentoAnalytics = (estabelecimentoId: string | undefine
         cliquesBeneficio,
         cliquesWhatsApp,
         cliquesTelefone,
+        cliquesInstagram,
+        cliquesSite,
         cliquesNavegacao,
         compartilhamentos,
         favoritosAdicionados,

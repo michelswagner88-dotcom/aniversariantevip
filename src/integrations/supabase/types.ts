@@ -582,6 +582,10 @@ export type Database = {
         Row: {
           ativo: boolean
           bairro: string | null
+          beneficio_regras: string | null
+          beneficio_titulo: string | null
+          beneficio_validade: string | null
+          bio: string | null
           cadastro_completo: boolean
           categoria: string[] | null
           cep: string | null
@@ -623,6 +627,10 @@ export type Database = {
         Insert: {
           ativo?: boolean
           bairro?: string | null
+          beneficio_regras?: string | null
+          beneficio_titulo?: string | null
+          beneficio_validade?: string | null
+          bio?: string | null
           cadastro_completo?: boolean
           categoria?: string[] | null
           cep?: string | null
@@ -664,6 +672,10 @@ export type Database = {
         Update: {
           ativo?: boolean
           bairro?: string | null
+          beneficio_regras?: string | null
+          beneficio_titulo?: string | null
+          beneficio_validade?: string | null
+          bio?: string | null
           cadastro_completo?: boolean
           categoria?: string[] | null
           cep?: string | null
@@ -1575,6 +1587,10 @@ export type Database = {
         Row: {
           ativo: boolean | null
           bairro: string | null
+          beneficio_regras: string | null
+          beneficio_titulo: string | null
+          beneficio_validade: string | null
+          bio: string | null
           categoria: string[] | null
           cep: string | null
           cidade: string | null
@@ -1606,6 +1622,10 @@ export type Database = {
         Insert: {
           ativo?: boolean | null
           bairro?: string | null
+          beneficio_regras?: string | null
+          beneficio_titulo?: string | null
+          beneficio_validade?: string | null
+          bio?: string | null
           categoria?: string[] | null
           cep?: string | null
           cidade?: string | null
@@ -1637,6 +1657,10 @@ export type Database = {
         Update: {
           ativo?: boolean | null
           bairro?: string | null
+          beneficio_regras?: string | null
+          beneficio_titulo?: string | null
+          beneficio_validade?: string | null
+          bio?: string | null
           categoria?: string[] | null
           cep?: string | null
           cidade?: string | null

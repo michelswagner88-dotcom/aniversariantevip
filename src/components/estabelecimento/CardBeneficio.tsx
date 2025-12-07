@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Gift, Calendar, Eye, FileText, X, Sparkles, Info, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEstablishmentMetrics } from '@/hooks/useEstablishmentMetrics';
-import { supabase } from '@/integrations/supabase/client';
+import { getValidadeTexto } from '@/lib/bioUtils';
 
 interface CardBeneficioProps {
   beneficio: string;
@@ -42,20 +42,6 @@ export const CardBeneficio = ({
 
     // 3. Se logado, abrir modal com as regras
     setModalAberto(true);
-  };
-
-  // Formatar período de validade para texto legível
-  const formatarValidade = (periodo: string) => {
-    switch (periodo) {
-      case 'dia_aniversario':
-        return 'Dia do aniversário';
-      case 'semana_aniversario':
-        return 'Semana do aniversário';
-      case 'mes_aniversario':
-        return 'Mês do aniversário';
-      default:
-        return periodo || 'Período de aniversário';
-    }
   };
 
   return (
@@ -105,7 +91,7 @@ export const CardBeneficio = ({
           {/* Validade - SEMPRE VISÍVEL */}
           <div className="flex items-center justify-center gap-2 text-sm text-purple-300/90 mb-4">
             <Calendar className="w-4 h-4" />
-            <span>Válido: {formatarValidade(validadeTexto)}</span>
+            <span>Válido: {getValidadeTexto(validadeTexto)}</span>
           </div>
 
           {/* Botão Ver Regras - REGISTRA CLIQUE */}

@@ -176,11 +176,14 @@ export const CategoryCarousel = ({
       setCanScrollLeft(scrollLeft > 10);
       setCanScrollRight(scrollLeft < maxScroll - 10);
       
-      // Calcular dots
-      const dots = Math.ceil(maxScroll / 320) + 1;
+      // Calcular dots baseado na largura real do card
+      const firstCard = container.querySelector(':scope > div') as HTMLElement;
+      const cardWidth = firstCard ? firstCard.offsetWidth + 16 : 316;
+      
+      const dots = Math.ceil(maxScroll / cardWidth) + 1;
       setTotalDots(Math.max(dots, 1));
       
-      const index = Math.round(scrollLeft / 320);
+      const index = Math.round(scrollLeft / cardWidth);
       setActiveIndex(Math.min(index, dots - 1));
     };
     
@@ -198,17 +201,19 @@ export const CategoryCarousel = ({
     const scrollLeft = container.scrollLeft;
     const maxScroll = scrollWidth - clientWidth;
     
-    let scrollAmount = direction === 'left' ? -320 : 320;
+    // Pegar largura real do primeiro card + gap
+    const firstCard = container.querySelector(':scope > div') as HTMLElement;
+    const cardWidth = firstCard ? firstCard.offsetWidth + 16 : 316; // 300 + 16 gap
+    
+    let scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
     
     // Scroll infinito: volta ao início/fim
     if (direction === 'right' && scrollLeft >= maxScroll - 10) {
-      // Chegou no final, volta ao início
       container.scrollTo({ left: 0, behavior: 'smooth' });
       return;
     }
     
     if (direction === 'left' && scrollLeft <= 10) {
-      // Chegou no início, vai para o final
       container.scrollTo({ left: maxScroll, behavior: 'smooth' });
       return;
     }
@@ -217,9 +222,11 @@ export const CategoryCarousel = ({
   };
 
   const scrollToIndex = (index: number) => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({ left: index * 320, behavior: 'smooth' });
-    }
+    if (!scrollRef.current) return;
+    const container = scrollRef.current;
+    const firstCard = container.querySelector(':scope > div') as HTMLElement;
+    const cardWidth = firstCard ? firstCard.offsetWidth + 16 : 316;
+    container.scrollTo({ left: index * cardWidth, behavior: 'smooth' });
   };
 
   if (estabelecimentos.length === 0) return null;

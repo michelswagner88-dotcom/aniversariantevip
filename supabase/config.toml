@@ -124,3 +124,13 @@ verify_jwt = false
 # --- UTILIDADES ---
 [functions.standardize-text]
 verify_jwt = false
+
+[functions.sitemap]
+verify_jwt = false
+
+[functions.cleanup-orphan-user]
+verify_jwt = true
+
+# --- BUSCA DE FOTOS ---
+[functions.buscar-fotos-lote]
+verify_jwt = true

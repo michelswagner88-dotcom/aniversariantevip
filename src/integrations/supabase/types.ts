@@ -600,7 +600,9 @@ export type Database = {
           endereco_formatado: string | null
           especialidades: string[] | null
           estado: string | null
+          foto_buscada: boolean | null
           galeria_fotos: string[] | null
+          google_place_id: string | null
           horario_funcionamento: string | null
           id: string
           instagram: string | null
@@ -645,7 +647,9 @@ export type Database = {
           endereco_formatado?: string | null
           especialidades?: string[] | null
           estado?: string | null
+          foto_buscada?: boolean | null
           galeria_fotos?: string[] | null
+          google_place_id?: string | null
           horario_funcionamento?: string | null
           id?: string
           instagram?: string | null
@@ -690,7 +694,9 @@ export type Database = {
           endereco_formatado?: string | null
           especialidades?: string[] | null
           estado?: string | null
+          foto_buscada?: boolean | null
           galeria_fotos?: string[] | null
+          google_place_id?: string | null
           horario_funcionamento?: string | null
           id?: string
           instagram?: string | null

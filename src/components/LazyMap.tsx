@@ -27,6 +27,8 @@ const LazyMap: React.FC<LazyMapProps> = ({
 }) => {
   const [showMap, setShowMap] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [staticMapError, setStaticMapError] = useState(false);
+  const [embedMapError, setEmbedMapError] = useState(false);
   
   // Verificar se tem coordenadas válidas
   const hasCoordinates = latitude && longitude && latitude !== 0 && longitude !== 0;
@@ -114,23 +116,26 @@ const LazyMap: React.FC<LazyMapProps> = ({
         {!showMap ? (
           /* Preview / Placeholder com botão para carregar */
           <div className="relative w-full h-full cursor-pointer group" onClick={() => setShowMap(true)}>
-            {/* Imagem estática do mapa se disponível */}
-            {staticMapUrl ? (
+            {/* Imagem estática do mapa se disponível e sem erro */}
+            {staticMapUrl && !staticMapError ? (
               <img
                 src={staticMapUrl}
                 alt={`Mapa de ${nomeEstabelecimento}`}
                 className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
                 loading="lazy"
+                onError={() => setStaticMapError(true)}
               />
             ) : (
-              /* Pattern decorativo se não tem API key */
-              <div 
-                className="absolute inset-0 opacity-20" 
-                style={{
-                  backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(139,92,246,0.1) 10px, rgba(139,92,246,0.1) 11px),
-                                    repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(139,92,246,0.1) 10px, rgba(139,92,246,0.1) 11px)`
-                }} 
-              />
+              /* Fallback visual com gradiente Cosmic */
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-900/40 to-pink-900/30">
+                <div 
+                  className="absolute inset-0 opacity-30" 
+                  style={{
+                    backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(139,92,246,0.15) 10px, rgba(139,92,246,0.15) 11px),
+                                      repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(139,92,246,0.15) 10px, rgba(139,92,246,0.15) 11px)`
+                  }} 
+                />
+              </div>
             )}
             
             {/* Marcador central animado */}
@@ -169,7 +174,7 @@ const LazyMap: React.FC<LazyMapProps> = ({
               </div>
             )}
             
-            {embedMapUrl ? (
+            {embedMapUrl && !embedMapError ? (
               <iframe
                 src={embedMapUrl}
                 width="100%"
@@ -180,15 +185,23 @@ const LazyMap: React.FC<LazyMapProps> = ({
                 referrerPolicy="no-referrer-when-downgrade"
                 title={`Mapa de ${nomeEstabelecimento}`}
                 onLoad={() => setMapLoaded(true)}
+                onError={() => setEmbedMapError(true)}
                 className={mapLoaded ? 'opacity-100' : 'opacity-0'}
               />
             ) : (
-              /* Fallback se não tem API key - abre Google Maps */
+              /* Fallback - botão para abrir Google Maps externamente */
               <div 
-                className="w-full h-full flex items-center justify-center cursor-pointer"
+                className="w-full h-full flex flex-col items-center justify-center cursor-pointer bg-gradient-to-br from-violet-900/40 to-pink-900/30 hover:from-violet-900/50 hover:to-pink-900/40 transition-colors"
                 onClick={openGoogleMaps}
               >
-                <span className="text-gray-400 text-sm flex items-center gap-2">
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  className="w-10 h-10 bg-violet-500 rounded-full flex items-center justify-center shadow-lg shadow-violet-500/50 mb-2"
+                >
+                  <MapPin className="w-5 h-5 text-white" />
+                </motion.div>
+                <span className="text-white text-sm flex items-center gap-2 font-medium">
                   <ExternalLink className="w-4 h-4" />
                   Abrir no Google Maps
                 </span>

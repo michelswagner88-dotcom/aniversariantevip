@@ -503,7 +503,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
           <div className="flex-1 pb-1">
             {/* Localização */}
             {(estabelecimento.cidade || estabelecimento.estado) && (
-              <div className="flex items-center gap-1.5 text-gray-400 text-sm">
+              <div className="flex items-center gap-1.5 text-white/80 text-sm">
                 <MapPin className="w-3.5 h-3.5" />
                 <span>
                   {[estabelecimento.cidade, estabelecimento.estado].filter(Boolean).join('/')}
@@ -536,7 +536,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
           transition={{ delay: 0.4 }}
           className="mx-4 mt-4"
         >
-          <p className="text-gray-300 text-sm leading-relaxed">
+          <p className="text-white/80 text-sm leading-relaxed">
             {estabelecimento.bio}
           </p>
         </motion.div>
@@ -675,7 +675,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
           <h3 className="text-base font-bold text-white mb-3 flex items-center gap-2">
             <Camera className="w-4 h-4 text-purple-400" />
             Fotos
-            <span className="text-gray-500 text-sm font-normal">({fotosParaExibir.length})</span>
+            <span className="text-white/60 text-sm font-normal">({fotosParaExibir.length})</span>
             {loadingPhotos && (
               <div className="ml-2 w-3 h-3 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
             )}
@@ -727,7 +727,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold text-white">Horário de Funcionamento</h4>
-                <p className="text-gray-400 text-sm mt-1">{estabelecimento.horario_funcionamento}</p>
+                <p className="text-white/80 text-sm mt-1">{estabelecimento.horario_funcionamento}</p>
               </div>
             </div>
           </div>

@@ -88,19 +88,19 @@ const LazyMap: React.FC<LazyMapProps> = ({
           <div>
             <h4 className="font-semibold text-white">Como Chegar</h4>
             {enderecoFormatado && (
-              <p className="text-gray-400 text-sm mt-1">{enderecoFormatado}</p>
+              <p className="text-white/80 text-sm mt-1">{enderecoFormatado}</p>
             )}
             {bairro && (
-              <p className="text-gray-500 text-sm mt-0.5">{bairro}</p>
+              <p className="text-white/70 text-sm mt-0.5">{bairro}</p>
             )}
             {cidadeEstado && (
-              <p className="text-gray-500 text-xs mt-0.5">{cidadeEstado}</p>
+              <p className="text-white/60 text-xs mt-0.5">{cidadeEstado}</p>
             )}
             {cep && (
-              <p className="text-gray-500 text-xs mt-0.5">CEP: {cep}</p>
+              <p className="text-white/60 text-xs mt-0.5">CEP: {cep}</p>
             )}
             {!temLocalizacao && (
-              <p className="text-gray-500 text-sm mt-1 italic">Endereço não informado</p>
+              <p className="text-white/50 text-sm mt-1 italic">Endereço não informado</p>
             )}
           </div>
         </div>
@@ -164,7 +164,7 @@ const LazyMap: React.FC<LazyMapProps> = ({
             decoding="async"
             className="w-6 h-6"
           />
-          <span className="text-xs text-gray-400">Maps</span>
+          <span className="text-xs text-white/80">Maps</span>
         </motion.button>
 
         <motion.button
@@ -176,7 +176,7 @@ const LazyMap: React.FC<LazyMapProps> = ({
           <div className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center">
             <span className="text-white text-[8px] font-bold">W</span>
           </div>
-          <span className="text-xs text-gray-400">Waze</span>
+          <span className="text-xs text-white/80">Waze</span>
         </motion.button>
 
         <motion.button
@@ -188,7 +188,7 @@ const LazyMap: React.FC<LazyMapProps> = ({
           <div className="w-6 h-6 bg-black rounded flex items-center justify-center">
             <span className="text-white text-[8px] font-bold">Uber</span>
           </div>
-          <span className="text-xs text-gray-400">Uber</span>
+          <span className="text-xs text-white/80">Uber</span>
         </motion.button>
 
         <motion.button
@@ -200,7 +200,7 @@ const LazyMap: React.FC<LazyMapProps> = ({
           <div className="w-6 h-6 bg-yellow-400 rounded flex items-center justify-center">
             <span className="text-black text-[10px] font-bold">99</span>
           </div>
-          <span className="text-xs text-gray-400">99</span>
+          <span className="text-xs text-white/80">99</span>
         </motion.button>
       </div>
     </div>

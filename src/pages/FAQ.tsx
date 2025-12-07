@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { useSEO } from "@/hooks/useSEO";
 import { SEO_CONTENT } from "@/constants/seo";
 import { CONTATOS } from "@/lib/constants";
+import { motion, type Variants } from "framer-motion";
 
 export default function FAQ() {
   useSEO({
@@ -43,63 +44,119 @@ export default function FAQ() {
     },
   ];
 
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.4,
+        ease: [0.25, 0.46, 0.45, 0.94]
+      }
+    }
+  };
+
+  const headerVariants: Variants = {
+    hidden: { opacity: 0, y: -20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: [0.25, 0.46, 0.45, 0.94]
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       <div className="pt-16">
         {/* Header */}
-        <div className="py-12 text-center">
+        <motion.div 
+          className="py-12 text-center"
+          initial="hidden"
+          animate="visible"
+          variants={headerVariants}
+        >
           <h1 className="text-3xl font-bold text-foreground">Perguntas Frequentes</h1>
           <p className="text-muted-foreground mt-2">
             Tire suas dúvidas sobre o Aniversariante VIP
           </p>
-        </div>
+        </motion.div>
 
         {/* Perguntas em acordeão */}
         <div className="max-w-3xl mx-auto px-4 pb-12">
-          <Accordion type="single" collapsible className="space-y-4">
-            {perguntas.map((item, index) => (
-              <AccordionItem 
-                key={index} 
-                value={`item-${index}`}
-                className="bg-card border border-border/20 rounded-xl px-6"
-              >
-                <AccordionTrigger className="text-left font-medium py-4 hover:no-underline">
-                  <span className="text-foreground">{index + 1}. {item.pergunta}</span>
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-4">
-                  {item.resposta}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+          >
+            <Accordion type="single" collapsible className="space-y-4">
+              {perguntas.map((item, index) => (
+                <motion.div key={index} variants={itemVariants}>
+                  <AccordionItem 
+                    value={`item-${index}`}
+                    className="bg-card border border-border/20 rounded-xl px-6"
+                  >
+                    <AccordionTrigger className="text-left font-medium py-4 hover:no-underline">
+                      <span className="text-foreground">{index + 1}. {item.pergunta}</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground pb-4">
+                      {item.resposta}
+                    </AccordionContent>
+                  </AccordionItem>
+                </motion.div>
+              ))}
+            </Accordion>
+          </motion.div>
 
           {/* Contato */}
-          <div className="mt-12 text-center p-8 bg-card border border-border/20 rounded-2xl">
+          <motion.div 
+            className="mt-12 text-center p-8 bg-card border border-border/20 rounded-2xl"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+          >
             <h2 className="text-xl font-bold text-foreground mb-2">Ainda tem dúvidas?</h2>
             <p className="text-muted-foreground mb-6">
               Entre em contato conosco. Estamos aqui para ajudar!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a 
+              <motion.a 
                 href={`mailto:${CONTATOS.email}`}
                 className="flex items-center justify-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <Mail size={18} />
                 {CONTATOS.email}
-              </a>
-              <a 
+              </motion.a>
+              <motion.a 
                 href={`https://wa.me/${CONTATOS.whatsapp.replace(/\D/g, '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 px-6 py-3 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-xl transition"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <Phone size={18} />
                 {CONTATOS.whatsapp}
-              </a>
+              </motion.a>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
       

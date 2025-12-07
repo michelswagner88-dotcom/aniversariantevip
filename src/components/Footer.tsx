@@ -30,6 +30,12 @@ export const Footer = () => {
             </h3>
             <nav className="flex flex-col gap-3">
               <Link 
+                to="/sobre" 
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline transition-colors"
+              >
+                Sobre Nós
+              </Link>
+              <Link 
                 to="/como-funciona" 
                 className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline transition-colors"
               >

@@ -55,6 +55,7 @@ const AreaColaborador = lazy(() => import("./pages/AreaColaborador"));
 const ComoFunciona = lazy(() => import("./pages/ComoFunciona"));
 const SejaParceito = lazy(() => import("./pages/SejaParceito"));
 const FAQ = lazy(() => import("./pages/FAQ"));
+const Sobre = lazy(() => import("./pages/Sobre"));
 const PoliticaPrivacidade = lazy(() => import("./pages/PoliticaPrivacidade"));
 const TermosUso = lazy(() => import("./pages/TermosUso"));
 const SelecionarPerfil = lazy(() => import("./pages/SelecionarPerfil"));
@@ -213,6 +214,17 @@ const App = () => (
                 <Route path="/cadastro" element={<Navigate to="/auth" replace />} />
                 <Route path="/login" element={<Navigate to="/auth" replace />} />
                 <Route path="/registro" element={<Navigate to="/auth" replace />} />
+                <Route path="/cadastro/aniversariante" element={<Navigate to="/auth" replace />} />
+                <Route path="/login/aniversariante" element={<Navigate to="/auth" replace />} />
+                
+                {/* Aliases - rotas curtas redirecionam para as corretas */}
+                <Route path="/favoritos" element={<Navigate to="/meus-favoritos" replace />} />
+                <Route path="/perfil" element={<Navigate to="/area-aniversariante" replace />} />
+                <Route path="/termos" element={<Navigate to="/termos-uso" replace />} />
+                <Route path="/privacidade" element={<Navigate to="/politica-privacidade" replace />} />
+                
+                {/* Página Sobre */}
+                <Route path="/sobre" element={<LazyRoute><Sobre /></LazyRoute>} />
                 
                 <Route path="*" element={<LazyRoute><NotFound /></LazyRoute>} />
               </Routes>

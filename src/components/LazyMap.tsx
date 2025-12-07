@@ -108,11 +108,8 @@ const LazyMap: React.FC<LazyMapProps> = ({
       
       {/* Área do mapa estático */}
       <div className="relative h-48 bg-white rounded-lg overflow-hidden mx-4 mb-2 border border-slate-200">
-        {/* Mapa estático clicável */}
-        <div 
-          className="relative w-full h-full cursor-pointer" 
-          onClick={openGoogleMaps}
-        >
+        {/* Mapa estático (não clicável) */}
+        <div className="relative w-full h-full">
           {/* Imagem estática do mapa se disponível e sem erro */}
           {staticMapUrl && !staticMapError ? (
             <img
@@ -127,7 +124,7 @@ const LazyMap: React.FC<LazyMapProps> = ({
             <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
               <div className="flex flex-col items-center gap-2">
                 <MapPin className="w-10 h-10 text-red-500" fill="#ef4444" />
-                <span className="text-gray-600 text-sm">Clique para abrir no Maps</span>
+                <span className="text-gray-600 text-sm">Localização</span>
               </div>
             </div>
           )}

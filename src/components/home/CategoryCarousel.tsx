@@ -80,7 +80,7 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
     <TiltCard 
       tiltAmount={6} 
       shadowAmount={12}
-      className="group flex-shrink-0 w-[calc(100vw-3rem)] sm:w-[280px] md:w-[300px] cursor-pointer"
+      className="group w-full cursor-pointer"
     >
       <article
         onClick={handleClick}
@@ -315,7 +315,8 @@ export const CategoryCarousel = ({
         >
           {estabelecimentos.map((est, index) => (
             <motion.div 
-              key={est.id} 
+              key={est.id}
+              className="flex-shrink-0 w-[calc(100vw-3rem)] sm:w-[280px] md:w-[300px]"
               style={{ 
                 scrollSnapAlign: 'start',
                 scrollSnapStop: 'always'

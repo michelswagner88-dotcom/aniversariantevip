@@ -360,9 +360,14 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
 
   const categoria = estabelecimento.categoria?.[0] || 'Estabelecimento';
   const mostraCardapio = ['Bar', 'Restaurante'].includes(categoria);
-  const fotosParaExibir = estabelecimento?.galeria_fotos || [];
-  const fotoPrincipal = fotosParaExibir.length > 0 ? fotosParaExibir[0] : estabelecimento.logo_url;
-  const temFotos = fotosParaExibir.length > 0 || estabelecimento.logo_url;
+  
+  // Montar array de fotos: galeria + logo_url como fallback
+  const galeriaFotos = estabelecimento?.galeria_fotos || [];
+  const fotosParaExibir = galeriaFotos.length > 0 
+    ? galeriaFotos 
+    : (estabelecimento.logo_url ? [estabelecimento.logo_url] : []);
+  const fotoPrincipal = fotosParaExibir.length > 0 ? fotosParaExibir[0] : '/placeholder-estabelecimento.png';
+  const temFotos = fotosParaExibir.length > 0;
 
   return (
     <div className="min-h-screen bg-slate-950 pb-24 md:pb-8 animate-in fade-in duration-500">

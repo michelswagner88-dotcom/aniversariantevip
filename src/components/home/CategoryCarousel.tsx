@@ -303,10 +303,14 @@ export const CategoryCarousel = ({
           )}
         />
         
-        {/* Botão esquerda */}
+        {/* Botão esquerda - sempre visível, área de clique maior */}
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-opacity hover:scale-105 -translate-x-1/2"
+          aria-label="Anterior"
+          className={cn(
+            "absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95",
+            canScrollLeft ? "opacity-100" : "opacity-40"
+          )}
         >
           <ChevronLeft className="w-5 h-5 text-slate-700 dark:text-slate-300" />
         </button>
@@ -338,10 +342,14 @@ export const CategoryCarousel = ({
           ))}
         </div>
         
-        {/* Botão direita */}
+        {/* Botão direita - sempre visível, área de clique maior */}
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-opacity hover:scale-105 translate-x-1/2"
+          aria-label="Próximo"
+          className={cn(
+            "absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95",
+            canScrollRight ? "opacity-100" : "opacity-40"
+          )}
         >
           <ChevronRightIcon className="w-5 h-5 text-slate-700 dark:text-slate-300" />
         </button>

@@ -5,6 +5,8 @@ import { useCidadeInteligente } from '@/hooks/useCidadeInteligente';
 import { useEstabelecimentos } from '@/hooks/useEstabelecimentos';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { useRotatingSections } from '@/hooks/useRotatingSections';
+import { ALL_HOME_SECTIONS } from '@/types/homeCategories';
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 import { getSectionTitle, getCategoryTitle, getCategorySubtitle } from '@/utils/sectionTitles';
 import { calcularDistancia } from '@/lib/geoUtils';
@@ -229,43 +231,41 @@ const Index = () => {
   // Título e subtítulo da seção baseado no contexto
   const destaquesConfig = getSectionTitle('destaques', cidadeFinal || undefined);
 
-  // Agrupar estabelecimentos por categoria para carrosséis
-  const estabelecimentosPorCategoria = useMemo(() => {
+  // Sistema de rotação dinâmica de seções
+  const { sections: rotatingSections, animationKey } = useRotatingSections(ALL_HOME_SECTIONS, {
+    rotatingCount: 5,
+    rotationInterval: 60000, // 1 minuto
+    rotateOnMount: true,
+  });
+
+  // Agrupar estabelecimentos por categoria para as seções rotativas
+  const secoesDinamicas = useMemo(() => {
     if (!estabelecimentos || categoriaParam || buscaParam) return [];
     
-    // Pegar as top 5 categorias com mais estabelecimentos
-    const contagem: Record<string, any[]> = {};
-    
-    estabelecimentosFiltrados.forEach(est => {
-      const cats = Array.isArray(est.categoria) ? est.categoria : [est.categoria];
-      cats.forEach((cat: string) => {
-        if (cat) {
-          if (!contagem[cat]) contagem[cat] = [];
-          if (contagem[cat].length < 10) {
-            contagem[cat].push(est);
-          }
-        }
-      });
-    });
-    
-    // Ordenar por quantidade e pegar top 5
-    return Object.entries(contagem)
-      .filter(([_, ests]) => ests.length >= 3)
-      .sort((a, b) => b[1].length - a[1].length)
-      .slice(0, 5)
-      .map(([cat, ests]) => {
-        const config = getSectionTitle(cat, cidadeFinal || undefined);
-        return {
-          categoria: cat,
-          titulo: config.titulo,
-          subtitulo: config.subtitulo,
-          estabelecimentos: ests
-        };
-      });
-  }, [estabelecimentos, estabelecimentosFiltrados, categoriaParam, buscaParam, cidadeFinal]);
+    return rotatingSections.map(section => {
+      let ests: any[] = [];
+      
+      if (section.category === 'all') {
+        // Seção "Em alta" - mostrar os mais populares (primeiros 10)
+        ests = estabelecimentosFiltrados.slice(0, 10);
+      } else {
+        // Filtrar por categoria específica
+        ests = estabelecimentosFiltrados.filter(est => {
+          const cats = Array.isArray(est.categoria) ? est.categoria : [est.categoria];
+          return cats.some(cat => cat?.toLowerCase() === section.category.toLowerCase());
+        }).slice(0, 10);
+      }
+      
+      return {
+        ...section,
+        estabelecimentos: ests,
+        hasContent: ests.length >= 2,
+      };
+    }).filter(section => section.hasContent);
+  }, [estabelecimentos, estabelecimentosFiltrados, rotatingSections, categoriaParam, buscaParam]);
 
   // Mostrar carrosséis apenas quando não há filtro ativo
-  const mostrarCarrosseis = !categoriaParam && !buscaParam && estabelecimentosPorCategoria.length > 0;
+  const mostrarCarrosseis = !categoriaParam && !buscaParam && secoesDinamicas.length > 0;
   
   // Estado para controlar se mostra Hero ou modo filtrado
   const isFiltered = !!(categoriaParam || buscaParam);
@@ -378,47 +378,35 @@ const Index = () => {
                 </div>
               )}
               
-              {/* Destaques gerais primeiro */}
-              <div className="scroll-reveal">
-                <CategoryCarousel
-                  title={destaquesConfig.titulo}
-                  subtitle={destaquesConfig.subtitulo}
-                  estabelecimentos={estabelecimentosFiltrados.slice(0, 10)}
-                  linkHref={cidadeFinal ? `/explorar?cidade=${cidadeFinal}&estado=${estadoFinal}` : '/explorar'}
-                />
-              </div>
-              
-              {/* CTA Banner intercalado */}
-              <div className="scroll-reveal">
-                <CTABanner variant="register" />
-              </div>
-              
-              {/* Carrosséis por categoria (primeiros 2) */}
-              {estabelecimentosPorCategoria.slice(0, 2).map(({ categoria, titulo, subtitulo, estabelecimentos: ests }, index) => (
-                <div key={categoria} className="scroll-reveal" style={{ transitionDelay: `${index * 0.1}s` }}>
-                  <CategoryCarousel
-                    title={titulo}
-                    subtitle={subtitulo}
-                    estabelecimentos={ests}
-                    linkHref={`/explorar?categoria=${encodeURIComponent(categoria)}${cidadeFinal ? `&cidade=${cidadeFinal}&estado=${estadoFinal}` : ''}`}
-                  />
-                </div>
-              ))}
-              
-              {/* CTA Banner para parceiros - SEMPRE aparece */}
-              <div className="scroll-reveal-scale">
-                <CTABanner variant="partner" />
-              </div>
-              
-              {/* Restante dos carrosséis */}
-              {estabelecimentosPorCategoria.slice(2).map(({ categoria, titulo, subtitulo, estabelecimentos: ests }, index) => (
-                <div key={categoria} className="scroll-reveal" style={{ transitionDelay: `${index * 0.05}s` }}>
-                  <CategoryCarousel
-                    title={titulo}
-                    subtitle={subtitulo}
-                    estabelecimentos={ests}
-                    linkHref={`/explorar?categoria=${encodeURIComponent(categoria)}${cidadeFinal ? `&cidade=${cidadeFinal}&estado=${estadoFinal}` : ''}`}
-                  />
+              {/* Seções dinâmicas com rotação */}
+              {secoesDinamicas.map((section, index) => (
+                <div key={`${section.id}-${animationKey}`}>
+                  {/* Seção de carrossel */}
+                  <div 
+                    className="scroll-reveal animate-fade-in" 
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <CategoryCarousel
+                      title={section.title}
+                      subtitle={section.subtitle}
+                      estabelecimentos={section.estabelecimentos}
+                      linkHref={section.viewAllLink + (cidadeFinal ? `${section.viewAllLink.includes('?') ? '&' : '?'}cidade=${cidadeFinal}&estado=${estadoFinal}` : '')}
+                    />
+                  </div>
+                  
+                  {/* CTA Banner após a primeira seção (Em Alta) */}
+                  {index === 0 && (
+                    <div className="scroll-reveal mt-8">
+                      <CTABanner variant="register" />
+                    </div>
+                  )}
+                  
+                  {/* CTA Banner para parceiros após a terceira seção */}
+                  {index === 2 && (
+                    <div className="scroll-reveal-scale mt-8">
+                      <CTABanner variant="partner" />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

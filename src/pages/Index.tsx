@@ -13,6 +13,7 @@ import { getSubcategoriesForCategory } from '@/constants/categorySubcategories';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import BottomNav from '@/components/BottomNav';
+import HeroSection from '@/components/home/HeroSection';
 import { AirbnbSearchBar } from '@/components/home/AirbnbSearchBar';
 import { AirbnbCategoryPills } from '@/components/home/AirbnbCategoryPills';
 import { AirbnbCardGrid } from '@/components/home/AirbnbCardGrid';
@@ -252,28 +253,44 @@ const Index = () => {
   // Mostrar carrosséis apenas quando não há filtro ativo
   const mostrarCarrosseis = !categoriaParam && !buscaParam && estabelecimentosPorCategoria.length > 0;
   
+  // Estado para controlar se mostra Hero ou modo filtrado
+  const isFiltered = !!(categoriaParam || buscaParam);
+
+  // Função para navegar para explorar com busca
+  const handleHeroBuscar = () => {
+    navigate(`/explorar${buscaParam ? `?q=${buscaParam}` : ''}${cidadeFinal ? `${buscaParam ? '&' : '?'}cidade=${cidadeFinal}&estado=${estadoFinal}` : ''}`);
+  };
+  
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <Header />
       
-      <main className="pt-20 pb-24">
-        {/* Search Bar Flutuante estilo Airbnb */}
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 mb-8">
-          <AirbnbSearchBar
-            cidade={cidadeFinal || ''}
-            estado={estadoFinal || ''}
-            busca={buscaParam || ''}
-            onBuscaChange={handleBuscaChange}
+      <main className="pb-24">
+        {/* Hero Section - Apenas na home sem filtros */}
+        {!isFiltered && (
+          <HeroSection
+            cidade={cidadeFinal || undefined}
+            estado={estadoFinal || undefined}
             onCidadeSelect={handleCidadeChange}
-            onCategoriaChange={handleCategoriaChange}
-            onUseLocation={requestLocation}
+            onBuscaChange={handleBuscaChange}
+            onBuscar={handleHeroBuscar}
           />
-          
-          {/* Slogan */}
-          <p className="text-center text-[9px] sm:text-xs font-medium tracking-[0.05em] sm:tracking-[0.08em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-slate-400 via-violet-400 to-slate-400 mt-4 opacity-0 animate-[fadeInSlide_0.8s_ease-out_0.5s_forwards] cursor-default transition-all duration-500 hover:from-violet-300 hover:via-fuchsia-300 hover:to-cyan-300 hover:scale-105 whitespace-nowrap">
-            ✨ O maior guia de benefícios para aniversariantes do Brasil ✨
-          </p>
-        </div>
+        )}
+        
+        {/* Search Bar alternativa quando filtrado */}
+        {isFiltered && (
+          <div className="pt-20 max-w-3xl mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 mb-8">
+            <AirbnbSearchBar
+              cidade={cidadeFinal || ''}
+              estado={estadoFinal || ''}
+              busca={buscaParam || ''}
+              onBuscaChange={handleBuscaChange}
+              onCidadeSelect={handleCidadeChange}
+              onCategoriaChange={handleCategoriaChange}
+              onUseLocation={requestLocation}
+            />
+          </div>
+        )}
         
         {/* Pills de categorias estilo Airbnb + Botão de Filtros */}
         <div className="border-b border-slate-200 dark:border-slate-800 sticky top-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-lg z-30">

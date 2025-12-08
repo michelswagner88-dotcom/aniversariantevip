@@ -85,7 +85,7 @@ const PartnerCTA = () => {
           
           {/* Benefícios rápidos */}
           <div className="flex flex-wrap justify-center gap-3 mb-6">
-            {['Gratuito para testar', 'Fácil de usar', '+1000 aniversariantes'].map((item) => (
+            {['Gratuito', 'Sem mensalidade', '+1000 aniversariantes'].map((item) => (
               <span 
                 key={item}
                 className="

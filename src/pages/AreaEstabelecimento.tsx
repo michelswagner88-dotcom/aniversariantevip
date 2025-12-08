@@ -53,6 +53,7 @@ export default function AreaEstabelecimento() {
     emailContato: "",
     instagram: "",
     site: "",
+    bio: "",
   });
 
   // Verificação de autenticação (PRIMEIRA coisa que executa)
@@ -147,6 +148,7 @@ export default function AreaEstabelecimento() {
             emailContato: "",
             instagram: estabelecimento.instagram || "",
             site: estabelecimento.site || "",
+            bio: estabelecimento.bio || "",
           });
           
           await loadCuponsEmitidos(userId);
@@ -325,6 +327,7 @@ export default function AreaEstabelecimento() {
           site: formData.site,
           logo_url: logoUrl,
           categoria: formData.categoria ? [formData.categoria] : null,
+          bio: formData.bio,
         })
         .eq("id", userId);
 
@@ -769,6 +772,23 @@ export default function AreaEstabelecimento() {
                   disabled={!isEditing}
                 />
               </div>
+            </div>
+
+            {/* Campo Bio - Sobre o Estabelecimento */}
+            <div className="space-y-2">
+              <Label htmlFor="bio">Sobre o estabelecimento</Label>
+              <Textarea
+                id="bio"
+                placeholder="Descreva seu estabelecimento de forma atraente para os aniversariantes..."
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value.slice(0, 500) })}
+                disabled={!isEditing}
+                rows={4}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {formData.bio?.length || 0}/500 caracteres
+              </p>
             </div>
 
             <div className="space-y-2">

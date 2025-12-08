@@ -1,0 +1,294 @@
+// EstablishmentHero.tsx - Hero Section Premium
+
+import { ArrowLeft, Heart, Share2, MapPin, Shield, Zap, Gift, Check } from 'lucide-react';
+import { useState } from 'react';
+
+interface EstablishmentHeroProps {
+  establishment: {
+    nome_fantasia: string;
+    photo_url: string | null;
+    categoria: string[] | null;
+    bairro: string | null;
+    cidade: string | null;
+    is_verified?: boolean;
+  };
+  onBack: () => void;
+  onFavorite: () => void;
+  onShare: () => void;
+  isFavorited?: boolean;
+}
+
+const EstablishmentHero = ({ 
+  establishment, 
+  onBack, 
+  onFavorite, 
+  onShare,
+  isFavorited = false 
+}: EstablishmentHeroProps) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const coverImage = establishment.photo_url || '/placeholder-estabelecimento.png';
+  const categoria = establishment.categoria?.[0] || 'Estabelecimento';
+  const inicialNome = (establishment.nome_fantasia || 'E').charAt(0).toUpperCase();
+
+  return (
+    <div className="relative">
+      {/* ========== FOTO DE CAPA COM BREATHING EFFECT ========== */}
+      <div className="relative w-full h-56 sm:h-72 md:h-80 overflow-hidden">
+        {/* Skeleton enquanto carrega */}
+        {!imageLoaded && (
+          <div className="absolute inset-0 img-skeleton" />
+        )}
+        
+        {/* Imagem com animação de respiração */}
+        {establishment.photo_url ? (
+          <img 
+            src={coverImage} 
+            alt={establishment.nome_fantasia}
+            onLoad={() => setImageLoaded(true)}
+            className={`
+              w-full h-full object-cover
+              transition-all duration-1000 ease-out
+              ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}
+            `}
+            style={{
+              animation: imageLoaded ? 'breathe 8s ease-in-out infinite' : 'none'
+            }}
+          />
+        ) : (
+          /* Fallback: gradient abstrato premium se não tiver foto */
+          <div className="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative">
+            <div 
+              className="absolute top-0 left-1/4 w-80 h-80 rounded-full blur-[100px] opacity-40 animate-float"
+              style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
+            />
+            <div 
+              className="absolute -bottom-20 right-1/4 w-96 h-96 rounded-full blur-[120px] opacity-30 animate-glow-pulse"
+              style={{ background: 'radial-gradient(circle, hsl(280, 80%, 60%) 0%, transparent 70%)' }}
+            />
+          </div>
+        )}
+        
+        {/* Gradiente multicamada sofisticado */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 via-50% to-background" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_0%,rgba(0,0,0,0.3)_100%)]" />
+        
+        {/* Vinheta premium nas bordas */}
+        <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.4)]" />
+      </div>
+
+      {/* ========== BOTÕES GLASSMORPHISM ========== */}
+      {/* Botão Voltar */}
+      <button 
+        onClick={onBack}
+        className="
+          absolute top-4 left-4 z-20
+          w-11 h-11 
+          rounded-full
+          glass-dark
+          flex items-center justify-center
+          transition-all duration-300 ease-out
+          hover:scale-110 hover:bg-black/50
+          active:scale-95
+          group
+        "
+        aria-label="Voltar"
+      >
+        <ArrowLeft className="w-5 h-5 text-white drop-shadow-lg transition-transform group-hover:-translate-x-0.5" />
+      </button>
+      
+      {/* Botões Favoritar e Compartilhar */}
+      <div className="absolute top-4 right-4 z-20 flex gap-2">
+        <button 
+          onClick={onFavorite}
+          className="
+            w-11 h-11 
+            rounded-full
+            glass-dark
+            flex items-center justify-center
+            transition-all duration-300 ease-out
+            hover:scale-110
+            active:scale-95
+            group
+          "
+          aria-label="Favoritar"
+        >
+          <Heart 
+            className={`
+              w-5 h-5 drop-shadow-lg
+              transition-all duration-300
+              ${isFavorited 
+                ? 'text-pink-500 fill-pink-500 scale-110' 
+                : 'text-white group-hover:text-pink-400'
+              }
+            `} 
+          />
+        </button>
+        
+        <button 
+          onClick={onShare}
+          className="
+            w-11 h-11 
+            rounded-full
+            glass-dark
+            flex items-center justify-center
+            transition-all duration-300 ease-out
+            hover:scale-110
+            active:scale-95
+            group
+          "
+          aria-label="Compartilhar"
+        >
+          <Share2 className="w-5 h-5 text-white drop-shadow-lg transition-transform group-hover:rotate-12" />
+        </button>
+      </div>
+
+      {/* ========== FOTO DE PERFIL COM ANEL ANIMADO ========== */}
+      <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="relative animate-fade-in-scale" style={{ animationDelay: '0.3s' }}>
+          {/* Anel gradiente animado (estilo Instagram Stories) */}
+          <div 
+            className="
+              absolute -inset-1.5 
+              bg-gradient-to-tr from-purple-500 via-pink-500 to-orange-400
+              rounded-[22px]
+              animate-ring-pulse
+              opacity-90
+            "
+          />
+          
+          {/* Glow por trás */}
+          <div 
+            className="
+              absolute -inset-3
+              bg-gradient-to-tr from-purple-500/40 via-pink-500/40 to-orange-400/40
+              rounded-[28px]
+              blur-xl
+              animate-glow-pulse
+            "
+          />
+          
+          {/* Container da foto */}
+          <div className="
+            relative 
+            w-32 h-32 
+            rounded-[18px] 
+            border-4 border-background 
+            overflow-hidden 
+            shadow-2xl
+          ">
+            {establishment.photo_url ? (
+              <img 
+                src={coverImage} 
+                alt={establishment.nome_fantasia}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-violet-600 via-fuchsia-500 to-pink-500 flex items-center justify-center">
+                <span className="text-4xl font-bold text-white drop-shadow-lg">{inicialNome}</span>
+              </div>
+            )}
+          </div>
+          
+          {/* Badge de Verificado Premium */}
+          {establishment.is_verified !== false && (
+            <div className="
+              absolute -bottom-2 -right-2 
+              w-9 h-9
+              bg-gradient-to-br from-green-400 to-emerald-500 
+              rounded-full 
+              flex items-center justify-center
+              border-[3px] border-background 
+              shadow-lg
+              shadow-green-500/30
+              animate-bounce-in
+            " style={{ animationDelay: '0.6s' }}>
+              <Check className="w-5 h-5 text-white" strokeWidth={3} />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ========== INFORMAÇÕES DO ESTABELECIMENTO ========== */}
+      <div className="pt-20 pb-2 text-center px-4">
+        {/* Nome com entrada animada */}
+        <h1 
+          className="
+            text-2xl sm:text-3xl 
+            font-bold 
+            text-foreground 
+            tracking-tight
+            animate-fade-in-up
+          "
+          style={{ animationDelay: '0.4s' }}
+        >
+          {establishment.nome_fantasia}
+        </h1>
+        
+        {/* Categoria e Localização */}
+        <div 
+          className="
+            flex items-center justify-center gap-3 mt-3 flex-wrap
+            animate-fade-in-up
+          "
+          style={{ animationDelay: '0.5s' }}
+        >
+          {/* Badge de Categoria */}
+          <span className="
+            inline-flex items-center gap-1.5 
+            bg-gradient-to-r from-purple-500/20 to-pink-500/20 
+            text-purple-300 
+            px-4 py-1.5 
+            rounded-full 
+            text-sm 
+            font-medium
+            border border-purple-500/30
+            backdrop-blur-sm
+          ">
+            {categoria}
+          </span>
+          
+          {/* Localização */}
+          <span className="
+            inline-flex items-center gap-1.5 
+            text-muted-foreground 
+            text-sm
+          ">
+            <MapPin className="w-4 h-4 text-pink-400" />
+            {establishment.bairro || establishment.cidade}
+          </span>
+        </div>
+        
+        {/* Indicadores de Confiança */}
+        <div 
+          className="
+            flex items-center justify-center gap-4 mt-4
+            animate-fade-in-up
+          "
+          style={{ animationDelay: '0.6s' }}
+        >
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
+              <Shield className="w-3 h-3 text-green-400" />
+            </div>
+            Verificado
+          </span>
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center">
+              <Zap className="w-3 h-3 text-blue-400" />
+            </div>
+            Responde rápido
+          </span>
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="w-5 h-5 rounded-full bg-pink-500/20 flex items-center justify-center">
+              <Gift className="w-3 h-3 text-pink-400" />
+            </div>
+            Benefício ativo
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EstablishmentHero;

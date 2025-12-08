@@ -276,10 +276,10 @@ export const AirbnbCategoryPills = ({
         )} 
       />
       
-      {/* Scroll container */}
+      {/* Scroll container - Com padding inicial para não cortar "Todos" */}
       <div 
         ref={scrollRef}
-        className="flex gap-3 sm:gap-4 overflow-x-auto py-4 px-2 md:px-12 scrollbar-hide scroll-smooth snap-x snap-proximity"
+        className="flex gap-3 sm:gap-4 overflow-x-auto py-4 pl-4 pr-4 md:pl-14 md:pr-14 scrollbar-hide scroll-smooth snap-x snap-proximity"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {categoriasConfig.map((cat, index) => {
@@ -301,7 +301,7 @@ export const AirbnbCategoryPills = ({
                   : 'bg-transparent border-transparent hover:bg-white/5 hover:border-white/10'
               )}
             >
-              {/* Ícone com container colorido */}
+              {/* Ícone com cor individual - mesmo quando inativo */}
               <div className={cn(
                 'flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300',
                 isActive 
@@ -312,10 +312,10 @@ export const AirbnbCategoryPills = ({
                   size={22} 
                   strokeWidth={1.5} 
                   className={cn(
-                    'transition-colors duration-300',
+                    'transition-all duration-300',
                     isActive 
                       ? style.color
-                      : 'text-slate-400 group-hover:text-slate-300'
+                      : `${style.color} opacity-50 group-hover:opacity-80`
                   )}
                 />
               </div>

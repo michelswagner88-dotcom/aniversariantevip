@@ -38,10 +38,9 @@ const WazeIcon = () => (
 );
 
 const UberIcon = () => (
-  <svg viewBox="0 0 118 24" className="w-10 h-5">
-    <path fill="#000000" d="M17.2 0C7.7 0 0 7.7 0 17.2v46.4C0 73 7.7 80.6 17.2 80.6h46.4c9.5 0 17.2-7.7 17.2-17.2V17.2C80.6 7.7 73 0 63.6 0H17.2zm23.5 17.8c7.3 0 13.2 5.9 13.2 13.2v18.3h-8.1V31.2c0-3-2.4-5.4-5.4-5.4s-5.4 2.4-5.4 5.4v18.1h-8.1V31c0-7.3 6.2-13.2 13.8-13.2zm-23.4.4h8.1v18.1c0 3 2.4 5.4 5.4 5.4s5.4-2.4 5.4-5.4V18.2h8.1v18.3c0 7.3-5.9 13.2-13.2 13.2-7.3 0-13.2-5.9-13.2-13.2V18.2h-.6z" transform="scale(0.3)"/>
-    <text x="28" y="17" fontSize="16" fontWeight="bold" fill="#000000" fontFamily="Arial, sans-serif">Uber</text>
-  </svg>
+  <div className="w-6 h-6 bg-black rounded flex items-center justify-center">
+    <span className="text-white text-[8px] font-bold tracking-tight">Uber</span>
+  </div>
 );
 
 const App99Icon = () => (

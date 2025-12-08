@@ -71,10 +71,11 @@ const EstablishmentHero = ({
             </div>
           )}
           
-          {/* Gradiente suave - apenas topo escuro para botões legíveis */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent" />
-          {/* Transição suave para o fundo */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 via-20% to-transparent" />
+          {/* Gradiente TOPO - apenas para legibilidade dos botões */}
+          <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/50 to-transparent" />
+          
+          {/* Gradiente BASE - apenas para transição pro conteúdo */}
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent" />
 
           {/* ========== BOTÕES GLASSMORPHISM (dentro da capa) ========== */}
           {/* Botão Voltar */}

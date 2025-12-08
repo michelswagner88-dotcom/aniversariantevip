@@ -301,30 +301,23 @@ export const AirbnbCategoryPills = ({
                   : 'bg-transparent border-transparent hover:bg-white/5 hover:border-white/10'
               )}
             >
-              {/* Ícone SEMPRE iluminado com cor individual */}
+              {/* Ícone dentro do quadrado colorido - igual ao "Todos" */}
               <div className={cn(
                 'flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300',
-                isActive 
-                  ? style.bgColor
-                  : `${style.bgColor} group-hover:scale-110`
+                style.bgColor,
+                isActive ? 'scale-110 shadow-lg' : 'group-hover:scale-110'
               )}>
                 <IconComponent 
                   size={22} 
                   strokeWidth={1.5} 
-                  className={cn(
-                    'transition-all duration-300',
-                    style.color,
-                    isActive && 'drop-shadow-lg'
-                  )}
+                  className="text-white transition-all duration-300"
                 />
               </div>
               
-              {/* Label */}
+              {/* Label - sempre branco */}
               <span className={cn(
-                'text-xs font-medium whitespace-nowrap transition-colors duration-300',
-                isActive 
-                  ? 'text-white' 
-                  : 'text-slate-400 group-hover:text-slate-300'
+                'text-xs font-medium whitespace-nowrap transition-colors duration-300 text-white',
+                isActive && 'font-semibold'
               )}>
                 {cat.nome}
               </span>

@@ -5,7 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Gift, Sparkles } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Gift, Sparkles, Copy, MessageCircle, Send, Facebook, Twitter, Linkedin } from 'lucide-react';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { useSEO } from '@/hooks/useSEO';
@@ -48,6 +48,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
   const [showBenefitRules, setShowBenefitRules] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   
   const { width, height } = useWindowSize();
   const { isFavorito, toggleFavorito } = useFavoritos(userId);
@@ -139,25 +140,33 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
     await toggleFavorito(id);
   };
   
-  const handleShare = async () => {
+  const handleShare = () => {
     if (id) trackShare(id);
+    setShowShareModal(true);
+  };
+
+  const shareToNetwork = (network: string) => {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent(`🎂 Confira ${estabelecimento?.nome_fantasia} no Aniversariante VIP! 📍 ${estabelecimento?.bairro}, ${estabelecimento?.cidade}`);
     
-    const shareData = {
-      title: `${estabelecimento.nome_fantasia} - Aniversariante VIP`,
-      text: `🎂 Confira ${estabelecimento.nome_fantasia} no Aniversariante VIP! 📍 ${estabelecimento.bairro}, ${estabelecimento.cidade}`,
-      url: window.location.href,
+    const shareUrls: Record<string, string> = {
+      whatsapp: `https://wa.me/?text=${text}%20${url}`,
+      telegram: `https://t.me/share/url?url=${url}&text=${text}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+      twitter: `https://twitter.com/intent/tweet?url=${url}&text=${text}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
     };
-    
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        // User cancelled or error
-      }
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success('Link copiado!');
+
+    if (shareUrls[network]) {
+      window.open(shareUrls[network], '_blank', 'width=600,height=400');
     }
+    setShowShareModal(false);
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success('Link copiado!');
+    setShowShareModal(false);
   };
 
   const handleShowRules = () => {
@@ -480,6 +489,100 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
         onClose={() => setShowLoginModal(false)}
         returnUrl={window.location.pathname}
       />
+
+      {/* Modal de Compartilhamento */}
+      <AnimatePresence>
+        {showShareModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            onClick={() => setShowShareModal(false)}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-card rounded-t-3xl sm:rounded-3xl p-6 pb-8"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-foreground">Compartilhar</h3>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+                >
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+
+              {/* Share Options Grid */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <button
+                  onClick={() => shareToNetwork('whatsapp')}
+                  className="flex flex-col items-center gap-2 p-3 rounded-2xl hover:bg-muted transition-colors group"
+                >
+                  <div className="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <MessageCircle className="w-7 h-7 text-white" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">WhatsApp</span>
+                </button>
+
+                <button
+                  onClick={() => shareToNetwork('telegram')}
+                  className="flex flex-col items-center gap-2 p-3 rounded-2xl hover:bg-muted transition-colors group"
+                >
+                  <div className="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Send className="w-7 h-7 text-white" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">Telegram</span>
+                </button>
+
+                <button
+                  onClick={() => shareToNetwork('facebook')}
+                  className="flex flex-col items-center gap-2 p-3 rounded-2xl hover:bg-muted transition-colors group"
+                >
+                  <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Facebook className="w-7 h-7 text-white" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">Facebook</span>
+                </button>
+
+                <button
+                  onClick={() => shareToNetwork('twitter')}
+                  className="flex flex-col items-center gap-2 p-3 rounded-2xl hover:bg-muted transition-colors group"
+                >
+                  <div className="w-14 h-14 rounded-full bg-black flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Twitter className="w-7 h-7 text-white" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">X</span>
+                </button>
+
+                <button
+                  onClick={() => shareToNetwork('linkedin')}
+                  className="flex flex-col items-center gap-2 p-3 rounded-2xl hover:bg-muted transition-colors group"
+                >
+                  <div className="w-14 h-14 rounded-full bg-blue-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Linkedin className="w-7 h-7 text-white" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">LinkedIn</span>
+                </button>
+              </div>
+
+              {/* Copy Link Button */}
+              <button
+                onClick={copyToClipboard}
+                className="w-full flex items-center justify-center gap-3 py-4 bg-muted rounded-2xl hover:bg-muted/80 transition-colors"
+              >
+                <Copy className="w-5 h-5 text-muted-foreground" />
+                <span className="font-medium text-foreground">Copiar link</span>
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Bottom Navigation */}
       <BottomNav />

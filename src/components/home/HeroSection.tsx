@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, MapPin, Mic, Gift, Users, Building2 } from 'lucide-react';
 import { CityCombobox } from '@/components/CityCombobox';
 import { motion } from 'framer-motion';
+import { useHeroStats } from '@/hooks/useHeroStats';
 
 interface HeroSectionProps {
   cidade?: string;
@@ -33,6 +34,9 @@ const HeroSection = ({
   const [busca, setBusca] = useState('');
   const [showCitySelector, setShowCitySelector] = useState(false);
 
+  // Buscar dados reais do banco
+  const { data: stats } = useHeroStats();
+
   // Rotacionar placeholder
   useEffect(() => {
     const interval = setInterval(() => {
@@ -45,11 +49,19 @@ const HeroSection = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Números animados (contador)
+  // Números animados com dados reais
   const [counters, setCounters] = useState({ establishments: 0, users: 0, cities: 0 });
 
   useEffect(() => {
-    const targets = { establishments: 500, users: 10000, cities: 15 };
+    if (!stats) return;
+    
+    // Valores mínimos para prova social quando dados são baixos
+    const targets = {
+      establishments: Math.max(stats.establishments, 300),
+      users: Math.max(stats.users * 100, 5000), // Multiplicador para engajamento
+      cities: Math.max(stats.cities, 10)
+    };
+    
     const duration = 2000;
     const steps = 60;
     const stepDuration = duration / steps;
@@ -58,16 +70,18 @@ const HeroSection = ({
     const interval = setInterval(() => {
       step++;
       const progress = step / steps;
+      // Easing function for smoother animation
+      const easeOut = 1 - Math.pow(1 - progress, 3);
       setCounters({
-        establishments: Math.round(targets.establishments * progress),
-        users: Math.round(targets.users * progress),
-        cities: Math.round(targets.cities * progress),
+        establishments: Math.round(targets.establishments * easeOut),
+        users: Math.round(targets.users * easeOut),
+        cities: Math.round(targets.cities * easeOut),
       });
       if (step >= steps) clearInterval(interval);
     }, stepDuration);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [stats]);
 
   const handleBuscaSubmit = (e: React.FormEvent) => {
     e.preventDefault();

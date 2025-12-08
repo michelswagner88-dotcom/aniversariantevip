@@ -187,23 +187,6 @@ const EstablishmentHero = ({
               </div>
             )}
           </div>
-          
-          {/* Badge de Verificado Premium */}
-          {establishment.is_verified !== false && (
-            <div className="
-              absolute -bottom-1 -right-1 
-              w-7 h-7
-              bg-gradient-to-br from-green-400 to-emerald-500 
-              rounded-full 
-              flex items-center justify-center
-              border-2 border-background 
-              shadow-lg
-              shadow-green-500/30
-              animate-bounce-in
-            " style={{ animationDelay: '0.6s' }}>
-              <Check className="w-4 h-4 text-white" strokeWidth={3} />
-            </div>
-          )}
         </div>
       </div>
 

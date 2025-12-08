@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, LogOut } from "lucide-react";
+import { Menu, X, User, LogOut, Gift } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,10 +16,20 @@ export const Header = () => {
   const [userName, setUserName] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [dataNascimento, setDataNascimento] = useState<string | null>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
   const { isBirthday } = useBirthdayTheme(dataNascimento);
   const { isVisible, isAtTop } = useScrollHeader({ threshold: 80, sensitivity: 8 });
   const isMobile = useIsMobile();
+
+  // Detectar scroll para glassmorphism
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     checkUser();
@@ -88,42 +98,85 @@ export const Header = () => {
           fixed left-0 right-0 z-50 
           transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
           ${isMobile && !isVisible ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'}
-          ${isAtTop 
-            ? 'bg-transparent border-transparent' 
-            : 'bg-slate-950/95 backdrop-blur-xl border-b border-white/[0.08] shadow-lg shadow-black/20'
+          ${isScrolled 
+            ? 'header-blur py-3' 
+            : 'bg-transparent py-4'
           }
         `}
         style={{ top: isBirthday && userName ? '48px' : '0' }}
       >
         <nav className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo - Esquerda com animação hover e transição de cores */}
-        <Link to="/" className="flex-shrink-0 group flex flex-col gap-0.5">
-          <span className="font-display font-extrabold text-base lg:text-lg text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 tracking-tight inline-block transition-all duration-500 ease-out group-hover:scale-105 group-hover:from-cyan-400 group-hover:via-violet-400 group-hover:to-fuchsia-400">
-            ANIVERSARIANTE VIP
-          </span>
-        </Link>
+        <div className="flex items-center justify-between h-14">
+          {/* Logo com ícone animado */}
+          <Link to="/" className="flex items-center gap-2.5 group">
+            {/* Ícone Gift animado */}
+            <div className="
+              w-10 h-10 
+              bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 
+              rounded-xl 
+              flex items-center justify-center
+              shadow-lg shadow-purple-500/25
+              transition-all duration-300
+              group-hover:scale-110 group-hover:rotate-6
+              group-hover:shadow-xl group-hover:shadow-purple-500/40
+            ">
+              <Gift className="w-5 h-5 text-white" />
+            </div>
+            
+            {/* Texto com gradiente animado */}
+            <span className="
+              font-display font-extrabold text-base lg:text-lg 
+              text-gradient-animated
+              tracking-tight 
+              hidden sm:block
+              transition-transform duration-300
+              group-hover:scale-105
+            ">
+              ANIVERSARIANTE VIP
+            </span>
+          </Link>
 
-          {/* Links Centro - Desktop Premium */}
-          <div className="hidden lg:flex items-center justify-center flex-1 gap-0.5 min-w-0 mx-2">
+          {/* Links Centro - Desktop com underline animado */}
+          <div className="hidden lg:flex items-center justify-center flex-1 gap-1 min-w-0 mx-4">
             <NavLink 
               to="/como-funciona" 
-              className="text-[11px] font-medium text-slate-300 hover:text-white transition-all duration-180 px-2 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
-              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
+              className="
+                relative text-sm font-medium text-slate-300 
+                hover:text-white transition-colors duration-200 
+                px-4 py-2 group
+              "
+              activeClassName="text-white"
             >
               Como Funciona
+              {/* Underline animado */}
+              <span className="
+                absolute -bottom-0.5 left-4 right-4 h-0.5 
+                bg-gradient-to-r from-violet-500 to-pink-500
+                scale-x-0 group-hover:scale-x-100
+                transition-transform duration-300 origin-left
+              "/>
             </NavLink>
             <NavLink 
               to="/seja-parceiro" 
-              className="text-[11px] font-medium text-slate-300 hover:text-white transition-all duration-180 px-2 py-2 rounded-lg hover:bg-white/5 whitespace-nowrap"
-              activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
+              className="
+                relative text-sm font-medium text-slate-300 
+                hover:text-white transition-colors duration-200 
+                px-4 py-2 group
+              "
+              activeClassName="text-white"
             >
               Seja Parceiro
+              <span className="
+                absolute -bottom-0.5 left-4 right-4 h-0.5 
+                bg-gradient-to-r from-violet-500 to-pink-500
+                scale-x-0 group-hover:scale-x-100
+                transition-transform duration-300 origin-left
+              "/>
             </NavLink>
           </div>
 
           {/* Botões Direita - Desktop */}
-          <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-4 flex-shrink-0">
             {userName ? (
               <>
                 {/* Greeting - apenas desktop grande */}
@@ -135,7 +188,7 @@ export const Header = () => {
                 <Button
                   variant="ghost"
                   onClick={() => navigate(getAreaLink())}
-                  className="flex items-center gap-2 px-2 h-10 hover:bg-white/10"
+                  className="flex items-center gap-2 px-3 h-10 hover:bg-white/10 transition-all duration-200"
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 p-0.5">
                     <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center">
@@ -153,37 +206,63 @@ export const Header = () => {
                   variant="ghost"
                   size="sm"
                   onClick={handleLogout}
-                  className="text-white hover:bg-white/10 h-8"
+                  className="text-white hover:bg-white/10 h-9 transition-all duration-200"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-4 h-4" />
                 </Button>
               </>
             ) : (
               <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                  className="text-white hover:bg-white/10 whitespace-nowrap text-[11px] px-2 h-8"
+                <Link 
+                  to="/selecionar-perfil"
+                  className="
+                    text-slate-300 hover:text-white 
+                    transition-colors duration-200
+                    px-4 py-2 text-sm font-medium
+                  "
                 >
-                  <Link to="/selecionar-perfil">Entrar</Link>
-                </Button>
-                <Button
-                  size="sm"
-                  asChild
-                  className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-700 hover:via-fuchsia-600 hover:to-pink-600 text-white rounded-full px-3 h-8 font-semibold whitespace-nowrap text-[11px]"
+                  Entrar
+                </Link>
+                
+                {/* Botão CTA com shimmer */}
+                <Link
+                  to="/auth"
+                  className="
+                    relative
+                    bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500
+                    text-white font-semibold
+                    px-6 py-2.5
+                    rounded-full
+                    shadow-lg shadow-purple-500/30
+                    transition-all duration-300
+                    hover:shadow-xl hover:shadow-purple-500/40
+                    hover:scale-105
+                    active:scale-95
+                    group
+                    overflow-hidden
+                    text-sm
+                  "
                 >
-                  <Link to="/auth">Cadastro Gratuito</Link>
-                </Button>
+                  {/* Shimmer effect */}
+                  <span className="
+                    absolute inset-0 
+                    bg-gradient-to-r from-transparent via-white/25 to-transparent
+                    -translate-x-full
+                    group-hover:translate-x-full
+                    transition-transform duration-700
+                  "/>
+                  <span className="relative">Cadastro Gratuito</span>
+                </Link>
               </>
             )}
           </div>
 
-          {/* Menu Hambúrguer - Mobile Premium (44px hit area) */}
+          {/* Menu Hambúrguer - Mobile */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2.5 -mr-2 text-white hover:bg-white/10 rounded-xl transition-all duration-180 active:scale-95"
+            className="lg:hidden p-2.5 -mr-2 text-white hover:bg-white/10 rounded-xl transition-all duration-200 active:scale-95"
             style={{ minWidth: '44px', minHeight: '44px' }}
+            aria-label="Menu"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -191,26 +270,36 @@ export const Header = () => {
 
         {/* Menu Mobile Premium */}
         {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-x-4 top-20 bg-slate-900/95 backdrop-blur-xl rounded-2xl p-3 shadow-premium-lg border border-white/10 animate-slide-in-right">
+          <div className="
+            lg:hidden 
+            mt-4 
+            p-4 
+            bg-slate-900/95 
+            backdrop-blur-xl 
+            rounded-2xl
+            border border-white/10
+            shadow-2xl shadow-black/40
+            animate-fade-in
+          ">
             <div className="flex flex-col gap-1">
               <NavLink
                 to="/como-funciona"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-180 active:scale-98"
-                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
+                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200"
+                activeClassName="text-white bg-white/5"
               >
                 Como Funciona
               </NavLink>
               <NavLink
                 to="/seja-parceiro"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-180 active:scale-98"
-                activeClassName="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500 bg-white/5"
+                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200"
+                activeClassName="text-white bg-white/5"
               >
                 Seja Parceiro
               </NavLink>
               
-              <div className="h-px bg-slate-700 my-2" />
+              <div className="h-px bg-white/10 my-3" />
               
               {userName ? (
                 <>
@@ -220,7 +309,7 @@ export const Header = () => {
                       navigate(getAreaLink());
                       setMobileMenuOpen(false);
                     }}
-                    className="justify-start text-white hover:bg-white/10"
+                    className="justify-start text-white hover:bg-white/10 py-3"
                   >
                     <User className="w-4 h-4 mr-2" />
                     {userName}
@@ -231,7 +320,7 @@ export const Header = () => {
                       handleLogout();
                       setMobileMenuOpen(false);
                     }}
-                    className="justify-start text-white hover:bg-white/10"
+                    className="justify-start text-white hover:bg-white/10 py-3"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
                     Sair
@@ -239,29 +328,28 @@ export const Header = () => {
                 </>
               ) : (
                 <>
-                  <Button
-                    variant="ghost"
-                    asChild
+                  <Link 
+                    to="/selecionar-perfil"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="justify-start text-white hover:bg-white/10"
+                    className="text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200"
                   >
-                    <Link to="/seja-parceiro">Seja Parceiro</Link>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    asChild
+                    Entrar
+                  </Link>
+                  <Link
+                    to="/auth"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="justify-start text-white hover:bg-white/10"
+                    className="
+                      mt-2
+                      bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500
+                      text-white font-semibold
+                      py-3 px-6 rounded-full text-center
+                      shadow-lg shadow-purple-500/30
+                      transition-all duration-300
+                      active:scale-95
+                    "
                   >
-                    <Link to="/selecionar-perfil">Entrar</Link>
-                  </Button>
-                  <Button
-                    asChild
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="justify-start bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 text-white font-semibold"
-                  >
-                    <Link to="/auth">Cadastro Gratuito</Link>
-                  </Button>
+                    Cadastro Gratuito
+                  </Link>
                 </>
               )}
             </div>

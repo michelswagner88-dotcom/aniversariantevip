@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight as ChevronRightIcon, Heart, Gift } from 'lucide-react';
+import { ChevronLeft, ChevronRight as ChevronRightIcon, Heart, Gift, ArrowRight, Star, Flame } from 'lucide-react';
 import { motion, useInView } from 'framer-motion';
 import { SafeImage } from '@/components/SafeImage';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
@@ -15,6 +15,8 @@ interface CategoryCarouselProps {
   estabelecimentos: any[];
   linkHref?: string;
   onVerTodos?: () => void;
+  variant?: 'default' | 'featured' | 'compact';
+  showViewMoreCard?: boolean;
 }
 
 // Variantes de animação
@@ -24,7 +26,7 @@ const cardVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      delay: i * 0.1,
+      delay: i * 0.08,
       duration: 0.4,
       ease: "easeOut" as const
     }
@@ -45,8 +47,10 @@ const titleVariants = {
 };
 
 // Card individual compacto para carrossel
-const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
+const CarouselCard = ({ estabelecimento, isNew, isPopular }: { estabelecimento: any; isNew?: boolean; isPopular?: boolean }) => {
   const navigate = useNavigate();
+  const [isHovered, setIsHovered] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
   const est = estabelecimento;
   
   const handleClick = () => {
@@ -57,6 +61,11 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
       id: est.id
     });
     navigate(url);
+  };
+
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFavorited(!isFavorited);
   };
 
   const categoria = Array.isArray(est.categoria) ? est.categoria[0] : est.categoria;
@@ -75,6 +84,11 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
     est.categoria
   );
   const fallbackUrl = getPlaceholderPorCategoria(est.categoria);
+
+  // Extrair resumo do benefício
+  const benefitSummary = est.descricao_beneficio?.length < 40 
+    ? est.descricao_beneficio 
+    : "Benefício especial";
   
   return (
     <TiltCard 
@@ -84,24 +98,37 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
     >
       <article
         onClick={handleClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         className="h-full flex flex-col transition-all duration-300 active:scale-[0.98]"
       >
-        {/* Container da imagem - PROPORÇÃO FIXA 4:3 - Foto domina o card */}
-        <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-slate-800 shadow-lg shadow-black/20 transition-all duration-300 ring-1 ring-white/5 group-hover:shadow-xl group-hover:shadow-violet-500/15">
+        {/* Container da imagem - PROPORÇÃO FIXA 4:3 */}
+        <div className={cn(
+          "relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-slate-800 transition-all duration-500",
+          "shadow-lg shadow-black/20 ring-1 ring-white/5",
+          isHovered && "shadow-xl shadow-violet-500/20 ring-violet-500/30"
+        )}>
           <SafeImage
             src={fotoUrl}
             alt={est.nome_fantasia || 'Estabelecimento'}
             fallbackSrc={fallbackUrl}
-            className="w-full h-full object-cover object-center transition-transform duration-400 ease-out group-hover:scale-[1.08]"
+            className={cn(
+              "w-full h-full object-cover object-center transition-transform duration-700 ease-out",
+              isHovered && "scale-110"
+            )}
             enableParallax
           />
           
-          {/* Overlay gradient sutil */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+          {/* Overlay gradient premium */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
           
-          {/* Badge de categoria + subcategoria - posição inferior esquerda */}
-          <div className="absolute bottom-3 left-3 flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg">
+          {/* Vinheta sutil */}
+          <div className="absolute inset-0 shadow-[inset_0_0_60px_rgba(0,0,0,0.3)] pointer-events-none" />
+          
+          {/* Badges no topo esquerdo */}
+          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 max-w-[70%]">
+            {/* Badge de categoria */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg border border-white/10">
               <span className="text-sm">{categoriaIcon}</span>
               <span className="text-xs font-medium text-white truncate max-w-[100px]">
                 {categoryLabel}
@@ -110,7 +137,7 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
             
             {/* Badge de benefício */}
             {temBeneficio && (
-              <div className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-lg shadow-lg transition-all duration-300 group-hover:shadow-[0_4px_20px_rgba(139,92,246,0.5)]">
+              <div className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-lg shadow-lg border border-white/20">
                 <Gift className="w-3.5 h-3.5 text-white" />
                 <span className="text-xs font-semibold text-white hidden sm:inline">
                   Benefício
@@ -118,27 +145,72 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
               </div>
             )}
           </div>
+
+          {/* Badges especiais (Novo / Popular) */}
+          {(isNew || isPopular) && (
+            <div className="absolute top-3 right-12 flex gap-1.5">
+              {isNew && (
+                <span className="inline-flex items-center gap-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-lg shadow-green-500/30 animate-pulse">
+                  <Star className="w-3 h-3" />
+                  Novo
+                </span>
+              )}
+              {isPopular && (
+                <span className="inline-flex items-center gap-1 bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-lg shadow-orange-500/30">
+                  <Flame className="w-3 h-3" />
+                  Popular
+                </span>
+              )}
+            </div>
+          )}
           
-          {/* Coração de favoritar - aparece no hover (desktop), sempre visível no mobile */}
+          {/* Botão favoritar - sempre visível */}
           <button 
-            onClick={(e) => { e.stopPropagation(); }}
-            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 
-                       opacity-100 sm:opacity-0 sm:group-hover:opacity-100 
-                       hover:bg-black/60 hover:scale-110 
-                       transition-all duration-200"
+            onClick={handleFavorite}
+            className={cn(
+              "absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full backdrop-blur-md border transition-all duration-300",
+              isFavorited 
+                ? "bg-pink-500/90 border-pink-400/50 shadow-lg shadow-pink-500/30" 
+                : "bg-black/40 border-white/10 hover:bg-black/60 hover:border-white/20",
+              isHovered && "scale-110"
+            )}
           >
-            <Heart className="w-[18px] h-[18px] text-white transition-colors hover:fill-white/50" />
+            <Heart className={cn(
+              "w-4 h-4 transition-all duration-300",
+              isFavorited ? "text-white fill-white" : "text-white"
+            )} />
           </button>
+
+          {/* Preview do benefício - aparece no hover */}
+          {temBeneficio && (
+            <div className={cn(
+              "absolute bottom-3 left-3 right-3 bg-black/80 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/10 transition-all duration-300",
+              isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
+            )}>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/30 to-pink-500/30 flex items-center justify-center">
+                  <Gift className="w-4 h-4 text-pink-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Seu benefício</p>
+                  <p className="text-sm text-white font-semibold truncate">{benefitSummary}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       
-        {/* Info do estabelecimento - Hierarquia clara */}
+        {/* Info do estabelecimento */}
         <div className="pt-3 flex flex-col gap-1">
-          {/* Nome - Hierarquia 1 (mais importante) */}
-          <h3 className="font-semibold text-base sm:text-[16px] leading-snug text-slate-900 dark:text-white truncate transition-colors duration-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">
+          {/* Nome */}
+          <h3 className={cn(
+            "font-semibold text-base sm:text-[16px] leading-snug truncate transition-colors duration-300",
+            isHovered ? "text-violet-600 dark:text-violet-400" : "text-slate-900 dark:text-white"
+          )}>
             {est.nome_fantasia || est.razao_social || 'Estabelecimento'}
           </h3>
           
-          {/* Bairro - Hierarquia 2 (secundário) */}
+          {/* Bairro */}
           <p className="text-sm text-muted-foreground truncate">
             {est.bairro || est.cidade}
           </p>
@@ -148,18 +220,65 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
   );
 };
 
+// Card "Ver mais" no final do carrossel
+const ViewMoreCard = ({ linkHref }: { linkHref: string }) => (
+  <Link 
+    to={linkHref}
+    className="
+      flex-shrink-0 w-[calc(100vw-3rem)] sm:w-[280px] md:w-[300px]
+      aspect-[4/3]
+      bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-violet-500/10
+      hover:from-violet-500/20 hover:via-fuchsia-500/10 hover:to-violet-500/20
+      border border-violet-500/20
+      hover:border-violet-500/40
+      rounded-xl
+      flex flex-col items-center justify-center
+      gap-4
+      transition-all duration-300
+      hover:scale-[1.02]
+      hover:shadow-xl hover:shadow-violet-500/10
+      group
+    "
+  >
+    <div className="
+      w-16 h-16
+      bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20
+      rounded-2xl
+      flex items-center justify-center
+      transition-all duration-300
+      group-hover:scale-110
+      group-hover:rotate-3
+    ">
+      <ArrowRight className="w-8 h-8 text-violet-400" />
+    </div>
+    <div className="text-center">
+      <p className="text-violet-300 font-semibold">Ver todos</p>
+      <p className="text-muted-foreground text-sm">Explorar categoria</p>
+    </div>
+  </Link>
+);
+
 export const CategoryCarousel = ({
   title,
   subtitle,
   estabelecimentos,
   linkHref,
-  onVerTodos
+  onVerTodos,
+  variant = 'default',
+  showViewMoreCard = true
 }: CategoryCarouselProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [totalDots, setTotalDots] = useState(1);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  
+  // Definir tamanho dos cards baseado na variante
+  const cardWidthClass = variant === 'featured' 
+    ? 'w-[calc(100vw-2rem)] sm:w-[320px] md:w-[350px]' 
+    : variant === 'compact'
+    ? 'w-[calc(100vw-4rem)] sm:w-[240px] md:w-[260px]'
+    : 'w-[calc(100vw-3rem)] sm:w-[280px] md:w-[300px]';
   
   // Calcular número de dots e estado de scroll
   useEffect(() => {
@@ -203,7 +322,7 @@ export const CategoryCarousel = ({
     
     // Pegar largura real do primeiro card + gap
     const firstCard = container.querySelector(':scope > div') as HTMLElement;
-    const cardWidth = firstCard ? firstCard.offsetWidth + 16 : 316; // 300 + 16 gap
+    const cardWidth = firstCard ? firstCard.offsetWidth + 16 : 316;
     
     let scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
     
@@ -303,16 +422,20 @@ export const CategoryCarousel = ({
           )}
         />
         
-        {/* Botão esquerda - sempre visível, área de clique maior */}
+        {/* Botão esquerda */}
         <button
           onClick={() => scroll('left')}
           aria-label="Anterior"
           className={cn(
-            "absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95",
-            canScrollLeft ? "opacity-100" : "opacity-40"
+            "absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10",
+            "w-12 h-12 bg-background/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full",
+            "shadow-lg border border-border flex items-center justify-center",
+            "transition-all duration-300 hover:scale-110 hover:border-violet-500/30 active:scale-95",
+            "opacity-0 group-hover/section:opacity-100",
+            !canScrollLeft && "!opacity-40"
           )}
         >
-          <ChevronLeft className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+          <ChevronLeft className="w-5 h-5 text-foreground" />
         </button>
         
         {/* Carrossel */}
@@ -324,34 +447,65 @@ export const CategoryCarousel = ({
             WebkitOverflowScrolling: 'touch'
           }}
         >
-          {estabelecimentos.map((est, index) => (
-            <motion.div 
-              key={est.id}
-              className="flex-shrink-0 w-[calc(100vw-3rem)] sm:w-[280px] md:w-[300px]"
-              style={{ 
-                scrollSnapAlign: 'start',
-                scrollSnapStop: 'always'
-              }}
-              custom={index}
+          {estabelecimentos.map((est, index) => {
+            // Verificar se é novo (criado nos últimos 7 dias)
+            const isNew = est.created_at 
+              ? (Date.now() - new Date(est.created_at).getTime()) < 7 * 24 * 60 * 60 * 1000
+              : false;
+            // Primeiros 3 são "populares" se for variante featured
+            const isPopular = variant === 'featured' && index < 3;
+
+            return (
+              <motion.div 
+                key={est.id}
+                className={cn("flex-shrink-0", cardWidthClass)}
+                style={{ 
+                  scrollSnapAlign: 'start',
+                  scrollSnapStop: 'always'
+                }}
+                custom={index}
+                initial="hidden"
+                animate={isInView ? "visible" : "hidden"}
+                variants={cardVariants}
+              >
+                <CarouselCard 
+                  estabelecimento={est} 
+                  isNew={isNew}
+                  isPopular={isPopular}
+                />
+              </motion.div>
+            );
+          })}
+
+          {/* Card "Ver mais" no final */}
+          {showViewMoreCard && linkHref && estabelecimentos.length >= 4 && (
+            <motion.div
+              className={cn("flex-shrink-0", cardWidthClass)}
+              custom={estabelecimentos.length}
               initial="hidden"
-              animate="visible"
+              animate={isInView ? "visible" : "hidden"}
               variants={cardVariants}
+              style={{ scrollSnapAlign: 'start' }}
             >
-              <CarouselCard estabelecimento={est} />
+              <ViewMoreCard linkHref={linkHref} />
             </motion.div>
-          ))}
+          )}
         </div>
         
-        {/* Botão direita - sempre visível, área de clique maior */}
+        {/* Botão direita */}
         <button
           onClick={() => scroll('right')}
           aria-label="Próximo"
           className={cn(
-            "absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95",
-            canScrollRight ? "opacity-100" : "opacity-40"
+            "absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10",
+            "w-12 h-12 bg-background/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full",
+            "shadow-lg border border-border flex items-center justify-center",
+            "transition-all duration-300 hover:scale-110 hover:border-violet-500/30 active:scale-95",
+            "opacity-0 group-hover/section:opacity-100",
+            !canScrollRight && "!opacity-40"
           )}
         >
-          <ChevronRightIcon className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+          <ChevronRightIcon className="w-5 h-5 text-foreground" />
         </button>
       </div>
       
@@ -374,6 +528,26 @@ export const CategoryCarousel = ({
             <span className="text-xs text-slate-400 ml-1">+{totalDots - 5}</span>
           )}
         </div>
+      )}
+
+      {/* Link "Ver todos" mobile */}
+      {linkHref && (
+        <Link 
+          to={linkHref}
+          className="
+            sm:hidden
+            flex items-center justify-center gap-2
+            mt-4
+            py-3
+            text-violet-500 
+            hover:text-violet-400
+            transition-colors
+            font-medium
+          "
+        >
+          <span>Ver todos</span>
+          <ArrowRight className="w-4 h-4" />
+        </Link>
       )}
     </section>
   );

@@ -2,6 +2,7 @@
 
 import { MapPin, Navigation } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 
 interface LocationSectionProps {
   establishment: {
@@ -84,29 +85,41 @@ const LocationSection = ({
       name: 'Maps', 
       Icon: GoogleMapsIcon,
       color: 'from-blue-500/20 to-green-500/20',
+      hoverColor: 'hover:from-blue-500/30 hover:to-green-500/30',
       borderColor: 'border-blue-500/20',
+      hoverBorder: 'hover:border-blue-400/40',
+      glowColor: 'hover:shadow-blue-500/30',
       onClick: onOpenMaps 
     },
     { 
       name: 'Waze', 
       Icon: WazeIcon,
       color: 'from-cyan-500/20 to-cyan-600/20',
+      hoverColor: 'hover:from-cyan-500/30 hover:to-cyan-600/30',
       borderColor: 'border-cyan-500/20',
+      hoverBorder: 'hover:border-cyan-400/40',
+      glowColor: 'hover:shadow-cyan-500/30',
       onClick: onOpenWaze 
     },
     { 
       name: 'Uber', 
       Icon: UberIcon,
       color: 'from-gray-500/20 to-gray-600/20',
+      hoverColor: 'hover:from-gray-500/30 hover:to-gray-600/30',
       borderColor: 'border-gray-500/20',
+      hoverBorder: 'hover:border-gray-400/40',
+      glowColor: 'hover:shadow-gray-500/30',
       onClick: onOpenUber 
     },
     { 
       name: '99', 
       Icon: App99Icon,
       color: 'from-yellow-500/20 to-yellow-600/20',
+      hoverColor: 'hover:from-yellow-500/30 hover:to-yellow-600/30',
       borderColor: 'border-yellow-500/20',
-      onClick: () => window.open('https://99app.com/', '_blank')
+      hoverBorder: 'hover:border-yellow-400/40',
+      glowColor: 'hover:shadow-yellow-500/30',
+      onClick: onOpen99
     },
   ];
 
@@ -120,20 +133,24 @@ const LocationSection = ({
   };
 
   return (
-    <div 
-      className="
-        mx-4 mt-6
-        animate-fade-in-up stagger-6
-      "
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.65, duration: 0.5 }}
+      className="mx-4 mt-6"
     >
       <div 
         className="
           relative
-          bg-gradient-to-br from-white/[0.03] to-white/[0.01]
+          bg-gradient-to-br from-white/[0.04] to-white/[0.01]
           backdrop-blur-sm
           rounded-2xl
           overflow-hidden
-          border border-white/[0.06]
+          border border-white/[0.08]
+          transition-all duration-300
+          hover:border-violet-500/20
+          hover:shadow-xl hover:shadow-violet-500/5
+          group
         "
       >
         {/* Header com endereço */}
@@ -147,6 +164,9 @@ const LocationSection = ({
                 flex items-center justify-center
                 border border-white/10
                 flex-shrink-0
+                transition-all duration-300
+                group-hover:border-pink-500/30
+                group-hover:shadow-lg group-hover:shadow-pink-500/10
               "
             >
               <MapPin className="w-5 h-5 text-pink-400" />
@@ -165,12 +185,11 @@ const LocationSection = ({
           </div>
         </div>
         
-        {/* Mapa com lazy load */}
+        {/* Mapa com lazy load e bordas premium */}
         <div ref={mapRef} className="px-4">
-          <div className="rounded-xl overflow-hidden border border-white/10">
+          <div className="rounded-xl overflow-hidden border border-white/10 shadow-lg">
             {mapVisible && hasValidCoordinates ? (
-              // Componente do mapa real
-              <div className="w-full h-40 bg-slate-800">
+              <div className="w-full h-44 bg-slate-800">
                 <iframe
                   src={`https://www.google.com/maps?q=${establishment.latitude},${establishment.longitude}&output=embed`}
                   width="100%"
@@ -182,47 +201,51 @@ const LocationSection = ({
                 />
               </div>
             ) : mapVisible && !hasValidCoordinates ? (
-              // Fallback quando não tem coordenadas
-              <div className="w-full h-40 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+              <div className="w-full h-44 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
                 <div className="text-center">
                   <Navigation className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">Mapa indisponível</p>
                 </div>
               </div>
             ) : (
-              // Skeleton do mapa
-              <div className="w-full h-40 img-skeleton rounded-xl" />
+              <div className="w-full h-44 img-skeleton rounded-xl" />
             )}
           </div>
         </div>
         
-        {/* Botões de navegação com ícones originais */}
+        {/* Botões de navegação premium */}
         <div className="p-4 grid grid-cols-4 gap-2">
-          {navigationApps.map((app) => (
-            <button
+          {navigationApps.map((app, index) => (
+            <motion.button
               key={app.name}
               onClick={app.onClick}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 + index * 0.05 }}
               className={`
                 flex flex-col items-center justify-center
                 bg-gradient-to-br ${app.color}
+                ${app.hoverColor}
                 rounded-xl
                 p-3
                 border ${app.borderColor}
+                ${app.hoverBorder}
                 transition-all duration-300 ease-out
-                hover:scale-105
-                active:scale-95
-                group
+                shadow-lg ${app.glowColor}
+                group/btn
               `}
             >
-              <div className="w-7 h-7 mb-1 flex items-center justify-center transition-transform group-hover:scale-110">
+              <div className="w-7 h-7 mb-1 flex items-center justify-center transition-transform group-hover/btn:scale-110">
                 <app.Icon />
               </div>
               <span className="text-xs font-medium text-muted-foreground">{app.name}</span>
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

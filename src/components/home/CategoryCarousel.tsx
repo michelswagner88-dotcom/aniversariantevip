@@ -17,6 +17,7 @@ interface CategoryCarouselProps {
   onVerTodos?: () => void;
   variant?: 'default' | 'featured' | 'compact';
   showViewMoreCard?: boolean;
+  showBadges?: boolean; // Mostrar badges Novo/Popular
 }
 
 // Variantes de animação
@@ -265,7 +266,8 @@ export const CategoryCarousel = ({
   linkHref,
   onVerTodos,
   variant = 'default',
-  showViewMoreCard = true
+  showViewMoreCard = true,
+  showBadges = true
 }: CategoryCarouselProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -448,12 +450,12 @@ export const CategoryCarousel = ({
           }}
         >
           {estabelecimentos.map((est, index) => {
-            // Verificar se é novo (criado nos últimos 7 dias)
-            const isNew = est.created_at 
+            // Verificar se é novo (criado nos últimos 7 dias) - só se showBadges=true
+            const isNew = showBadges && est.created_at 
               ? (Date.now() - new Date(est.created_at).getTime()) < 7 * 24 * 60 * 60 * 1000
               : false;
-            // Primeiros 3 são "populares" se for variante featured
-            const isPopular = variant === 'featured' && index < 3;
+            // Primeiros 3 são "populares" se for variante featured e showBadges=true
+            const isPopular = showBadges && variant === 'featured' && index < 3;
 
             return (
               <motion.div 

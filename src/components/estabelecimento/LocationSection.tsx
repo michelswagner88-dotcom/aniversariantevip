@@ -106,7 +106,7 @@ const LocationSection = ({
       Icon: App99Icon,
       color: 'from-yellow-500/20 to-yellow-600/20',
       borderColor: 'border-yellow-500/20',
-      onClick: onOpen99 
+      onClick: () => window.open('https://99app.com/', '_blank')
     },
   ];
 

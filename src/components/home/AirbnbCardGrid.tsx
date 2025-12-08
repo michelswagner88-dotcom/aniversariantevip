@@ -7,7 +7,7 @@ import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { getFotoEstabelecimento, getPlaceholderPorCategoria } from '@/lib/photoUtils';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/EmptyState';
-import { getCategoriaIcon, getCategoriaSingular, getSubcategoriaBadgeData, getCategoriaById } from '@/constants/categories';
+import { getCategoriaIcon } from '@/constants/categories';
 
 // Variantes de animação para o grid
 const containerVariants = {
@@ -76,25 +76,6 @@ const AirbnbCardSkeleton = () => (
   </div>
 );
 
-// Cores por categoria para badges
-const categoryColors: Record<string, { bg: string; text: string; glow: string }> = {
-  'Restaurante': { bg: 'bg-yellow-500/20', text: 'text-yellow-400', glow: 'shadow-yellow-500/30' },
-  'Bar': { bg: 'bg-red-500/20', text: 'text-red-400', glow: 'shadow-red-500/30' },
-  'Cafeteria': { bg: 'bg-amber-500/20', text: 'text-amber-400', glow: 'shadow-amber-500/30' },
-  'Salão de Beleza': { bg: 'bg-rose-500/20', text: 'text-rose-400', glow: 'shadow-rose-500/30' },
-  'Academia': { bg: 'bg-orange-500/20', text: 'text-orange-400', glow: 'shadow-orange-500/30' },
-  'Serviços': { bg: 'bg-purple-500/20', text: 'text-purple-400', glow: 'shadow-purple-500/30' },
-  'Barbearia': { bg: 'bg-blue-500/20', text: 'text-blue-400', glow: 'shadow-blue-500/30' },
-  'Casa Noturna': { bg: 'bg-violet-500/20', text: 'text-violet-400', glow: 'shadow-violet-500/30' },
-  'Confeitaria': { bg: 'bg-pink-500/20', text: 'text-pink-400', glow: 'shadow-pink-500/30' },
-  'Entretenimento': { bg: 'bg-cyan-500/20', text: 'text-cyan-400', glow: 'shadow-cyan-500/30' },
-  'Hospedagem': { bg: 'bg-teal-500/20', text: 'text-teal-400', glow: 'shadow-teal-500/30' },
-  'Loja': { bg: 'bg-emerald-500/20', text: 'text-emerald-400', glow: 'shadow-emerald-500/30' },
-  'Sorveteria': { bg: 'bg-sky-500/20', text: 'text-sky-400', glow: 'shadow-sky-500/30' },
-  'Saúde e Suplementos': { bg: 'bg-lime-500/20', text: 'text-lime-400', glow: 'shadow-lime-500/30' },
-  'default': { bg: 'bg-gray-500/20', text: 'text-gray-400', glow: 'shadow-gray-500/30' },
-};
-
 // Card individual Premium - Design LIMPO estilo Airbnb
 const AirbnbCard = ({ 
   estabelecimento, 
@@ -136,11 +117,6 @@ const AirbnbCard = ({
 
   const categoria = Array.isArray(est.categoria) ? est.categoria[0] : est.categoria;
   const temBeneficio = !!est.descricao_beneficio;
-  const categoryColor = categoryColors[categoria] || categoryColors['default'];
-  
-  // Verificar se é novo (menos de 30 dias)
-  const isNew = est.created_at && 
-    (Date.now() - new Date(est.created_at).getTime()) < 30 * 24 * 60 * 60 * 1000;
   
   // Calcular distância se tiver localização do usuário
   let distancia: string | null = null;
@@ -257,25 +233,15 @@ const AirbnbCard = ({
           </span>
         </div>
         
-        {/* Linha de benefício + novo (sutil, integrado) */}
-        <div className="flex items-center justify-between pt-1">
-          {/* Indicador de benefício */}
-          {temBeneficio && (
-            <div className="flex items-center gap-1.5">
-              <Gift className="w-3.5 h-3.5 text-pink-400" />
-              <span className="text-xs text-pink-400 font-medium">
-                Benefício disponível
-              </span>
-            </div>
-          )}
-          
-          {/* Tag "Novo" sutil como texto */}
-          {isNew && (
-            <span className="text-xs text-emerald-400 font-medium ml-auto">
-              Novo
+        {/* Indicador de benefício */}
+        {temBeneficio && (
+          <div className="flex items-center gap-1.5 pt-1">
+            <Gift className="w-3.5 h-3.5 text-pink-400" />
+            <span className="text-xs text-pink-400 font-medium">
+              Benefício disponível
             </span>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </article>
   );

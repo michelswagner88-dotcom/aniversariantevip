@@ -36,6 +36,7 @@ interface AirbnbCardGridProps {
   estabelecimentos: any[];
   isLoading: boolean;
   userLocation?: { lat: number; lng: number } | null;
+  showNewBadge?: boolean; // Controlar exibição do badge "Novo"
 }
 
 // Calcular distância entre dois pontos (Haversine)
@@ -99,11 +100,13 @@ const categoryColors: Record<string, { bg: string; text: string; glow: string }>
 const AirbnbCard = ({ 
   estabelecimento, 
   priority = false,
-  userLocation 
+  userLocation,
+  showNewBadge = false
 }: { 
   estabelecimento: any; 
   priority?: boolean;
   userLocation?: { lat: number; lng: number } | null;
+  showNewBadge?: boolean;
 }) => {
   const navigate = useNavigate();
   const est = estabelecimento;
@@ -146,11 +149,15 @@ const AirbnbCard = ({
   const especialidades = est.especialidades || [];
   const primeiraSubcategoria = especialidades[0];
   
-  // Se tem subcategoria, usa ela; senão usa categoria
+  // Se tem subcategoria válida (não "Outros"), usa ela; senão usa categoria
   let badgeIcon: string;
   let badgeLabel: string;
   
-  if (primeiraSubcategoria && categoria) {
+  // Ignorar "Outros" como subcategoria válida para badge
+  const subcategoriaValida = primeiraSubcategoria && 
+    !primeiraSubcategoria.toLowerCase().includes('outro');
+  
+  if (subcategoriaValida && categoria) {
     const subData = getSubcategoriaBadgeData(categoria, primeiraSubcategoria);
     badgeIcon = subData.icon;
     badgeLabel = subData.label;
@@ -239,8 +246,8 @@ const AirbnbCard = ({
           )}
         </div>
         
-        {/* Badge especial (Novo) - canto superior direito antes do coração */}
-        {isNew && (
+        {/* Badge especial (Novo) - só mostra se showNewBadge=true */}
+        {showNewBadge && isNew && (
           <div className="absolute top-3 right-12 z-10">
             <span className="inline-flex items-center gap-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-1 rounded-lg text-xs font-bold backdrop-blur-sm shadow-lg shadow-green-500/30 animate-pulse">
               <Star className="w-3 h-3" />
@@ -328,7 +335,8 @@ const AirbnbCard = ({
 export const AirbnbCardGrid = ({
   estabelecimentos,
   isLoading,
-  userLocation
+  userLocation,
+  showNewBadge = false
 }: AirbnbCardGridProps) => {
   
   if (isLoading) {
@@ -358,6 +366,7 @@ export const AirbnbCardGrid = ({
             estabelecimento={est} 
             priority={index < 6} 
             userLocation={userLocation}
+            showNewBadge={showNewBadge}
           />
         </motion.div>
       ))}

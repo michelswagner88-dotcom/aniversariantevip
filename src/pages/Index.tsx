@@ -75,17 +75,26 @@ const Index = () => {
   });
   
   // Filtrar por cidade, categoria, subcategoria, distância e busca (client-side)
-  const estabelecimentosFiltrados = useMemo(() => {
-    if (!estabelecimentos) return [];
+  const { estabelecimentosFiltrados, usandoFallback } = useMemo(() => {
+    if (!estabelecimentos) return { estabelecimentosFiltrados: [], usandoFallback: false };
     
     let filtrados = [...estabelecimentos];
+    let usouFallback = false;
     
     // Filtrar por cidade (se detectada/selecionada)
     if (cidadeFinal && estadoFinal) {
-      filtrados = filtrados.filter(est => 
+      const filtradosPorCidade = filtrados.filter(est => 
         est.cidade?.toLowerCase() === cidadeFinal.toLowerCase() &&
         est.estado?.toLowerCase() === estadoFinal.toLowerCase()
       );
+      
+      // Se não tem na cidade, mostrar de todas as cidades (fallback)
+      if (filtradosPorCidade.length > 0) {
+        filtrados = filtradosPorCidade;
+      } else {
+        usouFallback = true;
+        // Manter todos os estabelecimentos quando não há na cidade
+      }
     }
     
     // Filtrar por categoria
@@ -133,7 +142,7 @@ const Index = () => {
       });
     }
     
-    return filtrados;
+    return { estabelecimentosFiltrados: filtrados, usandoFallback: usouFallback };
   }, [estabelecimentos, cidadeFinal, estadoFinal, categoriaParam, buscaParam, selectedSubcategories, filterDistance, userLocation]);
   
   // Transformar estabelecimentos filtrados para o formato do mapa
@@ -420,21 +429,33 @@ const Index = () => {
               }}
               userLocation={userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : null}
               listHeader={
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
-                      {categoriaParam ? getCategoryTitle(categoriaParam, cidadeFinal || undefined) : destaquesConfig.titulo}
-                    </h2>
-                    {categoriaParam && getCategorySubtitle(categoriaParam) && (
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        {getCategorySubtitle(categoriaParam)}
-                      </p>
+                <div className="flex flex-col gap-2 mb-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
+                        {categoriaParam ? getCategoryTitle(categoriaParam, cidadeFinal || undefined) : destaquesConfig.titulo}
+                      </h2>
+                      {categoriaParam && getCategorySubtitle(categoriaParam) && (
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {getCategorySubtitle(categoriaParam)}
+                        </p>
+                      )}
+                    </div>
+                    {estabelecimentosFiltrados.length > 0 && (
+                      <span className="text-sm text-muted-foreground">
+                        {estabelecimentosFiltrados.length} {estabelecimentosFiltrados.length === 1 ? 'lugar' : 'lugares'}
+                      </span>
                     )}
                   </div>
-                  {estabelecimentosFiltrados.length > 0 && (
-                    <span className="text-sm text-muted-foreground">
-                      {estabelecimentosFiltrados.length} {estabelecimentosFiltrados.length === 1 ? 'lugar' : 'lugares'}
-                    </span>
+                  
+                  {/* Aviso quando mostrando de outras cidades */}
+                  {usandoFallback && cidadeFinal && (
+                    <div className="bg-violet-500/10 border border-violet-500/20 rounded-lg px-4 py-2">
+                      <p className="text-sm text-violet-300">
+                        <span className="font-medium">Ainda não temos {categoriaParam?.toLowerCase() || 'lugares'} em {cidadeFinal}.</span>
+                        {' '}Mostrando de outras cidades disponíveis.
+                      </p>
+                    </div>
                   )}
                 </div>
               }
@@ -443,6 +464,7 @@ const Index = () => {
                 estabelecimentos={estabelecimentosFiltrados}
                 isLoading={isLoadingEstabelecimentos}
                 userLocation={userLocation}
+                showNewBadge={false}
               />
             </AirbnbMapLayout>
           )}

@@ -4,6 +4,7 @@ import { useSEO } from '@/hooks/useSEO';
 import { useCidadeInteligente } from '@/hooks/useCidadeInteligente';
 import { useEstabelecimentos } from '@/hooks/useEstabelecimentos';
 import { useUserLocation } from '@/hooks/useUserLocation';
+import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 import { getSectionTitle, getCategoryTitle, getCategorySubtitle } from '@/utils/sectionTitles';
 import { calcularDistancia } from '@/lib/geoUtils';
@@ -32,6 +33,9 @@ import { SlidersHorizontal, MapPin, X } from 'lucide-react';
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Ativar scroll reveal
+  useScrollReveal();
   
   // Estados de filtros avançados
   const [showFilters, setShowFilters] = useState(false);
@@ -356,41 +360,49 @@ const Index = () => {
             /* MODO CARROSSÉIS: Quando não há filtro ativo */
             <div className="space-y-16 md:space-y-20">
               {/* Destaques gerais primeiro */}
-              <CategoryCarousel
-                title={destaquesConfig.titulo}
-                subtitle={destaquesConfig.subtitulo}
-                estabelecimentos={estabelecimentosFiltrados.slice(0, 10)}
-                linkHref={cidadeFinal ? `/explorar?cidade=${cidadeFinal}&estado=${estadoFinal}` : '/explorar'}
-              />
+              <div className="scroll-reveal">
+                <CategoryCarousel
+                  title={destaquesConfig.titulo}
+                  subtitle={destaquesConfig.subtitulo}
+                  estabelecimentos={estabelecimentosFiltrados.slice(0, 10)}
+                  linkHref={cidadeFinal ? `/explorar?cidade=${cidadeFinal}&estado=${estadoFinal}` : '/explorar'}
+                />
+              </div>
               
               {/* CTA Banner intercalado */}
-              <CTABanner variant="register" />
+              <div className="scroll-reveal">
+                <CTABanner variant="register" />
+              </div>
               
               {/* Carrosséis por categoria (primeiros 2) */}
-              {estabelecimentosPorCategoria.slice(0, 2).map(({ categoria, titulo, subtitulo, estabelecimentos: ests }) => (
-                <CategoryCarousel
-                  key={categoria}
-                  title={titulo}
-                  subtitle={subtitulo}
-                  estabelecimentos={ests}
-                  linkHref={`/explorar?categoria=${encodeURIComponent(categoria)}${cidadeFinal ? `&cidade=${cidadeFinal}&estado=${estadoFinal}` : ''}`}
-                />
+              {estabelecimentosPorCategoria.slice(0, 2).map(({ categoria, titulo, subtitulo, estabelecimentos: ests }, index) => (
+                <div key={categoria} className="scroll-reveal" style={{ transitionDelay: `${index * 0.1}s` }}>
+                  <CategoryCarousel
+                    title={titulo}
+                    subtitle={subtitulo}
+                    estabelecimentos={ests}
+                    linkHref={`/explorar?categoria=${encodeURIComponent(categoria)}${cidadeFinal ? `&cidade=${cidadeFinal}&estado=${estadoFinal}` : ''}`}
+                  />
+                </div>
               ))}
               
               {/* CTA Banner para parceiros */}
               {estabelecimentosPorCategoria.length > 2 && (
-                <CTABanner variant="partner" />
+                <div className="scroll-reveal-scale">
+                  <CTABanner variant="partner" />
+                </div>
               )}
               
               {/* Restante dos carrosséis */}
-              {estabelecimentosPorCategoria.slice(2).map(({ categoria, titulo, subtitulo, estabelecimentos: ests }) => (
-                <CategoryCarousel
-                  key={categoria}
-                  title={titulo}
-                  subtitle={subtitulo}
-                  estabelecimentos={ests}
-                  linkHref={`/explorar?categoria=${encodeURIComponent(categoria)}${cidadeFinal ? `&cidade=${cidadeFinal}&estado=${estadoFinal}` : ''}`}
-                />
+              {estabelecimentosPorCategoria.slice(2).map(({ categoria, titulo, subtitulo, estabelecimentos: ests }, index) => (
+                <div key={categoria} className="scroll-reveal" style={{ transitionDelay: `${index * 0.05}s` }}>
+                  <CategoryCarousel
+                    title={titulo}
+                    subtitle={subtitulo}
+                    estabelecimentos={ests}
+                    linkHref={`/explorar?categoria=${encodeURIComponent(categoria)}${cidadeFinal ? `&cidade=${cidadeFinal}&estado=${estadoFinal}` : ''}`}
+                  />
+                </div>
               ))}
             </div>
           ) : (

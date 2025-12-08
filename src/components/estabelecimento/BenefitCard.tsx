@@ -215,17 +215,15 @@ const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
                 </div>
               </div>
               
-              {/* Botão CTA Premium com shimmer infinito */}
-              <motion.button 
+              {/* Botão CTA Premium com shimmer infinito - CLICÁVEL */}
+              <button 
                 onClick={onShowRules}
                 onMouseDown={() => setIsPressed(true)}
                 onMouseUp={() => setIsPressed(false)}
                 onMouseLeave={() => setIsPressed(false)}
                 onTouchStart={() => setIsPressed(true)}
                 onTouchEnd={() => setIsPressed(false)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`
+                className="
                   w-full
                   relative
                   bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500
@@ -237,8 +235,13 @@ const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
                   rounded-2xl
                   overflow-hidden
                   transition-all duration-300
+                  z-20
+                  pointer-events-auto
+                  cursor-pointer
+                  hover:scale-[1.02]
+                  active:scale-[0.98]
                   group/btn
-                `}
+                "
                 style={{
                   animation: 'gradientFlow 4s ease infinite',
                   boxShadow: '0 10px 40px -10px rgba(139, 92, 246, 0.6)'
@@ -249,6 +252,7 @@ const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
                   className="
                     absolute inset-0 
                     bg-gradient-to-r from-transparent via-white/30 to-transparent
+                    pointer-events-none
                   "
                   style={{
                     animation: 'shimmer-slide 2s ease-in-out infinite'
@@ -260,7 +264,7 @@ const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
                   Ver regras e como usar
                   <ChevronRight className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" />
                 </span>
-              </motion.button>
+              </button>
             </div>
           </div>
         </div>

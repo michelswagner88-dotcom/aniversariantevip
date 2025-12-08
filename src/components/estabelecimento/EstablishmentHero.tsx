@@ -294,7 +294,7 @@ const EstablishmentHero = ({
 
       {/* ========== MODAL FULLSCREEN DA FOTO ========== */}
       <AnimatePresence>
-        {showFullImage && establishment.photo_url && (
+        {showFullImage && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -318,17 +318,30 @@ const EstablishmentHero = ({
               <X className="w-6 h-6 text-white" />
             </button>
 
-            {/* Imagem expandida */}
-            <motion.img 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: "spring", damping: 25 }}
-              src={coverImage} 
-              alt={establishment.nome_fantasia}
-              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
+            {/* Conteúdo expandido */}
+            {establishment.photo_url ? (
+              <motion.img 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ type: "spring", damping: 25 }}
+                src={coverImage} 
+                alt={establishment.nome_fantasia}
+                className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <motion.div 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ type: "spring", damping: 25 }}
+                className="w-48 h-48 sm:w-64 sm:h-64 rounded-3xl bg-gradient-to-br from-violet-600 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span className="text-7xl sm:text-8xl font-bold text-white drop-shadow-lg">{inicialNome}</span>
+              </motion.div>
+            )}
 
             {/* Nome do estabelecimento */}
             <motion.div 

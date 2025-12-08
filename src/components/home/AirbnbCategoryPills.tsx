@@ -295,7 +295,7 @@ export const AirbnbCategoryPills = ({
       {/* Scroll container - Com padding inicial generoso para não cortar "Todos" */}
       <div 
         ref={scrollRef}
-        className="flex gap-3 sm:gap-4 overflow-x-auto py-4 pl-6 pr-6 md:pl-16 md:pr-16 scrollbar-hide scroll-smooth snap-x snap-proximity"
+        className="flex gap-3 sm:gap-4 overflow-x-auto py-4 pl-12 pr-6 md:pl-20 md:pr-16 scrollbar-hide scroll-smooth snap-x snap-proximity"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {categoriasConfig.map((cat, index) => {

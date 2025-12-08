@@ -20,7 +20,9 @@ export const useScrollReveal = () => {
 
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
-      const elements = document.querySelectorAll('.scroll-reveal');
+      const elements = document.querySelectorAll(
+        '.scroll-reveal, .scroll-reveal-scale, .scroll-reveal-left, .scroll-reveal-right'
+      );
       elements.forEach((el) => observer.observe(el));
     }, 100);
 

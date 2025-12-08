@@ -368,6 +368,16 @@ const Index = () => {
           ) : mostrarCarrosseis ? (
             /* MODO CARROSSÉIS: Quando não há filtro ativo */
             <div className="space-y-16 md:space-y-20">
+              {/* Aviso quando mostrando de outras cidades */}
+              {usandoFallback && cidadeFinal && (
+                <div className="mx-4 sm:mx-6 lg:mx-12 xl:mx-20 bg-violet-500/10 border border-violet-500/20 rounded-xl px-6 py-4">
+                  <p className="text-sm text-violet-600 dark:text-violet-300 text-center">
+                    <span className="font-medium">Ainda não temos estabelecimentos em {cidadeFinal}.</span>
+                    {' '}Mostrando lugares de outras cidades disponíveis.
+                  </p>
+                </div>
+              )}
+              
               {/* Destaques gerais primeiro */}
               <div className="scroll-reveal">
                 <CategoryCarousel

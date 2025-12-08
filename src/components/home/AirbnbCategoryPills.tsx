@@ -267,35 +267,12 @@ export const AirbnbCategoryPills = ({
   
   return (
     <div className="relative">
-      {/* Botão esquerda - Desktop */}
-      <button
-        onClick={() => scrollBy('left')}
-        className={cn(
-          "absolute left-0 top-1/2 -translate-y-1/2 z-20 hidden md:flex",
-          "w-9 h-9 items-center justify-center rounded-full",
-          "bg-slate-800/90 border border-white/10 shadow-lg",
-          "hover:bg-slate-700 hover:scale-110 transition-all duration-200",
-          showFadeLeft ? "opacity-100" : "opacity-0 pointer-events-none"
-        )}
-        aria-label="Scroll para esquerda"
-      >
-        <ChevronLeft size={18} className="text-white" />
-      </button>
-
-      {/* Fade esquerda */}
-      <div 
-        className={cn(
-          "absolute left-0 top-0 bottom-0 w-12 sm:w-16 z-10 pointer-events-none",
-          "bg-gradient-to-r from-background via-background/80 to-transparent",
-          "transition-opacity duration-300",
-          showFadeLeft ? "opacity-100" : "opacity-0"
-        )} 
-      />
+      {/* Fade esquerda - Removido para não cortar Todos */}
       
-      {/* Scroll container - Com padding inicial generoso para não cortar "Todos" */}
+      {/* Scroll container - Padding simples para não cortar nada */}
       <div 
         ref={scrollRef}
-        className="flex gap-3 sm:gap-4 overflow-x-auto py-4 pl-12 pr-6 md:pl-20 md:pr-16 scrollbar-hide scroll-smooth snap-x snap-proximity"
+        className="flex gap-3 sm:gap-4 overflow-x-auto py-4 px-4 scrollbar-hide scroll-smooth snap-x snap-proximity"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {categoriasConfig.map((cat, index) => {
@@ -342,30 +319,7 @@ export const AirbnbCategoryPills = ({
         })}
       </div>
       
-      {/* Fade direita */}
-      <div 
-        className={cn(
-          "absolute right-0 top-0 bottom-0 w-12 sm:w-16 z-10 pointer-events-none",
-          "bg-gradient-to-l from-background via-background/80 to-transparent",
-          "transition-opacity duration-300",
-          showFadeRight ? "opacity-100" : "opacity-0"
-        )} 
-      />
-
-      {/* Botão direita - Desktop */}
-      <button
-        onClick={() => scrollBy('right')}
-        className={cn(
-          "absolute right-0 top-1/2 -translate-y-1/2 z-20 hidden md:flex",
-          "w-9 h-9 items-center justify-center rounded-full",
-          "bg-slate-800/90 border border-white/10 shadow-lg",
-          "hover:bg-slate-700 hover:scale-110 transition-all duration-200",
-          showFadeRight ? "opacity-100" : "opacity-0 pointer-events-none"
-        )}
-        aria-label="Scroll para direita"
-      >
-        <ChevronRight size={18} className="text-white" />
-      </button>
+      {/* Botões de navegação removidos para não cortar conteúdo */}
     </div>
   );
 };

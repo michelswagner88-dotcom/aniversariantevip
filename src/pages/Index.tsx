@@ -367,7 +367,7 @@ const Index = () => {
             </div>
           ) : mostrarCarrosseis ? (
             /* MODO CARROSSÉIS: Quando não há filtro ativo */
-            <div className="space-y-16 md:space-y-20">
+            <div className="space-y-8 md:space-y-12">
               {/* Aviso quando mostrando de outras cidades */}
               {usandoFallback && cidadeFinal && (
                 <div className="mx-4 sm:mx-6 lg:mx-12 xl:mx-20 bg-violet-500/10 border border-violet-500/20 rounded-xl px-6 py-4">

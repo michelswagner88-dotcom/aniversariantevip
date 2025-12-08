@@ -19,8 +19,12 @@ const EstabelecimentoDetalheBySlug = () => {
         return;
       }
 
+      // Normalizar estado: decodificar URL e preparar para busca flexível
+      const estadoNormalizado = decodeURIComponent(estado).trim();
+      
       console.log('🔍 Buscando estabelecimento:', { 
-        estado: estado.toUpperCase(), 
+        estadoOriginal: estado,
+        estadoNormalizado,
         cidade, 
         slug,
         url: window.location.pathname 
@@ -33,7 +37,7 @@ const EstabelecimentoDetalheBySlug = () => {
         .from('public_estabelecimentos')
         .select('id, nome_fantasia, cidade, estado, slug')
         .eq('slug', slug)
-        .eq('estado', estado.toUpperCase())
+        .ilike('estado', `%${estadoNormalizado}%`)
         .eq('ativo', true)
         .maybeSingle();
 

@@ -1162,6 +1162,20 @@ All colors MUST be HSL.
 }
 
 /* ---------- ANIMAÇÃO: CONFETTI (premium) ---------- */
+/* Shimmer animation para skeleton cards */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
 @keyframes confetti-fall {
   0% {
     transform: translateY(-10px) rotate(0deg) scale(1);

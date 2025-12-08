@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MapPin, Gift } from 'lucide-react';
+import { Heart, MapPin, Gift, Star, Flame } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SafeImage } from '@/components/SafeImage';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
@@ -56,21 +56,22 @@ const calcularDistancia = (
   return R * c;
 };
 
-// Skeleton Card limpo estilo Airbnb
+// Skeleton Card Premium com shimmer
 const AirbnbCardSkeleton = () => (
-  <div className="h-full flex flex-col">
-    <div className="relative w-full aspect-[4/3] rounded-xl bg-muted overflow-hidden">
-      <div 
-        className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite]"
-        style={{
-          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)'
-        }}
-      />
+  <div className="h-full flex flex-col rounded-2xl overflow-hidden bg-card/50 border border-border/50">
+    <div className="relative w-full aspect-[4/3] bg-muted overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-muted via-muted/50 to-muted bg-[length:200%_100%] animate-shimmer" />
+      {/* Badge skeletons */}
+      <div className="absolute top-3 left-3 flex gap-2">
+        <div className="w-20 h-6 bg-white/10 rounded-lg animate-pulse" />
+        <div className="w-16 h-6 bg-violet-500/20 rounded-lg animate-pulse" />
+      </div>
+      {/* Favorite button skeleton */}
+      <div className="absolute top-3 right-3 w-9 h-9 bg-white/10 rounded-full animate-pulse" />
     </div>
-    <div className="pt-3 space-y-2">
-      <div className="h-5 bg-muted rounded w-3/4" />
-      <div className="h-4 bg-muted rounded w-1/2" />
-      <div className="h-4 bg-muted rounded w-2/3" />
+    <div className="p-4 space-y-2">
+      <div className="h-5 bg-muted rounded-lg w-3/4 animate-pulse" />
+      <div className="h-4 bg-muted rounded-lg w-1/2 animate-pulse" />
     </div>
   </div>
 );
@@ -186,36 +187,44 @@ const AirbnbCard = ({
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
         "group cursor-pointer h-full flex flex-col",
-        "transition-all duration-300 ease-out",
-        "hover:-translate-y-2 hover:shadow-xl hover:shadow-purple-500/10",
+        "transition-all duration-500 ease-out",
+        "hover:-translate-y-2 hover:shadow-2xl hover:shadow-violet-500/20",
         "active:scale-[0.98]",
         "rounded-2xl overflow-hidden",
         "bg-card/50 backdrop-blur-sm border border-border/50",
-        "hover:border-purple-500/30"
+        "hover:border-violet-500/30"
       )}
     >
       {/* Container da imagem - PROPORÇÃO 4:3 */}
       <div className="relative w-full overflow-hidden bg-muted">
-        <SafeImage
-          src={fotoUrl}
-          alt={est.nome_fantasia || 'Estabelecimento'}
-          fallbackSrc={fallbackUrl}
-          aspectRatio="4:3"
-          priority={priority}
-          className="transition-transform duration-500 group-hover:scale-110"
-        />
+        {/* Imagem com zoom no hover */}
+        <div className={cn(
+          "transition-transform duration-700 ease-out",
+          isHovered && "scale-110"
+        )}>
+          <SafeImage
+            src={fotoUrl}
+            alt={est.nome_fantasia || 'Estabelecimento'}
+            fallbackSrc={fallbackUrl}
+            aspectRatio="4:3"
+            priority={priority}
+          />
+        </div>
         
         {/* Gradiente na base para uniformizar */}
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
+        
+        {/* Vinheta sutil */}
+        <div className="absolute inset-0 shadow-[inset_0_0_60px_rgba(0,0,0,0.4)] pointer-events-none" />
         
         {/* Badges no topo esquerdo */}
-        <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-2">
+        <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-1.5 max-w-[65%]">
           {/* Badge de categoria com cor */}
           <span className={cn(
-            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-md",
+            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium backdrop-blur-md border",
             categoryColor.bg,
             categoryColor.text,
-            "border border-white/10"
+            "border-white/10"
           )}>
             <span>{badgeIcon}</span>
             {badgeLabel}
@@ -223,7 +232,7 @@ const AirbnbCard = ({
           
           {/* Badge de Benefício */}
           {temBeneficio && (
-            <span className="inline-flex items-center gap-1 bg-gradient-to-r from-purple-500/80 to-pink-500/80 text-white px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-md border border-white/20">
+            <span className="inline-flex items-center gap-1 bg-gradient-to-r from-violet-500/90 to-fuchsia-500/90 text-white px-2.5 py-1 rounded-lg text-xs font-medium backdrop-blur-md border border-white/20">
               <Gift className="w-3 h-3" />
               Benefício
             </span>
@@ -233,33 +242,36 @@ const AirbnbCard = ({
         {/* Badge especial (Novo) - canto superior direito antes do coração */}
         {isNew && (
           <div className="absolute top-3 right-12 z-10">
-            <span className="inline-flex items-center gap-1 bg-emerald-500/90 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm animate-pulse">
-              ✨ Novo
+            <span className="inline-flex items-center gap-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-1 rounded-lg text-xs font-bold backdrop-blur-sm shadow-lg shadow-green-500/30 animate-pulse">
+              <Star className="w-3 h-3" />
+              Novo
             </span>
           </div>
         )}
         
-        {/* Botão Favoritar Premium */}
+        {/* Botão Favoritar Premium - SEMPRE VISÍVEL */}
         <button 
           onClick={handleFavorite}
           aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
           aria-pressed={isFavorited}
           className={cn(
             "absolute top-3 right-3 z-10",
-            "w-8 h-8 rounded-full",
-            "bg-black/40 backdrop-blur-md",
+            "w-9 h-9 rounded-full",
+            "backdrop-blur-md border",
             "flex items-center justify-center",
-            "transition-all duration-300",
-            "hover:bg-black/60 hover:scale-110",
+            "transition-all duration-300 ease-out",
             "active:scale-95",
-            isFavorited && "bg-pink-500/20"
+            isFavorited 
+              ? "bg-pink-500/90 border-pink-400/50 shadow-lg shadow-pink-500/30" 
+              : "bg-black/40 border-white/10 hover:bg-black/60 hover:border-white/20",
+            isHovered && "scale-110"
           )}
         >
           <Heart 
             className={cn(
               "w-4 h-4 transition-all duration-300",
               isFavorited 
-                ? "fill-pink-500 text-pink-500 scale-110" 
+                ? "fill-white text-white" 
                 : "text-white",
               isAnimating && "animate-[heart-pop_0.4s_ease]"
             )} 
@@ -270,18 +282,21 @@ const AirbnbCard = ({
         {temBeneficio && (
           <div className={cn(
             "absolute bottom-3 left-3 right-3 z-10",
-            "bg-black/70 backdrop-blur-md rounded-xl",
-            "px-3 py-2 border border-white/10",
-            "transition-all duration-300",
-            isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+            "bg-black/80 backdrop-blur-xl rounded-xl",
+            "px-4 py-3 border border-white/10",
+            "transition-all duration-300 ease-out",
+            isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
           )}>
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
-                <Gift className="w-3.5 h-3.5 text-white" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center flex-shrink-0">
+                <Gift className="w-4 h-4 text-fuchsia-400" />
               </div>
-              <span className="text-sm text-white font-medium line-clamp-1">
-                {est.descricao_beneficio || 'Benefício exclusivo'}
-              </span>
+              <div className="min-w-0">
+                <p className="text-xs text-gray-400">Seu benefício</p>
+                <p className="text-sm text-white font-semibold truncate">
+                  {est.descricao_beneficio || 'Benefício exclusivo'}
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -290,16 +305,19 @@ const AirbnbCard = ({
       {/* Info do estabelecimento */}
       <div className="p-4 space-y-1.5">
         {/* Nome com hover effect */}
-        <h3 className="font-semibold text-base leading-tight text-foreground group-hover:text-purple-400 transition-colors line-clamp-2">
+        <h3 className={cn(
+          "font-semibold text-base leading-tight line-clamp-2 transition-colors duration-300",
+          isHovered ? "text-violet-300" : "text-foreground"
+        )}>
           {est.nome_fantasia || est.razao_social || 'Estabelecimento'}
         </h3>
         
         {/* Localização */}
         <div className="flex items-center gap-1.5">
-          <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
+          <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm text-muted-foreground line-clamp-1">
             {est.bairro || est.cidade}
-            {distancia && <span className="text-purple-400 ml-1">• {distancia}</span>}
+            {distancia && <span className="text-violet-400 ml-1">• {distancia}</span>}
           </span>
         </div>
       </div>

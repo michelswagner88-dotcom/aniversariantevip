@@ -1,6 +1,6 @@
 // LocationSection.tsx - Seção de Localização Premium
 
-import { MapPin, Navigation, Car } from 'lucide-react';
+import { MapPin, Navigation } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 interface LocationSectionProps {
@@ -19,6 +19,37 @@ interface LocationSectionProps {
   onOpenUber: () => void;
   onOpen99: () => void;
 }
+
+// Ícones SVG originais dos apps
+const GoogleMapsIcon = () => (
+  <svg viewBox="0 0 92.3 132.3" className="w-6 h-6">
+    <path fill="#1a73e8" d="M60.2 2.2C55.8.8 51 0 46.1 0 32 0 19.3 6.4 10.8 16.5l21.8 18.3L60.2 2.2z"/>
+    <path fill="#ea4335" d="M10.8 16.5C4.1 24.5 0 34.9 0 46.1c0 8.7 1.7 15.7 4.6 22l28-33.1-21.8-18.5z"/>
+    <path fill="#4285f4" d="M46.2 28.5c9.8 0 17.7 7.9 17.7 17.7 0 4.3-1.6 8.3-4.2 11.4 0 0 13.9-16.6 27.5-32.7-5.6-10.8-15.3-19-27-22.7L32.6 34.8c3.3-3.8 8.1-6.3 13.6-6.3"/>
+    <path fill="#fbbc04" d="M46.2 63.8c-9.8 0-17.7-7.9-17.7-17.7 0-4.3 1.5-8.3 4.1-11.3l-28 33.1c4.8 10.6 12.8 19.2 21 29.9l34.1-40.5c-3.3 3.9-8.1 6.5-13.5 6.5"/>
+    <path fill="#34a853" d="M59.1 109.2c15.4-24.1 33.3-35 33.3-63 0-7.7-1.9-14.9-5.2-21.3L25.6 97.9c2.6 3.4 5.3 7.3 7.9 11.3 9.4 14.5 6.8 23.1 12.8 23.1s3.4-8.7 12.8-23.1"/>
+  </svg>
+);
+
+const WazeIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-6 h-6">
+    <path fill="#33ccff" d="M12 2C6.486 2 2 6.262 2 11.5c0 2.545 1.088 4.988 3 6.772V22l4.5-2.25c.75.188 1.5.25 2.5.25 5.514 0 10-4.262 10-9.5S17.514 2 12 2zm-3 11c-.828 0-1.5-.672-1.5-1.5S8.172 10 9 10s1.5.672 1.5 1.5S9.828 13 9 13zm6 0c-.828 0-1.5-.672-1.5-1.5s.672-1.5 1.5-1.5 1.5.672 1.5 1.5S15.828 13 15 13z"/>
+  </svg>
+);
+
+const UberIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-6 h-6">
+    <path fill="#000000" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+    <path fill="#000000" d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/>
+  </svg>
+);
+
+const App99Icon = () => (
+  <svg viewBox="0 0 24 24" className="w-6 h-6">
+    <circle cx="12" cy="12" r="10" fill="#FFDD00"/>
+    <text x="12" y="16" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#000">99</text>
+  </svg>
+);
 
 const LocationSection = ({ 
   establishment,
@@ -52,28 +83,28 @@ const LocationSection = ({
   const navigationApps = [
     { 
       name: 'Maps', 
-      icon: '🗺️',
+      Icon: GoogleMapsIcon,
       color: 'from-blue-500/20 to-green-500/20',
       borderColor: 'border-blue-500/20',
       onClick: onOpenMaps 
     },
     { 
       name: 'Waze', 
-      icon: '🚗',
+      Icon: WazeIcon,
       color: 'from-cyan-500/20 to-cyan-600/20',
       borderColor: 'border-cyan-500/20',
       onClick: onOpenWaze 
     },
     { 
       name: 'Uber', 
-      icon: '🚙',
+      Icon: UberIcon,
       color: 'from-gray-500/20 to-gray-600/20',
       borderColor: 'border-gray-500/20',
       onClick: onOpenUber 
     },
     { 
       name: '99', 
-      icon: '🚕',
+      Icon: App99Icon,
       color: 'from-yellow-500/20 to-yellow-600/20',
       borderColor: 'border-yellow-500/20',
       onClick: onOpen99 
@@ -166,7 +197,7 @@ const LocationSection = ({
           </div>
         </div>
         
-        {/* Botões de navegação */}
+        {/* Botões de navegação com ícones originais */}
         <div className="p-4 grid grid-cols-4 gap-2">
           {navigationApps.map((app) => (
             <button
@@ -184,8 +215,8 @@ const LocationSection = ({
                 group
               `}
             >
-              <div className="w-7 h-7 mb-1 flex items-center justify-center text-xl transition-transform group-hover:scale-110">
-                {app.icon}
+              <div className="w-7 h-7 mb-1 flex items-center justify-center transition-transform group-hover:scale-110">
+                <app.Icon />
               </div>
               <span className="text-xs font-medium text-muted-foreground">{app.name}</span>
             </button>

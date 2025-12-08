@@ -223,61 +223,68 @@ const EstablishmentHero = ({
           {establishment.nome_fantasia}
         </h1>
         
-        {/* Categoria e Localização */}
-        <div 
-          className="
-            flex items-center justify-center gap-3 mt-3 flex-wrap
-            animate-fade-in-up
-          "
-          style={{ animationDelay: '0.5s' }}
-        >
+        {/* Categoria e Localização - animação sequencial */}
+        <div className="flex items-center justify-center gap-3 mt-3 flex-wrap">
           {/* Badge de Categoria */}
-          <span className="
-            inline-flex items-center gap-1.5 
-            bg-gradient-to-r from-purple-500/20 to-pink-500/20 
-            text-purple-300 
-            px-4 py-1.5 
-            rounded-full 
-            text-sm 
-            font-medium
-            border border-purple-500/30
-            backdrop-blur-sm
-          ">
+          <span 
+            className="
+              inline-flex items-center gap-1.5 
+              bg-gradient-to-r from-purple-500/20 to-pink-500/20 
+              text-purple-300 
+              px-4 py-1.5 
+              rounded-full 
+              text-sm 
+              font-medium
+              border border-purple-500/30
+              backdrop-blur-sm
+              animate-fade-in-up
+              opacity-0
+            "
+            style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}
+          >
             {categoria}
           </span>
           
           {/* Localização */}
-          <span className="
-            inline-flex items-center gap-1.5 
-            text-muted-foreground 
-            text-sm
-          ">
+          <span 
+            className="
+              inline-flex items-center gap-1.5 
+              text-muted-foreground 
+              text-sm
+              animate-fade-in-up
+              opacity-0
+            "
+            style={{ animationDelay: '0.6s', animationFillMode: 'forwards' }}
+          >
             <MapPin className="w-4 h-4 text-pink-400" />
             {establishment.bairro || establishment.cidade}
           </span>
         </div>
         
-        {/* Indicadores de Confiança */}
-        <div 
-          className="
-            flex items-center justify-center gap-4 mt-4
-            animate-fade-in-up
-          "
-          style={{ animationDelay: '0.6s' }}
-        >
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        {/* Indicadores de Confiança - animação sequencial individual */}
+        <div className="flex items-center justify-center gap-4 mt-4">
+          <span 
+            className="flex items-center gap-1.5 text-xs text-muted-foreground animate-fade-in-up opacity-0"
+            style={{ animationDelay: '0.7s', animationFillMode: 'forwards' }}
+          >
             <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
               <Shield className="w-3 h-3 text-green-400" />
             </div>
             Verificado
           </span>
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span 
+            className="flex items-center gap-1.5 text-xs text-muted-foreground animate-fade-in-up opacity-0"
+            style={{ animationDelay: '0.8s', animationFillMode: 'forwards' }}
+          >
             <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center">
               <Zap className="w-3 h-3 text-blue-400" />
             </div>
             Responde rápido
           </span>
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span 
+            className="flex items-center gap-1.5 text-xs text-muted-foreground animate-fade-in-up opacity-0"
+            style={{ animationDelay: '0.9s', animationFillMode: 'forwards' }}
+          >
             <div className="w-5 h-5 rounded-full bg-pink-500/20 flex items-center justify-center">
               <Gift className="w-3 h-3 text-pink-400" />
             </div>

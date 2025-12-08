@@ -26,7 +26,8 @@ import {
 interface CategoryStyle {
   icon: LucideIcon;
   color: string;
-  bgColor: string;
+  bgColor: string;       // Cor sólida para o quadrado
+  bgColorLight: string;  // Cor clara para hover/active
   borderColor: string;
   activeGlow: string;
 }
@@ -34,106 +35,121 @@ interface CategoryStyle {
 const CATEGORIA_STYLES: Record<string, CategoryStyle> = {
   'todos': {
     icon: Sparkles,
-    color: 'text-violet-400',
-    bgColor: 'bg-violet-500/15',
+    color: 'text-white',
+    bgColor: 'bg-violet-500',
+    bgColorLight: 'bg-violet-500/15',
     borderColor: 'border-violet-500/40',
     activeGlow: 'shadow-violet-500/30'
   },
   'academia': {
     icon: Dumbbell,
-    color: 'text-orange-400',
-    bgColor: 'bg-orange-500/15',
+    color: 'text-white',
+    bgColor: 'bg-orange-500',
+    bgColorLight: 'bg-orange-500/15',
     borderColor: 'border-orange-500/40',
     activeGlow: 'shadow-orange-500/30'
   },
   'bar': {
     icon: Beer,
-    color: 'text-red-400',
-    bgColor: 'bg-red-500/15',
+    color: 'text-white',
+    bgColor: 'bg-red-500',
+    bgColorLight: 'bg-red-500/15',
     borderColor: 'border-red-500/40',
     activeGlow: 'shadow-red-500/30'
   },
   'barbearia': {
     icon: Scissors,
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/15',
+    color: 'text-white',
+    bgColor: 'bg-blue-500',
+    bgColorLight: 'bg-blue-500/15',
     borderColor: 'border-blue-500/40',
     activeGlow: 'shadow-blue-500/30'
   },
   'cafeteria': {
     icon: Coffee,
-    color: 'text-amber-400',
-    bgColor: 'bg-amber-500/15',
+    color: 'text-white',
+    bgColor: 'bg-amber-500',
+    bgColorLight: 'bg-amber-500/15',
     borderColor: 'border-amber-500/40',
     activeGlow: 'shadow-amber-500/30'
   },
   'casa-noturna': {
     icon: PartyPopper,
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/15',
+    color: 'text-white',
+    bgColor: 'bg-purple-500',
+    bgColorLight: 'bg-purple-500/15',
     borderColor: 'border-purple-500/40',
     activeGlow: 'shadow-purple-500/30'
   },
   'confeitaria': {
     icon: Cake,
-    color: 'text-pink-400',
-    bgColor: 'bg-pink-500/15',
+    color: 'text-white',
+    bgColor: 'bg-pink-500',
+    bgColorLight: 'bg-pink-500/15',
     borderColor: 'border-pink-500/40',
     activeGlow: 'shadow-pink-500/30'
   },
   'entretenimento': {
     icon: Clapperboard,
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-500/15',
+    color: 'text-white',
+    bgColor: 'bg-cyan-500',
+    bgColorLight: 'bg-cyan-500/15',
     borderColor: 'border-cyan-500/40',
     activeGlow: 'shadow-cyan-500/30'
   },
   'hospedagem': {
     icon: Hotel,
-    color: 'text-teal-400',
-    bgColor: 'bg-teal-500/15',
+    color: 'text-white',
+    bgColor: 'bg-teal-500',
+    bgColorLight: 'bg-teal-500/15',
     borderColor: 'border-teal-500/40',
     activeGlow: 'shadow-teal-500/30'
   },
   'loja': {
     icon: ShoppingBag,
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/15',
+    color: 'text-white',
+    bgColor: 'bg-emerald-500',
+    bgColorLight: 'bg-emerald-500/15',
     borderColor: 'border-emerald-500/40',
     activeGlow: 'shadow-emerald-500/30'
   },
   'restaurante': {
     icon: UtensilsCrossed,
-    color: 'text-yellow-400',
-    bgColor: 'bg-yellow-500/15',
+    color: 'text-white',
+    bgColor: 'bg-yellow-500',
+    bgColorLight: 'bg-yellow-500/15',
     borderColor: 'border-yellow-500/40',
     activeGlow: 'shadow-yellow-500/30'
   },
   'salao': {
     icon: Sparkle,
-    color: 'text-rose-400',
-    bgColor: 'bg-rose-500/15',
+    color: 'text-white',
+    bgColor: 'bg-rose-500',
+    bgColorLight: 'bg-rose-500/15',
     borderColor: 'border-rose-500/40',
     activeGlow: 'shadow-rose-500/30'
   },
   'servicos': {
     icon: Wrench,
-    color: 'text-slate-400',
-    bgColor: 'bg-slate-500/15',
+    color: 'text-white',
+    bgColor: 'bg-slate-500',
+    bgColorLight: 'bg-slate-500/15',
     borderColor: 'border-slate-500/40',
     activeGlow: 'shadow-slate-500/30'
   },
   'sorveteria': {
     icon: IceCream,
-    color: 'text-sky-400',
-    bgColor: 'bg-sky-500/15',
+    color: 'text-white',
+    bgColor: 'bg-sky-500',
+    bgColorLight: 'bg-sky-500/15',
     borderColor: 'border-sky-500/40',
     activeGlow: 'shadow-sky-500/30'
   },
   'outros': {
     icon: Store,
-    color: 'text-gray-400',
-    bgColor: 'bg-gray-500/15',
+    color: 'text-white',
+    bgColor: 'bg-gray-500',
+    bgColorLight: 'bg-gray-500/15',
     borderColor: 'border-gray-500/40',
     activeGlow: 'shadow-gray-500/30'
   },
@@ -276,10 +292,10 @@ export const AirbnbCategoryPills = ({
         )} 
       />
       
-      {/* Scroll container - Com padding inicial para não cortar "Todos" */}
+      {/* Scroll container - Com padding inicial generoso para não cortar "Todos" */}
       <div 
         ref={scrollRef}
-        className="flex gap-3 sm:gap-4 overflow-x-auto py-4 pl-4 pr-4 md:pl-14 md:pr-14 scrollbar-hide scroll-smooth snap-x snap-proximity"
+        className="flex gap-3 sm:gap-4 overflow-x-auto py-4 pl-6 pr-6 md:pl-16 md:pr-16 scrollbar-hide scroll-smooth snap-x snap-proximity"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {categoriasConfig.map((cat, index) => {
@@ -297,14 +313,14 @@ export const AirbnbCategoryPills = ({
                 'category-chip group flex flex-col items-center gap-2 min-w-[72px] sm:min-w-[80px] px-3 py-3 rounded-xl border transition-all duration-300 snap-start',
                 'animate-fade-in flex-shrink-0',
                 isActive
-                  ? `${style.bgColor} ${style.borderColor} scale-105 shadow-lg ${style.activeGlow}`
+                  ? `${style.bgColorLight} ${style.borderColor} scale-105 shadow-lg ${style.activeGlow}`
                   : 'bg-transparent border-transparent hover:bg-white/5 hover:border-white/10'
               )}
             >
-              {/* Ícone dentro do quadrado colorido - igual ao "Todos" */}
+              {/* Ícone dentro do quadrado colorido com cor SÓLIDA */}
               <div className={cn(
                 'flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300',
-                style.bgColor,
+                style.bgColor,  // Cor sólida do quadrado
                 isActive ? 'scale-110 shadow-lg' : 'group-hover:scale-110'
               )}>
                 <IconComponent 

@@ -395,12 +395,10 @@ const Index = () => {
                 </div>
               ))}
               
-              {/* CTA Banner para parceiros */}
-              {estabelecimentosPorCategoria.length > 2 && (
-                <div className="scroll-reveal-scale">
-                  <CTABanner variant="partner" />
-                </div>
-              )}
+              {/* CTA Banner para parceiros - SEMPRE aparece */}
+              <div className="scroll-reveal-scale">
+                <CTABanner variant="partner" />
+              </div>
               
               {/* Restante dos carrosséis */}
               {estabelecimentosPorCategoria.slice(2).map(({ categoria, titulo, subtitulo, estabelecimentos: ests }, index) => (

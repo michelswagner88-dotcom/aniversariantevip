@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ArrowLeft, MapPin, Phone, Globe, Instagram, Clock, 
-  Share2, Heart, Gift, MessageCircle, ExternalLink,
+  Share2, Heart, Gift, MessageCircle, 
   UtensilsCrossed, Copy, Send, Linkedin, Facebook,
-  Camera, X, ChevronLeft, ChevronRight, Check, Sparkles, ZoomIn, Store, ArrowRight, BadgeCheck
+  X, ChevronLeft, ChevronRight, Check, Sparkles, ZoomIn, Store, ArrowRight
 } from 'lucide-react';
 import { 
   getValidatedContacts, 
@@ -380,52 +380,46 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   return (
     <div className="min-h-screen bg-slate-950 pb-24 md:pb-8 animate-in fade-in duration-500">
       
-      {/* ========== HEADER ABSTRATO - NÍVEL MUNDIAL (SEM FOTO DE CAPA) ========== */}
-      <div className="relative h-56 md:h-64 w-full overflow-hidden">
-        {/* Gradient base - fundo tecnológico premium */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" />
+      {/* ========== HERO IMAGE COM FOTO DE CAPA ========== */}
+      <div className="relative">
+        {/* Foto de capa - largura total */}
+        <div className="w-full h-52 sm:h-72 overflow-hidden">
+          {fotoAvatar ? (
+            <img 
+              src={fotoAvatar} 
+              alt={estabelecimento.nome_fantasia}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            /* Fallback: gradient abstrato se não tiver foto */
+            <div className="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative">
+              <motion.div 
+                className="absolute top-0 left-1/4 w-80 h-80 rounded-full blur-[100px] opacity-40"
+                style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
+                animate={{ 
+                  x: [0, 30, 0],
+                  y: [0, -20, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+              />
+              <motion.div 
+                className="absolute -bottom-20 right-1/4 w-96 h-96 rounded-full blur-[120px] opacity-30"
+                style={{ background: 'radial-gradient(circle, hsl(280, 80%, 60%) 0%, transparent 70%)' }}
+                animate={{ 
+                  x: [0, -40, 0],
+                  y: [0, 30, 0],
+                  scale: [1, 1.15, 1]
+                }}
+                transition={{ repeat: Infinity, duration: 10, ease: "easeInOut", delay: 1 }}
+              />
+            </div>
+          )}
+          {/* Overlay gradiente para legibilidade */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-slate-950" />
+        </div>
         
-        {/* Orbs flutuantes animados - efeito Stripe/Linear */}
-        <motion.div 
-          className="absolute top-0 left-1/4 w-80 h-80 rounded-full blur-[100px] opacity-40"
-          style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
-          animate={{ 
-            x: [0, 30, 0],
-            y: [0, -20, 0],
-            scale: [1, 1.1, 1]
-          }}
-          transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-        />
-        <motion.div 
-          className="absolute -bottom-20 right-1/4 w-96 h-96 rounded-full blur-[120px] opacity-30"
-          style={{ background: 'radial-gradient(circle, hsl(280, 80%, 60%) 0%, transparent 70%)' }}
-          animate={{ 
-            x: [0, -40, 0],
-            y: [0, 30, 0],
-            scale: [1, 1.15, 1]
-          }}
-          transition={{ repeat: Infinity, duration: 10, ease: "easeInOut", delay: 1 }}
-        />
-        <motion.div 
-          className="absolute top-1/3 right-1/3 w-64 h-64 rounded-full blur-[80px] opacity-25"
-          style={{ background: 'radial-gradient(circle, hsl(320, 80%, 60%) 0%, transparent 70%)' }}
-          animate={{ 
-            x: [0, 20, -20, 0],
-            y: [0, 20, 0],
-          }}
-          transition={{ repeat: Infinity, duration: 6, ease: "easeInOut", delay: 0.5 }}
-        />
-        
-        {/* Grid pattern sutil - toque tech */}
-        <div 
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `linear-gradient(hsl(var(--primary)/0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)/0.3) 1px, transparent 1px)`,
-            backgroundSize: '50px 50px'
-          }}
-        />
-        
-        {/* Header com botões glass */}
+        {/* Botões sobre a capa */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -436,7 +430,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate(-1)}
-            className="p-3 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg hover:bg-white/10 transition-colors"
+            className="p-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg hover:bg-white/20 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
           </motion.button>
@@ -447,7 +441,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleFavorito}
-              className="p-3 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg hover:bg-white/10 transition-colors"
+              className="p-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg hover:bg-white/20 transition-colors"
             >
               <Heart className={`w-5 h-5 transition-colors ${id && isFavorito(id) ? 'fill-red-500 text-red-500' : 'text-white'}`} />
             </motion.button>
@@ -455,32 +449,29 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleShare}
-              className="p-3 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg hover:bg-white/10 transition-colors"
+              className="p-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg hover:bg-white/20 transition-colors"
             >
               <Share2 className="w-5 h-5 text-white" />
             </motion.button>
           </div>
         </motion.div>
-      </div>
-
-      {/* ========== AVATAR + INFO CENTRALIZADO - DESIGN PREMIUM ========== */}
-      <div className="relative z-20 px-4 -mt-20">
-        <div className="flex flex-col items-center text-center">
-          {/* Avatar grande centralizado */}
+        
+        {/* Foto de perfil sobrepondo a capa */}
+        <div className="absolute -bottom-14 left-1/2 transform -translate-x-1/2 z-10">
           <motion.div 
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-            className="relative mb-5"
+            className="relative"
           >
-            {/* Glow ring animado */}
-            <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 opacity-60 blur-lg animate-pulse" />
+            {/* Glow ring */}
+            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 opacity-60 blur-lg animate-pulse" />
             
             {/* Container do avatar */}
             <motion.div 
               whileHover={{ scale: 1.05 }}
               onClick={() => fotoAvatar && setShowLogoExpanded(true)}
-              className={`relative w-28 h-28 md:w-36 md:h-36 rounded-3xl border-4 border-slate-900 shadow-2xl overflow-hidden ${fotoAvatar ? 'cursor-pointer' : ''}`}
+              className={`relative w-28 h-28 rounded-2xl border-4 border-slate-950 overflow-hidden shadow-xl ${fotoAvatar ? 'cursor-pointer' : ''}`}
             >
               {fotoAvatar ? (
                 <img 
@@ -491,97 +482,85 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               ) : (
                 /* Inicial do nome com gradient premium */
                 <div className="w-full h-full bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 flex items-center justify-center">
-                  <span className="text-5xl md:text-6xl font-black text-white drop-shadow-lg">
+                  <span className="text-5xl font-black text-white drop-shadow-lg">
                     {inicialNome}
                   </span>
                 </div>
               )}
             </motion.div>
             
-            {/* Badge verificado fora do avatar */}
-            <div className="absolute -bottom-2 -right-2 p-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 border-3 border-slate-950 shadow-lg">
-              <BadgeCheck className="w-5 h-5 text-white" />
+            {/* Badge verificado */}
+            <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1.5 border-2 border-slate-950">
+              <Check className="w-4 h-4 text-white" />
             </div>
           </motion.div>
-          
-          {/* Nome do estabelecimento */}
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
-            className="text-2xl md:text-4xl font-extrabold text-white mb-3 tracking-tight max-w-md"
-          >
-            {estabelecimento.nome_fantasia || estabelecimento.razao_social}
-          </motion.h1>
-          
-          {/* Badges de categoria e localização */}
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="flex flex-wrap items-center justify-center gap-2 mb-3"
-          >
-            <span className="px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-600/80 to-fuchsia-600/80 backdrop-blur-sm text-xs font-bold text-white flex items-center gap-2 shadow-lg">
-              <span className="text-base">{getCategoriaIcon(categoria)}</span>
-              {categoria}
-            </span>
-            
-            {(estabelecimento.cidade || estabelecimento.estado) && (
-              <span className="px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-xs font-medium text-white/90 flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5" />
-                {[estabelecimento.cidade, estabelecimento.estado].filter(Boolean).join('/')}
-              </span>
-            )}
-          </motion.div>
-          
-          {/* Especialidades/Subcategorias */}
-          {estabelecimento.especialidades?.length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="flex flex-wrap justify-center gap-1.5"
-            >
-              {estabelecimento.especialidades.slice(0, 3).map((spec: string) => (
-                <span 
-                  key={spec} 
-                  className="px-3 py-1 rounded-full bg-purple-500/15 text-xs text-purple-300 border border-purple-500/25"
-                >
-                  {spec}
-                </span>
-              ))}
-            </motion.div>
-          )}
         </div>
       </div>
 
-      {/* ========== BIO DO ESTABELECIMENTO (só exibe se tiver bio real) ========== */}
-      {estabelecimento.bio && estabelecimento.bio.trim() !== '' && (
+      {/* ========== ESPAÇO + INFO CENTRALIZADO ========== */}
+      <div className="pt-[72px] pb-4 text-center px-4">
+        <motion.h1 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="text-2xl font-bold text-white"
+        >
+          {estabelecimento.nome_fantasia || estabelecimento.razao_social}
+        </motion.h1>
+        
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mx-4 mt-4"
+          className="flex flex-wrap items-center justify-center gap-2 mt-2"
         >
-          <p className="text-white/80 text-sm leading-relaxed">
-            {estabelecimento.bio}
-          </p>
+          <span className="flex items-center gap-1 bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm">
+            <span>{getCategoriaIcon(categoria)}</span>
+            {categoria}
+          </span>
+          
+          {(estabelecimento.bairro || estabelecimento.cidade) && (
+            <span className="flex items-center gap-1 text-sm text-gray-400">
+              <MapPin className="w-4 h-4" />
+              {estabelecimento.bairro || estabelecimento.cidade}
+            </span>
+          )}
         </motion.div>
-      )}
+        
+        {/* Especialidades/Subcategorias */}
+        {estabelecimento.especialidades?.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="flex flex-wrap justify-center gap-1.5 mt-2"
+          >
+            {estabelecimento.especialidades.slice(0, 3).map((spec: string) => (
+              <span 
+                key={spec} 
+                className="px-3 py-1 rounded-full bg-purple-500/15 text-xs text-purple-300 border border-purple-500/25"
+              >
+                {spec}
+              </span>
+            ))}
+          </motion.div>
+        )}
+      </div>
 
-      {/* ========== CARD DE BENEFÍCIO - SEMPRE VISÍVEL ========== */}
-      {(() => {
-        // Usar novos campos estruturados se existirem, senão extrair do legado
-        const beneficioData = estabelecimento.beneficio_titulo
-          ? {
-              titulo: estabelecimento.beneficio_titulo,
-              validade: estabelecimento.beneficio_validade || 'dia_aniversario',
-              detalhes: estabelecimento.beneficio_regras || estabelecimento.regras_utilizacao,
-            }
-          : separarBeneficio(estabelecimento.descricao_beneficio);
+      {/* ========== CONTEÚDO PRINCIPAL COM ESPAÇAMENTO ========== */}
+      <div className="px-4 space-y-6 pb-24">
+        
+        {/* 1. CARD DE BENEFÍCIO */}
+        {(() => {
+          const beneficioData = estabelecimento.beneficio_titulo
+            ? {
+                titulo: estabelecimento.beneficio_titulo,
+                validade: estabelecimento.beneficio_validade || 'dia_aniversario',
+                detalhes: estabelecimento.beneficio_regras || estabelecimento.regras_utilizacao,
+              }
+            : separarBeneficio(estabelecimento.descricao_beneficio);
 
-        return (
-          <div className="mx-4 mt-6">
+          return (
             <CardBeneficio
               beneficio={beneficioData.titulo}
               validadeTexto={beneficioData.validade}
@@ -590,234 +569,193 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
               userId={userId}
               onEmitirCupom={() => setShowCupomModal(true)}
             />
-          </div>
-        );
-      })()}
+          );
+        })()}
+        
+        {/* 2. SEÇÃO SOBRE (BIO) */}
+        {estabelecimento.bio && estabelecimento.bio.trim() !== '' && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="p-4 rounded-2xl bg-card/50 border border-white/10"
+          >
+            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2 text-white">
+              <div className="p-2 rounded-lg bg-purple-500/20">
+                <Store className="w-4 h-4 text-purple-400" />
+              </div>
+              Sobre
+            </h2>
+            <p className="text-gray-300 leading-relaxed text-sm">
+              {estabelecimento.bio}
+            </p>
+          </motion.div>
+        )}
 
+        {/* 3. BOTÕES DE CONTATO */}
+        {(() => {
+          const hasWhatsApp = !!formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone);
+          const hasInstagram = !!formatInstagram(estabelecimento.instagram);
+          const hasPhone = !!formatPhoneLink(estabelecimento.telefone);
+          const hasCardapio = mostraCardapio && !!estabelecimento.link_cardapio;
+          const hasSite = !!formatWebsite(estabelecimento.site);
+          
+          const validButtonsCount = [hasWhatsApp, hasInstagram, hasPhone, hasCardapio, hasSite].filter(Boolean).length;
+          
+          if (validButtonsCount === 0) return null;
+          
+          const gridCols = validButtonsCount <= 2 ? 'grid-cols-2' : 
+                          validButtonsCount === 3 ? 'grid-cols-3' :
+                          validButtonsCount === 4 ? 'grid-cols-4' : 'grid-cols-5';
+          
+          return (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <div className={`grid ${gridCols} gap-3`}>
+                {formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone) && (
+                  <motion.button
+                    onClick={handleWhatsApp}
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-green-500/15 to-green-600/25 border-green-500/30 hover:border-green-400/50 hover:shadow-lg hover:shadow-green-500/10"
+                  >
+                    <MessageCircle className="w-6 h-6 text-green-400" />
+                    <span className="text-xs font-medium text-gray-200">WhatsApp</span>
+                  </motion.button>
+                )}
 
-      {/* ========== SEÇÃO DE AÇÕES RÁPIDAS ========== */}
-      {(() => {
-        // Calcular quantos botões válidos temos
-        const hasWhatsApp = !!formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone);
-        const hasInstagram = !!formatInstagram(estabelecimento.instagram);
-        const hasPhone = !!formatPhoneLink(estabelecimento.telefone);
-        const hasCardapio = mostraCardapio && !!estabelecimento.link_cardapio;
-        const hasSite = !!formatWebsite(estabelecimento.site);
-        
-        const validButtonsCount = [hasWhatsApp, hasInstagram, hasPhone, hasCardapio, hasSite].filter(Boolean).length;
-        
-        // Se não tem nenhum botão válido, não renderiza a seção
-        if (validButtonsCount === 0) return null;
-        
-        // Determinar número de colunas baseado na quantidade de botões
-        const gridCols = validButtonsCount <= 2 ? 'grid-cols-2' : 
-                        validButtonsCount === 3 ? 'grid-cols-3' :
-                        validButtonsCount === 4 ? 'grid-cols-4' : 'grid-cols-5';
-        
-        return (
-          <motion.section 
+                {formatInstagram(estabelecimento.instagram) && (
+                  <motion.button
+                    onClick={handleInstagram}
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-pink-500/15 to-pink-600/25 border-pink-500/30 hover:border-pink-400/50 hover:shadow-lg hover:shadow-pink-500/10"
+                  >
+                    <Instagram className="w-6 h-6 text-pink-400" />
+                    <span className="text-xs font-medium text-gray-200">Instagram</span>
+                  </motion.button>
+                )}
+
+                {formatPhoneLink(estabelecimento.telefone) && (
+                  <motion.button
+                    onClick={handleLigar}
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-blue-500/15 to-blue-600/25 border-blue-500/30 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/10"
+                  >
+                    <Phone className="w-6 h-6 text-blue-400" />
+                    <span className="text-xs font-medium text-gray-200">Ligar</span>
+                  </motion.button>
+                )}
+
+                {mostraCardapio && estabelecimento.link_cardapio && (
+                  <motion.button
+                    onClick={handleCardapio}
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-orange-500/15 to-orange-600/25 border-orange-500/30 hover:border-orange-400/50 hover:shadow-lg hover:shadow-orange-500/10"
+                  >
+                    <UtensilsCrossed className="w-6 h-6 text-orange-400" />
+                    <span className="text-xs font-medium text-gray-200">Cardápio</span>
+                  </motion.button>
+                )}
+
+                {formatWebsite(estabelecimento.site) && (
+                  <motion.button
+                    onClick={handleSite}
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-violet-500/15 to-violet-600/25 border-violet-500/30 hover:border-violet-400/50 hover:shadow-lg hover:shadow-violet-500/10"
+                  >
+                    <Globe className="w-6 h-6 text-violet-400" />
+                    <span className="text-xs font-medium text-gray-200">Site</span>
+                  </motion.button>
+                )}
+              </div>
+            </motion.div>
+          );
+        })()}
+
+        {/* 4. HORÁRIO DE FUNCIONAMENTO */}
+        {estabelecimento.horario_funcionamento && (
+          <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="mx-4 mt-6"
+            transition={{ delay: 0.7 }}
           >
-            <div className={`grid ${gridCols} gap-3`}>
-          {/* WhatsApp */}
-          {formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone) && (
-            <motion.button
-              onClick={handleWhatsApp}
-              whileHover={{ scale: 1.05, y: -3 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-green-500/15 to-green-600/25 border-green-500/30 hover:border-green-400/50 hover:shadow-lg hover:shadow-green-500/10"
-            >
-              <MessageCircle className="w-6 h-6 text-green-400" />
-              <span className="text-xs font-medium text-gray-200">WhatsApp</span>
-            </motion.button>
-          )}
-
-          {/* Instagram */}
-          {formatInstagram(estabelecimento.instagram) && (
-            <motion.button
-              onClick={handleInstagram}
-              whileHover={{ scale: 1.05, y: -3 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-pink-500/15 to-pink-600/25 border-pink-500/30 hover:border-pink-400/50 hover:shadow-lg hover:shadow-pink-500/10"
-            >
-              <Instagram className="w-6 h-6 text-pink-400" />
-              <span className="text-xs font-medium text-gray-200">Instagram</span>
-            </motion.button>
-          )}
-
-          {/* Ligar */}
-          {formatPhoneLink(estabelecimento.telefone) && (
-            <motion.button
-              onClick={handleLigar}
-              whileHover={{ scale: 1.05, y: -3 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-blue-500/15 to-blue-600/25 border-blue-500/30 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/10"
-            >
-              <Phone className="w-6 h-6 text-blue-400" />
-              <span className="text-xs font-medium text-gray-200">Ligar</span>
-            </motion.button>
-          )}
-
-          {/* Cardápio */}
-          {mostraCardapio && estabelecimento.link_cardapio && (
-            <motion.button
-              onClick={handleCardapio}
-              whileHover={{ scale: 1.05, y: -3 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-orange-500/15 to-orange-600/25 border-orange-500/30 hover:border-orange-400/50 hover:shadow-lg hover:shadow-orange-500/10"
-            >
-              <UtensilsCrossed className="w-6 h-6 text-orange-400" />
-              <span className="text-xs font-medium text-gray-200">Cardápio</span>
-            </motion.button>
-          )}
-
-          {/* Site */}
-          {formatWebsite(estabelecimento.site) && (
-            <motion.button
-              onClick={handleSite}
-              whileHover={{ scale: 1.05, y: -3 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-violet-500/15 to-violet-600/25 border-violet-500/30 hover:border-violet-400/50 hover:shadow-lg hover:shadow-violet-500/10"
-            >
-              <Globe className="w-6 h-6 text-violet-400" />
-              <span className="text-xs font-medium text-gray-200">Site</span>
-            </motion.button>
-          )}
-            </div>
-          </motion.section>
-        );
-      })()}
-
-      {/* ========== GALERIA DE FOTOS PREMIUM ========== */}
-      {temFotosGaleria && galeriaFotos.length > 0 && (
-        <motion.section 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="mx-4 mt-6"
-        >
-          <h3 className="text-base font-bold text-white mb-3 flex items-center gap-2">
-            <Camera className="w-4 h-4 text-purple-400" />
-            Fotos
-            <span className="text-white/60 text-sm font-normal">({galeriaFotos.length})</span>
-            {loadingPhotos && (
-              <div className="ml-2 w-3 h-3 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-            )}
-          </h3>
-          
-          <div className="grid grid-cols-4 gap-2">
-            {galeriaFotos.slice(0, 4).map((photo: string, index: number) => (
-              <motion.button
-                key={index}
-                onClick={() => { setCurrentPhotoIndex(index); setLightboxOpen(true); }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="relative aspect-square rounded-xl overflow-hidden group"
-              >
-              <img 
-                  src={photo} 
-                  alt={`Foto ${index + 1}`}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
-                  <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-purple-500/20 border border-purple-500/30">
+                  <Clock className="w-5 h-5 text-purple-400" />
                 </div>
-                
-                {index === 3 && galeriaFotos.length > 4 && (
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <span className="text-white font-bold">+{galeriaFotos.length - 4}</span>
-                  </div>
-                )}
-              </motion.button>
-            ))}
-          </div>
-        </motion.section>
-      )}
+                <div className="flex-1">
+                  <h4 className="font-semibold text-white">Horário de Funcionamento</h4>
+                  <p className="text-white/80 text-sm mt-1">{estabelecimento.horario_funcionamento}</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
-      {/* ========== HORÁRIO DE FUNCIONAMENTO PREMIUM ========== */}
-      {estabelecimento.horario_funcionamento && (
-        <motion.section 
+        {/* 5. COMO CHEGAR (LOCALIZAÇÃO) */}
+        <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
-          className="mx-4 mt-6"
         >
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-purple-500/20 border border-purple-500/30">
-                <Clock className="w-5 h-5 text-purple-400" />
-              </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-white">Horário de Funcionamento</h4>
-                <p className="text-white/80 text-sm mt-1">{estabelecimento.horario_funcionamento}</p>
-              </div>
+          <LazyMap
+            endereco={[estabelecimento.logradouro, estabelecimento.numero, estabelecimento.complemento].filter(Boolean).join(', ')}
+            latitude={estabelecimento.latitude}
+            longitude={estabelecimento.longitude}
+            nomeEstabelecimento={estabelecimento.nome_fantasia}
+            bairro={estabelecimento.bairro}
+            cep={estabelecimento.cep}
+            cidade={estabelecimento.cidade}
+            estado={estabelecimento.estado}
+          />
+        </motion.div>
+
+        {/* 6. CTA PARA ESTABELECIMENTOS */}
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/80 via-pink-900/60 to-purple-900/80 p-6 text-center">
+            <div className="absolute top-0 left-1/4 w-32 h-32 bg-purple-500/30 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-pink-500/30 rounded-full blur-3xl" />
+            
+            <div className="relative">
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ repeat: Infinity, duration: 3 }}
+              >
+                <Store className="w-12 h-12 text-purple-300 mx-auto mb-4" />
+              </motion.div>
+              
+              <h3 className="text-xl font-bold text-white mb-2">
+                Quer sua página assim?
+              </h3>
+              <p className="text-purple-200 text-sm mb-5 max-w-xs mx-auto">
+                Cadastre seu estabelecimento e atraia aniversariantes todos os meses!
+              </p>
+              
+              <motion.button 
+                onClick={() => navigate('/seja-parceiro')}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-purple-900 font-bold text-sm shadow-lg shadow-purple-500/25"
+              >
+                Cadastrar meu negócio
+                <ArrowRight className="w-4 h-4" />
+              </motion.button>
             </div>
           </div>
-        </motion.section>
-      )}
-
-      {/* ========== SEÇÃO LOCALIZAÇÃO - LAZY MAP ========== */}
-      <motion.section 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.9 }}
-        className="mx-4 mt-6"
-      >
-        <LazyMap
-          endereco={[estabelecimento.logradouro, estabelecimento.numero, estabelecimento.complemento].filter(Boolean).join(', ')}
-          latitude={estabelecimento.latitude}
-          longitude={estabelecimento.longitude}
-          nomeEstabelecimento={estabelecimento.nome_fantasia}
-          bairro={estabelecimento.bairro}
-          cep={estabelecimento.cep}
-          cidade={estabelecimento.cidade}
-          estado={estabelecimento.estado}
-        />
-      </motion.section>
-
-      {/* ========== CTA PARA ESTABELECIMENTOS ========== */}
-      <motion.section 
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="mx-4 mt-10 mb-8"
-      >
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/80 via-pink-900/60 to-purple-900/80 p-6 text-center">
-          <div className="absolute top-0 left-1/4 w-32 h-32 bg-purple-500/30 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-pink-500/30 rounded-full blur-3xl" />
-          
-          <div className="relative">
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 3 }}
-            >
-              <Store className="w-12 h-12 text-purple-300 mx-auto mb-4" />
-            </motion.div>
-            
-            <h3 className="text-xl font-bold text-white mb-2">
-              Quer sua página assim?
-            </h3>
-            <p className="text-purple-200 text-sm mb-5 max-w-xs mx-auto">
-              Cadastre seu estabelecimento e atraia aniversariantes todos os meses!
-            </p>
-            
-            <motion.button 
-              onClick={() => navigate('/seja-parceiro')}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-purple-900 font-bold text-sm shadow-lg shadow-purple-500/25"
-            >
-              Cadastrar meu negócio
-              <ArrowRight className="w-4 h-4" />
-            </motion.button>
-          </div>
-        </div>
-      </motion.section>
+        </motion.div>
+      </div>
 
       {/* ========== BOTÃO FLUTUANTE MOBILE ========== */}
       <motion.div 
@@ -840,7 +778,6 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
         </motion.button>
       </motion.div>
 
-      {/* ========== LIGHTBOX MODAL ========== */}
       <AnimatePresence>
         {lightboxOpen && (
           <motion.div 

@@ -236,8 +236,13 @@ export const AirbnbCategoryPills = ({
     return counts;
   }, [estabelecimentos]);
   
-  // Mapear categorias do sistema com estilos
+  // Mapear categorias do sistema com estilos - SEMPRE mostra todas em ordem alfabética
   const categoriasConfig = useMemo(() => {
+    // Ordenar CATEGORIAS alfabeticamente pelo plural (nome que aparece)
+    const categoriasOrdenadas = [...CATEGORIAS].sort((a, b) => 
+      a.plural.localeCompare(b.plural, 'pt-BR')
+    );
+    
     const configs: Array<{ 
       id: string | null; 
       categoryId: string;
@@ -250,7 +255,7 @@ export const AirbnbCategoryPills = ({
         nome: 'Todos', 
         style: CATEGORIA_STYLES['todos']
       },
-      ...CATEGORIAS.map(cat => ({
+      ...categoriasOrdenadas.map(cat => ({
         id: cat.label,
         categoryId: cat.id,
         nome: cat.plural,
@@ -258,12 +263,8 @@ export const AirbnbCategoryPills = ({
       }))
     ];
     
-    // Filtrar apenas categorias com estabelecimentos
-    return configs.filter(cat => {
-      if (cat.id === null) return true;
-      return contagens[cat.id] > 0;
-    });
-  }, [contagens]);
+    return configs;
+  }, []);
   
   return (
     <div className="relative">

@@ -10,6 +10,7 @@ import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 import { normalizarCidade } from '@/lib/utils';
+import { gerarBioAutomatica } from '@/lib/bioUtils';
 
 interface ImportError {
   row: number;
@@ -684,6 +685,19 @@ export default function AdminImport() {
             placeDetails = await getPlaceDetails(nome, finalAddress, cidade || "", estado || "");
           }
 
+          // Gerar bio automática se não vier na planilha
+          const bioRaw = getColumnValue(row,
+            'BIO', 'Bio', 'bio', 'SOBRE', 'Sobre', 'sobre',
+            'DESCRICAO', 'Descricao', 'descricao', 'DESCRIÇÃO', 'Descrição'
+          );
+          
+          const bioGerada = bioRaw || gerarBioAutomatica({
+            nome_fantasia: nome,
+            categoria: [categoriaMapeada],
+            bairro: bairro || null,
+            cidade: cidade || null,
+          });
+
           // Preparar dados para inserção
           const estabelecimentoData = {
             codigo: codigoAtual,
@@ -720,6 +734,7 @@ export default function AdminImport() {
             cidade: cidade || null,
             estado: estado || null,
             deleted_at: null,
+            bio: bioGerada,
           };
 
           // Inserir/Atualizar no Supabase

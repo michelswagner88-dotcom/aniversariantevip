@@ -1,55 +1,57 @@
-// Utilitários para geração automática de bio e separação de benefício
+// Utilitários para geração automática de bio por categoria
 
 interface DadosEstabelecimento {
-  categoria?: string[];
+  nome_fantasia?: string | null;
+  categoria?: string[] | null;
   bairro?: string | null;
   cidade?: string | null;
-  descricao_beneficio?: string | null;
 }
 
 /**
- * Gera uma bio automática baseada nos dados do estabelecimento
+ * Gera uma bio automática premium baseada na categoria do estabelecimento
+ * Copywriting de alta qualidade para cada segmento
  */
 export const gerarBioAutomatica = (dados: DadosEstabelecimento): string => {
-  const { categoria, bairro, cidade, descricao_beneficio } = dados;
+  const { nome_fantasia, categoria, bairro, cidade } = dados;
   
-  const categoriaPrincipal = categoria?.[0] || 'Estabelecimento';
-  const localizacao = bairro || cidade || '';
+  const nome = nome_fantasia || 'Estabelecimento';
+  const categoriaPrincipal = categoria?.[0] || 'Outros';
+  const localizacao = bairro || cidade || 'sua região';
   
-  // Extrair diferenciais do benefício (se houver)
-  const diferenciais: string[] = [];
-  
-  if (descricao_beneficio) {
-    const beneficioLower = descricao_beneficio.toLowerCase();
+  // Bio premium por categoria
+  const biosPorCategoria: Record<string, string> = {
+    'Academia': `${nome} é referência em fitness em ${localizacao}. No seu aniversário, treine com benefícios exclusivos VIP!`,
     
-    if (beneficioLower.includes('climatizado')) {
-      diferenciais.push('Espaço climatizado');
-    }
-    if (beneficioLower.includes('estacionamento')) {
-      diferenciais.push('Estacionamento próprio');
-    }
-    if (beneficioLower.includes('wifi') || beneficioLower.includes('wi-fi')) {
-      diferenciais.push('Wi-Fi gratuito');
-    }
-    if (beneficioLower.includes('acessível') || beneficioLower.includes('acessibilidade')) {
-      diferenciais.push('Acessibilidade garantida');
-    }
-  }
+    'Bar': `O point obrigatório em ${localizacao} para celebrar. ${nome} oferece vantagens especiais para aniversariantes!`,
+    
+    'Barbearia': `Estilo e atitude em ${localizacao}. ${nome} cuida do seu visual com benefícios exclusivos no seu aniversário!`,
+    
+    'Cafeteria': `Café especial e ambiente acolhedor em ${localizacao}. ${nome} celebra seu aniversário com você!`,
+    
+    'Casa Noturna': `A noite é sua em ${localizacao}! ${nome} oferece entrada VIP e benefícios exclusivos para aniversariantes!`,
+    
+    'Confeitaria': `Doces momentos em ${localizacao}. ${nome} torna seu aniversário ainda mais especial!`,
+    
+    'Entretenimento': `Diversão garantida em ${localizacao}! ${nome} tem surpresas especiais para aniversariantes!`,
+    
+    'Hospedagem': `Conforto e exclusividade em ${localizacao}. ${nome} celebra seu aniversário com você!`,
+    
+    'Loja': `${nome} em ${localizacao} tem ofertas imperdíveis para aniversariantes. Presenteie-se!`,
+    
+    'Restaurante': `Experiência gastronômica de referência em ${localizacao}. ${nome} celebra seu aniversário com sabor!`,
+    
+    'Salão de Beleza': `Beleza e bem-estar em ${localizacao}. ${nome} cuida de você com benefícios exclusivos no seu aniversário!`,
+    
+    'Saúde e Suplementos': `Saúde e qualidade de vida em ${localizacao}. ${nome} oferece vantagens especiais para aniversariantes!`,
+    
+    'Serviços': `${nome} em ${localizacao} oferece atendimento VIP para aniversariantes. Aproveite!`,
+    
+    'Sorveteria': `Sabores refrescantes em ${localizacao}! ${nome} adoça seu aniversário com benefícios exclusivos!`,
+    
+    'Outros': `${nome} em ${localizacao} tem benefícios exclusivos para aniversariantes. Venha celebrar!`,
+  };
   
-  // Montar bio
-  let bio = `${categoriaPrincipal}`;
-  
-  if (localizacao) {
-    bio += ` em ${localizacao}`;
-  }
-  
-  if (diferenciais.length > 0) {
-    bio += `. ${diferenciais.join('. ')}`;
-  }
-  
-  bio += '. Confira nosso benefício exclusivo para aniversariantes!';
-  
-  return bio;
+  return biosPorCategoria[categoriaPrincipal] || biosPorCategoria['Outros'];
 };
 
 interface BeneficioSeparado {

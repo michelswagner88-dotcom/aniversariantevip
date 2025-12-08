@@ -1728,6 +1728,15 @@ export type Database = {
         }[]
       }
       generate_city_slug: { Args: { cidade: string }; Returns: string }
+      generate_establishment_bio: {
+        Args: {
+          p_bairro: string
+          p_categoria: string
+          p_cidade: string
+          p_nome: string
+        }
+        Returns: string
+      }
       generate_slug: { Args: { nome: string }; Returns: string }
       generate_unique_coupon_code: { Args: never; Returns: string }
       gerar_proximo_codigo: { Args: never; Returns: string }

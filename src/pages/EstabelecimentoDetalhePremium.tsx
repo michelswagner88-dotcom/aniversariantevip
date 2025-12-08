@@ -5,7 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Gift, Sparkles, Copy, MessageCircle, Send, Facebook, Twitter, Linkedin } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Gift, Sparkles, Copy, MessageCircle, Send, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { useSEO } from '@/hooks/useSEO';
@@ -155,7 +155,17 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
       twitter: `https://twitter.com/intent/tweet?url=${url}&text=${text}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+      instagram: `https://www.instagram.com/`,
     };
+
+    if (network === 'instagram') {
+      // Instagram não tem share direto - copia o link e abre o app
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('Link copiado! Cole no seu Stories do Instagram');
+      window.open('https://www.instagram.com/', '_blank');
+      setShowShareModal(false);
+      return;
+    }
 
     if (shareUrls[network]) {
       window.open(shareUrls[network], '_blank', 'width=600,height=400');
@@ -568,6 +578,16 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
                     <Linkedin className="w-7 h-7 text-white" />
                   </div>
                   <span className="text-xs text-muted-foreground">LinkedIn</span>
+                </button>
+
+                <button
+                  onClick={() => shareToNetwork('instagram')}
+                  className="flex flex-col items-center gap-2 p-3 rounded-2xl hover:bg-muted transition-colors group"
+                >
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Instagram className="w-7 h-7 text-white" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">Instagram</span>
                 </button>
               </div>
 

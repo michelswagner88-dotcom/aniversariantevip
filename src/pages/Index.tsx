@@ -21,6 +21,7 @@ import { CategoryCarousel } from '@/components/home/CategoryCarousel';
 import { AirbnbMapLayout } from '@/components/map/AirbnbMapLayout';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { CarouselSkeleton } from '@/components/skeletons';
+import CTABanner from '@/components/home/CTABanner';
 import SubcategoryFilter from '@/components/SubcategoryFilter';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -362,8 +363,27 @@ const Index = () => {
                 linkHref={cidadeFinal ? `/explorar?cidade=${cidadeFinal}&estado=${estadoFinal}` : '/explorar'}
               />
               
-              {/* Carrosséis por categoria */}
-              {estabelecimentosPorCategoria.map(({ categoria, titulo, subtitulo, estabelecimentos: ests }) => (
+              {/* CTA Banner intercalado */}
+              <CTABanner variant="register" />
+              
+              {/* Carrosséis por categoria (primeiros 2) */}
+              {estabelecimentosPorCategoria.slice(0, 2).map(({ categoria, titulo, subtitulo, estabelecimentos: ests }) => (
+                <CategoryCarousel
+                  key={categoria}
+                  title={titulo}
+                  subtitle={subtitulo}
+                  estabelecimentos={ests}
+                  linkHref={`/explorar?categoria=${encodeURIComponent(categoria)}${cidadeFinal ? `&cidade=${cidadeFinal}&estado=${estadoFinal}` : ''}`}
+                />
+              ))}
+              
+              {/* CTA Banner para parceiros */}
+              {estabelecimentosPorCategoria.length > 2 && (
+                <CTABanner variant="partner" />
+              )}
+              
+              {/* Restante dos carrosséis */}
+              {estabelecimentosPorCategoria.slice(2).map(({ categoria, titulo, subtitulo, estabelecimentos: ests }) => (
                 <CategoryCarousel
                   key={categoria}
                   title={titulo}

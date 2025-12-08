@@ -159,6 +159,11 @@ export default {
           "75%": { transform: "scale(1.15)" },
           "100%": { transform: "scale(1)" }
         },
+        "gradient-flow": {
+          "0%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+          "100%": { backgroundPosition: "0% 50%" }
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",

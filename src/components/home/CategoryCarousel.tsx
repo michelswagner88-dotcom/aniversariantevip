@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight as ChevronRightIcon, Heart, Gift, ArrowRight, Star, Flame } from 'lucide-react';
+import { ChevronLeft, ChevronRight as ChevronRightIcon, Heart, Gift, ArrowRight } from 'lucide-react';
 import { motion, useInView } from 'framer-motion';
 import { SafeImage } from '@/components/SafeImage';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
@@ -17,7 +17,6 @@ interface CategoryCarouselProps {
   onVerTodos?: () => void;
   variant?: 'default' | 'featured' | 'compact';
   showViewMoreCard?: boolean;
-  showBadges?: boolean; // Mostrar badges Novo/Popular
 }
 
 // Variantes de animação
@@ -47,8 +46,8 @@ const titleVariants = {
   }
 };
 
-// Card individual compacto para carrossel
-const CarouselCard = ({ estabelecimento, isNew, isPopular }: { estabelecimento: any; isNew?: boolean; isPopular?: boolean }) => {
+// Card individual compacto para carrossel - Design LIMPO estilo Airbnb
+const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -70,7 +69,6 @@ const CarouselCard = ({ estabelecimento, isNew, isPopular }: { estabelecimento: 
   };
 
   const categoria = Array.isArray(est.categoria) ? est.categoria[0] : est.categoria;
-  const temBeneficio = !!est.descricao_beneficio;
   
   // Badge de categoria + subcategoria
   const categoriaIcon = getCategoriaIcon(categoria);
@@ -85,11 +83,6 @@ const CarouselCard = ({ estabelecimento, isNew, isPopular }: { estabelecimento: 
     est.categoria
   );
   const fallbackUrl = getPlaceholderPorCategoria(est.categoria);
-
-  // Extrair resumo do benefício
-  const benefitSummary = est.descricao_beneficio?.length < 40 
-    ? est.descricao_beneficio 
-    : "Benefício especial";
   
   return (
     <TiltCard 
@@ -126,46 +119,15 @@ const CarouselCard = ({ estabelecimento, isNew, isPopular }: { estabelecimento: 
           {/* Vinheta sutil */}
           <div className="absolute inset-0 shadow-[inset_0_0_60px_rgba(0,0,0,0.3)] pointer-events-none" />
           
-          {/* Badges no topo esquerdo */}
-          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 max-w-[70%]">
-            {/* Badge de categoria */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg border border-white/10">
-              <span className="text-sm">{categoriaIcon}</span>
-              <span className="text-xs font-medium text-white truncate max-w-[100px]">
-                {categoryLabel}
-              </span>
-            </div>
-            
-            {/* Badge de benefício */}
-            {temBeneficio && (
-              <div className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-lg shadow-lg border border-white/20">
-                <Gift className="w-3.5 h-3.5 text-white" />
-                <span className="text-xs font-semibold text-white hidden sm:inline">
-                  Benefício
-                </span>
-              </div>
-            )}
+          {/* Badge de categoria - ÚNICO badge, canto inferior esquerdo */}
+          <div className="absolute bottom-3 left-3">
+            <span className="inline-flex items-center gap-1.5 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-lg">
+              <span>{categoriaIcon}</span>
+              {categoryLabel}
+            </span>
           </div>
-
-          {/* Badges especiais (Novo / Popular) */}
-          {(isNew || isPopular) && (
-            <div className="absolute top-3 right-12 flex gap-1.5">
-              {isNew && (
-                <span className="inline-flex items-center gap-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-lg shadow-green-500/30 animate-pulse">
-                  <Star className="w-3 h-3" />
-                  Novo
-                </span>
-              )}
-              {isPopular && (
-                <span className="inline-flex items-center gap-1 bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-lg shadow-orange-500/30">
-                  <Flame className="w-3 h-3" />
-                  Popular
-                </span>
-              )}
-            </div>
-          )}
           
-          {/* Botão favoritar - sempre visível */}
+          {/* Botão favoritar - topo direito */}
           <button 
             onClick={handleFavorite}
             className={cn(
@@ -182,23 +144,6 @@ const CarouselCard = ({ estabelecimento, isNew, isPopular }: { estabelecimento: 
             )} />
           </button>
 
-          {/* Preview do benefício - aparece no hover */}
-          {temBeneficio && (
-            <div className={cn(
-              "absolute bottom-3 left-3 right-3 bg-black/80 backdrop-blur-xl rounded-xl px-4 py-3 border border-white/10 transition-all duration-300",
-              isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
-            )}>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/30 to-pink-500/30 flex items-center justify-center">
-                  <Gift className="w-4 h-4 text-pink-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Seu benefício</p>
-                  <p className="text-sm text-white font-semibold truncate">{benefitSummary}</p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       
         {/* Info do estabelecimento */}
@@ -266,8 +211,7 @@ export const CategoryCarousel = ({
   linkHref,
   onVerTodos,
   variant = 'default',
-  showViewMoreCard = true,
-  showBadges = true
+  showViewMoreCard = true
 }: CategoryCarouselProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -449,35 +393,22 @@ export const CategoryCarousel = ({
             WebkitOverflowScrolling: 'touch'
           }}
         >
-          {estabelecimentos.map((est, index) => {
-            // Verificar se é novo (criado nos últimos 7 dias) - só se showBadges=true
-            const isNew = showBadges && est.created_at 
-              ? (Date.now() - new Date(est.created_at).getTime()) < 7 * 24 * 60 * 60 * 1000
-              : false;
-            // Primeiros 3 são "populares" se for variante featured e showBadges=true
-            const isPopular = showBadges && variant === 'featured' && index < 3;
-
-            return (
-              <motion.div 
-                key={est.id}
-                className={cn("flex-shrink-0", cardWidthClass)}
-                style={{ 
-                  scrollSnapAlign: 'start',
-                  scrollSnapStop: 'always'
-                }}
-                custom={index}
-                initial="hidden"
-                animate={isInView ? "visible" : "hidden"}
-                variants={cardVariants}
-              >
-                <CarouselCard 
-                  estabelecimento={est} 
-                  isNew={isNew}
-                  isPopular={isPopular}
-                />
-              </motion.div>
-            );
-          })}
+          {estabelecimentos.map((est, index) => (
+            <motion.div 
+              key={est.id}
+              className={cn("flex-shrink-0", cardWidthClass)}
+              style={{ 
+                scrollSnapAlign: 'start',
+                scrollSnapStop: 'always'
+              }}
+              custom={index}
+              initial="hidden"
+              animate={isInView ? "visible" : "hidden"}
+              variants={cardVariants}
+            >
+              <CarouselCard estabelecimento={est} />
+            </motion.div>
+          ))}
 
           {/* Card "Ver mais" no final */}
           {showViewMoreCard && linkHref && estabelecimentos.length >= 4 && (

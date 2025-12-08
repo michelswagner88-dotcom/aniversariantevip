@@ -33,7 +33,7 @@ const EstablishmentHero = ({
   return (
     <div className="relative overflow-visible">
       {/* ========== FOTO DE CAPA COM BREATHING EFFECT ========== */}
-      <div className="relative w-full h-56 sm:h-72 md:h-80 overflow-hidden">
+      <div className="relative w-full h-48 sm:h-56 md:h-64 overflow-hidden">
         {/* Skeleton enquanto carrega */}
         {!imageLoaded && (
           <div className="absolute inset-0 img-skeleton" />
@@ -68,13 +68,10 @@ const EstablishmentHero = ({
           </div>
         )}
         
-        {/* Gradiente multicamada sofisticado */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 via-50% to-background" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_0%,rgba(0,0,0,0.3)_100%)]" />
-        
-        {/* Vinheta premium nas bordas */}
-        <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.4)]" />
+        {/* Gradiente suave - apenas topo escuro para botões legíveis */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent" />
+        {/* Transição suave para o fundo */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 via-20% to-transparent" />
       </div>
 
       {/* ========== BOTÕES GLASSMORPHISM ========== */}
@@ -144,14 +141,14 @@ const EstablishmentHero = ({
       </div>
 
       {/* ========== FOTO DE PERFIL COM ANEL ANIMADO ========== */}
-      <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 z-20">
+      <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 z-20">
         <div className="relative animate-fade-in-scale" style={{ animationDelay: '0.3s' }}>
           {/* Anel gradiente animado (estilo Instagram Stories) */}
           <div 
             className="
-              absolute -inset-1.5 
+              absolute -inset-1 
               bg-gradient-to-tr from-purple-500 via-pink-500 to-orange-400
-              rounded-[22px]
+              rounded-2xl
               animate-ring-pulse
               opacity-90
             "
@@ -160,22 +157,23 @@ const EstablishmentHero = ({
           {/* Glow por trás */}
           <div 
             className="
-              absolute -inset-3
+              absolute -inset-2
               bg-gradient-to-tr from-purple-500/40 via-pink-500/40 to-orange-400/40
-              rounded-[28px]
-              blur-xl
+              rounded-2xl
+              blur-lg
               animate-glow-pulse
             "
           />
           
-          {/* Container da foto */}
+          {/* Container da foto - menor */}
           <div className="
             relative 
-            w-32 h-32 
-            rounded-[18px] 
+            w-24 h-24 sm:w-28 sm:h-28
+            rounded-2xl 
             border-4 border-background 
             overflow-hidden 
-            shadow-2xl
+            shadow-xl
+            bg-background
           ">
             {establishment.photo_url ? (
               <img 
@@ -185,7 +183,7 @@ const EstablishmentHero = ({
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-violet-600 via-fuchsia-500 to-pink-500 flex items-center justify-center">
-                <span className="text-4xl font-bold text-white drop-shadow-lg">{inicialNome}</span>
+                <span className="text-3xl font-bold text-white drop-shadow-lg">{inicialNome}</span>
               </div>
             )}
           </div>
@@ -193,24 +191,24 @@ const EstablishmentHero = ({
           {/* Badge de Verificado Premium */}
           {establishment.is_verified !== false && (
             <div className="
-              absolute -bottom-2 -right-2 
-              w-9 h-9
+              absolute -bottom-1 -right-1 
+              w-7 h-7
               bg-gradient-to-br from-green-400 to-emerald-500 
               rounded-full 
               flex items-center justify-center
-              border-[3px] border-background 
+              border-2 border-background 
               shadow-lg
               shadow-green-500/30
               animate-bounce-in
             " style={{ animationDelay: '0.6s' }}>
-              <Check className="w-5 h-5 text-white" strokeWidth={3} />
+              <Check className="w-4 h-4 text-white" strokeWidth={3} />
             </div>
           )}
         </div>
       </div>
 
       {/* ========== INFORMAÇÕES DO ESTABELECIMENTO ========== */}
-      <div className="pt-20 pb-2 text-center px-4">
+      <div className="pt-16 pb-2 text-center px-4">
         {/* Nome com entrada animada */}
         <h1 
           className="

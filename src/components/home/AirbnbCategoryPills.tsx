@@ -301,21 +301,20 @@ export const AirbnbCategoryPills = ({
                   : 'bg-transparent border-transparent hover:bg-white/5 hover:border-white/10'
               )}
             >
-              {/* Ícone com cor individual - mesmo quando inativo */}
+              {/* Ícone SEMPRE iluminado com cor individual */}
               <div className={cn(
                 'flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300',
                 isActive 
                   ? style.bgColor
-                  : 'bg-white/5 group-hover:bg-white/10'
+                  : `${style.bgColor} group-hover:scale-110`
               )}>
                 <IconComponent 
                   size={22} 
                   strokeWidth={1.5} 
                   className={cn(
                     'transition-all duration-300',
-                    isActive 
-                      ? style.color
-                      : `${style.color} opacity-50 group-hover:opacity-80`
+                    style.color,
+                    isActive && 'drop-shadow-lg'
                   )}
                 />
               </div>

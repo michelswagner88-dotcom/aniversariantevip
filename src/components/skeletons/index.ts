@@ -7,6 +7,7 @@ export { SkeletonGrid } from './SkeletonGrid';
 export { SkeletonPills } from './SkeletonPills';
 export { SkeletonSection } from './SkeletonSection';
 export { SkeletonEstablishmentPage } from './SkeletonEstablishmentPage';
+export { AirbnbCardSkeleton, AirbnbCardGridSkeleton } from './AirbnbCardSkeleton';
 export { 
   PageSkeleton, 
   CardSkeleton, 

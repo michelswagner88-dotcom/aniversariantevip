@@ -31,6 +31,7 @@ import BusinessHours from '@/components/estabelecimento/BusinessHours';
 import LocationSection from '@/components/estabelecimento/LocationSection';
 import PartnerCTA from '@/components/estabelecimento/PartnerCTA';
 import EstablishmentSkeleton from '@/components/estabelecimento/EstablishmentSkeleton';
+import BottomNav from '@/components/BottomNav';
 
 interface EstabelecimentoDetalhePremiumProps {
   estabelecimentoIdProp?: string | null;
@@ -479,6 +480,9 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
         onClose={() => setShowLoginModal(false)}
         returnUrl={window.location.pathname}
       />
+
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 };

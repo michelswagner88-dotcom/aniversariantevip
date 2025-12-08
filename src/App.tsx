@@ -25,6 +25,7 @@ import VersionBadge from "@/components/debug/VersionBadge";
 const Index = lazy(() => import("./pages/Index"));
 const Explorar = lazy(() => import("./pages/Explorar"));
 const EstabelecimentoDetalhe = lazy(() => import("./pages/EstabelecimentoDetalhe"));
+const EstabelecimentoDetalhePremium = lazy(() => import("./pages/EstabelecimentoDetalhePremium"));
 const EstabelecimentoDetalheBySlug = lazy(() => import("./pages/EstabelecimentoDetalheBySlug"));
 const EstabelecimentoRedirect = lazy(() => import("./pages/EstabelecimentoRedirect"));
 const SmartAuth = lazy(() => import("./pages/SmartAuth"));
@@ -124,6 +125,9 @@ const App = () => (
                 
                 {/* Rota antiga com redirect para nova URL */}
                 <Route path="/estabelecimento/:id" element={<LazyRoute><EstabelecimentoRedirect /></LazyRoute>} />
+                
+                {/* Rota premium para testes */}
+                <Route path="/premium/:id" element={<LazyRoute><EstabelecimentoDetalhePremium /></LazyRoute>} />
                 
                 <Route path="/como-funciona" element={<LazyRoute><ComoFunciona /></LazyRoute>} />
                 <Route path="/seja-parceiro" element={<LazyRoute><SejaParceito /></LazyRoute>} />

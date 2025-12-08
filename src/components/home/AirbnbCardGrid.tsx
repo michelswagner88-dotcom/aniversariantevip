@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MapPin, Gift, Star, Flame } from 'lucide-react';
+import { Heart, MapPin, Gift } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SafeImage } from '@/components/SafeImage';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
@@ -36,7 +36,6 @@ interface AirbnbCardGridProps {
   estabelecimentos: any[];
   isLoading: boolean;
   userLocation?: { lat: number; lng: number } | null;
-  showNewBadge?: boolean; // Controlar exibição do badge "Novo"
 }
 
 // Calcular distância entre dois pontos (Haversine)
@@ -96,17 +95,15 @@ const categoryColors: Record<string, { bg: string; text: string; glow: string }>
   'default': { bg: 'bg-gray-500/20', text: 'text-gray-400', glow: 'shadow-gray-500/30' },
 };
 
-// Card individual Premium
+// Card individual Premium - Design LIMPO estilo Airbnb
 const AirbnbCard = ({ 
   estabelecimento, 
   priority = false,
-  userLocation,
-  showNewBadge = false
+  userLocation
 }: { 
   estabelecimento: any; 
   priority?: boolean;
   userLocation?: { lat: number; lng: number } | null;
-  showNewBadge?: boolean;
 }) => {
   const navigate = useNavigate();
   const est = estabelecimento;
@@ -145,27 +142,6 @@ const AirbnbCard = ({
   const isNew = est.created_at && 
     (Date.now() - new Date(est.created_at).getTime()) < 30 * 24 * 60 * 60 * 1000;
   
-  // Tenta pegar subcategoria primeiro, senão usa categoria
-  const especialidades = est.especialidades || [];
-  const primeiraSubcategoria = especialidades[0];
-  
-  // Se tem subcategoria válida (não "Outros"), usa ela; senão usa categoria
-  let badgeIcon: string;
-  let badgeLabel: string;
-  
-  // Ignorar "Outros" como subcategoria válida para badge
-  const subcategoriaValida = primeiraSubcategoria && 
-    !primeiraSubcategoria.toLowerCase().includes('outro');
-  
-  if (subcategoriaValida && categoria) {
-    const subData = getSubcategoriaBadgeData(categoria, primeiraSubcategoria);
-    badgeIcon = subData.icon;
-    badgeLabel = subData.label;
-  } else {
-    badgeIcon = getCategoriaIcon(categoria);
-    badgeLabel = getCategoriaSingular(categoria) || categoria || 'Estabelecimento';
-  }
-  
   // Calcular distância se tiver localização do usuário
   let distancia: string | null = null;
   if (userLocation && est.latitude && est.longitude) {
@@ -187,6 +163,9 @@ const AirbnbCard = ({
   );
   const fallbackUrl = getPlaceholderPorCategoria(est.categoria);
   
+  // Badge: Categoria label limpo
+  const badgeLabel = categoria || 'Estabelecimento';
+  
   return (
     <article
       onClick={handleClick}
@@ -195,19 +174,18 @@ const AirbnbCard = ({
       className={cn(
         "group cursor-pointer h-full flex flex-col",
         "transition-all duration-500 ease-out",
-        "hover:-translate-y-2 hover:shadow-2xl hover:shadow-violet-500/20",
+        "hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20",
         "active:scale-[0.98]",
         "rounded-2xl overflow-hidden",
-        "bg-card/50 backdrop-blur-sm border border-border/50",
-        "hover:border-violet-500/30"
+        "bg-card/30"
       )}
     >
       {/* Container da imagem - PROPORÇÃO 4:3 */}
-      <div className="relative w-full overflow-hidden bg-muted">
+      <div className="relative w-full overflow-hidden rounded-xl">
         {/* Imagem com zoom no hover */}
         <div className={cn(
           "transition-transform duration-700 ease-out",
-          isHovered && "scale-110"
+          isHovered && "scale-105"
         )}>
           <SafeImage
             src={fotoUrl}
@@ -218,102 +196,53 @@ const AirbnbCard = ({
           />
         </div>
         
-        {/* Gradiente na base para uniformizar */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
+        {/* Gradiente sutil na base */}
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
         
-        {/* Vinheta sutil */}
-        <div className="absolute inset-0 shadow-[inset_0_0_60px_rgba(0,0,0,0.4)] pointer-events-none" />
-        
-        {/* Badges no topo esquerdo */}
-        <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-1.5 max-w-[65%]">
-          {/* Badge de categoria com cor */}
-          <span className={cn(
-            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium backdrop-blur-md border",
-            categoryColor.bg,
-            categoryColor.text,
-            "border-white/10"
-          )}>
-            <span>{badgeIcon}</span>
-            {badgeLabel}
-          </span>
-          
-          {/* Badge de Benefício */}
-          {temBeneficio && (
-            <span className="inline-flex items-center gap-1 bg-gradient-to-r from-violet-500/90 to-fuchsia-500/90 text-white px-2.5 py-1 rounded-lg text-xs font-medium backdrop-blur-md border border-white/20">
-              <Gift className="w-3 h-3" />
-              Benefício
-            </span>
-          )}
-        </div>
-        
-        {/* Badge especial (Novo) - só mostra se showNewBadge=true */}
-        {showNewBadge && isNew && (
-          <div className="absolute top-3 right-12 z-10">
-            <span className="inline-flex items-center gap-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-1 rounded-lg text-xs font-bold backdrop-blur-sm shadow-lg shadow-green-500/30 animate-pulse">
-              <Star className="w-3 h-3" />
-              Novo
-            </span>
-          </div>
-        )}
-        
-        {/* Botão Favoritar Premium - SEMPRE VISÍVEL */}
+        {/* Botão Favoritar - ÚNICO elemento no topo direito */}
         <button 
           onClick={handleFavorite}
           aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
           aria-pressed={isFavorited}
           className={cn(
             "absolute top-3 right-3 z-10",
-            "w-9 h-9 rounded-full",
-            "backdrop-blur-md border",
+            "w-8 h-8 rounded-full",
             "flex items-center justify-center",
             "transition-all duration-300 ease-out",
             "active:scale-95",
             isFavorited 
-              ? "bg-pink-500/90 border-pink-400/50 shadow-lg shadow-pink-500/30" 
-              : "bg-black/40 border-white/10 hover:bg-black/60 hover:border-white/20",
+              ? "bg-white text-pink-500" 
+              : "bg-black/30 text-white hover:bg-black/50",
             isHovered && "scale-110"
           )}
         >
           <Heart 
             className={cn(
               "w-4 h-4 transition-all duration-300",
-              isFavorited 
-                ? "fill-white text-white" 
-                : "text-white",
+              isFavorited && "fill-current",
               isAnimating && "animate-[heart-pop_0.4s_ease]"
             )} 
           />
         </button>
 
-        {/* Preview do Benefício (aparece no hover) */}
-        {temBeneficio && (
-          <div className={cn(
-            "absolute bottom-3 left-3 right-3 z-10",
-            "bg-black/80 backdrop-blur-xl rounded-xl",
-            "px-4 py-3 border border-white/10",
-            "transition-all duration-300 ease-out",
-            isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
+        {/* Badge de categoria - ÚNICO badge, posição inferior esquerda */}
+        <div className="absolute bottom-3 left-3 z-10">
+          <span className={cn(
+            "inline-flex items-center",
+            "bg-black/60 backdrop-blur-sm",
+            "text-white text-xs font-medium",
+            "px-2.5 py-1 rounded-lg"
           )}>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center flex-shrink-0">
-                <Gift className="w-4 h-4 text-fuchsia-400" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-gray-400">Seu benefício</p>
-                <p className="text-sm text-white font-semibold truncate">
-                  {est.descricao_beneficio || 'Benefício exclusivo'}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+            {badgeLabel}
+          </span>
+        </div>
       </div>
     
-      {/* Info do estabelecimento */}
-      <div className="p-4 space-y-1.5">
+      {/* Info do estabelecimento - FORA DA FOTO */}
+      <div className="px-1 pt-3 pb-1 space-y-1">
         {/* Nome com hover effect */}
         <h3 className={cn(
-          "font-semibold text-base leading-tight line-clamp-2 transition-colors duration-300",
+          "font-semibold text-base leading-tight line-clamp-1 transition-colors duration-300",
           isHovered ? "text-violet-300" : "text-foreground"
         )}>
           {est.nome_fantasia || est.razao_social || 'Estabelecimento'}
@@ -324,8 +253,28 @@ const AirbnbCard = ({
           <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           <span className="text-sm text-muted-foreground line-clamp-1">
             {est.bairro || est.cidade}
-            {distancia && <span className="text-violet-400 ml-1">• {distancia}</span>}
+            {distancia && <span className="text-muted-foreground/70 ml-1">• {distancia}</span>}
           </span>
+        </div>
+        
+        {/* Linha de benefício + novo (sutil, integrado) */}
+        <div className="flex items-center justify-between pt-1">
+          {/* Indicador de benefício */}
+          {temBeneficio && (
+            <div className="flex items-center gap-1.5">
+              <Gift className="w-3.5 h-3.5 text-pink-400" />
+              <span className="text-xs text-pink-400 font-medium">
+                Benefício disponível
+              </span>
+            </div>
+          )}
+          
+          {/* Tag "Novo" sutil como texto */}
+          {isNew && (
+            <span className="text-xs text-emerald-400 font-medium ml-auto">
+              Novo
+            </span>
+          )}
         </div>
       </div>
     </article>
@@ -335,8 +284,7 @@ const AirbnbCard = ({
 export const AirbnbCardGrid = ({
   estabelecimentos,
   isLoading,
-  userLocation,
-  showNewBadge = false
+  userLocation
 }: AirbnbCardGridProps) => {
   
   if (isLoading) {
@@ -366,7 +314,6 @@ export const AirbnbCardGrid = ({
             estabelecimento={est} 
             priority={index < 6} 
             userLocation={userLocation}
-            showNewBadge={showNewBadge}
           />
         </motion.div>
       ))}

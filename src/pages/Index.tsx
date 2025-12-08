@@ -464,7 +464,6 @@ const Index = () => {
                 estabelecimentos={estabelecimentosFiltrados}
                 isLoading={isLoadingEstabelecimentos}
                 userLocation={userLocation}
-                showNewBadge={false}
               />
             </AirbnbMapLayout>
           )}

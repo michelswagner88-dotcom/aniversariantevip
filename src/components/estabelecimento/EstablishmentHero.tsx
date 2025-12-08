@@ -31,8 +31,8 @@ const EstablishmentHero = ({
   const inicialNome = (establishment.nome_fantasia || 'E').charAt(0).toUpperCase();
 
   return (
-    <div className="relative overflow-visible">
-      {/* ========== FOTO DE CAPA COM BREATHING EFFECT ========== */}
+    <div className="relative">
+      {/* ========== FOTO DE CAPA ========== */}
       <div className="relative w-full h-48 sm:h-56 md:h-64 overflow-hidden">
         {/* Skeleton enquanto carrega */}
         {!imageLoaded && (
@@ -72,76 +72,76 @@ const EstablishmentHero = ({
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent" />
         {/* Transição suave para o fundo */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 via-20% to-transparent" />
-      </div>
 
-      {/* ========== BOTÕES GLASSMORPHISM ========== */}
-      {/* Botão Voltar */}
-      <button 
-        onClick={onBack}
-        className="
-          absolute top-4 left-4 z-20
-          w-11 h-11 
-          rounded-full
-          glass-dark
-          flex items-center justify-center
-          transition-all duration-300 ease-out
-          hover:scale-110 hover:bg-black/50
-          active:scale-95
-          group
-        "
-        aria-label="Voltar"
-      >
-        <ArrowLeft className="w-5 h-5 text-white drop-shadow-lg transition-transform group-hover:-translate-x-0.5" />
-      </button>
-      
-      {/* Botões Favoritar e Compartilhar */}
-      <div className="absolute top-4 right-4 z-20 flex gap-2">
+        {/* ========== BOTÕES GLASSMORPHISM (dentro da capa) ========== */}
+        {/* Botão Voltar */}
         <button 
-          onClick={onFavorite}
+          onClick={onBack}
           className="
+            absolute top-4 left-4 z-20
             w-11 h-11 
             rounded-full
             glass-dark
             flex items-center justify-center
             transition-all duration-300 ease-out
-            hover:scale-110
+            hover:scale-110 hover:bg-black/50
             active:scale-95
             group
           "
-          aria-label="Favoritar"
+          aria-label="Voltar"
         >
-          <Heart 
-            className={`
-              w-5 h-5 drop-shadow-lg
-              transition-all duration-300
-              ${isFavorited 
-                ? 'text-pink-500 fill-pink-500 scale-110' 
-                : 'text-white group-hover:text-pink-400'
-              }
-            `} 
-          />
+          <ArrowLeft className="w-5 h-5 text-white drop-shadow-lg transition-transform group-hover:-translate-x-0.5" />
         </button>
         
-        <button 
-          onClick={onShare}
-          className="
-            w-11 h-11 
-            rounded-full
-            glass-dark
-            flex items-center justify-center
-            transition-all duration-300 ease-out
-            hover:scale-110
-            active:scale-95
-            group
-          "
-          aria-label="Compartilhar"
-        >
-          <Share2 className="w-5 h-5 text-white drop-shadow-lg transition-transform group-hover:rotate-12" />
-        </button>
+        {/* Botões Favoritar e Compartilhar */}
+        <div className="absolute top-4 right-4 z-20 flex gap-2">
+          <button 
+            onClick={onFavorite}
+            className="
+              w-11 h-11 
+              rounded-full
+              glass-dark
+              flex items-center justify-center
+              transition-all duration-300 ease-out
+              hover:scale-110
+              active:scale-95
+              group
+            "
+            aria-label="Favoritar"
+          >
+            <Heart 
+              className={`
+                w-5 h-5 drop-shadow-lg
+                transition-all duration-300
+                ${isFavorited 
+                  ? 'text-pink-500 fill-pink-500 scale-110' 
+                  : 'text-white group-hover:text-pink-400'
+                }
+              `} 
+            />
+          </button>
+          
+          <button 
+            onClick={onShare}
+            className="
+              w-11 h-11 
+              rounded-full
+              glass-dark
+              flex items-center justify-center
+              transition-all duration-300 ease-out
+              hover:scale-110
+              active:scale-95
+              group
+            "
+            aria-label="Compartilhar"
+          >
+            <Share2 className="w-5 h-5 text-white drop-shadow-lg transition-transform group-hover:rotate-12" />
+          </button>
+        </div>
       </div>
 
-      {/* ========== FOTO DE PERFIL COM ANEL ANIMADO ========== */}
-      <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 z-20">
+      {/* ========== FOTO DE PERFIL - NO FLUXO NATURAL COM MARGEM NEGATIVA ========== */}
+      <div className="flex justify-center -mt-14 relative z-10">
         <div className="relative animate-fade-in-scale" style={{ animationDelay: '0.3s' }}>
           {/* Anel gradiente animado (estilo Instagram Stories) */}
           <div 
@@ -165,7 +165,7 @@ const EstablishmentHero = ({
             "
           />
           
-          {/* Container da foto - menor */}
+          {/* Container da foto */}
           <div className="
             relative 
             w-24 h-24 sm:w-28 sm:h-28
@@ -207,8 +207,8 @@ const EstablishmentHero = ({
         </div>
       </div>
 
-      {/* ========== INFORMAÇÕES DO ESTABELECIMENTO ========== */}
-      <div className="pt-16 pb-2 text-center px-4">
+      {/* ========== INFORMAÇÕES DO ESTABELECIMENTO - ABAIXO DA FOTO ========== */}
+      <div className="mt-4 pb-2 text-center px-4">
         {/* Nome com entrada animada */}
         <h1 
           className="
@@ -217,8 +217,9 @@ const EstablishmentHero = ({
             text-foreground 
             tracking-tight
             animate-fade-in-up
+            opacity-0
           "
-          style={{ animationDelay: '0.4s' }}
+          style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}
         >
           {establishment.nome_fantasia}
         </h1>

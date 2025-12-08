@@ -258,7 +258,7 @@ export const AirbnbCategoryPills = ({
       ...categoriasOrdenadas.map(cat => ({
         id: cat.label,
         categoryId: cat.id,
-        nome: cat.plural,
+        nome: cat.label, // Singular ao invés de plural
         style: CATEGORIA_STYLES[cat.id] || CATEGORIA_STYLES['outros']
       }))
     ];

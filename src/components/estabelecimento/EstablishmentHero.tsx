@@ -84,8 +84,8 @@ const EstablishmentHero = ({
           {/* Gradiente TOPO - sutil para botões */}
           <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/40 to-transparent" />
           
-          {/* Gradiente BASE - transição suave */}
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background to-transparent" />
+          {/* Gradiente BASE - só na pontinha */}
+          <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-background to-transparent" />
 
           {/* ========== BOTÕES GLASSMORPHISM ========== */}
           <motion.button 
@@ -160,8 +160,8 @@ const EstablishmentHero = ({
           </motion.div>
         </div>
 
-        {/* ========== FOTO DE PERFIL - HOLOGRÁFICA ========== */}
-        <div className="flex justify-center -mt-16 relative z-10">
+        {/* ========== FOTO DE PERFIL - HOLOGRÁFICA - Mais baixo ========== */}
+        <div className="flex justify-center -mt-20 sm:-mt-24 relative z-10">
           <motion.div
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}

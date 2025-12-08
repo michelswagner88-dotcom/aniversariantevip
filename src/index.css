@@ -1161,20 +1161,36 @@ All colors MUST be HSL.
   opacity: 0;
 }
 
-/* ---------- ANIMAÇÃO: CONFETTI (sutil) ---------- */
+/* ---------- ANIMAÇÃO: CONFETTI (premium) ---------- */
 @keyframes confetti-fall {
   0% {
-    transform: translateY(-10px) rotate(0deg);
+    transform: translateY(-10px) rotate(0deg) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  50% {
     opacity: 1;
+    transform: translateY(50px) rotate(180deg) scale(1.2);
   }
   100% {
-    transform: translateY(100px) rotate(360deg);
+    transform: translateY(120px) rotate(360deg) scale(0.8);
     opacity: 0;
   }
 }
 
+@keyframes confetti-shimmer {
+  0%, 100% {
+    box-shadow: 0 0 4px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 12px currentColor, 0 0 20px currentColor;
+  }
+}
+
 .animate-confetti {
-  animation: confetti-fall 3s ease-in-out infinite;
+  animation: confetti-fall 4s ease-in-out infinite, confetti-shimmer 2s ease-in-out infinite;
 }
 
 /* ---------- ANIMAÇÃO: COUNT UP (para números) ---------- */

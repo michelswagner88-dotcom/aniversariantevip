@@ -12,8 +12,48 @@ interface BenefitCardProps {
   onShowRules: () => void;
 }
 
+// Formatar a validade de forma bonita
+const formatValidity = (validity?: string): string => {
+  if (!validity) return 'No dia do aniversário';
+  
+  const validityMap: Record<string, string> = {
+    'dia_aniversario': 'No dia do aniversário',
+    'dia_do_aniversario': 'No dia do aniversário',
+    'semana_aniversario': 'Na semana do aniversário',
+    'semana_do_aniversario': 'Na semana do aniversário',
+    'mes_aniversario': 'No mês do aniversário',
+    'mes_do_aniversario': 'No mês do aniversário',
+    'mes_inteiro': 'O mês inteiro',
+    '7_dias': '7 dias antes e depois',
+    '15_dias': '15 dias antes e depois',
+    '30_dias': '30 dias',
+  };
+  
+  const key = validity.toLowerCase().trim();
+  return validityMap[key] || validity;
+};
+
+// Limpar descrição removendo regras que não deveriam estar lá
+const cleanDescription = (description: string): string => {
+  if (!description) return '';
+  
+  return description
+    .replace(/A partir de \d+ pessoas\.?/gi, '')
+    .replace(/Mínimo de? \d+ pessoas\.?/gi, '')
+    .replace(/Válido no DIA do aniversário\.?/gi, '')
+    .replace(/Válido no dia do aniversário\.?/gi, '')
+    .replace(/Válido na semana do aniversário\.?/gi, '')
+    .replace(/Válido no mês do aniversário\.?/gi, '')
+    .replace(/Necessário reserva.*?\.?/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
   const [isPressed, setIsPressed] = useState(false);
+  
+  const cleanedDescription = cleanDescription(benefit.description);
+  const formattedValidity = formatValidity(benefit.validity);
 
   return (
     <div 
@@ -89,7 +129,7 @@ const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
               </div>
             </div>
             
-            {/* Título do benefício */}
+            {/* Título do benefício - apenas descrição limpa */}
             <h2 
               className="
                 text-xl sm:text-2xl 
@@ -100,10 +140,10 @@ const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
                 mb-5
               "
             >
-              {benefit.description}
+              {cleanedDescription || benefit.description}
             </h2>
             
-            {/* Validade */}
+            {/* Validade formatada bonita */}
             <div className="flex justify-center mb-6">
               <div 
                 className="
@@ -119,7 +159,7 @@ const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
                 <span className="text-sm text-gray-300">
                   Válido: 
                   <span className="text-pink-300 font-semibold ml-1">
-                    {benefit.validity || 'Dia do aniversário'}
+                    {formattedValidity}
                   </span>
                 </span>
               </div>

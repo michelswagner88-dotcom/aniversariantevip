@@ -31,7 +31,7 @@ const EstablishmentHero = ({
   const inicialNome = (establishment.nome_fantasia || 'E').charAt(0).toUpperCase();
 
   return (
-    <div className="relative">
+    <div className="relative overflow-visible">
       {/* ========== FOTO DE CAPA COM BREATHING EFFECT ========== */}
       <div className="relative w-full h-56 sm:h-72 md:h-80 overflow-hidden">
         {/* Skeleton enquanto carrega */}
@@ -144,7 +144,7 @@ const EstablishmentHero = ({
       </div>
 
       {/* ========== FOTO DE PERFIL COM ANEL ANIMADO ========== */}
-      <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 z-10">
+      <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 z-20">
         <div className="relative animate-fade-in-scale" style={{ animationDelay: '0.3s' }}>
           {/* Anel gradiente animado (estilo Instagram Stories) */}
           <div 

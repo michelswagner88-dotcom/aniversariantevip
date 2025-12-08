@@ -1062,6 +1062,199 @@ All colors MUST be HSL.
   }
 }
 
+/* ========================================
+   ANIVERSARIANTE VIP - HOME PREMIUM
+   Complemento ao design system
+   ======================================== */
+
+/* ---------- ANIMAÇÃO: TYPING PLACEHOLDER ---------- */
+@keyframes typing {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-typing {
+  animation: typing 1s ease-in-out infinite;
+}
+
+/* ---------- ANIMAÇÃO: SLIDE IN FROM LEFT ---------- */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.6s var(--ease-out-expo) forwards;
+  opacity: 0;
+}
+
+/* ---------- ANIMAÇÃO: SLIDE IN FROM RIGHT ---------- */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.6s var(--ease-out-expo) forwards;
+  opacity: 0;
+}
+
+/* ---------- ANIMAÇÃO: CONFETTI (sutil) ---------- */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-confetti {
+  animation: confetti-fall 3s ease-in-out infinite;
+}
+
+/* ---------- ANIMAÇÃO: COUNT UP (para números) ---------- */
+@keyframes countPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-count-pulse {
+  animation: countPulse 2s ease-in-out infinite;
+}
+
+/* ---------- ANIMAÇÃO: MARQUEE (texto rolando) ---------- */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* ---------- HEADER SCROLL EFFECT ---------- */
+.header-blur {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(10, 10, 20, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ---------- CARD HOVER PREMIUM ---------- */
+.card-hover-premium {
+  transition: all 0.4s var(--ease-out-expo);
+}
+
+.card-hover-premium:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 40px rgba(168, 85, 247, 0.1);
+}
+
+/* ---------- CATEGORY CHIP ACTIVE ---------- */
+.category-chip {
+  transition: all 0.3s var(--ease-out-expo);
+}
+
+.category-chip:hover {
+  transform: translateY(-2px);
+}
+
+.category-chip-active {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
+  border-color: rgba(168, 85, 247, 0.5);
+  color: white;
+}
+
+/* ---------- BENEFIT PREVIEW OVERLAY ---------- */
+.benefit-preview {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s var(--ease-out-expo);
+}
+
+.card-hover-premium:hover .benefit-preview {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------- GRADIENT TEXT ANIMATED ---------- */
+.text-gradient-animated {
+  background: linear-gradient(
+    90deg,
+    #a855f7,
+    #ec4899,
+    #f97316,
+    #ec4899,
+    #a855f7
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientFlow 4s ease infinite;
+}
+
+/* ---------- SOCIAL PROOF COUNTER ---------- */
+.counter-glow {
+  text-shadow:
+    0 0 20px rgba(168, 85, 247, 0.5),
+    0 0 40px rgba(168, 85, 247, 0.3);
+}
+
+/* ---------- NEWSLETTER INPUT ---------- */
+.newsletter-input:focus {
+  box-shadow:
+    0 0 0 2px rgba(168, 85, 247, 0.3),
+    0 0 20px rgba(168, 85, 247, 0.1);
+}
+
+/* ---------- SCROLL REVEAL ---------- */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s var(--ease-out-expo);
+}
+
+.scroll-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------- PARALLAX SUBTLE ---------- */
+.parallax-subtle {
+  transition: transform 0.1s linear;
+}
+
+/* ---------- SKELETON CARD ---------- */
+.skeleton-card {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 16px;
+}
+
 @media print {
   body {
     background: hsl(0, 0%, 5%) !important;

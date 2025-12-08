@@ -313,6 +313,20 @@
 }
 
 /* ---------- IMAGE LOADING SKELETON ---------- */
+/* ---------- BREATHING ANIMATION (CAPA) ---------- */
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+.animate-breathe {
+  animation: breathe 8s ease-in-out infinite;
+}
+
 .img-skeleton {
   background: linear-gradient(
     90deg,

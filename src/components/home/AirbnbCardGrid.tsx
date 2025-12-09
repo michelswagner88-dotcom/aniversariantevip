@@ -127,21 +127,21 @@ const AirbnbCard = ({
 
       <div className="space-y-0.5">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-[15px] text-[#222222] truncate pr-2">
+          <h3 className="font-semibold text-[15px] text-[#240046] truncate pr-2">
             {est.nome_fantasia || est.razao_social || "Estabelecimento"}
           </h3>
         </div>
 
-        <p className="text-[15px] text-[#717171] truncate">
+        <p className="text-[15px] text-[#3C096C] truncate">
           {est.bairro || est.cidade}
           {distancia && <span className="ml-1">• {distancia}</span>}
         </p>
 
-        <p className="text-[15px] text-[#717171]">{categoria || "Estabelecimento"}</p>
+        <p className="text-[15px] text-[#3C096C]">{categoria || "Estabelecimento"}</p>
 
         {temBeneficio && (
-          <p className="text-[15px] text-[#222222] mt-1">
-            <span className="font-semibold">🎁 Benefício</span> no aniversário
+          <p className="text-[15px] text-[#3C096C] mt-1">
+            <span className="font-semibold text-[#240046]">🎁 Benefício</span> no aniversário
           </p>
         )}
       </div>
@@ -164,7 +164,6 @@ export const AirbnbCardGrid = ({ estabelecimentos, isLoading, userLocation }: Ai
     return <EmptyState type="geral" />;
   }
 
-  // CORRIGIDO: Sem Framer Motion, cards aparecem direto
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
       {estabelecimentos.map((est, index) => (

@@ -261,10 +261,18 @@ const Index = () => {
   const destaquesConfig = getSectionTitle("destaques", cidadeFinal || undefined);
 
   // Sistema de rotação dinâmica de seções
-  const { sections: rotatingSections, animationKey } = useRotatingSections(ALL_HOME_SECTIONS, {
+  // rotationInterval: 30000 = 30s entre rotações
+  // lockDuration: 10000 = 10s de trava após interação do usuário
+  const {
+    sections: rotatingSections,
+    animationKey,
+    lockSection,
+  } = useRotatingSections(ALL_HOME_SECTIONS, {
     rotatingCount: 5,
-    rotationInterval: 0,
+    rotationInterval: 30000, // Rotaciona a cada 30 segundos
+    featuredRotationInterval: 0, // Featured não rotaciona automaticamente
     rotateOnMount: true,
+    lockDuration: 10000, // Trava por 10s após interação
   });
 
   // Agrupar estabelecimentos por categoria para as seções rotativas
@@ -427,6 +435,8 @@ const Index = () => {
                           title={displayTitle}
                           subtitle={section.subtitle}
                           estabelecimentos={section.estabelecimentos}
+                          sectionId={section.id}
+                          onUserInteraction={lockSection}
                         />
                       </div>
 
@@ -673,7 +683,7 @@ const Index = () => {
             </div>
           </ScrollArea>
 
-          {/* Footer do Modal */}
+          {/* Footer */}
           <div className="flex items-center justify-between p-4 border-t border-slate-200 dark:border-slate-800">
             <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-muted-foreground">
               <X className="h-4 w-4 mr-1" />

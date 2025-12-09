@@ -66,7 +66,7 @@ const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
         <div 
           className="
             absolute -inset-2 
-            bg-[#240046]/30
+            bg-primary/20
             rounded-[32px] 
             blur-2xl 
             opacity-60
@@ -77,17 +77,17 @@ const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
         <div 
           className="
             relative
-            bg-gradient-to-br from-[#1a1025] via-[#150d1f] to-[#0f0a1a]
+            bg-gradient-to-br from-background via-background to-primary/10
             rounded-[24px]
             p-6
-            border border-[#240046]/40
+            border border-primary/20
             shadow-2xl
             overflow-hidden
           "
         >
-          {/* Elementos decorativos de fundo - tons roxos */}
-          <div className="absolute top-0 right-0 w-48 h-48 bg-[#240046]/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-40 h-40 bg-[#3C096C]/15 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+          {/* Elementos decorativos de fundo */}
+          <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-primary/15 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
           
           {/* Pattern sutil */}
           <div 
@@ -104,20 +104,20 @@ const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
             <div className="flex justify-center mb-5">
               <div className="relative">
                 {/* Glow atrás do ícone */}
-                <div className="absolute inset-0 bg-[#240046]/40 rounded-2xl blur-xl" />
+                <div className="absolute inset-0 bg-primary/30 rounded-2xl blur-xl" />
                 
                 <div 
                   className="
                     relative
                     w-16 h-16 
-                    bg-[#240046]/30
+                    bg-primary/20
                     rounded-2xl 
                     flex items-center justify-center
-                    border border-[#240046]/50
+                    border border-primary/30
                     shadow-inner
                   "
                 >
-                  <Gift className="w-8 h-8 text-[#A78BFA]" />
+                  <Gift className="w-8 h-8 text-primary" />
                 </div>
               </div>
             </div>
@@ -141,31 +141,31 @@ const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
               <div 
                 className="
                   inline-flex items-center gap-2
-                  bg-white/5
+                  bg-muted/50
                   backdrop-blur-sm
                   px-5 py-2.5
                   rounded-full
-                  border border-white/10
+                  border border-border
                 "
               >
-                <Calendar className="w-4 h-4 text-[#A78BFA]" />
-                <span className="text-sm text-gray-300">
+                <Calendar className="w-4 h-4 text-primary" />
+                <span className="text-sm text-muted-foreground">
                   Válido: 
-                  <span className="text-[#A78BFA] font-semibold ml-1">
+                  <span className="text-primary font-semibold ml-1">
                     {formattedValidity}
                   </span>
                 </span>
               </div>
             </div>
             
-            {/* Botão CTA Clean - SEM efeitos excessivos */}
+            {/* Botão CTA Clean */}
             <button 
               onClick={onShowRules}
               className="
                 w-full
-                bg-gradient-to-r from-[#240046] to-[#3C096C]
-                hover:from-[#3C096C] hover:to-[#5B21B6]
-                text-white
+                bg-gradient-to-r from-primary to-primary/80
+                hover:from-primary/90 hover:to-primary
+                text-primary-foreground
                 font-semibold
                 py-4
                 px-6
@@ -173,7 +173,7 @@ const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
                 transition-all duration-300
                 hover:scale-[1.02]
                 active:scale-[0.98]
-                shadow-lg shadow-[#240046]/40
+                shadow-lg shadow-primary/30
                 flex items-center justify-center gap-2
               "
             >

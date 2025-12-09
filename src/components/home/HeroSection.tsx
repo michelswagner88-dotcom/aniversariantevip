@@ -233,13 +233,13 @@ const HeroSection = ({
               type="submit"
               className="
                 relative
-                bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500
+                bg-gradient-to-r from-[#240046] to-[#3C096C]
                 text-white font-semibold
                 px-8 py-4 sm:py-3
                 rounded-xl sm:rounded-full
-                shadow-lg shadow-violet-500/30
+                shadow-lg shadow-[#240046]/30
                 transition-all duration-300
-                hover:shadow-xl hover:shadow-violet-500/40
+                hover:shadow-xl hover:shadow-[#240046]/40
                 hover:scale-105
                 active:scale-95
                 flex items-center justify-center gap-2

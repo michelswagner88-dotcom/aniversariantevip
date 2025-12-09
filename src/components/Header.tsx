@@ -109,17 +109,17 @@ export const Header = () => {
         <div className="flex items-center justify-between h-14">
           {/* Logo com ícone animado */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            {/* Ícone Gift animado */}
-            <div className="
-              w-10 h-10 
-              bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 
-              rounded-xl 
-              flex items-center justify-center
-              shadow-lg shadow-purple-500/25
-              transition-all duration-300
-              group-hover:scale-110 group-hover:rotate-6
-              group-hover:shadow-xl group-hover:shadow-purple-500/40
-            ">
+              {/* Ícone Gift animado */}
+              <div className="
+                w-10 h-10 
+                bg-gradient-to-br from-[#240046] to-[#3C096C]
+                rounded-xl 
+                flex items-center justify-center
+                shadow-lg shadow-[#240046]/25
+                transition-all duration-300
+                group-hover:scale-110 group-hover:rotate-6
+                group-hover:shadow-xl group-hover:shadow-[#240046]/40
+              ">
               <Gift className="w-5 h-5 text-white" />
             </div>
             
@@ -151,7 +151,7 @@ export const Header = () => {
               {/* Underline animado */}
               <span className="
                 absolute -bottom-0.5 left-4 right-4 h-0.5 
-                bg-gradient-to-r from-violet-500 to-pink-500
+                bg-gradient-to-r from-[#240046] to-[#3C096C]
                 scale-x-0 group-hover:scale-x-100
                 transition-transform duration-300 origin-left
               "/>
@@ -168,7 +168,7 @@ export const Header = () => {
               Seja Parceiro
               <span className="
                 absolute -bottom-0.5 left-4 right-4 h-0.5 
-                bg-gradient-to-r from-violet-500 to-pink-500
+                bg-gradient-to-r from-[#240046] to-[#3C096C]
                 scale-x-0 group-hover:scale-x-100
                 transition-transform duration-300 origin-left
               "/>
@@ -190,7 +190,7 @@ export const Header = () => {
                   onClick={() => navigate(getAreaLink())}
                   className="flex items-center gap-2 px-3 h-10 hover:bg-white/10 transition-all duration-200"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 p-0.5">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#240046] to-[#3C096C] p-0.5">
                     <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center">
                       <span className="text-xs font-bold text-white">
                         {userName.slice(0, 2).toUpperCase()}
@@ -229,13 +229,13 @@ export const Header = () => {
                   to="/auth"
                   className="
                     relative
-                    bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500
+                    bg-gradient-to-r from-[#240046] to-[#3C096C]
                     text-white font-semibold
                     px-6 py-2.5
                     rounded-full
-                    shadow-lg shadow-purple-500/30
+                    shadow-lg shadow-[#240046]/30
                     transition-all duration-300
-                    hover:shadow-xl hover:shadow-purple-500/40
+                    hover:shadow-xl hover:shadow-[#240046]/40
                     hover:scale-105
                     active:scale-95
                     group
@@ -340,10 +340,10 @@ export const Header = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className="
                       mt-2
-                      bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500
+                      bg-gradient-to-r from-[#240046] to-[#3C096C]
                       text-white font-semibold
                       py-3 px-6 rounded-full text-center
-                      shadow-lg shadow-purple-500/30
+                      shadow-lg shadow-[#240046]/30
                       transition-all duration-300
                       active:scale-95
                     "

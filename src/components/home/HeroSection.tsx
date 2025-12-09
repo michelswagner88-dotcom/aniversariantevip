@@ -168,7 +168,7 @@ const HeroSection = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          Descubra restaurantes, bares, lojas e muito mais oferecendo benefícios especiais pra você aproveitar
+          Descubra restaurantes, bares, lojas e muito mais oferecendo benefícios especiais para você aproveitar
         </motion.p>
 
         {/* Barra de Busca Premium */}

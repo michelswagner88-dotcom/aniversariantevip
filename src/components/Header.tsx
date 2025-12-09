@@ -100,7 +100,7 @@ export const Header = () => {
             <div className="hidden lg:flex items-center justify-center flex-1 gap-1 min-w-0 mx-4">
               <NavLink
                 to="/como-funciona"
-                className="relative text-sm font-medium text-white/80 hover:text-white transition-colors duration-200 px-4 py-2 group"
+                className="relative text-sm font-medium text-white hover:text-white transition-colors duration-200 px-4 py-2 group"
                 activeClassName="text-white"
               >
                 Como Funciona
@@ -108,7 +108,7 @@ export const Header = () => {
               </NavLink>
               <NavLink
                 to="/seja-parceiro"
-                className="relative text-sm font-medium text-white/80 hover:text-white transition-colors duration-200 px-4 py-2 group"
+                className="relative text-sm font-medium text-white hover:text-white transition-colors duration-200 px-4 py-2 group"
                 activeClassName="text-white"
               >
                 Seja Parceiro
@@ -147,7 +147,7 @@ export const Header = () => {
                 <>
                   <Link
                     to="/selecionar-perfil"
-                    className="text-white/80 hover:text-white transition-colors duration-200 px-4 py-2 text-sm font-medium"
+                    className="text-white hover:text-white/80 transition-colors duration-200 px-4 py-2 text-sm font-medium"
                   >
                     Entrar
                   </Link>

@@ -306,13 +306,20 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
   const galeriaFotos = estabelecimento?.galeria_fotos || [];
   const fotoAvatar = galeriaFotos.length > 0 ? galeriaFotos[0] : estabelecimento.logo_url;
 
-  const beneficioData = estabelecimento.beneficio_titulo
+  // Preparar dados do benefício com tipagem segura
+  const beneficioRaw = estabelecimento.beneficio_titulo
     ? {
         titulo: estabelecimento.beneficio_titulo,
         validade: estabelecimento.beneficio_validade || "dia_aniversario",
         regras: estabelecimento.beneficio_regras || estabelecimento.regras_utilizacao,
       }
     : separarBeneficio(estabelecimento.descricao_beneficio);
+
+  const beneficioData = {
+    titulo: beneficioRaw.titulo || "Benefício exclusivo para aniversariantes",
+    validade: beneficioRaw.validade || "dia_aniversario",
+    regras: "regras" in beneficioRaw ? beneficioRaw.regras : estabelecimento.regras_utilizacao || undefined,
+  };
 
   // === RENDER ===
 

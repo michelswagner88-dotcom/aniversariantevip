@@ -1,11 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { queryKeys } from '@/lib/queryClient';
-import { Tables } from '@/integrations/supabase/types';
-import { sanitizarInput } from '@/lib/sanitize';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { queryKeys } from "@/lib/queryClient";
+import { Tables } from "@/integrations/supabase/types";
+import { sanitizarInput } from "@/lib/sanitize";
 
-type Estabelecimento = Tables<'estabelecimentos'>;
+type Estabelecimento = Tables<"estabelecimentos">;
 
 interface EstabelecimentoFilters {
   cidade?: string;
@@ -24,29 +24,29 @@ let realtimeSubscribers = 0;
 export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
   const queryClient = useQueryClient();
   const hasSetupRealtime = useRef(false);
-  
+
   const query = useQuery({
     queryKey: queryKeys.estabelecimentos.list(filters),
     queryFn: async () => {
-      console.log('[useEstabelecimentos] Executando query com filtros:', filters);
-      
+      console.log("[useEstabelecimentos] Executando query com filtros:", filters);
+
       let q = supabase
-        .from('public_estabelecimentos')
-        .select('*')
-        .eq('ativo', true)
-        .order('created_at', { ascending: false });
+        .from("public_estabelecimentos")
+        .select("*")
+        .eq("ativo", true)
+        .order("created_at", { ascending: false });
 
       if (filters.cidade && !filters.showAll) {
         const cidadeSanitizada = sanitizarInput(filters.cidade, 100);
-        console.log('[useEstabelecimentos] Filtrando por cidade:', cidadeSanitizada);
-        q = q.ilike('cidade', `%${cidadeSanitizada}%`);
+        console.log("[useEstabelecimentos] Filtrando por cidade:", cidadeSanitizada);
+        q = q.ilike("cidade", `%${cidadeSanitizada}%`);
       }
       if (filters.estado && !filters.showAll) {
-        q = q.ilike('estado', sanitizarInput(filters.estado, 2));
+        q = q.ilike("estado", sanitizarInput(filters.estado, 2));
       }
       if (filters.categoria && filters.categoria.length > 0) {
-        const categoriasSanitizadas = filters.categoria.map(c => sanitizarInput(c, 50));
-        q = q.overlaps('categoria', categoriasSanitizadas);
+        const categoriasSanitizadas = filters.categoria.map((c) => sanitizarInput(c, 50));
+        q = q.overlaps("categoria", categoriasSanitizadas);
       }
       if (filters.search) {
         const searchSanitizado = sanitizarInput(filters.search, 100);
@@ -54,13 +54,13 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
       }
 
       const { data, error } = await q;
-      
-      console.log('[useEstabelecimentos] Resultado:', { 
-        count: data?.length, 
+
+      console.log("[useEstabelecimentos] Resultado:", {
+        count: data?.length,
         error: error?.message,
-        filters 
+        filters,
       });
-      
+
       if (error) throw error;
       return data as Estabelecimento[];
     },
@@ -76,44 +76,44 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
     // Evitar setup duplicado no mesmo componente
     if (hasSetupRealtime.current) return;
     hasSetupRealtime.current = true;
-    
+
     realtimeSubscribers++;
-    console.log('[Realtime] Subscribers:', realtimeSubscribers);
-    
+    console.log("[Realtime] Subscribers:", realtimeSubscribers);
+
     // Só criar channel se ainda não existe
     if (!realtimeChannel) {
-      console.log('[Realtime] Criando channel único...');
-      
+      console.log("[Realtime] Criando channel único...");
+
       realtimeChannel = supabase
-        .channel('estabelecimentos-realtime-singleton')
+        .channel("estabelecimentos-realtime-singleton")
         .on(
-          'postgres_changes',
+          "postgres_changes",
           {
-            event: '*',
-            schema: 'public',
-            table: 'estabelecimentos',
+            event: "*",
+            schema: "public",
+            table: "estabelecimentos",
           },
           (payload) => {
-            console.log('[Realtime] Mudança detectada:', payload.eventType);
+            console.log("[Realtime] Mudança detectada:", payload.eventType);
             // Invalidar queries de forma controlada (não agressiva)
-            queryClient.invalidateQueries({ 
-              queryKey: ['estabelecimentos'],
-              refetchType: 'none' // Não refetch imediato, só marca como stale
+            queryClient.invalidateQueries({
+              queryKey: ["estabelecimentos"],
+              refetchType: "none", // Não refetch imediato, só marca como stale
             });
-          }
+          },
         )
         .subscribe((status) => {
-          console.log('[Realtime] Status:', status);
+          console.log("[Realtime] Status:", status);
         });
     }
 
     return () => {
       realtimeSubscribers--;
-      console.log('[Realtime] Subscribers restantes:', realtimeSubscribers);
-      
+      console.log("[Realtime] Subscribers restantes:", realtimeSubscribers);
+
       // Só remove o channel quando TODOS os subscribers saírem
       if (realtimeSubscribers === 0 && realtimeChannel) {
-        console.log('[Realtime] Removendo channel...');
+        console.log("[Realtime] Removendo channel...");
         supabase.removeChannel(realtimeChannel);
         realtimeChannel = null;
       }
@@ -126,17 +126,17 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
 // Hook para obter detalhes de um estabelecimento específico
 export const useEstabelecimento = (id: string | undefined) => {
   return useQuery({
-    queryKey: queryKeys.estabelecimentos.detail(id || ''),
+    queryKey: queryKeys.estabelecimentos.detail(id || ""),
     queryFn: async () => {
-      if (!id) throw new Error('ID não fornecido');
-      
+      if (!id) throw new Error("ID não fornecido");
+
       const { data, error } = await supabase
-        .from('public_estabelecimentos')
-        .select('*')
-        .eq('id', id)
-        .eq('ativo', true)
+        .from("public_estabelecimentos")
+        .select("*")
+        .eq("id", id)
+        .eq("ativo", true)
         .single();
-      
+
       if (error) throw error;
       return data as Estabelecimento;
     },
@@ -151,8 +151,21 @@ export const useEstabelecimento = (id: string | undefined) => {
 // Mutation para registrar visualização (analytics)
 export const useTrackView = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ estabelecimentoId, userId }: { estabelecimentoId: string; userId?: string }) => {
-      const { error } = await supabase
-        .from('estabelecimento_analytics')
+      const { error } = await supabase.from("estabelecimento_analytics").insert({
+        estabelecimento_id: estabelecimentoId,
+        tipo_evento: "view",
+        user_id: userId,
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.analytics.establishment(variables.estabelecimentoId),
+      });
+    },
+  });
+};

@@ -423,7 +423,7 @@ const Index = () => {
 
                 {secoesDinamicas.map((section, index) => (
                   <div key={`${section.id}-${animationKey}`}>
-                    <div className="scroll-reveal animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                    <div className="" style={{ animationDelay: `${index * 0.1}s` }}>
                       <CategoryCarousel
                         title={section.title}
                         subtitle={section.subtitle}
@@ -438,13 +438,13 @@ const Index = () => {
                     </div>
 
                     {index === 0 && (
-                      <div className="scroll-reveal mt-8">
+                      <div className="vazio mt-8">
                         <CTABanner variant="register" />
                       </div>
                     )}
 
                     {index === 2 && (
-                      <div className="scroll-reveal-scale mt-8">
+                      <div className="vazio mt-8">
                         <CTABanner variant="partner" />
                       </div>
                     )}

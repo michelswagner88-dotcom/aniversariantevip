@@ -1,62 +1,46 @@
-// PartnerCTA.tsx - Call to Action Premium
+// PartnerCTA.tsx - CTA para Parceiros Clean
 
-import { Store, ArrowRight, Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
+import { Store, ArrowRight } from "lucide-react";
 
 const PartnerCTA = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="mx-4 mt-6 mb-6">
-      <div 
-        className="relative overflow-hidden rounded-2xl p-4"
-        style={{
-          background: 'linear-gradient(135deg, #240046 0%, #3C096C 50%, #5B21B6 100%)'
-        }}
-      >
-        {/* Elementos decorativos menores */}
-        <div className="absolute top-0 right-0 w-24 h-24 bg-white/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
-        <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl" />
-        
-        {/* Conteúdo compacto */}
-        <div className="relative z-10 flex items-center gap-4">
-          {/* Ícone menor */}
-          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30 flex-shrink-0">
-            <Store className="w-6 h-6 text-white" />
+    <div className="mx-4 sm:mx-6 mt-4 sm:mt-6 mb-6 sm:mb-8">
+      <div className="max-w-3xl mx-auto">
+        <div
+          className="
+            bg-gradient-to-r from-[#240046] to-[#3C096C]
+            rounded-2xl
+            p-5 sm:p-6
+            text-center
+          "
+        >
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <Store className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
           </div>
-          
-          {/* Texto */}
-          <div className="flex-1 min-w-0">
-            <h3 className="text-base sm:text-lg font-bold text-white">
-              Quer sua página assim?
-            </h3>
-            <p className="text-white/80 text-sm truncate">
-              Cadastre e atraia aniversariantes!
-            </p>
-          </div>
-          
-          {/* Botão compacto */}
-          <button 
-            onClick={() => navigate('/cadastro/estabelecimento')}
+
+          <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Quer sua página assim?</h3>
+          <p className="text-white/70 text-sm mb-4 sm:mb-5 max-w-xs mx-auto">
+            Cadastre seu estabelecimento e atraia aniversariantes todos os meses!
+          </p>
+
+          <button
+            onClick={() => navigate("/seja-parceiro")}
             className="
-              flex items-center gap-1.5
-              bg-white
-              text-[#240046]
-              font-semibold
-              py-2.5
-              px-4
-              rounded-lg
-              shadow-md
-              transition-all duration-300
-              hover:shadow-lg
-              hover:scale-105
-              active:scale-95
-              flex-shrink-0
-              text-sm
+              inline-flex items-center gap-2 
+              px-5 sm:px-6 py-3 
+              bg-white 
+              text-[#240046] 
+              font-semibold 
+              text-sm sm:text-base
+              rounded-xl
+              transition-all duration-200
+              active:scale-[0.98]
             "
           >
-            <Sparkles className="w-4 h-4" />
-            <span className="hidden sm:inline">Cadastrar</span>
+            Cadastrar meu negócio
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

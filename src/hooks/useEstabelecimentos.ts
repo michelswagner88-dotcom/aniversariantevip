@@ -16,18 +16,21 @@ interface EstabelecimentoFilters {
   enabled?: boolean;
 }
 
+// Singleton do realtime - fora do hook para ser verdadeiramente global
 let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
 let realtimeSubscribers = 0;
+let queryClientRef: ReturnType<typeof useQueryClient> | null = null;
 
 export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
   const queryClient = useQueryClient();
   const hasSetupRealtime = useRef(false);
 
+  // Atualiza a ref do queryClient para o realtime usar
+  queryClientRef = queryClient;
+
   const query = useQuery({
     queryKey: queryKeys.estabelecimentos.list(filters),
     queryFn: async () => {
-      console.log("[useEstabelecimentos] Executando query com filtros:", filters);
-
       let q = supabase
         .from("public_estabelecimentos")
         .select("*")
@@ -37,7 +40,6 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
       if (filters.cidade && filters.estado && !filters.showAll) {
         const cidadeSanitizada = sanitizarInput(filters.cidade, 100);
         const estadoSanitizado = sanitizarInput(filters.estado, 2);
-        console.log("[useEstabelecimentos] Filtrando por cidade:", cidadeSanitizada, estadoSanitizado);
         q = q.ilike("cidade", `%${cidadeSanitizada}%`);
         q = q.ilike("estado", estadoSanitizado);
       }
@@ -54,12 +56,6 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
 
       const { data, error } = await q;
 
-      console.log("[useEstabelecimentos] Resultado:", {
-        count: data?.length || 0,
-        error: error?.message,
-        primeiroItem: data?.[0]?.nome_fantasia,
-      });
-
       if (error) {
         console.error("[useEstabelecimentos] Erro na query:", error);
         throw error;
@@ -75,16 +71,16 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
     placeholderData: [],
   });
 
+  // Setup realtime - SEM dependências para executar apenas UMA vez
   useEffect(() => {
+    // Guard contra múltiplas execuções
     if (hasSetupRealtime.current) return;
     hasSetupRealtime.current = true;
 
     realtimeSubscribers++;
-    console.log("[Realtime] Subscribers:", realtimeSubscribers);
 
+    // Cria o channel apenas se não existir
     if (!realtimeChannel) {
-      console.log("[Realtime] Criando channel único...");
-
       realtimeChannel = supabase
         .channel("estabelecimentos-realtime-singleton")
         .on(
@@ -94,30 +90,28 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
             schema: "public",
             table: "estabelecimentos",
           },
-          (payload) => {
-            console.log("[Realtime] Mudança detectada:", payload.eventType);
-            queryClient.invalidateQueries({
-              queryKey: ["estabelecimentos"],
-              refetchType: "none",
-            });
+          () => {
+            // Usa a ref global do queryClient
+            if (queryClientRef) {
+              queryClientRef.invalidateQueries({
+                queryKey: ["estabelecimentos"],
+                refetchType: "none",
+              });
+            }
           },
         )
-        .subscribe((status) => {
-          console.log("[Realtime] Status:", status);
-        });
+        .subscribe();
     }
 
     return () => {
       realtimeSubscribers--;
-      console.log("[Realtime] Subscribers restantes:", realtimeSubscribers);
 
       if (realtimeSubscribers === 0 && realtimeChannel) {
-        console.log("[Realtime] Removendo channel...");
         supabase.removeChannel(realtimeChannel);
         realtimeChannel = null;
       }
     };
-  }, [queryClient]);
+  }, []); // ARRAY VAZIO - executa apenas no mount
 
   return query;
 };

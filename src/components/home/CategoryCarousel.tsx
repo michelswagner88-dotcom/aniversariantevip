@@ -1,13 +1,10 @@
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight as ChevronRightIcon, Heart, Gift, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight as ChevronRightIcon, Heart, ArrowRight } from 'lucide-react';
 import { motion, useInView } from 'framer-motion';
-import { SafeImage } from '@/components/SafeImage';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { cn } from '@/lib/utils';
-import { TiltCard } from '@/components/ui/tilt-card';
 import { getFotoEstabelecimento, getPlaceholderPorCategoria } from '@/lib/photoUtils';
-import { getCategoriaIcon } from '@/lib/constants';
 
 interface CategoryCarouselProps {
   title: string;
@@ -46,11 +43,11 @@ const titleVariants = {
   }
 };
 
-// Card individual compacto para carrossel - Design LIMPO estilo Airbnb
+// Card individual - Estilo Airbnb LIMPO (sem box/sombra/borda)
 const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
   const navigate = useNavigate();
-  const [isHovered, setIsHovered] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   const est = estabelecimento;
   
   const handleClick = () => {
@@ -66,14 +63,12 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
   const handleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsFavorited(!isFavorited);
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 400);
   };
 
   const categoria = Array.isArray(est.categoria) ? est.categoria[0] : est.categoria;
-  
-  // Badge de categoria + subcategoria
-  const categoriaIcon = getCategoriaIcon(categoria);
-  const subcategoria = est.especialidades?.[0];
-  const categoryLabel = subcategoria || categoria || 'Estabelecimento';
+  const temBeneficio = !!est.descricao_beneficio;
   
   // Obter a melhor foto com fallback inteligente
   const fotoUrl = getFotoEstabelecimento(
@@ -85,121 +80,102 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
   const fallbackUrl = getPlaceholderPorCategoria(est.categoria);
   
   return (
-    <TiltCard 
-      tiltAmount={6} 
-      shadowAmount={12}
-      className="group w-full cursor-pointer"
+    <article
+      onClick={handleClick}
+      className="group cursor-pointer w-full"
     >
-      <article
-        onClick={handleClick}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className="h-full flex flex-col transition-all duration-300 active:scale-[0.98]"
-      >
-        {/* Container da imagem - PROPORÇÃO FIXA 4:3 */}
-        <div className={cn(
-          "relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-slate-800 transition-all duration-500",
-          "shadow-lg shadow-black/20 ring-1 ring-white/5",
-          isHovered && "shadow-xl shadow-violet-500/20 ring-violet-500/30"
-        )}>
-          <SafeImage
-            src={fotoUrl}
-            alt={est.nome_fantasia || 'Estabelecimento'}
-            fallbackSrc={fallbackUrl}
+      {/* IMAGEM - apenas rounded, com favorito */}
+      <div className="relative aspect-square rounded-xl overflow-hidden mb-3">
+        <img 
+          src={fotoUrl || fallbackUrl}
+          alt={est.nome_fantasia || 'Estabelecimento'}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            if (target.src !== fallbackUrl) {
+              target.src = fallbackUrl;
+            }
+          }}
+        />
+        
+        {/* Botão favorito - canto superior direito */}
+        <button 
+          onClick={handleFavorite}
+          aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+          className="absolute top-3 right-3 z-10"
+        >
+          <Heart 
             className={cn(
-              "w-full h-full object-cover object-center transition-transform duration-700 ease-out",
-              isHovered && "scale-110"
-            )}
-            enableParallax
-          />
-          
-          {/* Overlay gradient premium */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
-          
-          {/* Vinheta sutil */}
-          <div className="absolute inset-0 shadow-[inset_0_0_60px_rgba(0,0,0,0.3)] pointer-events-none" />
-          
-          {/* Badge de categoria - ÚNICO badge, canto inferior esquerdo */}
-          <div className="absolute bottom-3 left-3">
-            <span className="inline-flex items-center gap-1.5 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-lg">
-              <span>{categoriaIcon}</span>
-              {categoryLabel}
-            </span>
-          </div>
-          
-          {/* Botão favoritar - topo direito */}
-          <button 
-            onClick={handleFavorite}
-            className={cn(
-              "absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full backdrop-blur-md border transition-all duration-300",
+              "w-6 h-6 drop-shadow-md hover:scale-110 transition-transform",
               isFavorited 
-                ? "bg-pink-500/90 border-pink-400/50 shadow-lg shadow-pink-500/30" 
-                : "bg-black/40 border-white/10 hover:bg-black/60 hover:border-white/20",
-              isHovered && "scale-110"
-            )}
-          >
-            <Heart className={cn(
-              "w-4 h-4 transition-all duration-300",
-              isFavorited ? "text-white fill-white" : "text-white"
-            )} />
-          </button>
-
-        </div>
+                ? "text-red-500 fill-red-500" 
+                : "text-white",
+              isAnimating && "animate-[heart-pop_0.4s_ease]"
+            )} 
+            strokeWidth={1.5}
+          />
+        </button>
+      </div>
       
-        {/* Info do estabelecimento */}
-        <div className="pt-3 flex flex-col gap-1">
-          {/* Nome */}
-          <h3 className={cn(
-            "font-semibold text-base sm:text-[16px] leading-snug truncate transition-colors duration-300",
-            isHovered ? "text-[#240046] dark:text-[#A78BFA]" : "text-gray-900 dark:text-white"
-          )}>
-            {est.nome_fantasia || est.razao_social || 'Estabelecimento'}
-          </h3>
-          
-          {/* Bairro */}
-          <p className="text-sm text-gray-500 dark:text-muted-foreground truncate">
-            {est.bairro || est.cidade}
+      {/* TEXTO - solto no fundo branco, SEM box */}
+      <div className="space-y-0.5">
+        {/* Linha 1: Nome */}
+        <h3 className="font-semibold text-[15px] text-[#222222] dark:text-white truncate">
+          {est.nome_fantasia || est.razao_social || 'Estabelecimento'}
+        </h3>
+        
+        {/* Linha 2: Bairro */}
+        <p className="text-[15px] text-[#717171] dark:text-gray-400 truncate">
+          {est.bairro || est.cidade}
+        </p>
+        
+        {/* Linha 3: Categoria */}
+        <p className="text-[15px] text-[#717171] dark:text-gray-400">
+          {categoria || 'Estabelecimento'}
+        </p>
+        
+        {/* Linha 4: Benefício (destaque) */}
+        {temBeneficio && (
+          <p className="text-[15px] text-[#222222] dark:text-white mt-1">
+            <span className="font-semibold">🎁 Benefício</span> no aniversário
           </p>
-        </div>
-      </article>
-    </TiltCard>
+        )}
+      </div>
+    </article>
   );
 };
 
-// Card "Ver mais" no final do carrossel
+// Card "Ver mais" no final do carrossel - Estilo Airbnb
 const ViewMoreCard = ({ linkHref }: { linkHref: string }) => (
   <Link 
     to={linkHref}
     className="
-      flex-shrink-0 w-[calc(100vw-3rem)] sm:w-[280px] md:w-[300px]
-      aspect-[4/3]
-      bg-gradient-to-br from-[#240046]/10 via-[#3C096C]/5 to-[#240046]/10
-      hover:from-[#240046]/20 hover:via-[#3C096C]/10 hover:to-[#240046]/20
-      border border-[#240046]/20
-      hover:border-[#240046]/40
+      flex-shrink-0 w-full
+      aspect-square
+      bg-gray-100 dark:bg-gray-800
+      hover:bg-gray-200 dark:hover:bg-gray-700
       rounded-xl
       flex flex-col items-center justify-center
       gap-4
       transition-all duration-300
-      hover:scale-[1.02]
-      hover:shadow-xl hover:shadow-[#240046]/10
       group
     "
   >
     <div className="
       w-16 h-16
-      bg-gradient-to-br from-[#240046]/20 to-[#3C096C]/20
-      rounded-2xl
+      bg-white dark:bg-gray-700
+      rounded-full
       flex items-center justify-center
       transition-all duration-300
       group-hover:scale-110
-      group-hover:rotate-3
+      shadow-md
     ">
-      <ArrowRight className="w-8 h-8 text-[#240046] dark:text-[#A78BFA]" />
+      <ArrowRight className="w-8 h-8 text-[#222222] dark:text-white" />
     </div>
     <div className="text-center">
-      <p className="text-[#240046] dark:text-[#A78BFA] font-semibold">Ver todos</p>
-      <p className="text-gray-500 dark:text-muted-foreground text-sm">Explorar categoria</p>
+      <p className="text-[#222222] dark:text-white font-semibold text-[15px]">Ver todos</p>
+      <p className="text-[#717171] dark:text-gray-400 text-sm">Explorar categoria</p>
     </div>
   </Link>
 );
@@ -221,10 +197,10 @@ export const CategoryCarousel = ({
   
   // Definir tamanho dos cards baseado na variante
   const cardWidthClass = variant === 'featured' 
-    ? 'w-[calc(100vw-2rem)] sm:w-[320px] md:w-[350px]' 
+    ? 'w-[calc(100vw-2rem)] sm:w-[280px] md:w-[300px]' 
     : variant === 'compact'
-    ? 'w-[calc(100vw-4rem)] sm:w-[240px] md:w-[260px]'
-    : 'w-[calc(100vw-3rem)] sm:w-[280px] md:w-[300px]';
+    ? 'w-[calc(100vw-4rem)] sm:w-[220px] md:w-[240px]'
+    : 'w-[calc(100vw-3rem)] sm:w-[260px] md:w-[280px]';
   
   // Calcular número de dots e estado de scroll
   useEffect(() => {
@@ -243,7 +219,7 @@ export const CategoryCarousel = ({
       
       // Calcular dots baseado na largura real do card
       const firstCard = container.querySelector(':scope > div') as HTMLElement;
-      const cardWidth = firstCard ? firstCard.offsetWidth + 16 : 316;
+      const cardWidth = firstCard ? firstCard.offsetWidth + 24 : 304;
       
       const dots = Math.ceil(maxScroll / cardWidth) + 1;
       setTotalDots(Math.max(dots, 1));
@@ -268,7 +244,7 @@ export const CategoryCarousel = ({
     
     // Pegar largura real do primeiro card + gap
     const firstCard = container.querySelector(':scope > div') as HTMLElement;
-    const cardWidth = firstCard ? firstCard.offsetWidth + 16 : 316;
+    const cardWidth = firstCard ? firstCard.offsetWidth + 24 : 304;
     
     let scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
     
@@ -290,7 +266,7 @@ export const CategoryCarousel = ({
     if (!scrollRef.current) return;
     const container = scrollRef.current;
     const firstCard = container.querySelector(':scope > div') as HTMLElement;
-    const cardWidth = firstCard ? firstCard.offsetWidth + 16 : 316;
+    const cardWidth = firstCard ? firstCard.offsetWidth + 24 : 304;
     container.scrollTo({ left: index * cardWidth, behavior: 'smooth' });
   };
 
@@ -301,20 +277,20 @@ export const CategoryCarousel = ({
   
   return (
     <section className="relative group/section">
-      {/* Header da seção com storytelling e link animado */}
+      {/* Header da seção - Estilo Airbnb */}
       <motion.div 
         ref={titleRef}
-        className="flex items-center justify-between mb-6 md:mb-8"
+        className="flex items-center justify-between mb-4"
         initial="hidden"
         animate={isInView ? "visible" : "hidden"}
         variants={titleVariants}
       >
         <div>
-          <h2 className="text-xl md:text-2xl font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-[22px] font-semibold text-[#222222] dark:text-white">
             {title}
           </h2>
           {subtitle && (
-            <p className="text-sm text-gray-500 dark:text-muted-foreground mt-0.5">{subtitle}</p>
+            <p className="text-sm text-[#717171] dark:text-gray-400 mt-0.5">{subtitle}</p>
           )}
         </div>
         {(linkHref || onVerTodos) && estabelecimentos.length > 4 && (
@@ -326,68 +302,46 @@ export const CategoryCarousel = ({
             {linkHref ? (
               <Link 
                 to={linkHref}
-                className="group/link flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                className="group/link flex items-center gap-1 text-sm font-semibold text-[#222222] dark:text-white hover:underline"
               >
                 Ver todos
-                <ChevronRightIcon 
-                  size={16} 
-                  className="transition-transform group-hover/link:translate-x-1" 
-                />
+                <span className="transition-transform group-hover/link:translate-x-1">›</span>
               </Link>
             ) : onVerTodos ? (
               <button 
                 onClick={onVerTodos}
-                className="group/link flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                className="group/link flex items-center gap-1 text-sm font-semibold text-[#222222] dark:text-white hover:underline"
               >
                 Ver todos
-                <ChevronRightIcon 
-                  size={16} 
-                  className="transition-transform group-hover/link:translate-x-1" 
-                />
+                <span className="transition-transform group-hover/link:translate-x-1">›</span>
               </button>
             ) : null}
           </motion.div>
         )}
       </motion.div>
       
-      {/* Container do carrossel com fade nas bordas */}
+      {/* Container do carrossel */}
       <div className="relative">
-        {/* Fade esquerda */}
-        <div 
-          className={cn(
-            "absolute left-0 top-0 bottom-2 w-12 bg-gradient-to-r from-white to-transparent z-[5] pointer-events-none transition-opacity duration-300",
-            canScrollLeft ? "opacity-100" : "opacity-0"
-          )}
-        />
-        
-        {/* Fade direita */}
-        <div 
-          className={cn(
-            "absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-white to-transparent z-[5] pointer-events-none transition-opacity duration-300",
-            canScrollRight ? "opacity-100" : "opacity-0"
-          )}
-        />
-        
-        {/* Botão esquerda */}
+        {/* Botão esquerda - Estilo Airbnb */}
         <button
           onClick={() => scroll('left')}
           aria-label="Anterior"
           className={cn(
             "absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10",
-            "w-12 h-12 bg-white dark:bg-slate-800/90 backdrop-blur-md rounded-full",
-            "shadow-lg border border-gray-200 dark:border-border flex items-center justify-center",
-            "transition-all duration-300 hover:scale-110 hover:border-[#240046]/30 active:scale-95",
+            "w-8 h-8 bg-white rounded-full",
+            "shadow-md border border-[#DDDDDD] flex items-center justify-center",
+            "transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95",
             "opacity-0 group-hover/section:opacity-100",
-            !canScrollLeft && "!opacity-40"
+            !canScrollLeft && "!opacity-0 pointer-events-none"
           )}
         >
-          <ChevronLeft className="w-5 h-5 text-foreground" />
+          <ChevronLeft className="w-4 h-4 text-[#222222]" />
         </button>
         
         {/* Carrossel */}
         <div 
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 px-4 -mx-4"
+          className="flex gap-6 overflow-x-auto scrollbar-hide pb-2"
           style={{ 
             scrollSnapType: 'x mandatory',
             WebkitOverflowScrolling: 'touch'
@@ -425,24 +379,24 @@ export const CategoryCarousel = ({
           )}
         </div>
         
-        {/* Botão direita */}
+        {/* Botão direita - Estilo Airbnb */}
         <button
           onClick={() => scroll('right')}
           aria-label="Próximo"
           className={cn(
             "absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10",
-            "w-12 h-12 bg-white dark:bg-slate-800/90 backdrop-blur-md rounded-full",
-            "shadow-lg border border-gray-200 dark:border-border flex items-center justify-center",
-            "transition-all duration-300 hover:scale-110 hover:border-[#240046]/30 active:scale-95",
+            "w-8 h-8 bg-white rounded-full",
+            "shadow-md border border-[#DDDDDD] flex items-center justify-center",
+            "transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95",
             "opacity-0 group-hover/section:opacity-100",
-            !canScrollRight && "!opacity-40"
+            !canScrollRight && "!opacity-0 pointer-events-none"
           )}
         >
-          <ChevronRightIcon className="w-5 h-5 text-foreground" />
+          <ChevronRightIcon className="w-4 h-4 text-[#222222]" />
         </button>
       </div>
       
-      {/* Indicadores de progresso (dots) */}
+      {/* Indicadores de progresso (dots) - Estilo Airbnb */}
       {totalDots > 1 && (
         <div className="flex items-center justify-center gap-1.5 mt-4">
           {Array.from({ length: Math.min(totalDots, 5) }).map((_, i) => (
@@ -450,15 +404,15 @@ export const CategoryCarousel = ({
               key={i}
               onClick={() => scrollToIndex(i)}
               className={cn(
-                'w-2 h-2 rounded-full transition-all duration-300',
+                'w-1.5 h-1.5 rounded-full transition-all duration-300',
                 activeIndex === i 
-                  ? 'bg-[#240046] w-4' 
-                  : 'bg-gray-300 dark:bg-slate-600 hover:bg-gray-400'
+                  ? 'bg-[#222222] dark:bg-white w-4' 
+                  : 'bg-[#DDDDDD] dark:bg-gray-600 hover:bg-[#717171]'
               )}
             />
           ))}
           {totalDots > 5 && (
-            <span className="text-xs text-slate-400 ml-1">+{totalDots - 5}</span>
+            <span className="text-xs text-[#717171] ml-1">+{totalDots - 5}</span>
           )}
         </div>
       )}
@@ -472,10 +426,11 @@ export const CategoryCarousel = ({
             flex items-center justify-center gap-2
             mt-4
             py-3
-            text-[#240046] dark:text-[#A78BFA]
-            hover:text-[#3C096C] dark:hover:text-[#A78BFA]/80
+            text-[#222222] dark:text-white
+            hover:underline
             transition-colors
-            font-medium
+            font-semibold
+            text-sm
           "
         >
           <span>Ver todos</span>

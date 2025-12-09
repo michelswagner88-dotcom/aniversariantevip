@@ -59,10 +59,10 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
       if (error) throw error;
       return data as Estabelecimento[];
     },
-    staleTime: 0, // Sempre considerar stale
+    staleTime: 60000, // Cache por 1 minuto para evitar flashes
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    enabled: filters.enabled !== false, // Desabilitar query quando enabled=false
+    refetchOnWindowFocus: false, // Não refetch ao focar - evita tela branca
+    enabled: filters.enabled !== false,
   });
 
   // REALTIME: Escutar mudanças na tabela estabelecimentos

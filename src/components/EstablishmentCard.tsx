@@ -180,7 +180,7 @@ const EstablishmentCard = ({ establishment, index = 0 }: EstablishmentCardProps)
             border border-border/50
             transition-all duration-500 ease-out
             ${isHovered 
-              ? 'transform -translate-y-2 shadow-2xl shadow-violet-500/20 border-violet-500/30' 
+              ? 'transform -translate-y-2 shadow-2xl shadow-[#240046]/20 border-[#240046]/30' 
               : 'shadow-lg shadow-black/20'
             }
           `}
@@ -239,7 +239,7 @@ const EstablishmentCard = ({ establishment, index = 0 }: EstablishmentCardProps)
               {/* Badge de Benefício */}
               <span className="
                 inline-flex items-center gap-1
-                bg-gradient-to-r from-violet-500/90 to-fuchsia-500/90
+                bg-gradient-to-r from-[#240046]/90 to-[#3C096C]/90
                 text-white
                 px-2 py-1
                 rounded-lg
@@ -339,8 +339,8 @@ const EstablishmentCard = ({ establishment, index = 0 }: EstablishmentCardProps)
                 `}
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center flex-shrink-0">
-                    <Gift className="w-4 h-4 text-fuchsia-400" />
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#240046]/30 to-[#3C096C]/30 flex items-center justify-center flex-shrink-0">
+                    <Gift className="w-4 h-4 text-[#A78BFA]" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs text-gray-400">Seu benefício</p>
@@ -359,7 +359,7 @@ const EstablishmentCard = ({ establishment, index = 0 }: EstablishmentCardProps)
                 text-base font-semibold 
                 line-clamp-1
                 transition-colors duration-300
-                ${isHovered ? 'text-violet-300' : 'text-foreground'}
+                ${isHovered ? 'text-[#240046] dark:text-[#A78BFA]' : 'text-gray-900 dark:text-foreground'}
               `}
             >
               {name}

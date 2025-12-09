@@ -33,11 +33,11 @@ const CTABanner = ({ variant = 'register' }: CTABannerProps) => {
 
   const { title, subtitle, cta, link, icon: Icon } = content[variant];
 
-  // Cores por variante - Roxo premium Nubank
+  // Cores por variante - Roxo escuro premium #240046
   const gradients = {
-    register: 'linear-gradient(135deg, #820AD1 0%, #530080 100%)',
-    partner: 'linear-gradient(135deg, #530080 0%, #3D0066 100%)',
-    benefits: 'linear-gradient(135deg, #820AD1 0%, #E91E8C 100%)',
+    register: 'linear-gradient(135deg, #240046 0%, #3C096C 100%)',
+    partner: 'linear-gradient(135deg, #3C096C 0%, #240046 100%)',
+    benefits: 'linear-gradient(135deg, #240046 0%, #3C096C 100%)',
   };
 
   return (
@@ -76,7 +76,7 @@ const CTABanner = ({ variant = 'register' }: CTABannerProps) => {
             to={link}
             className="
               group flex items-center gap-2
-              bg-white text-[#820AD1] font-bold
+              bg-white text-[#240046] font-bold
               px-6 py-3 rounded-full
               shadow-lg transition-all duration-300
               hover:scale-105 active:scale-95

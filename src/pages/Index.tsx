@@ -264,8 +264,11 @@ const Index = () => {
     }).filter(section => section.hasContent);
   }, [estabelecimentos, estabelecimentosFiltrados, rotatingSections, categoriaParam, buscaParam]);
 
-  // Mostrar carrosséis apenas quando não há filtro ativo
+  // Mostrar carrosséis apenas quando não há filtro ativo E tem seções com conteúdo
   const mostrarCarrosseis = !categoriaParam && !buscaParam && secoesDinamicas.length > 0;
+  
+  // Fallback: mostrar grid simples quando não há seções dinâmicas
+  const mostrarGridSimples = !isLoadingEstabelecimentos && !mostrarCarrosseis && !categoriaParam && !buscaParam && estabelecimentosFiltrados.length > 0;
   
   // Estado para controlar se mostra Hero ou modo filtrado
   const isFiltered = !!(categoriaParam || buscaParam);
@@ -276,10 +279,10 @@ const Index = () => {
   };
   
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="pb-24">
+      <main className="flex-1">
         {/* Hero Section - Apenas na home sem filtros */}
         {!isFiltered && (
           <HeroSection
@@ -306,8 +309,8 @@ const Index = () => {
           </div>
         )}
         
-        {/* Pills de categorias estilo Airbnb + Botão de Filtros - FUNDO ESCURO igual Hero */}
-        <div className="bg-[#0F0A1A] border-b border-white/10 sticky top-16 backdrop-blur-lg z-30">
+        {/* Pills de categorias - MESMO FUNDO DO HERO (slate-950) */}
+        <div className="bg-slate-950 border-b border-white/10 sticky top-16 backdrop-blur-lg z-30">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
             <div className="flex items-center gap-3">
               <div className="flex-1 overflow-hidden">
@@ -356,22 +359,25 @@ const Index = () => {
         )}
         
         {/* Container principal - ÁREA BRANCA FIXA vai direto até o footer */}
-        <div className="bg-white">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-8 pb-16">
+        <div className="bg-white min-h-[50vh]">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-8 pb-24">
           
           {/* Loading state com skeletons */}
-          {isLoadingEstabelecimentos ? (
+          {isLoadingEstabelecimentos && (
             <div className="space-y-16 md:space-y-20">
               {Array.from({ length: 3 }).map((_, i) => (
                 <CarouselSkeleton key={i} />
               ))}
             </div>
-          ) : mostrarCarrosseis ? (
-            /* MODO CARROSSÉIS: Quando não há filtro ativo */
+          )}
+          
+          {/* SEMPRE mostrar conteúdo quando não está carregando */}
+          {!isLoadingEstabelecimentos && mostrarCarrosseis && (
+            /* MODO CARROSSÉIS: Quando não há filtro ativo e tem seções */
             <div className="space-y-8 md:space-y-12">
               {/* Aviso quando mostrando de outras cidades */}
               {usandoFallback && cidadeFinal && (
-                <div className="mx-4 sm:mx-6 lg:mx-12 xl:mx-20 bg-violet-50 border border-violet-200 rounded-xl px-6 py-4">
+                <div className="bg-[#240046]/10 border border-[#240046]/20 rounded-xl px-6 py-4">
                   <p className="text-sm text-[#222222] text-center">
                     <span className="font-medium">Ainda não temos estabelecimentos em {cidadeFinal}.</span>
                     {' '}Mostrando lugares de outras cidades disponíveis.
@@ -411,7 +417,47 @@ const Index = () => {
                 </div>
               ))}
             </div>
-          ) : (
+          )}
+          
+          {/* MODO GRID SIMPLES: Fallback quando não há seções dinâmicas mas tem dados */}
+          {mostrarGridSimples && (
+            <div className="space-y-8">
+              {/* Aviso quando mostrando de outras cidades */}
+              {usandoFallback && cidadeFinal && (
+                <div className="bg-[#240046]/10 border border-[#240046]/20 rounded-xl px-6 py-4">
+                  <p className="text-sm text-[#222222] text-center">
+                    <span className="font-medium">Ainda não temos estabelecimentos em {cidadeFinal}.</span>
+                    {' '}Mostrando lugares de outras cidades disponíveis.
+                  </p>
+                </div>
+              )}
+              
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl md:text-2xl font-semibold text-[#222222]">
+                    {destaquesConfig.titulo}
+                  </h2>
+                  <p className="text-sm text-[#717171] mt-0.5">{destaquesConfig.subtitulo}</p>
+                </div>
+                <span className="text-sm text-[#717171]">
+                  {estabelecimentosFiltrados.length} {estabelecimentosFiltrados.length === 1 ? 'lugar' : 'lugares'}
+                </span>
+              </div>
+              
+              {/* Grid de cards */}
+              <AirbnbCardGrid
+                estabelecimentos={estabelecimentosFiltrados}
+                isLoading={false}
+                userLocation={userLocation}
+              />
+              
+              <CTABanner variant="register" />
+            </div>
+          )}
+          
+          {/* MODO GRID COM MAPA: Quando há filtro de categoria ou busca */}
+          {!isLoadingEstabelecimentos && !mostrarCarrosseis && !mostrarGridSimples && (
             /* MODO GRID COM MAPA: Quando há filtro de categoria ou busca */
             <AirbnbMapLayout
               establishments={estabelecimentosParaMapa}
@@ -429,17 +475,17 @@ const Index = () => {
                 <div className="flex flex-col gap-2 mb-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
+                      <h2 className="text-xl md:text-2xl font-semibold text-[#222222]">
                         {categoriaParam ? getCategoryTitle(categoriaParam, cidadeFinal || undefined) : destaquesConfig.titulo}
                       </h2>
                       {categoriaParam && getCategorySubtitle(categoriaParam) && (
-                        <p className="text-sm text-muted-foreground mt-0.5">
+                        <p className="text-sm text-[#717171] mt-0.5">
                           {getCategorySubtitle(categoriaParam)}
                         </p>
                       )}
                     </div>
                     {estabelecimentosFiltrados.length > 0 && (
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm text-[#717171]">
                         {estabelecimentosFiltrados.length} {estabelecimentosFiltrados.length === 1 ? 'lugar' : 'lugares'}
                       </span>
                     )}
@@ -447,8 +493,8 @@ const Index = () => {
                   
                   {/* Aviso quando mostrando de outras cidades */}
                   {usandoFallback && cidadeFinal && (
-                    <div className="bg-violet-500/10 border border-violet-500/20 rounded-lg px-4 py-2">
-                      <p className="text-sm text-violet-300">
+                    <div className="bg-[#240046]/10 border border-[#240046]/20 rounded-lg px-4 py-2">
+                      <p className="text-sm text-[#240046]">
                         <span className="font-medium">Ainda não temos {categoriaParam?.toLowerCase() || 'lugares'} em {cidadeFinal}.</span>
                         {' '}Mostrando de outras cidades disponíveis.
                       </p>

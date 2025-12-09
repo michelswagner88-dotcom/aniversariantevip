@@ -15,7 +15,7 @@ interface HeroSectionProps {
 
 interface EstabelecimentoSugestao {
   id: string;
-  nome: string;
+  nome_fantasia: string;
   categoria: string;
   cidade: string;
   estado: string;
@@ -125,9 +125,9 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
       try {
         let query = supabase
           .from("estabelecimentos")
-          .select("id, nome, categoria, cidade, estado, slug")
+          .select("id, nome_fantasia, categoria, cidade, estado, slug")
           .eq("ativo", true)
-          .ilike("nome", `%${termo}%`)
+          .ilike("nome_fantasia", `%${termo}%`)
           .limit(8);
 
         // Filtrar por cidade se selecionada
@@ -149,9 +149,9 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
         if ((!data || data.length === 0) && cidade && estado) {
           const { data: dataBrasil } = await supabase
             .from("estabelecimentos")
-            .select("id, nome, categoria, cidade, estado, slug")
+            .select("id, nome_fantasia, categoria, cidade, estado, slug")
             .eq("ativo", true)
-            .ilike("nome", `%${termo}%`)
+            .ilike("nome_fantasia", `%${termo}%`)
             .limit(5);
 
           if (dataBrasil && dataBrasil.length > 0) {
@@ -450,7 +450,7 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
                             onClick={() => handleEstabelecimentoClick(est)}
                             className="px-4 py-3 hover:bg-[#240046]/5 cursor-pointer border-b border-[#240046]/5 last:border-0"
                           >
-                            <p className="text-[#240046] font-semibold text-sm">{est.nome}</p>
+                            <p className="text-[#240046] font-semibold text-sm">{est.nome_fantasia}</p>
                             <p className="text-[#240046]/60 text-xs">
                               {est.categoria} • {est.cidade}, {est.estado}
                               {(est as any).foraDaCidade && <span className="ml-2 text-amber-600">(outra cidade)</span>}

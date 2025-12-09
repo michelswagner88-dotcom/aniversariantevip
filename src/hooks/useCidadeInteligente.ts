@@ -1,17 +1,17 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 // Tipos
 interface CidadeDetectada {
   cidade: string | null;
   estado: string | null;
-  origem: 'cache' | 'gps' | 'ip' | 'perfil' | 'manual' | null;
+  origem: "cache" | "gps" | "ip" | "perfil" | "manual" | null;
 }
 
 interface UseCidadeInteligenteReturn {
   cidade: string | null;
   estado: string | null;
-  origem: CidadeDetectada['origem'];
+  origem: CidadeDetectada["origem"];
   isLoading: boolean;
   isDetecting: boolean;
   error: string | null;
@@ -23,14 +23,42 @@ interface UseCidadeInteligenteReturn {
 }
 
 // Constantes
-const STORAGE_KEY = 'aniversariante_cidade_selecionada';
+const STORAGE_KEY = "aniversariante_cidade_selecionada";
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 dias em ms
 const GPS_TIMEOUT = 10000; // 10 segundos
 const IP_API_TIMEOUT = 5000; // 5 segundos
 const SAFETY_TIMEOUT = 15000; // 15 segundos - timeout de segurança
 
 // Estados brasileiros válidos para validação de localização
-const ESTADOS_BR = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+const ESTADOS_BR = [
+  "AC",
+  "AL",
+  "AP",
+  "AM",
+  "BA",
+  "CE",
+  "DF",
+  "ES",
+  "GO",
+  "MA",
+  "MT",
+  "MS",
+  "MG",
+  "PA",
+  "PB",
+  "PR",
+  "PE",
+  "PI",
+  "RJ",
+  "RN",
+  "RS",
+  "RO",
+  "RR",
+  "SC",
+  "SP",
+  "SE",
+  "TO",
+];
 
 // Função para verificar se é localização brasileira
 const isBrazilianLocation = (estado: string): boolean => {
@@ -39,32 +67,57 @@ const isBrazilianLocation = (estado: string): boolean => {
   return ESTADOS_BR.includes(normalizado.toUpperCase());
 };
 
-// APIs de IP (fallback chain)
+// APIs de IP (fallback chain) - CORRIGIDO: Todas HTTPS
 const IP_APIS = [
   {
-    name: 'ipapi.co',
-    url: 'https://ipapi.co/json/',
-    extract: (data: any) => ({ cidade: data.city, estado: data.region_code })
+    name: "ipapi.co",
+    url: "https://ipapi.co/json/",
+    extract: (data: any) => ({ cidade: data.city, estado: data.region_code }),
   },
   {
-    name: 'ip-api.com', 
-    url: 'http://ip-api.com/json/?fields=city,region',
-    extract: (data: any) => ({ cidade: data.city, estado: data.region })
-  }
+    name: "ipwho.is",
+    url: "https://ipwho.is/",
+    extract: (data: any) => ({ cidade: data.city, estado: data.region }),
+  },
+  {
+    name: "ipapi.is",
+    url: "https://api.ipapi.is/",
+    extract: (data: any) => ({ cidade: data.location?.city, estado: data.location?.state }),
+  },
 ];
 
 // Função para converter sigla do estado brasileiro
 const normalizarEstado = (estado: string): string => {
   const estadosBR: Record<string, string> = {
-    'Acre': 'AC', 'Alagoas': 'AL', 'Amapá': 'AP', 'Amazonas': 'AM',
-    'Bahia': 'BA', 'Ceará': 'CE', 'Distrito Federal': 'DF', 'Espírito Santo': 'ES',
-    'Goiás': 'GO', 'Maranhão': 'MA', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS',
-    'Minas Gerais': 'MG', 'Pará': 'PA', 'Paraíba': 'PB', 'Paraná': 'PR',
-    'Pernambuco': 'PE', 'Piauí': 'PI', 'Rio de Janeiro': 'RJ', 'Rio Grande do Norte': 'RN',
-    'Rio Grande do Sul': 'RS', 'Rondônia': 'RO', 'Roraima': 'RR', 'Santa Catarina': 'SC',
-    'São Paulo': 'SP', 'Sergipe': 'SE', 'Tocantins': 'TO'
+    Acre: "AC",
+    Alagoas: "AL",
+    Amapá: "AP",
+    Amazonas: "AM",
+    Bahia: "BA",
+    Ceará: "CE",
+    "Distrito Federal": "DF",
+    "Espírito Santo": "ES",
+    Goiás: "GO",
+    Maranhão: "MA",
+    "Mato Grosso": "MT",
+    "Mato Grosso do Sul": "MS",
+    "Minas Gerais": "MG",
+    Pará: "PA",
+    Paraíba: "PB",
+    Paraná: "PR",
+    Pernambuco: "PE",
+    Piauí: "PI",
+    "Rio de Janeiro": "RJ",
+    "Rio Grande do Norte": "RN",
+    "Rio Grande do Sul": "RS",
+    Rondônia: "RO",
+    Roraima: "RR",
+    "Santa Catarina": "SC",
+    "São Paulo": "SP",
+    Sergipe: "SE",
+    Tocantins: "TO",
   };
-  
+
   if (estado.length === 2) return estado.toUpperCase();
   return estadosBR[estado] || estado;
 };
@@ -74,27 +127,27 @@ const reverseGeocode = async (lat: number, lng: number): Promise<CidadeDetectada
   try {
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
-      { headers: { 'User-Agent': 'AniversarianteVIP/1.0' } }
+      { headers: { "User-Agent": "AniversarianteVIP/1.0" } },
     );
-    
+
     if (!response.ok) return null;
-    
+
     const data = await response.json();
     const address = data.address;
-    
+
     const cidade = address.city || address.town || address.village || address.municipality;
-    const estado = normalizarEstado(address.state || '');
-    
+    const estado = normalizarEstado(address.state || "");
+
     // VALIDAÇÃO CRÍTICA: Só retornar se for localização brasileira
     if (cidade && estado && isBrazilianLocation(estado)) {
-      return { cidade, estado, origem: 'gps' };
+      return { cidade, estado, origem: "gps" };
     }
-    
+
     // Localização estrangeira detectada via GPS - retornar null
-    console.log('[Geo] Localização GPS ESTRANGEIRA ignorada:', cidade, estado);
+    console.log("[Geo] Localização GPS ESTRANGEIRA ignorada:", cidade, estado);
     return null;
   } catch (error) {
-    console.error('[Geo] Erro no reverse geocoding:', error);
+    console.error("[Geo] Erro no reverse geocoding:", error);
     return null;
   }
 };
@@ -105,21 +158,21 @@ const detectarPorIP = async (): Promise<CidadeDetectada | null> => {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), IP_API_TIMEOUT);
-      
+
       const response = await fetch(api.url, { signal: controller.signal });
       clearTimeout(timeoutId);
-      
+
       if (!response.ok) continue;
-      
+
       const data = await response.json();
       const { cidade, estado } = api.extract(data);
-      
+
       if (cidade && estado) {
         console.log(`[Geo] Cidade detectada via ${api.name}:`, cidade, estado);
-        return { 
-          cidade, 
-          estado: normalizarEstado(estado), 
-          origem: 'ip' 
+        return {
+          cidade,
+          estado: normalizarEstado(estado),
+          origem: "ip",
         };
       }
     } catch (error) {
@@ -127,7 +180,7 @@ const detectarPorIP = async (): Promise<CidadeDetectada | null> => {
       continue;
     }
   }
-  
+
   return null;
 };
 
@@ -135,20 +188,20 @@ const detectarPorIP = async (): Promise<CidadeDetectada | null> => {
 const verificarEstabelecimentos = async (cidade: string, estado: string): Promise<number> => {
   try {
     const { count, error } = await supabase
-      .from('estabelecimentos')
-      .select('*', { count: 'exact', head: true })
-      .ilike('cidade', cidade)
-      .ilike('estado', estado)
-      .eq('ativo', true);
-    
+      .from("estabelecimentos")
+      .select("*", { count: "exact", head: true })
+      .ilike("cidade", cidade)
+      .ilike("estado", estado)
+      .eq("ativo", true);
+
     if (error) {
-      console.error('[Geo] Erro ao verificar estabelecimentos:', error);
+      console.error("[Geo] Erro ao verificar estabelecimentos:", error);
       return 0;
     }
-    
+
     return count || 0;
   } catch (error) {
-    console.error('[Geo] Erro ao verificar estabelecimentos:', error);
+    console.error("[Geo] Erro ao verificar estabelecimentos:", error);
     return 0;
   }
 };
@@ -156,25 +209,27 @@ const verificarEstabelecimentos = async (cidade: string, estado: string): Promis
 // Função para buscar cidade do perfil do usuário logado
 const buscarCidadeDoPerfil = async (): Promise<CidadeDetectada | null> => {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     if (!session?.user?.id) return null;
-    
+
     const { data: aniversariante } = await supabase
-      .from('aniversariantes')
-      .select('cidade, estado')
-      .eq('id', session.user.id)
+      .from("aniversariantes")
+      .select("cidade, estado")
+      .eq("id", session.user.id)
       .maybeSingle();
-    
+
     if (aniversariante?.cidade && aniversariante?.estado) {
-      console.log('[Geo] Cidade do perfil:', aniversariante.cidade);
+      console.log("[Geo] Cidade do perfil:", aniversariante.cidade);
       return {
         cidade: aniversariante.cidade,
         estado: aniversariante.estado,
-        origem: 'perfil'
+        origem: "perfil",
       };
     }
-    
+
     return null;
   } catch (error) {
     return null;
@@ -186,26 +241,26 @@ const getCachedCity = (): CidadeDetectada | null => {
   try {
     const cached = localStorage.getItem(STORAGE_KEY);
     if (!cached) return null;
-    
+
     const data = JSON.parse(cached);
-    
+
     // Verificar expiração do cache
     if (Date.now() - data.timestamp > CACHE_DURATION) {
       localStorage.removeItem(STORAGE_KEY);
       return null;
     }
-    
+
     // VALIDAR: Verificar se a cidade em cache é brasileira
     if (data.estado && !isBrazilianLocation(data.estado)) {
-      console.log('[Geo] Cidade ESTRANGEIRA em cache detectada e REMOVIDA:', data.cidade, data.estado);
+      console.log("[Geo] Cidade ESTRANGEIRA em cache detectada e REMOVIDA:", data.cidade, data.estado);
       localStorage.removeItem(STORAGE_KEY);
       return null; // Forçar nova detecção
     }
-    
+
     return {
       cidade: data.cidade,
       estado: data.estado,
-      origem: 'cache'
+      origem: "cache",
     };
   } catch {
     return null;
@@ -213,12 +268,12 @@ const getCachedCity = (): CidadeDetectada | null => {
 };
 
 // Salvar no cache
-const saveToCache = (cidade: string, estado: string, origem: CidadeDetectada['origem']) => {
+const saveToCache = (cidade: string, estado: string, origem: CidadeDetectada["origem"]) => {
   const cache = {
     cidade,
     estado,
     origem,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
 };
@@ -228,9 +283,9 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
   const [cidadeData, setCidadeData] = useState<CidadeDetectada>({
     cidade: null,
     estado: null,
-    origem: null
+    origem: null,
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // CORRIGIDO: Começa false pra não bloquear
   const [isDetecting, setIsDetecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [quantidadeEstabelecimentos, setQuantidadeEstabelecimentos] = useState(0);
@@ -245,91 +300,90 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
     try {
       setIsDetecting(true);
       setError(null);
-      
-      console.log('[Geo] Iniciando detecção de cidade...');
-      
+
+      console.log("[Geo] Iniciando detecção de cidade...");
+
       // 1. Verificar perfil do usuário logado
       const perfilCidade = await buscarCidadeDoPerfil();
       if (perfilCidade && perfilCidade.cidade && perfilCidade.estado) {
-        console.log('[Geo] Cidade encontrada no perfil:', perfilCidade.cidade);
+        console.log("[Geo] Cidade encontrada no perfil:", perfilCidade.cidade);
         setCidadeData(perfilCidade);
-        saveToCache(perfilCidade.cidade, perfilCidade.estado, 'perfil');
-        
+        saveToCache(perfilCidade.cidade, perfilCidade.estado, "perfil");
+
         const qtd = await verificarEstabelecimentos(perfilCidade.cidade, perfilCidade.estado);
         setQuantidadeEstabelecimentos(qtd);
         setTemEstabelecimentos(qtd > 0);
         return;
       }
-      
+
       // 2. Tentar GPS (mais preciso)
-      if ('geolocation' in navigator) {
+      if ("geolocation" in navigator) {
         try {
-          console.log('[Geo] Tentando GPS...');
-          
+          console.log("[Geo] Tentando GPS...");
+
           const position = await new Promise<GeolocationPosition>((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
               enableHighAccuracy: false,
               timeout: GPS_TIMEOUT,
-              maximumAge: 300000
+              maximumAge: 300000,
             });
           });
-          
+
           const { latitude, longitude } = position.coords;
-          console.log('[Geo] GPS obtido:', latitude, longitude);
-          
+          console.log("[Geo] GPS obtido:", latitude, longitude);
+
           const cidadeGPS = await reverseGeocode(latitude, longitude);
-          
+
           if (cidadeGPS && cidadeGPS.cidade && cidadeGPS.estado) {
-            console.log('[Geo] Cidade via GPS:', cidadeGPS.cidade);
+            console.log("[Geo] Cidade via GPS:", cidadeGPS.cidade);
             setCidadeData(cidadeGPS);
-            saveToCache(cidadeGPS.cidade, cidadeGPS.estado, 'gps');
-            
+            saveToCache(cidadeGPS.cidade, cidadeGPS.estado, "gps");
+
             const qtd = await verificarEstabelecimentos(cidadeGPS.cidade, cidadeGPS.estado);
             setQuantidadeEstabelecimentos(qtd);
             setTemEstabelecimentos(qtd > 0);
             return;
           }
         } catch (gpsError: any) {
-          console.log('[Geo] GPS não disponível ou negado:', gpsError.message);
+          console.log("[Geo] GPS não disponível ou negado:", gpsError.message);
         }
       }
-      
+
       // 3. Fallback: Detectar por IP
-      console.log('[Geo] Tentando detecção por IP...');
+      console.log("[Geo] Tentando detecção por IP...");
       const cidadeIP = await detectarPorIP();
-      
+
       if (cidadeIP && cidadeIP.cidade && cidadeIP.estado) {
         // VALIDAR: Verificar se é localização brasileira antes de aceitar
         if (isBrazilianLocation(cidadeIP.estado)) {
-          console.log('[Geo] Localização brasileira confirmada:', cidadeIP.cidade, cidadeIP.estado);
+          console.log("[Geo] Localização brasileira confirmada:", cidadeIP.cidade, cidadeIP.estado);
           setCidadeData(cidadeIP);
-          saveToCache(cidadeIP.cidade, cidadeIP.estado, 'ip');
-          
+          saveToCache(cidadeIP.cidade, cidadeIP.estado, "ip");
+
           const qtd = await verificarEstabelecimentos(cidadeIP.cidade, cidadeIP.estado);
           setQuantidadeEstabelecimentos(qtd);
           setTemEstabelecimentos(qtd > 0);
           return;
         } else {
           // Localização estrangeira detectada - ignorar e mostrar "Todo o Brasil"
-          console.log('[Geo] Localização ESTRANGEIRA detectada e IGNORADA:', cidadeIP.cidade, cidadeIP.estado);
+          console.log("[Geo] Localização ESTRANGEIRA detectada e IGNORADA:", cidadeIP.cidade, cidadeIP.estado);
           // NÃO definir cidade - deixar como "Todo o Brasil"
         }
       }
-      
+
       // 4. Nenhum método funcionou ou localização é estrangeira
       console.log('[Geo] Sem cidade brasileira detectada - usuário verá "Todo o Brasil"');
       // NÃO mostrar erro - apenas deixar cidade como null (Todo o Brasil)
       setCidadeData({ cidade: null, estado: null, origem: null });
       setTemEstabelecimentos(null);
-      
     } catch (err) {
-      console.error('[Geo] Erro fatal na detecção:', err);
-      setError('Erro ao detectar localização');
+      console.error("[Geo] Erro fatal na detecção:", err);
+      setError("Erro ao detectar localização");
     } finally {
       // GARANTIR que loading termine, não importa o que aconteça
       setIsLoading(false);
       setIsDetecting(false);
-      
+
       // Limpar timeout de segurança
       if (safetyTimeoutRef.current) {
         clearTimeout(safetyTimeoutRef.current);
@@ -340,11 +394,11 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
 
   // Definir cidade manualmente
   const setCidadeManual = useCallback(async (cidade: string, estado: string) => {
-    console.log('[Geo] Cidade definida manualmente:', cidade, estado);
-    
-    setCidadeData({ cidade, estado, origem: 'manual' });
-    saveToCache(cidade, estado, 'manual');
-    
+    console.log("[Geo] Cidade definida manualmente:", cidade, estado);
+
+    setCidadeData({ cidade, estado, origem: "manual" });
+    saveToCache(cidade, estado, "manual");
+
     const qtd = await verificarEstabelecimentos(cidade, estado);
     setQuantidadeEstabelecimentos(qtd);
     setTemEstabelecimentos(qtd > 0);
@@ -363,13 +417,13 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
     localStorage.removeItem(STORAGE_KEY);
     setIsLoading(true);
     hasInitialized.current = false;
-    
+
     // Re-executar detecção
     const cached = getCachedCity();
     if (cached && cached.cidade && cached.estado) {
       setCidadeData(cached);
       setIsLoading(false);
-      verificarEstabelecimentos(cached.cidade, cached.estado).then(qtd => {
+      verificarEstabelecimentos(cached.cidade, cached.estado).then((qtd) => {
         setQuantidadeEstabelecimentos(qtd);
         setTemEstabelecimentos(qtd > 0);
       });
@@ -383,39 +437,39 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
-    console.log('[Geo] Inicializando hook de cidade...');
+    console.log("[Geo] Inicializando hook de cidade...");
 
     // Timeout de segurança - forçar fim do loading após 15s
     safetyTimeoutRef.current = setTimeout(() => {
-      console.warn('[Geo] Safety timeout - forçando fim do loading');
+      console.warn("[Geo] Safety timeout - forçando fim do loading");
       setIsLoading(false);
       setIsDetecting(false);
     }, SAFETY_TIMEOUT);
 
     // 1. Tentar carregar do cache SINCRONAMENTE primeiro
     const cached = getCachedCity();
-    
+
     if (cached && cached.cidade && cached.estado) {
-      console.log('[Geo] Cidade encontrada no cache:', cached.cidade);
+      console.log("[Geo] Cidade encontrada no cache:", cached.cidade);
       setCidadeData(cached);
       setIsLoading(false); // Libera a tela IMEDIATAMENTE
-      
+
       // Verificar estabelecimentos em BACKGROUND (não bloqueia UI)
-      verificarEstabelecimentos(cached.cidade, cached.estado).then(qtd => {
+      verificarEstabelecimentos(cached.cidade, cached.estado).then((qtd) => {
         setQuantidadeEstabelecimentos(qtd);
         setTemEstabelecimentos(qtd > 0);
       });
-      
+
       // Limpar timeout de segurança já que carregou
       if (safetyTimeoutRef.current) {
         clearTimeout(safetyTimeoutRef.current);
         safetyTimeoutRef.current = null;
       }
-      
+
       return;
     }
 
-    // 2. Sem cache - fazer detecção assíncrona
+    // 2. Sem cache - fazer detecção assíncrona (não bloqueia renderização)
     detectarCidadeAsync();
 
     // Cleanup
@@ -437,7 +491,7 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
     quantidadeEstabelecimentos,
     setCidadeManual,
     limparCidade,
-    redetectar
+    redetectar,
   };
 };
 

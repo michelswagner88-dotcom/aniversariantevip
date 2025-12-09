@@ -141,7 +141,7 @@ const AirbnbCard = ({
 
         {temBeneficio && (
           <p className="text-[15px] text-[#3C096C] mt-1">
-            <span className="font-semibold text-[#240046]">🎁 Benefício</span> no aniversário
+            <span className="font-semibold text-[#240046]">🎁 Benefício para aniversariantes</span>
           </p>
         )}
       </div>

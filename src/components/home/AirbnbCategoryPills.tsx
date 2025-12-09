@@ -267,60 +267,84 @@ export const AirbnbCategoryPills = ({
   }, []);
   
   return (
-    <div className="relative">
-      {/* Fade esquerda - Removido para não cortar Todos */}
-      
-      {/* Scroll container - Padding simples para não cortar nada */}
+    <div className="relative flex items-center gap-2">
+      {/* Botão seta esquerda - FORA do scroll */}
+      <button
+        onClick={() => scrollBy('left')}
+        aria-label="Categorias anteriores"
+        className={cn(
+          "hidden sm:flex flex-shrink-0 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 items-center justify-center transition-all",
+          !showFadeLeft && "opacity-30 pointer-events-none"
+        )}
+      >
+        <ChevronLeft className="w-4 h-4 text-gray-400" />
+      </button>
+
+      {/* Scroll container - sem padding lateral para não cortar "Todos" */}
       <div 
         ref={scrollRef}
-        className="flex gap-3 sm:gap-4 overflow-x-auto py-4 px-4 scrollbar-hide scroll-smooth snap-x snap-proximity"
+        className="flex-1 flex gap-3 sm:gap-4 overflow-x-auto py-4 scrollbar-hide scroll-smooth"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
-        {categoriasConfig.map((cat, index) => {
-          const isActive = categoriaAtiva === cat.id;
-          const IconComponent = cat.style.icon;
-          const style = cat.style;
-          
-          return (
-            <button
-              key={cat.id || 'todos'}
-              data-categoria={cat.id ?? 'todos'}
-              onClick={() => onCategoriaChange(cat.id)}
-              style={{ animationDelay: `${index * 30}ms` }}
-              className={cn(
-                'category-chip group flex flex-col items-center gap-2 min-w-[72px] sm:min-w-[80px] px-3 py-3 rounded-xl border transition-all duration-300 snap-start',
-                'animate-fade-in flex-shrink-0',
-                isActive
-                  ? `${style.bgColorLight} ${style.borderColor} scale-105 shadow-lg ${style.activeGlow}`
-                  : 'bg-transparent border-transparent hover:bg-white/5 hover:border-white/10'
-              )}
-            >
-              {/* Ícone dentro do quadrado colorido com cor SÓLIDA */}
-              <div className={cn(
-                'flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300',
-                style.bgColor,  // Cor sólida do quadrado
-                isActive ? 'scale-110 shadow-lg' : 'group-hover:scale-110'
-              )}>
-                <IconComponent 
-                  size={22} 
-                  strokeWidth={1.5} 
-                  className="text-white transition-all duration-300"
-                />
-              </div>
-              
-              {/* Label - sempre branco */}
-              <span className={cn(
-                'text-xs font-medium whitespace-nowrap transition-colors duration-300 text-white',
-                isActive && 'font-semibold'
-              )}>
-                {cat.nome}
-              </span>
-            </button>
-          );
-        })}
+        <div className="flex gap-3 sm:gap-4 px-1 min-w-max">
+          {categoriasConfig.map((cat, index) => {
+            const isActive = categoriaAtiva === cat.id;
+            const IconComponent = cat.style.icon;
+            const style = cat.style;
+            
+            return (
+              <button
+                key={cat.id || 'todos'}
+                data-categoria={cat.id ?? 'todos'}
+                onClick={() => onCategoriaChange(cat.id)}
+                aria-label={`Filtrar por ${cat.nome}`}
+                aria-pressed={isActive}
+                style={{ animationDelay: `${index * 30}ms` }}
+                className={cn(
+                  'category-chip group flex flex-col items-center gap-2 min-w-[72px] sm:min-w-[80px] px-3 py-3 rounded-xl border transition-all duration-300',
+                  'animate-fade-in flex-shrink-0',
+                  isActive
+                    ? `${style.bgColorLight} ${style.borderColor} scale-105 shadow-lg ${style.activeGlow}`
+                    : 'bg-transparent border-transparent hover:bg-white/5 hover:border-white/10'
+                )}
+              >
+                {/* Ícone dentro do quadrado colorido com cor SÓLIDA */}
+                <div className={cn(
+                  'flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300',
+                  style.bgColor,
+                  isActive ? 'scale-110 shadow-lg' : 'group-hover:scale-110'
+                )}>
+                  <IconComponent 
+                    size={22} 
+                    strokeWidth={1.5} 
+                    className="text-white transition-all duration-300"
+                  />
+                </div>
+                
+                {/* Label - sempre branco */}
+                <span className={cn(
+                  'text-xs font-medium whitespace-nowrap transition-colors duration-300 text-white',
+                  isActive && 'font-semibold'
+                )}>
+                  {cat.nome}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
       
-      {/* Botões de navegação removidos para não cortar conteúdo */}
+      {/* Botão seta direita - FORA do scroll */}
+      <button
+        onClick={() => scrollBy('right')}
+        aria-label="Próximas categorias"
+        className={cn(
+          "hidden sm:flex flex-shrink-0 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 items-center justify-center transition-all",
+          !showFadeRight && "opacity-30 pointer-events-none"
+        )}
+      >
+        <ChevronRight className="w-4 h-4 text-gray-400" />
+      </button>
     </div>
   );
 };

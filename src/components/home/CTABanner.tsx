@@ -41,39 +41,31 @@ const CTABanner = ({ variant = 'register' }: CTABannerProps) => {
   };
 
   return (
-    <section className="py-4">
+    <section className="py-4 sm:py-6">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
-        className="relative overflow-hidden rounded-2xl p-6 sm:p-8"
+        className="relative overflow-hidden rounded-2xl p-5 sm:p-6 lg:p-8"
         style={{ background: gradients[variant] }}
       >
         {/* Elementos decorativos sutis */}
-        <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-3xl" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-3xl" />
 
         {/* Conteúdo compacto */}
         <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-center sm:text-left">
-            {/* Ícone menor */}
-            <div className="hidden sm:flex w-12 h-12 bg-white/10 backdrop-blur-sm rounded-xl items-center justify-center">
-              <Icon className="w-6 h-6 text-white" />
-            </div>
-            
-            <div>
-              <h3 className="text-xl sm:text-2xl font-bold text-white mb-1">
-                {title}
-              </h3>
-              <p className="text-white/80 text-sm sm:text-base max-w-md">
-                {subtitle}
-              </p>
-            </div>
+          <div className="text-center sm:text-left">
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-1">
+              {title}
+            </h3>
+            <p className="text-white/80 text-sm sm:text-base">{subtitle}</p>
           </div>
           
           <Link
             to={link}
+            aria-label={cta}
             className="
               group flex items-center gap-2
               bg-white text-[#240046] font-bold

@@ -150,6 +150,7 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
 const ViewMoreCard = ({ linkHref }: { linkHref: string }) => (
   <Link 
     to={linkHref}
+    aria-label="Ver todos os estabelecimentos desta categoria"
     className="
       flex-shrink-0 w-full
       aspect-square
@@ -403,11 +404,12 @@ export const CategoryCarousel = ({
             <button
               key={i}
               onClick={() => scrollToIndex(i)}
+              aria-label={`Ir para página ${i + 1}`}
               className={cn(
                 'w-1.5 h-1.5 rounded-full transition-all duration-300',
                 activeIndex === i 
-                  ? 'bg-[#222222] dark:bg-white w-4' 
-                  : 'bg-[#DDDDDD] dark:bg-gray-600 hover:bg-[#717171]'
+                  ? 'bg-[#222222] w-4' 
+                  : 'bg-[#DDDDDD] hover:bg-[#717171]'
               )}
             />
           ))}
@@ -421,12 +423,13 @@ export const CategoryCarousel = ({
       {linkHref && (
         <Link 
           to={linkHref}
+          aria-label="Ver todos os estabelecimentos"
           className="
             sm:hidden
             flex items-center justify-center gap-2
             mt-4
             py-3
-            text-[#222222] dark:text-white
+            text-[#222222]
             hover:underline
             transition-colors
             font-semibold

@@ -95,7 +95,7 @@ const HeroSection = ({
   };
 
   return (
-    <section className="relative min-h-[600px] md:min-h-[650px] flex items-center justify-center overflow-hidden pt-20 pb-12">
+    <section className="relative min-h-[500px] sm:min-h-[600px] md:min-h-[650px] flex items-center justify-center overflow-hidden pt-16 sm:pt-20 pb-8 sm:pb-12 px-4">
       {/* Background decorativo */}
       <div className="absolute inset-0 z-0">
         {/* Gradiente base */}
@@ -149,9 +149,9 @@ const HeroSection = ({
           <span className="text-sm text-violet-300">O maior guia de benefícios para aniversariantes do Brasil</span>
         </motion.div>
 
-        {/* Título principal */}
+        {/* Título principal - responsivo */}
         <motion.h1 
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4"
+          className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
@@ -161,9 +161,9 @@ const HeroSection = ({
           <span className="text-gradient-animated">vantagens exclusivas</span>
         </motion.h1>
 
-        {/* Subtítulo */}
+        {/* Subtítulo - responsivo */}
         <motion.p 
-          className="text-lg sm:text-xl text-slate-400 mb-10 max-w-2xl mx-auto"
+          className="text-sm sm:text-base lg:text-lg text-slate-400 mb-6 sm:mb-10 max-w-2xl mx-auto px-2"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
@@ -208,15 +208,16 @@ const HeroSection = ({
 
             {/* Campo de Busca */}
             <div className="flex-1 flex items-center gap-3 px-4 py-3">
-              <Search className="w-5 h-5 text-[#240046]/50" />
+              <Search className="w-5 h-5 text-[#240046]/50 flex-shrink-0" />
               <input
                 type="text"
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 placeholder={placeholders[currentPlaceholder]}
+                aria-label="Buscar estabelecimentos"
                 className={`
                   flex-1 bg-transparent text-[#222222] placeholder-[#240046]/40
-                  outline-none text-base
+                  outline-none text-sm sm:text-base min-w-0
                   transition-opacity duration-200
                   ${isTyping ? "opacity-100" : "opacity-50"}
                 `}
@@ -230,14 +231,15 @@ const HeroSection = ({
               </button>
             </div>
 
-            {/* Botão de Busca */}
+            {/* Botão de Busca - Full width em mobile */}
             <button 
               type="submit"
+              aria-label="Buscar estabelecimentos"
               className="
                 relative
                 bg-gradient-to-r from-[#240046] to-[#3C096C]
                 text-white font-semibold
-                px-8 py-4 sm:py-3
+                px-6 sm:px-8 py-3 sm:py-3
                 rounded-xl sm:rounded-full
                 shadow-lg shadow-[#240046]/30
                 transition-all duration-300
@@ -245,6 +247,7 @@ const HeroSection = ({
                 hover:scale-105
                 active:scale-95
                 flex items-center justify-center gap-2
+                w-full sm:w-auto
                 overflow-hidden
                 group
               "
@@ -278,44 +281,38 @@ const HeroSection = ({
           )}
         </motion.div>
 
-        {/* Prova Social - Números */}
+        {/* Prova Social - Stack em mobile, row em desktop */}
         <motion.div 
-          className="flex flex-wrap justify-center gap-8 sm:gap-12"
+          className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
           {/* Estabelecimentos */}
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <Building2 className="w-5 h-5 text-violet-400" />
-              <span className="text-3xl sm:text-4xl font-bold text-white counter-glow animate-count-pulse">
-                {counters.establishments}+
-              </span>
-            </div>
-            <p className="text-sm text-slate-500">Estabelecimentos</p>
+          <div className="flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-violet-400" />
+            <span className="text-xl sm:text-2xl font-bold text-white">
+              {counters.establishments}+
+            </span>
+            <span className="text-xs sm:text-sm text-slate-500">Estabelecimentos</span>
           </div>
 
           {/* Usuários */}
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <Users className="w-5 h-5 text-pink-400" />
-              <span className="text-3xl sm:text-4xl font-bold text-white counter-glow animate-count-pulse">
-                {counters.users.toLocaleString()}+
-              </span>
-            </div>
-            <p className="text-sm text-slate-500">Aniversariantes</p>
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-pink-400" />
+            <span className="text-xl sm:text-2xl font-bold text-white">
+              {counters.users.toLocaleString()}+
+            </span>
+            <span className="text-xs sm:text-sm text-slate-500">Aniversariantes</span>
           </div>
 
           {/* Cidades */}
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <MapPin className="w-5 h-5 text-orange-400" />
-              <span className="text-3xl sm:text-4xl font-bold text-white counter-glow animate-count-pulse">
-                {counters.cities}+
-              </span>
-            </div>
-            <p className="text-sm text-slate-500">Cidades</p>
+          <div className="flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-orange-400" />
+            <span className="text-xl sm:text-2xl font-bold text-white">
+              {counters.cities}+
+            </span>
+            <span className="text-xs sm:text-sm text-slate-500">Cidades</span>
           </div>
         </motion.div>
 

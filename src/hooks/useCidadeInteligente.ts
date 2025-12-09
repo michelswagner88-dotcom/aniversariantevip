@@ -85,10 +85,13 @@ const reverseGeocode = async (lat: number, lng: number): Promise<CidadeDetectada
     const cidade = address.city || address.town || address.village || address.municipality;
     const estado = normalizarEstado(address.state || '');
     
-    if (cidade && estado) {
+    // VALIDAÇÃO CRÍTICA: Só retornar se for localização brasileira
+    if (cidade && estado && isBrazilianLocation(estado)) {
       return { cidade, estado, origem: 'gps' };
     }
     
+    // Localização estrangeira detectada via GPS - retornar null
+    console.log('[Geo] Localização GPS ESTRANGEIRA ignorada:', cidade, estado);
     return null;
   } catch (error) {
     console.error('[Geo] Erro no reverse geocoding:', error);

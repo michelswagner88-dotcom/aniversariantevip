@@ -87,16 +87,21 @@ export const Header = () => {
       >
         <nav className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
           <div className="flex items-center justify-between h-14">
-            <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/10 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:bg-white/20">
-                <Gift className="w-5 h-5 text-white" />
+            {/* Logo + Nome - VISÍVEL EM TODAS AS TELAS */}
+            <Link to="/" className="flex items-center gap-2 group">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center bg-white/10 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:bg-white/20 flex-shrink-0">
+                <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <span className="hidden sm:flex items-center gap-1 font-display font-extrabold text-base lg:text-lg tracking-tight transition-transform duration-300 group-hover:scale-105">
-                <span className="bg-gradient-to-r from-[#9D4EDD] to-[#22D3EE] bg-clip-text text-transparent">ANIVERSARIANTE</span>
+              {/* Nome SEMPRE visível - ajustado para caber no mobile */}
+              <div className="flex items-center gap-0.5 sm:gap-1 font-display font-extrabold text-sm sm:text-base lg:text-lg tracking-tight transition-transform duration-300 group-hover:scale-105">
+                <span className="bg-gradient-to-r from-[#9D4EDD] to-[#C77DFF] bg-clip-text text-transparent">
+                  ANIVERSARIANTE
+                </span>
                 <span className="bg-gradient-to-r from-[#C77DFF] to-[#22D3EE] bg-clip-text text-transparent">VIP</span>
-              </span>
+              </div>
             </Link>
 
+            {/* Menu Desktop - Links centrais */}
             <div className="hidden lg:flex items-center justify-center flex-1 gap-1 min-w-0 mx-4">
               <NavLink
                 to="/como-funciona"
@@ -116,6 +121,7 @@ export const Header = () => {
               </NavLink>
             </div>
 
+            {/* Menu Desktop - Botões direita */}
             <div className="hidden lg:flex items-center gap-4 flex-shrink-0">
               {userName ? (
                 <>
@@ -161,19 +167,22 @@ export const Header = () => {
               )}
             </div>
 
+            {/* Botão Menu Hambúrguer - Mobile/Tablet */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden p-2.5 -mr-2 text-white hover:bg-white/10 rounded-xl transition-all duration-200 active:scale-95"
               style={{ minWidth: "44px", minHeight: "44px" }}
-              aria-label="Menu"
+              aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
 
+          {/* Menu Mobile Expandido */}
           {mobileMenuOpen && (
             <div className="lg:hidden mt-4 p-4 bg-[#1a0033] rounded-2xl border border-white/10 shadow-2xl shadow-black/40 animate-fade-in">
               <div className="flex flex-col gap-1">
+                {/* Links de navegação */}
                 <NavLink
                   to="/como-funciona"
                   onClick={() => setMobileMenuOpen(false)}
@@ -193,6 +202,7 @@ export const Header = () => {
 
                 <div className="h-px bg-white/10 my-3" />
 
+                {/* Área do usuário ou botões de login */}
                 {userName ? (
                   <>
                     <Button
@@ -201,10 +211,10 @@ export const Header = () => {
                         navigate(getAreaLink());
                         setMobileMenuOpen(false);
                       }}
-                      className="justify-start text-white hover:bg-white/10 py-3"
+                      className="justify-start text-white hover:bg-white/10 py-3 h-auto"
                     >
                       <User className="w-4 h-4 mr-2" />
-                      {userName}
+                      Minha Área ({userName.split(" ")[0]})
                     </Button>
                     <Button
                       variant="ghost"
@@ -212,7 +222,7 @@ export const Header = () => {
                         handleLogout();
                         setMobileMenuOpen(false);
                       }}
-                      className="justify-start text-white hover:bg-white/10 py-3"
+                      className="justify-start text-white/70 hover:text-white hover:bg-white/10 py-3 h-auto"
                     >
                       <LogOut className="w-4 h-4 mr-2" />
                       Sair
@@ -223,14 +233,14 @@ export const Header = () => {
                     <Link
                       to="/selecionar-perfil"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-white/80 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200"
+                      className="text-white/80 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200 text-sm font-medium"
                     >
                       Entrar
                     </Link>
                     <Link
                       to="/auth"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="mt-2 bg-white text-[#240046] font-semibold py-3 px-6 rounded-full text-center transition-all duration-300 active:scale-95"
+                      className="mt-2 bg-white text-[#240046] font-semibold py-3 px-6 rounded-full text-center transition-all duration-300 active:scale-95 text-sm"
                     >
                       Cadastro Gratuito
                     </Link>

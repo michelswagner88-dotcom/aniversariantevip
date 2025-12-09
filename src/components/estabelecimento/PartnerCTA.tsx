@@ -11,7 +11,7 @@ const PartnerCTA = () => {
       <div 
         className="relative overflow-hidden rounded-2xl p-4"
         style={{
-          background: 'linear-gradient(135deg, #7c3aed 0%, #db2777 50%, #f97316 100%)'
+          background: 'linear-gradient(135deg, #240046 0%, #3C096C 50%, #5B21B6 100%)'
         }}
       >
         {/* Elementos decorativos menores */}
@@ -41,7 +41,7 @@ const PartnerCTA = () => {
             className="
               flex items-center gap-1.5
               bg-white
-              text-purple-600
+              text-[#240046]
               font-semibold
               py-2.5
               px-4

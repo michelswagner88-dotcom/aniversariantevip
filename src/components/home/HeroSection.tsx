@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from "react";
-import { Search, MapPin, Mic, Gift } from "lucide-react";
-import { CityCombobox } from "@/components/CityCombobox";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Search, MapPin, Mic, MicOff, Gift, X, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useCidadesAutocomplete } from "@/hooks/useCidadesAutocomplete";
 
 interface HeroSectionProps {
   cidade?: string;
@@ -11,77 +13,276 @@ interface HeroSectionProps {
   onBuscar: () => void;
 }
 
+interface EstabelecimentoSugestao {
+  id: string;
+  nome: string;
+  categoria: string;
+  cidade: string;
+  estado: string;
+  slug: string;
+}
+
 const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }: HeroSectionProps) => {
+  const navigate = useNavigate();
+
+  // Placeholders rotativos - instruções claras
   const placeholders = [
-    "Restaurante japonês...",
-    "Spa e massagem...",
-    "Bar com música ao vivo...",
-    "Buffet infantil...",
-    "Salão de beleza...",
-    "Academia com benefício...",
+    "Digite o nome de um restaurante...",
+    "Busque por um bar ou pub...",
+    "Encontre sua academia...",
+    "Procure um salão de beleza...",
+    "Busque uma loja...",
+    "Digite o nome do estabelecimento...",
   ];
 
+  // Estados
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
-  const [isTyping, setIsTyping] = useState(true);
   const [busca, setBusca] = useState("");
-  const [showCitySelector, setShowCitySelector] = useState(false);
+  const [buscaEstabelecimentos, setBuscaEstabelecimentos] = useState<EstabelecimentoSugestao[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showEstabelecimentoDropdown, setShowEstabelecimentoDropdown] = useState(false);
 
-  // Ref para armazenar o timeout e poder limpar no cleanup
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Estados do campo de cidade
+  const [editandoCidade, setEditandoCidade] = useState(false);
+  const [cidadeInput, setCidadeInput] = useState("");
+  const [showCidadeDropdown, setShowCidadeDropdown] = useState(false);
 
+  // Estados do microfone
+  const [isListening, setIsListening] = useState(false);
+  const [micSupported, setMicSupported] = useState(false);
+
+  // Refs
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const cidadeInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const placeholderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Hook de cidades disponíveis
+  const { cidades: cidadesSugestoes, isLoading: isLoadingCidades } = useCidadesAutocomplete(cidadeInput);
+
+  // Verificar suporte a Web Speech API
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    setMicSupported(!!SpeechRecognition);
+
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.lang = "pt-BR";
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setBusca(transcript);
+        setIsListening(false);
+        // Disparar busca automática após reconhecimento
+        buscarEstabelecimentos(transcript);
+      };
+
+      recognitionRef.current.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, []);
+
+  // Rotação de placeholders
   useEffect(() => {
     const interval = setInterval(() => {
-      setIsTyping(false);
-
-      // Limpa timeout anterior se existir
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      // Armazena referência do novo timeout
-      timeoutRef.current = setTimeout(() => {
-        setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
-        setIsTyping(true);
-      }, 200);
-    }, 3000);
+      setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
+    }, 3500);
 
     return () => {
       clearInterval(interval);
-      // Limpa o timeout pendente no cleanup
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      if (placeholderTimeoutRef.current) {
+        clearTimeout(placeholderTimeoutRef.current);
       }
     };
   }, [placeholders.length]);
 
+  // Buscar estabelecimentos por nome (com debounce)
+  const buscarEstabelecimentos = useCallback(
+    async (termo: string) => {
+      if (!termo || termo.length < 2) {
+        setBuscaEstabelecimentos([]);
+        setShowEstabelecimentoDropdown(false);
+        return;
+      }
+
+      setIsSearching(true);
+      setShowEstabelecimentoDropdown(true);
+
+      try {
+        let query = supabase
+          .from("estabelecimentos")
+          .select("id, nome, categoria, cidade, estado, slug")
+          .eq("ativo", true)
+          .ilike("nome", `%${termo}%`)
+          .limit(8);
+
+        // Filtrar por cidade se selecionada
+        if (cidade && estado) {
+          query = query.ilike("cidade", cidade).ilike("estado", estado);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error("[Hero] Erro ao buscar:", error);
+          setBuscaEstabelecimentos([]);
+          return;
+        }
+
+        setBuscaEstabelecimentos(data || []);
+
+        // Se não encontrou na cidade, buscar em todo Brasil
+        if ((!data || data.length === 0) && cidade && estado) {
+          const { data: dataBrasil } = await supabase
+            .from("estabelecimentos")
+            .select("id, nome, categoria, cidade, estado, slug")
+            .eq("ativo", true)
+            .ilike("nome", `%${termo}%`)
+            .limit(5);
+
+          if (dataBrasil && dataBrasil.length > 0) {
+            setBuscaEstabelecimentos(dataBrasil.map((e) => ({ ...e, foraDaCidade: true }) as any));
+          }
+        }
+      } catch (err) {
+        console.error("[Hero] Erro:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [cidade, estado],
+  );
+
+  // Debounce da busca
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      buscarEstabelecimentos(busca);
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [busca, buscarEstabelecimentos]);
+
+  // Handlers
   const handleBuscaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Se tem apenas 1 resultado, abre direto
+    if (buscaEstabelecimentos.length === 1) {
+      navigate(`/estabelecimento/${buscaEstabelecimentos[0].slug}`);
+      return;
+    }
+
     onBuscaChange(busca);
     onBuscar();
+    setShowEstabelecimentoDropdown(false);
+  };
+
+  const handleEstabelecimentoClick = (estabelecimento: EstabelecimentoSugestao) => {
+    navigate(`/estabelecimento/${estabelecimento.slug}`);
+    setShowEstabelecimentoDropdown(false);
+    setBusca("");
+  };
+
+  const handleCidadeClick = () => {
+    setEditandoCidade(true);
+    setCidadeInput("");
+    setShowCidadeDropdown(true);
+    setTimeout(() => cidadeInputRef.current?.focus(), 50);
   };
 
   const handleCidadeSelect = (novaCidade: string, novoEstado: string) => {
     onCidadeSelect(novaCidade, novoEstado);
-    setShowCitySelector(false);
+    setEditandoCidade(false);
+    setShowCidadeDropdown(false);
+    setCidadeInput("");
   };
 
+  const handleCidadeInputBlur = () => {
+    // Delay para permitir clique no dropdown
+    setTimeout(() => {
+      if (!showCidadeDropdown) {
+        setEditandoCidade(false);
+      }
+    }, 200);
+  };
+
+  const handleMicClick = () => {
+    if (!micSupported || !recognitionRef.current) return;
+
+    if (isListening) {
+      recognitionRef.current.abort();
+      setIsListening(false);
+    } else {
+      setIsListening(true);
+      recognitionRef.current.start();
+    }
+  };
+
+  const handleBadgeClick = () => {
+    navigate("/login");
+  };
+
+  // Fechar dropdowns ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".search-container")) {
+        setShowEstabelecimentoDropdown(false);
+      }
+      if (!target.closest(".cidade-container")) {
+        setShowCidadeDropdown(false);
+        setEditandoCidade(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
-    <section className="relative min-h-[400px] sm:min-h-[450px] md:min-h-[500px] flex items-center justify-center overflow-hidden pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 bg-[#240046]">
-      <div className="relative z-10 container mx-auto px-4 text-center">
-        <motion.div
-          className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-2 mb-6"
+    <section className="relative min-h-[380px] sm:min-h-[420px] md:min-h-[480px] flex items-center justify-center overflow-hidden pt-16 sm:pt-20 pb-8 sm:pb-12 px-3 sm:px-4 bg-[#240046]">
+      <div className="relative z-10 container mx-auto px-2 sm:px-4 text-center">
+        {/* Badge - Pulsando e Clicável */}
+        <motion.button
+          onClick={handleBadgeClick}
+          className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 sm:px-4 py-2 mb-5 sm:mb-6 hover:bg-white/20 transition-colors cursor-pointer"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          <Gift className="w-4 h-4 text-white" />
-          <span className="text-sm text-white font-medium">
-            O maior guia de benefícios para aniversariantes do Brasil
+          <Gift className="w-4 h-4 text-amber-400 animate-pulse" />
+          <span className="text-xs sm:text-sm text-white font-medium whitespace-nowrap">
+            O maior guia de benefícios para aniversariantes
           </span>
-        </motion.div>
+        </motion.button>
 
+        {/* Título */}
         <motion.h1
-          className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4"
+          className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4 leading-tight"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
@@ -91,15 +292,17 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
           <span className="text-gradient-animated">benefícios exclusivos</span>
         </motion.h1>
 
+        {/* Subtítulo */}
         <motion.p
-          className="text-sm sm:text-base lg:text-lg text-white mb-6 sm:mb-10 max-w-2xl mx-auto px-2"
+          className="text-sm sm:text-base text-white/80 mb-6 sm:mb-8 max-w-xl mx-auto px-2"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          Descubra restaurantes, bares, lojas e muito mais para você aproveitar
+          Descubra restaurantes, bares, lojas e muito mais
         </motion.p>
 
+        {/* Barra de Busca */}
         <motion.div
           className="max-w-3xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
@@ -108,61 +311,187 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
         >
           <form
             onSubmit={handleBuscaSubmit}
-            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-0 bg-white rounded-2xl sm:rounded-full p-2 shadow-2xl shadow-black/20"
+            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-0 bg-white rounded-2xl sm:rounded-full p-2 shadow-2xl shadow-black/20"
           >
-            <div
-              className="flex items-center gap-3 px-4 py-3 sm:border-r border-[#240046]/10 cursor-pointer hover:bg-[#240046]/5 rounded-xl sm:rounded-l-full transition-colors"
-              onClick={() => setShowCitySelector(!showCitySelector)}
-            >
-              <MapPin className="w-5 h-5 text-[#240046]" />
-              <div className="text-left">
-                <p className="text-xs text-[#240046] uppercase tracking-wide font-medium">Onde</p>
-                <p className="text-[#240046] font-semibold">
-                  {cidade && estado ? `${cidade}, ${estado}` : "Todo o Brasil"}
-                </p>
-              </div>
+            {/* Campo Cidade - Editável Inline */}
+            <div className="cidade-container relative">
+              {editandoCidade ? (
+                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 sm:border-r border-[#240046]/10 min-w-[140px] sm:min-w-[180px]">
+                  <MapPin className="w-4 sm:w-5 h-4 sm:h-5 text-[#240046] flex-shrink-0" />
+                  <input
+                    ref={cidadeInputRef}
+                    type="text"
+                    value={cidadeInput}
+                    onChange={(e) => {
+                      setCidadeInput(e.target.value);
+                      setShowCidadeDropdown(true);
+                    }}
+                    onBlur={handleCidadeInputBlur}
+                    placeholder="Digite a cidade..."
+                    className="flex-1 bg-transparent text-[#240046] placeholder-[#240046]/50 outline-none text-sm min-w-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditandoCidade(false);
+                      setShowCidadeDropdown(false);
+                    }}
+                    className="p-1 hover:bg-[#240046]/10 rounded-full"
+                  >
+                    <X className="w-4 h-4 text-[#240046]/60" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onClick={handleCidadeClick}
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 sm:border-r border-[#240046]/10 cursor-pointer hover:bg-[#240046]/5 rounded-xl sm:rounded-l-full transition-colors min-w-[140px] sm:min-w-[180px]"
+                >
+                  <MapPin className="w-4 sm:w-5 h-4 sm:h-5 text-[#240046] flex-shrink-0" />
+                  <div className="text-left">
+                    <p className="text-[10px] sm:text-xs text-[#240046]/70 uppercase tracking-wide font-medium">Onde</p>
+                    <p className="text-[#240046] font-semibold text-sm sm:text-base truncate max-w-[100px] sm:max-w-[140px]">
+                      {cidade && estado ? `${cidade}, ${estado}` : "Selecionar"}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Dropdown de Cidades */}
+              <AnimatePresence>
+                {showCidadeDropdown && editandoCidade && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-[#240046]/10 overflow-hidden z-50 min-w-[200px]"
+                  >
+                    {isLoadingCidades ? (
+                      <div className="p-4 text-center text-[#240046]/60">
+                        <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                      </div>
+                    ) : cidadesSugestoes.length > 0 ? (
+                      <ul className="max-h-[200px] overflow-y-auto">
+                        {cidadesSugestoes.map((c, i) => (
+                          <li
+                            key={`${c.cidade}-${c.estado}-${i}`}
+                            onClick={() => handleCidadeSelect(c.cidade, c.estado)}
+                            className="px-4 py-3 hover:bg-[#240046]/5 cursor-pointer flex items-center justify-between gap-2 border-b border-[#240046]/5 last:border-0"
+                          >
+                            <span className="text-[#240046] font-medium text-sm">
+                              {c.cidade}, {c.estado}
+                            </span>
+                            <span className="text-[#240046]/50 text-xs">
+                              {c.total} {c.total === 1 ? "lugar" : "lugares"}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : cidadeInput.length >= 2 ? (
+                      <div className="p-4 text-center text-[#240046]/60 text-sm">Nenhuma cidade encontrada</div>
+                    ) : (
+                      <div className="p-4 text-center text-[#240046]/60 text-sm">Digite para buscar cidades</div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            <div className="flex-1 flex items-center gap-3 px-4 py-3">
-              <Search className="w-5 h-5 text-[#240046] flex-shrink-0" />
+            {/* Campo de Busca por Estabelecimento */}
+            <div className="search-container flex-1 flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 relative">
+              <Search className="w-4 sm:w-5 h-4 sm:h-5 text-[#240046] flex-shrink-0" />
               <input
+                ref={searchInputRef}
                 type="text"
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
+                onFocus={() => busca.length >= 2 && setShowEstabelecimentoDropdown(true)}
                 placeholder={placeholders[currentPlaceholder]}
-                aria-label="Buscar estabelecimentos"
-                className={`flex-1 bg-transparent text-[#240046] placeholder-[#240046]/60 outline-none text-sm sm:text-base min-w-0 transition-opacity duration-200 ${isTyping ? "opacity-100" : "opacity-50"}`}
+                aria-label="Buscar estabelecimento por nome"
+                className="flex-1 bg-transparent text-[#240046] placeholder-[#240046]/50 outline-none text-sm sm:text-base min-w-0"
               />
-              <button
-                type="button"
-                className="p-2 hover:bg-[#240046]/10 rounded-full transition-colors"
-                aria-label="Busca por voz"
-              >
-                <Mic className="w-5 h-5 text-[#240046]" />
-              </button>
+
+              {/* Botão Microfone */}
+              {micSupported && (
+                <button
+                  type="button"
+                  onClick={handleMicClick}
+                  className={`p-2 rounded-full transition-colors ${
+                    isListening ? "bg-red-100 text-red-600 animate-pulse" : "hover:bg-[#240046]/10 text-[#240046]"
+                  }`}
+                  aria-label={isListening ? "Parar gravação" : "Busca por voz"}
+                >
+                  {isListening ? (
+                    <MicOff className="w-4 sm:w-5 h-4 sm:h-5" />
+                  ) : (
+                    <Mic className="w-4 sm:w-5 h-4 sm:h-5" />
+                  )}
+                </button>
+              )}
+
+              {/* Dropdown de Estabelecimentos */}
+              <AnimatePresence>
+                {showEstabelecimentoDropdown && (busca.length >= 2 || isSearching) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-[#240046]/10 overflow-hidden z-50"
+                  >
+                    {isSearching ? (
+                      <div className="p-4 text-center text-[#240046]/60">
+                        <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
+                        <span className="text-sm">Buscando...</span>
+                      </div>
+                    ) : buscaEstabelecimentos.length > 0 ? (
+                      <ul className="max-h-[280px] overflow-y-auto">
+                        {buscaEstabelecimentos.map((est) => (
+                          <li
+                            key={est.id}
+                            onClick={() => handleEstabelecimentoClick(est)}
+                            className="px-4 py-3 hover:bg-[#240046]/5 cursor-pointer border-b border-[#240046]/5 last:border-0"
+                          >
+                            <p className="text-[#240046] font-semibold text-sm">{est.nome}</p>
+                            <p className="text-[#240046]/60 text-xs">
+                              {est.categoria} • {est.cidade}, {est.estado}
+                              {(est as any).foraDaCidade && <span className="ml-2 text-amber-600">(outra cidade)</span>}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="p-4 text-center">
+                        <p className="text-[#240046]/60 text-sm mb-2">
+                          Nenhum "{busca}" encontrado{cidade ? ` em ${cidade}` : ""}
+                        </p>
+                        {cidade && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onCidadeSelect("", "");
+                              buscarEstabelecimentos(busca);
+                            }}
+                            className="text-[#240046] text-sm font-medium hover:underline"
+                          >
+                            Buscar em todo Brasil
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
+            {/* Botão Buscar */}
             <button
               type="submit"
-              aria-label="Buscar estabelecimentos"
-              className="relative bg-gradient-to-r from-[#240046] to-[#3C096C] text-white font-semibold px-6 sm:px-8 py-3 rounded-xl sm:rounded-full shadow-lg shadow-[#240046]/30 transition-all duration-300 hover:shadow-xl hover:shadow-[#240046]/40 hover:scale-105 active:scale-95 flex items-center justify-center gap-2 w-full sm:w-auto overflow-hidden group"
+              aria-label="Buscar"
+              className="bg-gradient-to-r from-[#240046] to-[#3C096C] text-white font-semibold px-5 sm:px-8 py-2.5 sm:py-3 rounded-xl sm:rounded-full shadow-lg shadow-[#240046]/30 transition-all duration-300 hover:shadow-xl hover:shadow-[#240046]/40 hover:scale-105 active:scale-95 flex items-center justify-center gap-2 w-full sm:w-auto"
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              <Search className="w-5 h-5 relative z-10" />
-              <span className="relative z-10">Buscar</span>
+              <Search className="w-4 sm:w-5 h-4 sm:h-5" />
+              <span className="sm:inline">Buscar</span>
             </button>
           </form>
-
-          {showCitySelector && (
-            <motion.div
-              className="mt-3 p-4 bg-[#1a0033] backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <CityCombobox onSelect={handleCidadeSelect} placeholder="Digite o nome da cidade..." />
-            </motion.div>
-          )}
         </motion.div>
       </div>
     </section>

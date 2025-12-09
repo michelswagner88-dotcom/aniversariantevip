@@ -1,10 +1,10 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSEO } from "@/hooks/useSEO";
 import { useCidadeInteligente } from "@/hooks/useCidadeInteligente";
 import { useEstabelecimentos } from "@/hooks/useEstabelecimentos";
 import { useUserLocation } from "@/hooks/useUserLocation";
-import { useScrollReveal } from "@/hooks/useScrollReveal";
+// REMOVIDO: useScrollReveal - causava cards invisíveis (opacity: 0)
 import { useRotatingSections } from "@/hooks/useRotatingSections";
 import { ALL_HOME_SECTIONS } from "@/types/homeCategories";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
@@ -36,8 +36,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Ativar scroll reveal
-  useScrollReveal();
+  // REMOVIDO: useScrollReveal() - causava cards invisíveis
 
   // Estados de filtros avançados
   const [showFilters, setShowFilters] = useState(false);
@@ -45,8 +44,7 @@ const Index = () => {
   const [filterDistance, setFilterDistance] = useState<number | null>(null);
   const [filterValidity, setFilterValidity] = useState<string | null>(null);
 
-  // Estado para forçar re-render quando dados chegam
-  const [, setForceUpdate] = useState(0);
+  // REMOVIDO: setForceUpdate - React Query já gerencia re-renders
 
   // Geolocalização para filtro de distância
   const { location: userLocation, requestLocation, loading: locationLoading } = useUserLocation();
@@ -70,13 +68,7 @@ const Index = () => {
     enabled: true,
   });
 
-  // Forçar re-render quando estabelecimentos chegam
-  useEffect(() => {
-    if (estabelecimentos && estabelecimentos.length > 0) {
-      console.log("[Index] Dados recebidos, forçando re-render:", estabelecimentos.length);
-      setForceUpdate((prev) => prev + 1);
-    }
-  }, [estabelecimentos]);
+  // REMOVIDO: useEffect com setForceUpdate - desnecessário, React Query já faz isso
 
   // Filtrar por cidade, categoria, subcategoria, distância e busca (client-side)
   const { estabelecimentosFiltrados, usandoFallback } = useMemo(() => {
@@ -166,16 +158,7 @@ const Index = () => {
     return [];
   }, [estabelecimentosFiltrados, estabelecimentos]);
 
-  // Log para debug
-  useEffect(() => {
-    console.log("[Index] Estado atual:", {
-      isLoading: isLoadingEstabelecimentos,
-      estabelecimentos: estabelecimentos?.length || 0,
-      dadosParaExibir: dadosParaExibir.length,
-      cidadeFinal,
-      usandoFallback,
-    });
-  }, [isLoadingEstabelecimentos, estabelecimentos, dadosParaExibir, cidadeFinal, usandoFallback]);
+  // REMOVIDO: useEffect com console.log - poluía console
 
   // Transformar estabelecimentos para o formato do mapa
   const estabelecimentosParaMapa = useMemo(() => {
@@ -261,19 +244,16 @@ const Index = () => {
   const destaquesConfig = getSectionTitle("destaques", cidadeFinal || undefined);
 
   // Sistema de rotação dinâmica de seções
-  // rotationInterval: 30000 = 30s entre rotações das seções rotativas
-  // featuredRotationInterval: 30000 = 30s entre rotações da seção destaque
-  // lockDuration: 10000 = 10s de trava após interação do usuário
   const {
     sections: rotatingSections,
     animationKey,
     lockSection,
   } = useRotatingSections(ALL_HOME_SECTIONS, {
     rotatingCount: 5,
-    rotationInterval: 30000, // Rotaciona seções a cada 30 segundos
-    featuredRotationInterval: 30000, // Featured também rotaciona a cada 30 segundos
+    rotationInterval: 30000,
+    featuredRotationInterval: 30000,
     rotateOnMount: true,
-    lockDuration: 10000, // Trava por 10s após interação
+    lockDuration: 10000,
   });
 
   // Agrupar estabelecimentos por categoria para as seções rotativas
@@ -425,30 +405,27 @@ const Index = () => {
                 )}
 
                 {secoesDinamicas.map((section, index) => {
-                  // Primeira seção: título com cidade
                   const isFeatured = index === 0 && section.priority === "featured";
                   const displayTitle = isFeatured && cidadeFinal ? `${section.title} em ${cidadeFinal}` : section.title;
 
                   return (
                     <div key={`${section.id}-${animationKey}`}>
-                      <div className="" style={{ animationDelay: `${index * 0.1}s` }}>
-                        <CategoryCarousel
-                          title={displayTitle}
-                          subtitle={section.subtitle}
-                          estabelecimentos={section.estabelecimentos}
-                          sectionId={section.id}
-                          onUserInteraction={lockSection}
-                        />
-                      </div>
+                      <CategoryCarousel
+                        title={displayTitle}
+                        subtitle={section.subtitle}
+                        estabelecimentos={section.estabelecimentos}
+                        sectionId={section.id}
+                        onUserInteraction={lockSection}
+                      />
 
                       {index === 0 && (
-                        <div className="vazio mt-8">
+                        <div className="mt-8">
                           <CTABanner variant="register" />
                         </div>
                       )}
 
                       {index === 2 && (
-                        <div className="vazio mt-8">
+                        <div className="mt-8">
                           <CTABanner variant="partner" />
                         </div>
                       )}

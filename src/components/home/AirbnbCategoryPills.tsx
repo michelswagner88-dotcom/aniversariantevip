@@ -170,14 +170,14 @@ export const AirbnbCategoryPills = ({
                     strokeWidth={1.5}
                     className={cn(
                       "transition-all duration-300",
-                      isActive ? "text-white scale-110" : "text-white/70 group-hover:text-white group-hover:scale-110",
+                      isActive ? "text-white scale-110" : "text-white group-hover:scale-110",
                     )}
                   />
 
                   <span
                     className={cn(
                       "text-xs whitespace-nowrap transition-all duration-300",
-                      isActive ? "text-white font-semibold" : "text-white/70 group-hover:text-white",
+                      isActive ? "text-white font-semibold" : "text-white",
                     )}
                   >
                     {cat.nome}

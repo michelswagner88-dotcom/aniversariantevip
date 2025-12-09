@@ -1,164 +1,115 @@
-// ContactButtons.tsx - Botões de Contato Premium
+// ContactButtons.tsx - Botões de Contato Clean
 
-import { MessageCircle, Instagram, Phone } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { MessageCircle, Instagram, Phone, Globe } from "lucide-react";
+import { formatWhatsApp, formatInstagram, formatPhoneLink, formatWebsite } from "@/lib/contactUtils";
 
 interface ContactButtonsProps {
-  whatsapp?: string;
-  instagram?: string;
-  phone?: string;
-  onWhatsApp: () => void;
-  onInstagram: () => void;
-  onPhone: () => void;
+  whatsapp?: string | null;
+  instagram?: string | null;
+  phone?: string | null;
+  site?: string | null;
+  onWhatsApp?: () => void;
+  onInstagram?: () => void;
+  onPhone?: () => void;
+  onSite?: () => void;
 }
 
-const ContactButtons = ({ 
+const ContactButtons = ({
   whatsapp,
   instagram,
   phone,
-  onWhatsApp, 
-  onInstagram, 
-  onPhone 
+  site,
+  onWhatsApp,
+  onInstagram,
+  onPhone,
+  onSite,
 }: ContactButtonsProps) => {
-  
+  const hasWhatsApp = !!formatWhatsApp(whatsapp);
+  const hasInstagram = !!formatInstagram(instagram);
+  const hasPhone = !!formatPhoneLink(phone);
+  const hasSite = !!formatWebsite(site);
+
   const buttons = [
     {
-      name: 'WhatsApp',
+      name: "WhatsApp",
       icon: MessageCircle,
       onClick: onWhatsApp,
-      available: !!whatsapp,
-      gradient: 'from-green-500/20 to-green-600/10',
-      hoverGradient: 'group-hover:from-green-500/30 group-hover:to-green-600/20',
-      borderColor: 'border-green-500/30',
-      hoverBorder: 'group-hover:border-green-400/50',
-      iconBg: 'bg-green-500/20 group-hover:bg-green-500/30',
-      iconColor: 'text-green-400',
-      textColor: 'text-green-300',
-      glowColor: 'group-hover:shadow-green-500/40',
-      rippleColor: 'bg-green-400/20',
+      available: hasWhatsApp,
+      bgColor: "bg-[#25D366]",
+      hoverColor: "hover:bg-[#22c55e]",
     },
     {
-      name: 'Instagram',
+      name: "Instagram",
       icon: Instagram,
       onClick: onInstagram,
-      available: !!instagram,
-      gradient: 'from-pink-500/20 via-purple-500/10 to-orange-500/10',
-      hoverGradient: 'group-hover:from-pink-500/30 group-hover:via-purple-500/20 group-hover:to-orange-500/20',
-      borderColor: 'border-pink-500/30',
-      hoverBorder: 'group-hover:border-pink-400/50',
-      iconBg: 'bg-gradient-to-br from-pink-500/20 to-purple-500/20 group-hover:from-pink-500/30 group-hover:to-purple-500/30',
-      iconColor: 'text-pink-400',
-      textColor: 'text-pink-300',
-      glowColor: 'group-hover:shadow-pink-500/40',
-      rippleColor: 'bg-pink-400/20',
+      available: hasInstagram,
+      bgColor: "bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400",
+      hoverColor: "hover:opacity-90",
     },
     {
-      name: 'Ligar',
+      name: "Ligar",
       icon: Phone,
       onClick: onPhone,
-      available: !!phone,
-      gradient: 'from-blue-500/20 to-blue-600/10',
-      hoverGradient: 'group-hover:from-blue-500/30 group-hover:to-blue-600/20',
-      borderColor: 'border-blue-500/30',
-      hoverBorder: 'group-hover:border-blue-400/50',
-      iconBg: 'bg-blue-500/20 group-hover:bg-blue-500/30',
-      iconColor: 'text-blue-400',
-      textColor: 'text-blue-300',
-      glowColor: 'group-hover:shadow-blue-500/40',
-      rippleColor: 'bg-blue-400/20',
+      available: hasPhone,
+      bgColor: "bg-[#3b82f6]",
+      hoverColor: "hover:bg-[#2563eb]",
     },
-  ];
+    {
+      name: "Site",
+      icon: Globe,
+      onClick: onSite,
+      available: hasSite,
+      bgColor: "bg-[#240046]",
+      hoverColor: "hover:bg-[#3C096C]",
+    },
+  ].filter((btn) => btn.available);
+
+  if (buttons.length === 0) return null;
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.55, duration: 0.5 }}
-      className="mx-4 mt-6"
-    >
-      <div className="grid grid-cols-3 gap-3">
-        {buttons.map((button, index) => {
-          const Icon = button.icon;
-          
-          return (
-            <motion.button
-              key={button.name}
-              onClick={button.onClick}
-              disabled={!button.available}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 + index * 0.1 }}
-              className={`
-                group
-                relative
-                flex flex-col items-center justify-center
-                bg-gradient-to-br ${button.gradient}
-                ${button.hoverGradient}
-                border ${button.borderColor}
-                ${button.hoverBorder}
-                rounded-2xl
-                p-4
-                transition-all duration-300 ease-out
-                shadow-lg ${button.glowColor}
-                disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100
-                overflow-hidden
-              `}
-            >
-              {/* Ripple effect on click */}
-              <div className="absolute inset-0 overflow-hidden rounded-2xl">
-                <div 
-                  className={`
-                    absolute inset-0 
-                    ${button.rippleColor}
-                    scale-0 
-                    group-active:scale-150 
-                    transition-transform duration-500
-                    rounded-full
-                    origin-center
-                  `}
-                />
-              </div>
-              
-              {/* Glow effect */}
-              <div 
-                className="
-                  absolute inset-0 
-                  opacity-0 group-hover:opacity-100
-                  transition-opacity duration-300
-                  pointer-events-none
-                  rounded-2xl
-                "
-                style={{
-                  background: 'radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%)'
-                }}
-              />
-              
-              {/* Ícone */}
-              <div 
+    <div className="mx-4 sm:mx-6 mt-4 sm:mt-6">
+      <div className="max-w-3xl mx-auto">
+        {/* Grid 2 colunas no mobile pequeno, adapta conforme quantidade */}
+        <div
+          className={`grid gap-2 sm:gap-3 ${
+            buttons.length === 1
+              ? "grid-cols-1"
+              : buttons.length === 2
+                ? "grid-cols-2"
+                : buttons.length === 3
+                  ? "grid-cols-3"
+                  : "grid-cols-2 sm:grid-cols-4"
+          }`}
+        >
+          {buttons.map((button) => {
+            const Icon = button.icon;
+
+            return (
+              <button
+                key={button.name}
+                onClick={button.onClick}
                 className={`
-                  relative
-                  w-12 h-12 
-                  ${button.iconBg}
-                  rounded-xl 
-                  flex items-center justify-center
-                  mb-2
-                  transition-all duration-300
+                  ${button.bgColor}
+                  ${button.hoverColor}
+                  text-white
+                  font-medium
+                  min-h-[48px]
+                  py-3 sm:py-3.5 px-3 sm:px-4
+                  rounded-xl
+                  flex items-center justify-center gap-2
+                  transition-all duration-200
+                  active:scale-[0.98]
+                  shadow-sm
                 `}
               >
-                <Icon className={`w-6 h-6 ${button.iconColor} transition-transform group-hover:scale-110`} />
-              </div>
-              
-              {/* Nome */}
-              <span className={`relative text-sm font-medium ${button.textColor}`}>
-                {button.name}
-              </span>
-            </motion.button>
-          );
-        })}
+                <Icon className="w-5 h-5" />
+                <span className="text-sm">{button.name}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

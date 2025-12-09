@@ -121,23 +121,23 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
       {/* TEXTO - solto no fundo branco, SEM box */}
       <div className="space-y-0.5">
         {/* Linha 1: Nome */}
-        <h3 className="font-semibold text-[15px] text-[#222222] dark:text-white truncate">
+        <h3 className="font-semibold text-[15px] text-[#222222] truncate">
           {est.nome_fantasia || est.razao_social || 'Estabelecimento'}
         </h3>
         
         {/* Linha 2: Bairro */}
-        <p className="text-[15px] text-[#717171] dark:text-gray-400 truncate">
+        <p className="text-[15px] text-[#717171] truncate">
           {est.bairro || est.cidade}
         </p>
         
         {/* Linha 3: Categoria */}
-        <p className="text-[15px] text-[#717171] dark:text-gray-400">
+        <p className="text-[15px] text-[#717171]">
           {categoria || 'Estabelecimento'}
         </p>
         
         {/* Linha 4: Benefício (destaque) */}
         {temBeneficio && (
-          <p className="text-[15px] text-[#222222] dark:text-white mt-1">
+          <p className="text-[15px] text-[#222222] mt-1">
             <span className="font-semibold">🎁 Benefício</span> no aniversário
           </p>
         )}
@@ -153,8 +153,8 @@ const ViewMoreCard = ({ linkHref }: { linkHref: string }) => (
     className="
       flex-shrink-0 w-full
       aspect-square
-      bg-gray-100 dark:bg-gray-800
-      hover:bg-gray-200 dark:hover:bg-gray-700
+      bg-gray-100
+      hover:bg-gray-200
       rounded-xl
       flex flex-col items-center justify-center
       gap-4
@@ -164,18 +164,18 @@ const ViewMoreCard = ({ linkHref }: { linkHref: string }) => (
   >
     <div className="
       w-16 h-16
-      bg-white dark:bg-gray-700
+      bg-white
       rounded-full
       flex items-center justify-center
       transition-all duration-300
       group-hover:scale-110
       shadow-md
     ">
-      <ArrowRight className="w-8 h-8 text-[#222222] dark:text-white" />
+      <ArrowRight className="w-8 h-8 text-[#222222]" />
     </div>
     <div className="text-center">
-      <p className="text-[#222222] dark:text-white font-semibold text-[15px]">Ver todos</p>
-      <p className="text-[#717171] dark:text-gray-400 text-sm">Explorar categoria</p>
+      <p className="text-[#222222] font-semibold text-[15px]">Ver todos</p>
+      <p className="text-[#717171] text-sm">Explorar categoria</p>
     </div>
   </Link>
 );
@@ -286,11 +286,11 @@ export const CategoryCarousel = ({
         variants={titleVariants}
       >
         <div>
-          <h2 className="text-[22px] font-semibold text-[#222222] dark:text-white">
+          <h2 className="text-[22px] font-semibold text-[#222222]">
             {title}
           </h2>
           {subtitle && (
-            <p className="text-sm text-[#717171] dark:text-gray-400 mt-0.5">{subtitle}</p>
+            <p className="text-sm text-[#717171] mt-0.5">{subtitle}</p>
           )}
         </div>
         {(linkHref || onVerTodos) && estabelecimentos.length > 4 && (
@@ -302,7 +302,7 @@ export const CategoryCarousel = ({
             {linkHref ? (
               <Link 
                 to={linkHref}
-                className="group/link flex items-center gap-1 text-sm font-semibold text-[#222222] dark:text-white hover:underline"
+                className="group/link flex items-center gap-1 text-sm font-semibold text-[#222222] hover:underline"
               >
                 Ver todos
                 <span className="transition-transform group-hover/link:translate-x-1">›</span>
@@ -310,7 +310,7 @@ export const CategoryCarousel = ({
             ) : onVerTodos ? (
               <button 
                 onClick={onVerTodos}
-                className="group/link flex items-center gap-1 text-sm font-semibold text-[#222222] dark:text-white hover:underline"
+                className="group/link flex items-center gap-1 text-sm font-semibold text-[#222222] hover:underline"
               >
                 Ver todos
                 <span className="transition-transform group-hover/link:translate-x-1">›</span>

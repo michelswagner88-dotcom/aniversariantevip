@@ -180,26 +180,26 @@ const AirbnbCard = ({
       <div className="space-y-0.5">
         {/* Linha 1: Nome + Nota (se tiver) */}
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-[15px] text-[#222222] dark:text-white truncate pr-2">
+          <h3 className="font-semibold text-[15px] text-[#222222] truncate pr-2">
             {est.nome_fantasia || est.razao_social || 'Estabelecimento'}
           </h3>
           {/* Placeholder para nota futura */}
         </div>
         
         {/* Linha 2: Bairro/Localização */}
-        <p className="text-[15px] text-[#717171] dark:text-gray-400 truncate">
+        <p className="text-[15px] text-[#717171] truncate">
           {est.bairro || est.cidade}
           {distancia && <span className="ml-1">• {distancia}</span>}
         </p>
         
         {/* Linha 3: Categoria */}
-        <p className="text-[15px] text-[#717171] dark:text-gray-400">
+        <p className="text-[15px] text-[#717171]">
           {categoria || 'Estabelecimento'}
         </p>
         
         {/* Linha 4: Benefício (destaque) */}
         {temBeneficio && (
-          <p className="text-[15px] text-[#222222] dark:text-white mt-1">
+          <p className="text-[15px] text-[#222222] mt-1">
             <span className="font-semibold">🎁 Benefício</span> no aniversário
           </p>
         )}

@@ -276,10 +276,10 @@ const Index = () => {
   };
   
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
+    <div className="min-h-screen bg-slate-950">
       <Header />
       
-      <main className="pb-24 bg-white dark:bg-slate-950">
+      <main className="pb-24">
         {/* Hero Section - Apenas na home sem filtros */}
         {!isFiltered && (
           <HeroSection
@@ -342,7 +342,7 @@ const Index = () => {
         
         {/* Subcategorias - aparecem quando uma categoria está selecionada */}
         {categoriaParam && (
-          <div className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+          <div className="bg-white border-b border-slate-200">
             <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 py-3">
               <SubcategoryFilter
                 category={categoriaParam}
@@ -355,8 +355,8 @@ const Index = () => {
           </div>
         )}
         
-        {/* Container principal com padding respirado - ÁREA BRANCA */}
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-8 pb-16 bg-white dark:bg-slate-950">
+        {/* Container principal - ÁREA BRANCA FIXA (estilo Airbnb) */}
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-8 pb-16 bg-white">
           
           {/* Loading state com skeletons */}
           {isLoadingEstabelecimentos ? (
@@ -370,8 +370,8 @@ const Index = () => {
             <div className="space-y-8 md:space-y-12">
               {/* Aviso quando mostrando de outras cidades */}
               {usandoFallback && cidadeFinal && (
-                <div className="mx-4 sm:mx-6 lg:mx-12 xl:mx-20 bg-[#240046]/10 border border-[#240046]/20 rounded-xl px-6 py-4">
-                  <p className="text-sm text-[#240046] dark:text-[#A78BFA] text-center">
+                <div className="mx-4 sm:mx-6 lg:mx-12 xl:mx-20 bg-violet-50 border border-violet-200 rounded-xl px-6 py-4">
+                  <p className="text-sm text-[#222222] text-center">
                     <span className="font-medium">Ainda não temos estabelecimentos em {cidadeFinal}.</span>
                     {' '}Mostrando lugares de outras cidades disponíveis.
                   </p>

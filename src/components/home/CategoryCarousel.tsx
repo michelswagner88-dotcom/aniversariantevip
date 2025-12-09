@@ -95,39 +95,23 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
 
 export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = "default" }: CategoryCarouselProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [totalDots, setTotalDots] = useState(1);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const cardWidthClass =
-    variant === "featured"
-      ? "w-[calc(100vw-2rem)] sm:w-[280px] md:w-[300px]"
-      : variant === "compact"
-        ? "w-[calc(100vw-4rem)] sm:w-[220px] md:w-[240px]"
-        : "w-[calc(100vw-3rem)] sm:w-[260px] md:w-[280px]";
+  // Largura fixa do card + gap
+  const cardWidth = variant === "featured" ? 300 : variant === "compact" ? 240 : 280;
+  const gap = 24;
 
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
 
     const updateScrollState = () => {
-      const scrollWidth = container.scrollWidth;
-      const clientWidth = container.clientWidth;
-      const scrollLeft = container.scrollLeft;
+      const { scrollLeft, scrollWidth, clientWidth } = container;
       const maxScroll = scrollWidth - clientWidth;
 
       setCanScrollLeft(scrollLeft > 10);
       setCanScrollRight(scrollLeft < maxScroll - 10);
-
-      const firstCard = container.querySelector(":scope > div") as HTMLElement;
-      const cardWidth = firstCard ? firstCard.offsetWidth + 24 : 304;
-
-      const dots = Math.ceil(maxScroll / cardWidth) + 1;
-      setTotalDots(Math.max(dots, 1));
-
-      const index = Math.round(scrollLeft / cardWidth);
-      setActiveIndex(Math.min(index, dots - 1));
     };
 
     updateScrollState();
@@ -139,35 +123,26 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
     if (!scrollRef.current) return;
 
     const container = scrollRef.current;
-    const scrollWidth = container.scrollWidth;
-    const clientWidth = container.clientWidth;
-    const scrollLeft = container.scrollLeft;
+    const { scrollLeft, scrollWidth, clientWidth } = container;
     const maxScroll = scrollWidth - clientWidth;
 
-    const firstCard = container.querySelector(":scope > div") as HTMLElement;
-    const cardWidth = firstCard ? firstCard.offsetWidth + 24 : 304;
+    // Calcular quantos cards cabem inteiros na tela
+    const cardsVisiveis = Math.floor(clientWidth / (cardWidth + gap));
+    const scrollAmount = cardsVisiveis * (cardWidth + gap);
 
-    let scrollAmount = direction === "left" ? -cardWidth : cardWidth;
-
-    if (direction === "right" && scrollLeft >= maxScroll - 10) {
-      container.scrollTo({ left: 0, behavior: "smooth" });
-      return;
+    if (direction === "right") {
+      if (scrollLeft >= maxScroll - 10) {
+        container.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        container.scrollBy({ left: scrollAmount, behavior: "smooth" });
+      }
+    } else {
+      if (scrollLeft <= 10) {
+        container.scrollTo({ left: maxScroll, behavior: "smooth" });
+      } else {
+        container.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+      }
     }
-
-    if (direction === "left" && scrollLeft <= 10) {
-      container.scrollTo({ left: maxScroll, behavior: "smooth" });
-      return;
-    }
-
-    container.scrollBy({ left: scrollAmount, behavior: "smooth" });
-  };
-
-  const scrollToIndex = (index: number) => {
-    if (!scrollRef.current) return;
-    const container = scrollRef.current;
-    const firstCard = container.querySelector(":scope > div") as HTMLElement;
-    const cardWidth = firstCard ? firstCard.offsetWidth + 24 : 304;
-    container.scrollTo({ left: index * cardWidth, behavior: "smooth" });
   };
 
   if (estabelecimentos.length === 0) return null;
@@ -183,8 +158,8 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
       </div>
 
       {/* Container do carrossel */}
-      <div className="relative overflow-hidden">
-        {/* Botão esquerda - sempre visível quando pode scrollar */}
+      <div className="relative">
+        {/* Botão esquerda */}
         <button
           onClick={() => scroll("left")}
           aria-label="Anterior"
@@ -202,19 +177,17 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
         {/* Carrossel */}
         <div
           ref={scrollRef}
-          className="flex gap-6 overflow-x-auto scrollbar-hide pb-2"
+          className="flex gap-6 overflow-x-auto scrollbar-hide pb-2 snap-x snap-mandatory"
           style={{
-            scrollSnapType: "x mandatory",
             WebkitOverflowScrolling: "touch",
           }}
         >
           {estabelecimentos.map((est) => (
             <div
               key={est.id}
-              className={cn("flex-shrink-0", cardWidthClass)}
+              className="flex-shrink-0 snap-start"
               style={{
-                scrollSnapAlign: "start",
-                scrollSnapStop: "always",
+                width: `${cardWidth}px`,
               }}
             >
               <CarouselCard estabelecimento={est} />
@@ -222,7 +195,7 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
           ))}
         </div>
 
-        {/* Botão direita - sempre visível quando pode scrollar */}
+        {/* Botão direita */}
         <button
           onClick={() => scroll("right")}
           aria-label="Próximo"
@@ -237,24 +210,6 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
           <ChevronRightIcon className="w-5 h-5 text-[#240046]" />
         </button>
       </div>
-
-      {/* Indicadores de progresso (dots) */}
-      {totalDots > 1 && (
-        <div className="flex items-center justify-center gap-1.5 mt-4">
-          {Array.from({ length: Math.min(totalDots, 5) }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => scrollToIndex(i)}
-              aria-label={`Ir para página ${i + 1}`}
-              className={cn(
-                "w-1.5 h-1.5 rounded-full transition-all duration-300",
-                activeIndex === i ? "bg-[#240046] w-4" : "bg-[#DDDDDD] hover:bg-[#3C096C]",
-              )}
-            />
-          ))}
-          {totalDots > 5 && <span className="text-xs text-[#3C096C] ml-1">+{totalDots - 5}</span>}
-        </div>
-      )}
     </section>
   );
 };

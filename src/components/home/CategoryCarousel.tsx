@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight as ChevronRightIcon, Heart, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight as ChevronRightIcon, Heart } from "lucide-react";
 import { getEstabelecimentoUrl } from "@/lib/slugUtils";
 import { cn } from "@/lib/utils";
 import { getFotoEstabelecimento, getPlaceholderPorCategoria } from "@/lib/photoUtils";
@@ -9,10 +9,7 @@ interface CategoryCarouselProps {
   title: string;
   subtitle?: string;
   estabelecimentos: any[];
-  linkHref?: string;
-  onVerTodos?: () => void;
   variant?: "default" | "featured" | "compact";
-  showViewMoreCard?: boolean;
 }
 
 // Card individual - Estilo Airbnb LIMPO
@@ -96,52 +93,7 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
   );
 };
 
-// Card "Ver mais" no final do carrossel
-const ViewMoreCard = ({ linkHref }: { linkHref: string }) => (
-  <Link
-    to={linkHref}
-    aria-label="Ver todos os estabelecimentos desta categoria"
-    className="
-      flex-shrink-0 w-full
-      aspect-square
-      bg-gray-100
-      hover:bg-gray-200
-      rounded-xl
-      flex flex-col items-center justify-center
-      gap-4
-      transition-all duration-300
-      group
-    "
-  >
-    <div
-      className="
-      w-16 h-16
-      bg-white
-      rounded-full
-      flex items-center justify-center
-      transition-all duration-300
-      group-hover:scale-110
-      shadow-md
-    "
-    >
-      <ArrowRight className="w-8 h-8 text-[#240046]" />
-    </div>
-    <div className="text-center">
-      <p className="text-[#240046] font-semibold text-[15px]">Ver todos</p>
-      <p className="text-[#3C096C] text-sm">Explorar categoria</p>
-    </div>
-  </Link>
-);
-
-export const CategoryCarousel = ({
-  title,
-  subtitle,
-  estabelecimentos,
-  linkHref,
-  onVerTodos,
-  variant = "default",
-  showViewMoreCard = true,
-}: CategoryCarouselProps) => {
+export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = "default" }: CategoryCarouselProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [totalDots, setTotalDots] = useState(1);
@@ -228,27 +180,6 @@ export const CategoryCarousel = ({
           <h2 className="text-[22px] font-semibold text-[#240046]">{title}</h2>
           {subtitle && <p className="text-sm text-[#3C096C] mt-0.5">{subtitle}</p>}
         </div>
-        {(linkHref || onVerTodos) && estabelecimentos.length > 4 && (
-          <div>
-            {linkHref ? (
-              <Link
-                to={linkHref}
-                className="group/link flex items-center gap-1 text-sm font-semibold text-[#240046] hover:underline"
-              >
-                Ver todos
-                <span className="transition-transform group-hover/link:translate-x-1">›</span>
-              </Link>
-            ) : onVerTodos ? (
-              <button
-                onClick={onVerTodos}
-                className="group/link flex items-center gap-1 text-sm font-semibold text-[#240046] hover:underline"
-              >
-                Ver todos
-                <span className="transition-transform group-hover/link:translate-x-1">›</span>
-              </button>
-            ) : null}
-          </div>
-        )}
       </div>
 
       {/* Container do carrossel */}
@@ -269,7 +200,7 @@ export const CategoryCarousel = ({
           <ChevronLeft className="w-4 h-4 text-[#240046]" />
         </button>
 
-        {/* Carrossel - SEM FRAMER MOTION */}
+        {/* Carrossel */}
         <div
           ref={scrollRef}
           className="flex gap-6 overflow-x-auto scrollbar-hide pb-2"
@@ -290,13 +221,6 @@ export const CategoryCarousel = ({
               <CarouselCard estabelecimento={est} />
             </div>
           ))}
-
-          {/* Card "Ver mais" no final */}
-          {showViewMoreCard && linkHref && estabelecimentos.length >= 4 && (
-            <div className={cn("flex-shrink-0", cardWidthClass)} style={{ scrollSnapAlign: "start" }}>
-              <ViewMoreCard linkHref={linkHref} />
-            </div>
-          )}
         </div>
 
         {/* Botão direita */}
@@ -332,28 +256,6 @@ export const CategoryCarousel = ({
           ))}
           {totalDots > 5 && <span className="text-xs text-[#3C096C] ml-1">+{totalDots - 5}</span>}
         </div>
-      )}
-
-      {/* Link "Ver todos" mobile */}
-      {linkHref && (
-        <Link
-          to={linkHref}
-          aria-label="Ver todos os estabelecimentos"
-          className="
-            sm:hidden
-            flex items-center justify-center gap-2
-            mt-4
-            py-3
-            text-[#240046]
-            hover:underline
-            transition-colors
-            font-semibold
-            text-sm
-          "
-        >
-          <span>Ver todos</span>
-          <ArrowRight className="w-4 h-4" />
-        </Link>
       )}
     </section>
   );

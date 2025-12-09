@@ -191,6 +191,14 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
     window.open(siteUrl, "_blank");
   };
 
+  const handleCardapio = () => {
+    if (!estabelecimento.link_cardapio) {
+      toast.error("Cardápio não disponível");
+      return;
+    }
+    window.open(estabelecimento.link_cardapio, "_blank");
+  };
+
   const getEnderecoCompleto = () => {
     if (!estabelecimento) return "";
     return [
@@ -239,10 +247,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
   const handleOpen99 = () => {
     if (id) trackDirectionsClick(id, "99");
     if (estabelecimento.latitude && estabelecimento.longitude) {
-      window.open(
-        `https://99app.com/app/ride?destination_latitude=${estabelecimento.latitude}&destination_longitude=${estabelecimento.longitude}&destination_title=${encodeURIComponent(estabelecimento.nome_fantasia)}`,
-        "_blank",
-      );
+      window.open(`https://99app.com/`, "_blank");
     } else {
       window.open(`https://99app.com/`, "_blank");
     }
@@ -363,10 +368,12 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
         instagram={estabelecimento.instagram}
         phone={estabelecimento.telefone}
         site={estabelecimento.site}
+        cardapio={estabelecimento.link_cardapio}
         onWhatsApp={handleWhatsApp}
         onInstagram={handleInstagram}
         onPhone={handlePhone}
         onSite={handleSite}
+        onCardapio={handleCardapio}
       />
 
       {/* Horário */}

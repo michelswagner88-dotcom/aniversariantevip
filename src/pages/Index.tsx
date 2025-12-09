@@ -365,9 +365,9 @@ const Index = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowFilters(true)}
-                className="shrink-0 gap-2 border-white/20 text-gray-300 hover:bg-white/10 hover:border-white/40 bg-transparent"
+                className="shrink-0 gap-2 bg-white border-white text-[#240046] hover:bg-white/90 font-medium"
               >
-                <SlidersHorizontal className="h-4 w-4" />
+                <SlidersHorizontal className="h-4 w-4 text-[#240046]" />
                 <span className="hidden sm:inline">Filtros</span>
                 {activeFiltersCount > 0 && (
                   <Badge

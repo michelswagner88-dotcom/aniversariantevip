@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSEO } from "@/hooks/useSEO";
 import { useCidadeInteligente } from "@/hooks/useCidadeInteligente";
@@ -45,6 +45,9 @@ const Index = () => {
   const [filterDistance, setFilterDistance] = useState<number | null>(null);
   const [filterValidity, setFilterValidity] = useState<string | null>(null);
 
+  // Estado para forçar re-render quando dados chegam
+  const [, setForceUpdate] = useState(0);
+
   // Geolocalização para filtro de distância
   const { location: userLocation, requestLocation, loading: locationLoading } = useUserLocation();
 
@@ -55,27 +58,31 @@ const Index = () => {
   const buscaParam = useMemo(() => searchParams.get("q"), [searchParams]);
 
   // Sistema de geolocalização inteligente (em background, não bloqueia)
-  const {
-    cidade: cidadeDetectada,
-    estado: estadoDetectado,
-    origem,
-    setCidadeManual,
-    limparCidade,
-  } = useCidadeInteligente();
+  const { cidade: cidadeDetectada, estado: estadoDetectado, setCidadeManual, limparCidade } = useCidadeInteligente();
 
   // Cidade final (prioridade: URL > Detectada)
   const cidadeFinal = cidadeParam || cidadeDetectada;
   const estadoFinal = estadoParam || estadoDetectado;
 
-  // CARREGAR TODOS OS ESTABELECIMENTOS IMEDIATAMENTE (estilo Airbnb)
+  // CARREGAR TODOS OS ESTABELECIMENTOS IMEDIATAMENTE
   const { data: estabelecimentos, isLoading: isLoadingEstabelecimentos } = useEstabelecimentos({
     showAll: true,
     enabled: true,
   });
 
+  // Forçar re-render quando estabelecimentos chegam
+  useEffect(() => {
+    if (estabelecimentos && estabelecimentos.length > 0) {
+      console.log("[Index] Dados recebidos, forçando re-render:", estabelecimentos.length);
+      setForceUpdate((prev) => prev + 1);
+    }
+  }, [estabelecimentos]);
+
   // Filtrar por cidade, categoria, subcategoria, distância e busca (client-side)
   const { estabelecimentosFiltrados, usandoFallback } = useMemo(() => {
-    if (!estabelecimentos) return { estabelecimentosFiltrados: [], usandoFallback: false };
+    if (!estabelecimentos || estabelecimentos.length === 0) {
+      return { estabelecimentosFiltrados: [], usandoFallback: false };
+    }
 
     let filtrados = [...estabelecimentos];
     let usouFallback = false;
@@ -151,15 +158,30 @@ const Index = () => {
 
   // Dados para exibição - SEMPRE ter algo para mostrar
   const dadosParaExibir = useMemo(() => {
-    // Se tem dados filtrados, usar; senão usar TODOS os estabelecimentos
+    // Se tem dados filtrados, usar
     if (estabelecimentosFiltrados && estabelecimentosFiltrados.length > 0) {
       return estabelecimentosFiltrados;
     }
-    // FALLBACK GARANTIDO: Sempre usar todos os estabelecimentos se filtrados estiver vazio
-    return estabelecimentos || [];
+    // FALLBACK GARANTIDO: Sempre usar todos os estabelecimentos
+    if (estabelecimentos && estabelecimentos.length > 0) {
+      return estabelecimentos;
+    }
+    // Retornar array vazio enquanto carrega
+    return [];
   }, [estabelecimentosFiltrados, estabelecimentos]);
 
-  // Transformar estabelecimentos para o formato do mapa (usa dadosParaExibir com fallback)
+  // Log para debug
+  useEffect(() => {
+    console.log("[Index] Estado atual:", {
+      isLoading: isLoadingEstabelecimentos,
+      estabelecimentos: estabelecimentos?.length || 0,
+      dadosParaExibir: dadosParaExibir.length,
+      cidadeFinal,
+      usandoFallback,
+    });
+  }, [isLoadingEstabelecimentos, estabelecimentos, dadosParaExibir, cidadeFinal, usandoFallback]);
+
+  // Transformar estabelecimentos para o formato do mapa
   const estabelecimentosParaMapa = useMemo(() => {
     return dadosParaExibir
       .filter((est) => est.latitude && est.longitude && est.latitude !== 0 && est.longitude !== 0)
@@ -243,33 +265,27 @@ const Index = () => {
   // Título e subtítulo da seção baseado no contexto
   const destaquesConfig = getSectionTitle("destaques", cidadeFinal || undefined);
 
-  // Sistema de rotação dinâmica de seções
-  // CORRIGIDO: rotationInterval: 0 para DESATIVAR rotação automática
+  // Sistema de rotação dinâmica de seções - DESATIVADO
   const { sections: rotatingSections, animationKey } = useRotatingSections(ALL_HOME_SECTIONS, {
     rotatingCount: 5,
-    rotationInterval: 0, // DESATIVADO - não reseta mais a cada 60s
+    rotationInterval: 0,
     rotateOnMount: true,
   });
 
   // Agrupar estabelecimentos por categoria para as seções rotativas
   const secoesDinamicas = useMemo(() => {
-    // Sem dados base ou com filtros ativos, não mostrar carrosséis
-    if (!estabelecimentos || estabelecimentos.length === 0) return [];
+    // Sem dados, retornar vazio
+    if (!dadosParaExibir || dadosParaExibir.length === 0) return [];
     if (categoriaParam || buscaParam) return [];
-
-    // CORREÇÃO CRÍTICA: Usar dadosParaExibir que SEMPRE tem dados (fallback garantido)
-    const dadosBase = dadosParaExibir.length > 0 ? dadosParaExibir : estabelecimentos;
 
     return rotatingSections
       .map((section) => {
         let ests: any[] = [];
 
         if (section.category === "all") {
-          // Seção "Em alta" - mostrar os mais populares (primeiros 10)
-          ests = dadosBase.slice(0, 10);
+          ests = dadosParaExibir.slice(0, 10);
         } else {
-          // Filtrar por categoria específica
-          ests = dadosBase
+          ests = dadosParaExibir
             .filter((est) => {
               const cats = Array.isArray(est.categoria) ? est.categoria : [est.categoria];
               return cats.some((cat) => cat?.toLowerCase() === section.category.toLowerCase());
@@ -280,20 +296,15 @@ const Index = () => {
         return {
           ...section,
           estabelecimentos: ests,
-          hasContent: ests.length >= 1, // Mostrar seção mesmo com 1 estabelecimento
+          hasContent: ests.length >= 1,
         };
       })
       .filter((section) => section.hasContent);
-  }, [estabelecimentos, dadosParaExibir, rotatingSections, categoriaParam, buscaParam]);
+  }, [dadosParaExibir, rotatingSections, categoriaParam, buscaParam]);
 
-  // Mostrar carrosséis apenas quando não há filtro ativo E tem seções com conteúdo
+  // Lógica de exibição simplificada
   const mostrarCarrosseis = !categoriaParam && !buscaParam && secoesDinamicas.length > 0;
-
-  // Fallback: mostrar grid simples quando não há seções dinâmicas mas TEM dados
-  // SIMPLIFICADO: Se não tem carrosséis e não está carregando, mostrar grid
   const mostrarGridSimples = !isLoadingEstabelecimentos && !mostrarCarrosseis && !categoriaParam && !buscaParam;
-
-  // Estado para controlar se mostra Hero ou modo filtrado
   const isFiltered = !!(categoriaParam || buscaParam);
 
   // Função para navegar para explorar com busca
@@ -334,7 +345,7 @@ const Index = () => {
           </div>
         )}
 
-        {/* Pills de categorias - MESMO FUNDO DO HERO */}
+        {/* Pills de categorias */}
         <div className="bg-background border-b border-white/10 sticky top-16 backdrop-blur-lg z-30">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
             <div className="flex items-center gap-3">
@@ -343,13 +354,13 @@ const Index = () => {
                   categoriaAtiva={categoriaParam}
                   onCategoriaChange={(cat) => {
                     handleCategoriaChange(cat);
-                    setSelectedSubcategories([]); // Reset subcategorias ao mudar categoria
+                    setSelectedSubcategories([]);
                   }}
                   estabelecimentos={estabelecimentos || []}
                 />
               </div>
 
-              {/* Botão de Filtros - estilo escuro */}
+              {/* Botão de Filtros */}
               <Button
                 variant="outline"
                 size="sm"
@@ -371,7 +382,7 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Subcategorias - aparecem quando uma categoria está selecionada */}
+        {/* Subcategorias */}
         {categoriaParam && (
           <div className="bg-white border-b border-slate-200">
             <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 py-3">
@@ -386,10 +397,10 @@ const Index = () => {
           </div>
         )}
 
-        {/* Container principal - ÁREA BRANCA FIXA vai direto até o footer */}
+        {/* Container principal */}
         <div className="bg-white min-h-[50vh]">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-8 pb-24">
-            {/* Loading state com skeletons */}
+            {/* Loading state */}
             {isLoadingEstabelecimentos && (
               <div className="space-y-16 md:space-y-20">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -398,11 +409,9 @@ const Index = () => {
               </div>
             )}
 
-            {/* SEMPRE mostrar conteúdo quando não está carregando */}
+            {/* MODO CARROSSÉIS */}
             {!isLoadingEstabelecimentos && mostrarCarrosseis && (
-              /* MODO CARROSSÉIS: Quando não há filtro ativo e tem seções */
               <div className="space-y-8 md:space-y-12">
-                {/* Aviso quando mostrando de outras cidades */}
                 {usandoFallback && cidadeFinal && (
                   <div className="bg-[#240046]/10 border border-[#240046]/20 rounded-xl px-6 py-4">
                     <p className="text-sm text-[#222222] text-center">
@@ -412,10 +421,8 @@ const Index = () => {
                   </div>
                 )}
 
-                {/* Seções dinâmicas com rotação */}
                 {secoesDinamicas.map((section, index) => (
                   <div key={`${section.id}-${animationKey}`}>
-                    {/* Seção de carrossel */}
                     <div className="scroll-reveal animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
                       <CategoryCarousel
                         title={section.title}
@@ -430,14 +437,12 @@ const Index = () => {
                       />
                     </div>
 
-                    {/* CTA Banner após a primeira seção (Em Alta) */}
                     {index === 0 && (
                       <div className="scroll-reveal mt-8">
                         <CTABanner variant="register" />
                       </div>
                     )}
 
-                    {/* CTA Banner para parceiros após a terceira seção */}
                     {index === 2 && (
                       <div className="scroll-reveal-scale mt-8">
                         <CTABanner variant="partner" />
@@ -448,10 +453,9 @@ const Index = () => {
               </div>
             )}
 
-            {/* MODO GRID SIMPLES: Fallback quando não há seções dinâmicas */}
-            {!isLoadingEstabelecimentos && !mostrarCarrosseis && !categoriaParam && !buscaParam && (
+            {/* MODO GRID SIMPLES - FALLBACK GARANTIDO */}
+            {!isLoadingEstabelecimentos && mostrarGridSimples && dadosParaExibir.length > 0 && (
               <div className="space-y-8">
-                {/* Aviso quando mostrando de outras cidades */}
                 {usandoFallback && cidadeFinal && (
                   <div className="bg-[#240046]/10 border border-[#240046]/20 rounded-xl px-6 py-4">
                     <p className="text-sm text-[#222222] text-center">
@@ -461,7 +465,6 @@ const Index = () => {
                   </div>
                 )}
 
-                {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-xl md:text-2xl font-semibold text-[#222222]">{destaquesConfig.titulo}</h2>
@@ -472,14 +475,13 @@ const Index = () => {
                   </span>
                 </div>
 
-                {/* Grid de cards - SEMPRE usa dadosParaExibir que tem fallback garantido */}
                 <AirbnbCardGrid estabelecimentos={dadosParaExibir} isLoading={false} userLocation={userLocation} />
 
                 <CTABanner variant="register" />
               </div>
             )}
 
-            {/* MODO GRID COM MAPA: Quando há filtro de categoria ou busca */}
+            {/* MODO GRID COM MAPA - Filtro ativo */}
             {!isLoadingEstabelecimentos && (categoriaParam || buscaParam) && (
               <AirbnbMapLayout
                 establishments={estabelecimentosParaMapa}
@@ -514,7 +516,6 @@ const Index = () => {
                       )}
                     </div>
 
-                    {/* Aviso quando mostrando de outras cidades */}
                     {usandoFallback && cidadeFinal && (
                       <div className="bg-[#240046]/10 border border-[#240046]/20 rounded-lg px-4 py-2">
                         <p className="text-sm text-[#240046]">
@@ -542,7 +543,7 @@ const Index = () => {
       <Footer />
       <BottomNav />
 
-      {/* Modal de Filtros Avançados */}
+      {/* Modal de Filtros */}
       <Dialog open={showFilters} onOpenChange={setShowFilters}>
         <DialogContent className="max-w-lg max-h-[85vh] p-0">
           <DialogHeader className="p-4 pb-0">
@@ -551,7 +552,7 @@ const Index = () => {
 
           <ScrollArea className="max-h-[60vh] px-4">
             <div className="space-y-6 py-4">
-              {/* Seção: Categorias */}
+              {/* Categorias */}
               <div>
                 <h3 className="text-sm font-medium text-foreground mb-3">Categorias</h3>
                 <div className="flex flex-wrap gap-2">
@@ -585,7 +586,7 @@ const Index = () => {
                 </div>
               </div>
 
-              {/* Seção: Subcategorias (aparecem quando categoria selecionada) */}
+              {/* Subcategorias */}
               {categoriaParam && (
                 <div>
                   <h3 className="text-sm font-medium text-foreground mb-3">Tipo de {categoriaParam}</h3>
@@ -617,7 +618,7 @@ const Index = () => {
                 </div>
               )}
 
-              {/* Seção: Distância */}
+              {/* Distância */}
               <div>
                 <h3 className="text-sm font-medium text-foreground mb-3">Distância</h3>
                 {!userLocation ? (
@@ -651,7 +652,7 @@ const Index = () => {
                 )}
               </div>
 
-              {/* Seção: Validade do Benefício */}
+              {/* Validade */}
               <div>
                 <h3 className="text-sm font-medium text-foreground mb-3">Validade do Benefício</h3>
                 <div className="flex flex-wrap gap-2">
@@ -678,7 +679,7 @@ const Index = () => {
             </div>
           </ScrollArea>
 
-          {/* Footer com botões */}
+          {/* Footer */}
           <div className="flex items-center justify-between p-4 border-t border-slate-200 dark:border-slate-800">
             <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-muted-foreground">
               <X className="h-4 w-4 mr-1" />

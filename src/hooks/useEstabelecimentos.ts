@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryClient';
 import { Tables } from '@/integrations/supabase/types';
@@ -16,9 +16,14 @@ interface EstabelecimentoFilters {
   enabled?: boolean;
 }
 
-// Hook otimizado para listar estabelecimentos com cache, filtros e REALTIME
+// Variável global para garantir APENAS UMA subscription de Realtime
+let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+let realtimeSubscribers = 0;
+
+// Hook otimizado para listar estabelecimentos com cache e filtros
 export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
   const queryClient = useQueryClient();
+  const hasSetupRealtime = useRef(false);
   
   const query = useQuery({
     queryKey: queryKeys.estabelecimentos.list(filters),
@@ -59,40 +64,59 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
       if (error) throw error;
       return data as Estabelecimento[];
     },
-    staleTime: 60000, // Cache por 1 minuto para evitar flashes
-    refetchOnMount: true,
-    refetchOnWindowFocus: false, // Não refetch ao focar - evita tela branca
+    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+    gcTime: 10 * 60 * 1000, // Manter em cache por 10 minutos
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     enabled: filters.enabled !== false,
   });
 
-  // REALTIME: Escutar mudanças na tabela estabelecimentos
+  // REALTIME: Singleton - apenas UMA subscription global
   useEffect(() => {
-    console.log('[useEstabelecimentos] Configurando listener realtime...');
+    // Evitar setup duplicado no mesmo componente
+    if (hasSetupRealtime.current) return;
+    hasSetupRealtime.current = true;
     
-    const channel = supabase
-      .channel('estabelecimentos-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // INSERT, UPDATE, DELETE
-          schema: 'public',
-          table: 'estabelecimentos',
-        },
-        (payload) => {
-          console.log('[Realtime] Mudança detectada:', payload.eventType);
-          
-          // Invalidar TODAS as queries de estabelecimentos
-          queryClient.invalidateQueries({ queryKey: ['estabelecimentos'] });
-          queryClient.invalidateQueries({ queryKey: ['public_estabelecimentos'] });
-        }
-      )
-      .subscribe((status) => {
-        console.log('[Realtime] Status subscription:', status);
-      });
+    realtimeSubscribers++;
+    console.log('[Realtime] Subscribers:', realtimeSubscribers);
+    
+    // Só criar channel se ainda não existe
+    if (!realtimeChannel) {
+      console.log('[Realtime] Criando channel único...');
+      
+      realtimeChannel = supabase
+        .channel('estabelecimentos-realtime-singleton')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'estabelecimentos',
+          },
+          (payload) => {
+            console.log('[Realtime] Mudança detectada:', payload.eventType);
+            // Invalidar queries de forma controlada (não agressiva)
+            queryClient.invalidateQueries({ 
+              queryKey: ['estabelecimentos'],
+              refetchType: 'none' // Não refetch imediato, só marca como stale
+            });
+          }
+        )
+        .subscribe((status) => {
+          console.log('[Realtime] Status:', status);
+        });
+    }
 
     return () => {
-      console.log('[Realtime] Removendo listener...');
-      supabase.removeChannel(channel);
+      realtimeSubscribers--;
+      console.log('[Realtime] Subscribers restantes:', realtimeSubscribers);
+      
+      // Só remove o channel quando TODOS os subscribers saírem
+      if (realtimeSubscribers === 0 && realtimeChannel) {
+        console.log('[Realtime] Removendo channel...');
+        supabase.removeChannel(realtimeChannel);
+        realtimeChannel = null;
+      }
     };
   }, [queryClient]);
 
@@ -117,8 +141,10 @@ export const useEstabelecimento = (id: string | undefined) => {
       return data as Estabelecimento;
     },
     enabled: !!id,
-    staleTime: 0,
-    refetchOnMount: true,
+    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+    gcTime: 10 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -130,19 +156,3 @@ export const useTrackView = () => {
     mutationFn: async ({ estabelecimentoId, userId }: { estabelecimentoId: string; userId?: string }) => {
       const { error } = await supabase
         .from('estabelecimento_analytics')
-        .insert({
-          estabelecimento_id: estabelecimentoId,
-          tipo_evento: 'view',
-          user_id: userId,
-        });
-      
-      if (error) throw error;
-    },
-    onSuccess: (_, variables) => {
-      // Invalidar analytics do estabelecimento
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.analytics.establishment(variables.estabelecimentoId),
-      });
-    },
-  });
-};

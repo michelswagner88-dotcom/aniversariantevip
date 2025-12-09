@@ -1288,17 +1288,29 @@ All colors MUST be HSL.
 .text-gradient-animated {
   background: linear-gradient(
     90deg,
-    #a855f7,
-    #ec4899,
-    #f97316,
-    #ec4899,
-    #a855f7
+    #9D4EDD,    /* Roxo */
+    #C77DFF,    /* Roxo claro */
+    #F472B6,    /* Rosa */
+    #22D3EE,    /* Ciano */
+    #9D4EDD     /* Volta pro roxo */
   );
-  background-size: 200% auto;
+  background-size: 300% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: gradientFlow 4s ease infinite;
+  animation: gradientShift 5s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* ---------- SOCIAL PROOF COUNTER ---------- */

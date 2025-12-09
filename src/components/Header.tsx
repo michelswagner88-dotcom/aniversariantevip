@@ -109,30 +109,36 @@ export const Header = () => {
         <div className="flex items-center justify-between h-14">
           {/* Logo com ícone animado */}
           <Link to="/" className="flex items-center gap-2.5 group">
-              {/* Ícone Gift animado */}
-              <div className="
-                w-10 h-10 
-                bg-gradient-to-br from-[#240046] to-[#3C096C]
-                rounded-xl 
-                flex items-center justify-center
-                shadow-lg shadow-[#240046]/25
-                transition-all duration-300
-                group-hover:scale-110 group-hover:rotate-6
-                group-hover:shadow-xl group-hover:shadow-[#240046]/40
-              ">
+              {/* Ícone Gift com gradiente roxo → ciano */}
+              <div 
+                className="
+                  w-10 h-10 
+                  rounded-xl 
+                  flex items-center justify-center
+                  shadow-lg shadow-[#240046]/25
+                  transition-all duration-300
+                  group-hover:scale-110 group-hover:rotate-6
+                  group-hover:shadow-xl group-hover:shadow-[#240046]/40
+                "
+                style={{ background: 'linear-gradient(135deg, #240046 0%, #5B21B6 50%, #06B6D4 100%)' }}
+              >
               <Gift className="w-5 h-5 text-white" />
             </div>
             
-            {/* Texto com gradiente animado */}
-            <span className="
-              font-display font-extrabold text-base lg:text-lg 
-              text-gradient-animated
-              tracking-tight 
-              hidden sm:block
-              transition-transform duration-300
-              group-hover:scale-105
-            ">
-              ANIVERSARIANTE VIP
+            {/* Texto com gradiente roxo → ciano */}
+            <span className="hidden sm:flex items-center gap-1 font-display font-extrabold text-base lg:text-lg tracking-tight transition-transform duration-300 group-hover:scale-105">
+              <span 
+                className="text-transparent bg-clip-text"
+                style={{ backgroundImage: 'linear-gradient(90deg, #9D4EDD 0%, #06B6D4 100%)' }}
+              >
+                ANIVERSARIANTE
+              </span>
+              <span 
+                className="text-transparent bg-clip-text"
+                style={{ backgroundImage: 'linear-gradient(90deg, #C77DFF 0%, #22D3EE 100%)' }}
+              >
+                VIP
+              </span>
             </span>
           </Link>
 

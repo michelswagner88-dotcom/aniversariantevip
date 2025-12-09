@@ -182,49 +182,51 @@ const HeroSection = ({
             onSubmit={handleBuscaSubmit}
             className="
               flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-0
-              bg-white/5 
-              backdrop-blur-xl 
+              bg-white
               rounded-2xl sm:rounded-full 
               p-2
-              border border-white/10
-              shadow-2xl shadow-violet-500/10
+              border-2 border-[#240046]/20
+              shadow-2xl shadow-[#240046]/10
+              hover:border-[#240046]/40
+              focus-within:border-[#240046]
+              transition-colors duration-300
             "
           >
             {/* Campo de Localização */}
             <div 
-              className="flex items-center gap-3 px-4 py-3 sm:border-r border-white/10 cursor-pointer hover:bg-white/5 rounded-xl sm:rounded-l-full transition-colors"
+              className="flex items-center gap-3 px-4 py-3 sm:border-r border-[#240046]/10 cursor-pointer hover:bg-[#240046]/5 rounded-xl sm:rounded-l-full transition-colors"
               onClick={() => setShowCitySelector(!showCitySelector)}
             >
-              <MapPin className="w-5 h-5 text-pink-400" />
+              <MapPin className="w-5 h-5 text-[#240046]" />
               <div className="text-left">
-                <p className="text-xs text-slate-500 uppercase tracking-wide">Onde</p>
-                <p className="text-white font-medium">
-                  {cidade && estado ? `${cidade}, ${estado}` : 'Todo o Brasil'}
+                <p className="text-xs text-[#240046]/60 uppercase tracking-wide">Onde</p>
+                <p className="text-[#222222] font-medium">
+                  {cidade && estado ? `${cidade}, ${estado}` : "Todo o Brasil"}
                 </p>
               </div>
             </div>
 
             {/* Campo de Busca */}
             <div className="flex-1 flex items-center gap-3 px-4 py-3">
-              <Search className="w-5 h-5 text-slate-400" />
+              <Search className="w-5 h-5 text-[#240046]/50" />
               <input
                 type="text"
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 placeholder={placeholders[currentPlaceholder]}
                 className={`
-                  flex-1 bg-transparent text-white placeholder-slate-500
+                  flex-1 bg-transparent text-[#222222] placeholder-[#240046]/40
                   outline-none text-base
                   transition-opacity duration-200
-                  ${isTyping ? 'opacity-100' : 'opacity-50'}
+                  ${isTyping ? "opacity-100" : "opacity-50"}
                 `}
               />
               <button 
                 type="button"
-                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                className="p-2 hover:bg-[#240046]/10 rounded-full transition-colors"
                 aria-label="Busca por voz"
               >
-                <Mic className="w-5 h-5 text-slate-400" />
+                <Mic className="w-5 h-5 text-[#240046]/50" />
               </button>
             </div>
 

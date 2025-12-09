@@ -261,7 +261,8 @@ const Index = () => {
   const destaquesConfig = getSectionTitle("destaques", cidadeFinal || undefined);
 
   // Sistema de rotação dinâmica de seções
-  // rotationInterval: 30000 = 30s entre rotações
+  // rotationInterval: 30000 = 30s entre rotações das seções rotativas
+  // featuredRotationInterval: 30000 = 30s entre rotações da seção destaque
   // lockDuration: 10000 = 10s de trava após interação do usuário
   const {
     sections: rotatingSections,
@@ -269,8 +270,8 @@ const Index = () => {
     lockSection,
   } = useRotatingSections(ALL_HOME_SECTIONS, {
     rotatingCount: 5,
-    rotationInterval: 30000, // Rotaciona a cada 30 segundos
-    featuredRotationInterval: 0, // Featured não rotaciona automaticamente
+    rotationInterval: 30000, // Rotaciona seções a cada 30 segundos
+    featuredRotationInterval: 30000, // Featured também rotaciona a cada 30 segundos
     rotateOnMount: true,
     lockDuration: 10000, // Trava por 10s após interação
   });

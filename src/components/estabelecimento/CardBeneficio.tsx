@@ -4,7 +4,6 @@ import { Gift, Calendar, FileText, X, Sparkles, Info, Check } from 'lucide-react
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEstablishmentMetrics } from '@/hooks/useEstablishmentMetrics';
 import { getValidadeTexto } from '@/lib/bioUtils';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
 
 interface CardBeneficioProps {
   beneficio: string;
@@ -43,19 +42,19 @@ export const CardBeneficio = ({
 
   return (
     <>
-      {/* Card de Benefício - Design Glass Premium */}
+      {/* Card de Benefício - Design Clean Premium */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, type: 'spring', stiffness: 100 }}
         className="relative overflow-hidden rounded-2xl"
       >
-        {/* Animated gradient border */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 opacity-30 blur-sm" />
+        {/* Gradient border sutil */}
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#240046] to-[#3C096C] opacity-30 blur-sm" />
         <div className="absolute inset-[1px] rounded-2xl bg-slate-900/95" />
         
         {/* Inner glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-transparent to-fuchsia-500/10 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#240046]/10 via-transparent to-[#3C096C]/10 pointer-events-none" />
         
         <div className="relative p-6 md:p-8 space-y-5">
           {/* Ícone com pulse premium */}
@@ -64,8 +63,8 @@ export const CardBeneficio = ({
             transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
             className="flex justify-center"
           >
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center border border-violet-400/30 shadow-lg shadow-violet-500/20">
-              <Gift className="w-8 h-8 text-violet-300" />
+            <div className="w-16 h-16 rounded-2xl bg-[#240046]/30 flex items-center justify-center border border-[#240046]/40 shadow-lg shadow-[#240046]/20">
+              <Gift className="w-8 h-8 text-[#A78BFA]" />
             </div>
           </motion.div>
 
@@ -79,21 +78,31 @@ export const CardBeneficio = ({
           {/* Validade - Elegante */}
           <div className="flex items-center justify-center gap-2">
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
-              <Calendar className="w-4 h-4 text-violet-400" />
+              <Calendar className="w-4 h-4 text-[#A78BFA]" />
               <span className="text-sm text-gray-300">
-                Válido: <span className="text-violet-300 font-medium">{getValidadeTexto(validadeTexto)}</span>
+                Válido: <span className="text-[#A78BFA] font-medium">{getValidadeTexto(validadeTexto)}</span>
               </span>
             </div>
           </div>
 
-          {/* Botão Shimmer Premium */}
-          <ShimmerButton
+          {/* Botão Clean - SEM shimmer excessivo */}
+          <button
             onClick={handleVerRegras}
-            className="w-full py-4 text-base"
+            className="
+              w-full py-4 
+              bg-gradient-to-r from-[#240046] to-[#3C096C]
+              hover:from-[#3C096C] hover:to-[#5B21B6]
+              text-white font-semibold text-base
+              rounded-xl
+              transition-all duration-300
+              hover:scale-[1.02] active:scale-[0.98]
+              shadow-lg shadow-[#240046]/30
+              flex items-center justify-center gap-2
+            "
           >
             <Sparkles className="w-5 h-5" />
             Ver regras e como usar o benefício
-          </ShimmerButton>
+          </button>
         </div>
       </motion.div>
 
@@ -124,15 +133,15 @@ export const CardBeneficio = ({
               className="relative w-full max-w-md overflow-hidden rounded-3xl"
             >
               {/* Gradient border effect */}
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 opacity-20" />
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[#240046] to-[#3C096C] opacity-20" />
               <div className="absolute inset-[1px] rounded-3xl bg-slate-900" />
               
               <div className="relative">
                 {/* Header */}
-                <div className="p-6 border-b border-white/10 bg-gradient-to-b from-violet-500/10 to-transparent">
+                <div className="p-6 border-b border-white/10 bg-gradient-to-b from-[#240046]/15 to-transparent">
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#240046] to-[#3C096C] flex items-center justify-center">
                         <Info className="w-5 h-5 text-white" />
                       </div>
                       Como usar seu benefício
@@ -150,9 +159,9 @@ export const CardBeneficio = ({
                 <div className="p-6 space-y-5 overflow-y-auto max-h-[60vh]">
                   {/* Benefício highlight */}
                   <div className="relative overflow-hidden rounded-2xl">
-                    <div className="absolute inset-0 bg-gradient-to-r from-violet-500/20 via-fuchsia-500/20 to-pink-500/20" />
-                    <div className="relative p-5 text-center border border-violet-500/30 rounded-2xl">
-                      <p className="text-sm text-violet-300 mb-2">Você ganha:</p>
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#240046]/20 to-[#3C096C]/20" />
+                    <div className="relative p-5 text-center border border-[#240046]/30 rounded-2xl">
+                      <p className="text-sm text-[#A78BFA] mb-2">Você ganha:</p>
                       <p className="text-lg font-bold text-white">
                         🎁 {beneficio || 'Benefício exclusivo!'}
                       </p>
@@ -163,7 +172,7 @@ export const CardBeneficio = ({
                   {regras && (
                     <div>
                       <h3 className="font-bold text-white mb-3 flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-violet-400" />
+                        <FileText className="w-4 h-4 text-[#A78BFA]" />
                         Regras de uso
                       </h3>
                       <div className="text-gray-300 text-sm space-y-2 whitespace-pre-line bg-white/5 p-4 rounded-xl border border-white/5">
@@ -207,16 +216,26 @@ export const CardBeneficio = ({
 
                 {/* Footer */}
                 <div className="p-6 border-t border-white/10 bg-slate-900/80 space-y-3">
-                  <ShimmerButton
+                  <button
                     onClick={() => {
                       setModalAberto(false);
                       onEmitirCupom();
                     }}
-                    className="w-full py-4 text-base"
+                    className="
+                      w-full py-4 
+                      bg-gradient-to-r from-[#240046] to-[#3C096C]
+                      hover:from-[#3C096C] hover:to-[#5B21B6]
+                      text-white font-semibold text-base
+                      rounded-xl
+                      transition-all duration-300
+                      hover:scale-[1.02] active:scale-[0.98]
+                      shadow-lg shadow-[#240046]/30
+                      flex items-center justify-center gap-2
+                    "
                   >
                     <Gift className="w-5 h-5" />
                     Ver Meu Benefício
-                  </ShimmerButton>
+                  </button>
 
                   <button
                     onClick={() => setModalAberto(false)}

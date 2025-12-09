@@ -1,9 +1,7 @@
-// BenefitCard.tsx - Card de Benefício World-Class com Efeito Holográfico
+// BenefitCard.tsx - Card de Benefício Clean e Profissional
 
 import { Gift, Calendar, Sparkles, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { TiltCard } from '@/components/ui/tilt-card';
 
 interface BenefitCardProps {
   benefit: {
@@ -52,8 +50,6 @@ const cleanDescription = (description: string): string => {
 };
 
 const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
-  const [isPressed, setIsPressed] = useState(false);
-  
   const cleanedDescription = cleanDescription(benefit.description);
   const formattedValidity = formatValidity(benefit.validity);
 
@@ -64,211 +60,130 @@ const BenefitCard = ({ benefit, onShowRules }: BenefitCardProps) => {
       transition={{ delay: 0.4, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className="mx-4 mt-6"
     >
-      <TiltCard
-        tiltAmount={8}
-        shadowAmount={30}
-        enableHolographic={true}
-        className="group"
-      >
-        {/* Container com glow animado */}
-        <div className="relative">
-          {/* Glow effect por trás - animado */}
+      {/* Container com glow sutil */}
+      <div className="relative">
+        {/* Glow effect por trás - sutil, não animado */}
+        <div 
+          className="
+            absolute -inset-2 
+            bg-[#240046]/30
+            rounded-[32px] 
+            blur-2xl 
+            opacity-60
+          "
+        />
+        
+        {/* Card principal */}
+        <div 
+          className="
+            relative
+            bg-gradient-to-br from-[#1a1025] via-[#150d1f] to-[#0f0a1a]
+            rounded-[24px]
+            p-6
+            border border-[#240046]/40
+            shadow-2xl
+            overflow-hidden
+          "
+        >
+          {/* Elementos decorativos de fundo - tons roxos */}
+          <div className="absolute top-0 right-0 w-48 h-48 bg-[#240046]/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-[#3C096C]/15 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+          
+          {/* Pattern sutil */}
           <div 
-            className="
-              absolute -inset-2 
-              bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 
-              rounded-[32px] 
-              blur-2xl 
-              opacity-50
-              animate-glow-pulse
-              group-hover:opacity-70
-              transition-opacity duration-500
-            "
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+              backgroundSize: '24px 24px'
+            }}
           />
           
-          {/* Card principal */}
-          <div 
-            className="
-              relative
-              bg-gradient-to-br from-[#0f0a1a] via-[#1a1030] to-[#0f0a1a]
-              rounded-[24px]
-              p-6
-              border border-violet-500/30
-              shadow-2xl
-              overflow-hidden
-            "
-          >
-            {/* Borda holográfica animada */}
-            <div 
-              className="
-                absolute inset-0 rounded-[24px]
-                opacity-50 group-hover:opacity-80
-                transition-opacity duration-500
-                pointer-events-none
-              "
-              style={{
-                background: 'linear-gradient(135deg, transparent 40%, rgba(139, 92, 246, 0.3) 50%, transparent 60%)',
-                backgroundSize: '200% 200%',
-                animation: 'shimmer-slide 3s ease-in-out infinite'
-              }}
-            />
-            
-            {/* Elementos decorativos de fundo */}
-            <div className="absolute top-0 right-0 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-fuchsia-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-            
-            {/* Pattern sutil */}
-            <div 
-              className="absolute inset-0 opacity-[0.03]"
-              style={{
-                backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
-                backgroundSize: '24px 24px'
-              }}
-            />
-            
-            {/* Rainbow shimmer overlay */}
-            <div 
-              className="
-                absolute inset-0 
-                opacity-0 group-hover:opacity-30
-                transition-opacity duration-700
-                pointer-events-none
-              "
-              style={{
-                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(217, 70, 239, 0.2) 25%, rgba(236, 72, 153, 0.2) 50%, rgba(139, 92, 246, 0.2) 75%, rgba(217, 70, 239, 0.2) 100%)',
-                backgroundSize: '400% 400%',
-                animation: 'gradientFlow 6s ease infinite'
-              }}
-            />
-            
-            {/* Conteúdo */}
-            <div className="relative z-10">
-              {/* Ícone do presente flutuante */}
-              <div className="flex justify-center mb-5">
-                <motion.div 
-                  className="relative"
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  {/* Glow atrás do ícone */}
-                  <div className="absolute inset-0 bg-violet-500/40 rounded-2xl blur-xl animate-glow-pulse" />
-                  
-                  {/* Ring pulsante */}
-                  <div 
-                    className="
-                      absolute -inset-2
-                      rounded-2xl
-                      border-2 border-violet-400/30
-                      animate-ring-pulse
-                    "
-                  />
-                  
-                  <div 
-                    className="
-                      relative
-                      w-16 h-16 
-                      bg-gradient-to-br from-violet-500/30 via-fuchsia-500/30 to-pink-500/30
-                      rounded-2xl 
-                      flex items-center justify-center
-                      border border-violet-400/40
-                      shadow-inner
-                    "
-                  >
-                    <Gift className="w-8 h-8 text-violet-300" />
-                  </div>
-                </motion.div>
-              </div>
-              
-              {/* Título do benefício */}
-              <h2 
-                className="
-                  text-xl sm:text-2xl 
-                  font-bold 
-                  text-center 
-                  text-white 
-                  leading-tight
-                  mb-5
-                "
-              >
-                {cleanedDescription || benefit.description}
-              </h2>
-              
-              {/* Validade formatada */}
-              <div className="flex justify-center mb-6">
+          {/* Conteúdo */}
+          <div className="relative z-10">
+            {/* Ícone do presente */}
+            <div className="flex justify-center mb-5">
+              <div className="relative">
+                {/* Glow atrás do ícone */}
+                <div className="absolute inset-0 bg-[#240046]/40 rounded-2xl blur-xl" />
+                
                 <div 
                   className="
-                    inline-flex items-center gap-2
-                    bg-white/5
-                    backdrop-blur-sm
-                    px-5 py-2.5
-                    rounded-full
-                    border border-white/10
+                    relative
+                    w-16 h-16 
+                    bg-[#240046]/30
+                    rounded-2xl 
+                    flex items-center justify-center
+                    border border-[#240046]/50
+                    shadow-inner
                   "
                 >
-                  <Calendar className="w-4 h-4 text-fuchsia-400" />
-                  <span className="text-sm text-gray-300">
-                    Válido: 
-                    <span className="text-fuchsia-300 font-semibold ml-1">
-                      {formattedValidity}
-                    </span>
-                  </span>
+                  <Gift className="w-8 h-8 text-[#A78BFA]" />
                 </div>
               </div>
-              
-              {/* Botão CTA Premium com shimmer infinito - CLICÁVEL */}
-              <button 
-                onClick={onShowRules}
-                onMouseDown={() => setIsPressed(true)}
-                onMouseUp={() => setIsPressed(false)}
-                onMouseLeave={() => setIsPressed(false)}
-                onTouchStart={() => setIsPressed(true)}
-                onTouchEnd={() => setIsPressed(false)}
-                className="
-                  w-full
-                  relative
-                  bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500
-                  bg-[length:200%_auto]
-                  text-white
-                  font-semibold
-                  py-4
-                  px-6
-                  rounded-2xl
-                  overflow-hidden
-                  transition-all duration-300
-                  z-20
-                  pointer-events-auto
-                  cursor-pointer
-                  hover:scale-[1.02]
-                  active:scale-[0.98]
-                  group/btn
-                "
-                style={{
-                  animation: 'gradientFlow 4s ease infinite',
-                  boxShadow: '0 10px 40px -10px rgba(139, 92, 246, 0.6)'
-                }}
-              >
-                {/* Shimmer infinito no botão */}
-                <div 
-                  className="
-                    absolute inset-0 
-                    bg-gradient-to-r from-transparent via-white/30 to-transparent
-                    pointer-events-none
-                  "
-                  style={{
-                    animation: 'shimmer-slide 2s ease-in-out infinite'
-                  }}
-                />
-                
-                <span className="relative flex items-center justify-center gap-2">
-                  <Sparkles className="w-5 h-5" />
-                  Ver regras e como usar
-                  <ChevronRight className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" />
-                </span>
-              </button>
             </div>
+            
+            {/* Título do benefício */}
+            <h2 
+              className="
+                text-xl sm:text-2xl 
+                font-bold 
+                text-center 
+                text-white 
+                leading-tight
+                mb-5
+              "
+            >
+              {cleanedDescription || benefit.description}
+            </h2>
+            
+            {/* Validade formatada */}
+            <div className="flex justify-center mb-6">
+              <div 
+                className="
+                  inline-flex items-center gap-2
+                  bg-white/5
+                  backdrop-blur-sm
+                  px-5 py-2.5
+                  rounded-full
+                  border border-white/10
+                "
+              >
+                <Calendar className="w-4 h-4 text-[#A78BFA]" />
+                <span className="text-sm text-gray-300">
+                  Válido: 
+                  <span className="text-[#A78BFA] font-semibold ml-1">
+                    {formattedValidity}
+                  </span>
+                </span>
+              </div>
+            </div>
+            
+            {/* Botão CTA Clean - SEM efeitos excessivos */}
+            <button 
+              onClick={onShowRules}
+              className="
+                w-full
+                bg-gradient-to-r from-[#240046] to-[#3C096C]
+                hover:from-[#3C096C] hover:to-[#5B21B6]
+                text-white
+                font-semibold
+                py-4
+                px-6
+                rounded-2xl
+                transition-all duration-300
+                hover:scale-[1.02]
+                active:scale-[0.98]
+                shadow-lg shadow-[#240046]/40
+                flex items-center justify-center gap-2
+              "
+            >
+              <Sparkles className="w-5 h-5" />
+              Ver regras e como usar
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
         </div>
-      </TiltCard>
+      </div>
     </motion.div>
   );
 };

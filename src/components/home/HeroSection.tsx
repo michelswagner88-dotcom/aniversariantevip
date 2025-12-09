@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Search, MapPin, Mic, Gift } from "lucide-react";
 import { CityCombobox } from "@/components/CityCombobox";
 import { motion } from "framer-motion";
@@ -26,16 +26,33 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
   const [busca, setBusca] = useState("");
   const [showCitySelector, setShowCitySelector] = useState(false);
 
+  // Ref para armazenar o timeout e poder limpar no cleanup
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setIsTyping(false);
-      setTimeout(() => {
+
+      // Limpa timeout anterior se existir
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      // Armazena referência do novo timeout
+      timeoutRef.current = setTimeout(() => {
         setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
         setIsTyping(true);
       }, 200);
     }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+
+    return () => {
+      clearInterval(interval);
+      // Limpa o timeout pendente no cleanup
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [placeholders.length]);
 
   const handleBuscaSubmit = (e: React.FormEvent) => {
     e.preventDefault();

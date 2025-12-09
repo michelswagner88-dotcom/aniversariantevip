@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight as ChevronRightIcon, Heart } from "lucide-react";
 import { getEstabelecimentoUrl } from "@/lib/slugUtils";
@@ -11,8 +11,8 @@ interface CategoryCarouselProps {
   subtitle?: string;
   estabelecimentos: any[];
   variant?: "default" | "featured" | "compact";
-  sectionId?: string; // ID da seção para controle de trava
-  onUserInteraction?: (sectionId: string) => void; // Callback quando usuário interage
+  sectionId?: string;
+  onUserInteraction?: (sectionId: string) => void;
 }
 
 // Função para converter categoria para singular
@@ -124,11 +124,11 @@ export const CategoryCarousel = ({
   const [cardsPerPage, setCardsPerPage] = useState(4);
 
   // Notifica interação do usuário
-  const notifyInteraction = () => {
+  const notifyInteraction = useCallback(() => {
     if (sectionId && onUserInteraction) {
       onUserInteraction(sectionId);
     }
-  };
+  }, [sectionId, onUserInteraction]);
 
   // Calcular quantos cards cabem por página baseado na largura da tela
   useEffect(() => {
@@ -149,10 +149,27 @@ export const CategoryCarousel = ({
       }
     };
 
+    // Debounce para evitar recálculos excessivos durante resize
+    let timeoutId: NodeJS.Timeout;
+    const debouncedCalculate = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(calculateCardsPerPage, 150);
+    };
+
+    // Calcular imediatamente no mount
     calculateCardsPerPage();
-    window.addEventListener("resize", calculateCardsPerPage);
-    return () => window.removeEventListener("resize", calculateCardsPerPage);
+
+    window.addEventListener("resize", debouncedCalculate);
+    return () => {
+      window.removeEventListener("resize", debouncedCalculate);
+      clearTimeout(timeoutId);
+    };
   }, []);
+
+  // Reset página quando muda quantidade de cards por página
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [cardsPerPage]);
 
   // Total de páginas
   const totalPages = Math.ceil(estabelecimentos.length / cardsPerPage);
@@ -165,30 +182,30 @@ export const CategoryCarousel = ({
   const canScrollLeft = currentPage > 0;
   const canScrollRight = currentPage < totalPages - 1;
 
-  const scroll = (direction: "left" | "right") => {
-    // Notifica que usuário interagiu - TRAVA ROTAÇÃO
-    notifyInteraction();
+  const scroll = useCallback(
+    (direction: "left" | "right") => {
+      // Notifica que usuário interagiu - TRAVA ROTAÇÃO
+      notifyInteraction();
 
-    if (direction === "right") {
-      if (currentPage < totalPages - 1) {
-        setCurrentPage(currentPage + 1);
-      } else {
-        setCurrentPage(0);
-      }
-    } else {
-      if (currentPage > 0) {
-        setCurrentPage(currentPage - 1);
-      } else {
-        setCurrentPage(totalPages - 1);
-      }
-    }
-  };
+      setCurrentPage((prev) => {
+        if (direction === "right") {
+          return prev < totalPages - 1 ? prev + 1 : 0;
+        } else {
+          return prev > 0 ? prev - 1 : totalPages - 1;
+        }
+      });
+    },
+    [notifyInteraction, totalPages],
+  );
 
   // Clique nos dots também notifica interação
-  const goToPage = (page: number) => {
-    notifyInteraction();
-    setCurrentPage(page);
-  };
+  const goToPage = useCallback(
+    (page: number) => {
+      notifyInteraction();
+      setCurrentPage(page);
+    },
+    [notifyInteraction],
+  );
 
   if (estabelecimentos.length === 0) return null;
 

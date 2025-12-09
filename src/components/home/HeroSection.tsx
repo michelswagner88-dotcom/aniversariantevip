@@ -58,7 +58,9 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
           transition={{ duration: 0.6 }}
         >
           <Gift className="w-4 h-4 text-white" />
-          <span className="text-sm text-white">O maior guia de benefícios para aniversariantes do Brasil</span>
+          <span className="text-sm text-white font-medium">
+            O maior guia de benefícios para aniversariantes do Brasil
+          </span>
         </motion.div>
 
         <motion.h1
@@ -89,7 +91,7 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
         >
           <form
             onSubmit={handleBuscaSubmit}
-            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-0 bg-white rounded-2xl sm:rounded-full p-2 border-2 border-white/20 shadow-2xl shadow-black/20 transition-colors duration-300"
+            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-0 bg-white rounded-2xl sm:rounded-full p-2 shadow-2xl shadow-black/20"
           >
             <div
               className="flex items-center gap-3 px-4 py-3 sm:border-r border-[#240046]/10 cursor-pointer hover:bg-[#240046]/5 rounded-xl sm:rounded-l-full transition-colors"

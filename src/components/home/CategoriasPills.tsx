@@ -128,7 +128,7 @@ export const CategoriasPills = ({
       <div 
         className={cn(
           'absolute left-0 top-0 bottom-0 w-8 z-[5]',
-          'bg-gradient-to-r from-slate-950 to-transparent',
+          'bg-gradient-to-r from-background to-transparent',
           'pointer-events-none transition-opacity duration-300',
           showLeftFade ? 'opacity-100' : 'opacity-0'
         )} 
@@ -188,7 +188,7 @@ export const CategoriasPills = ({
       <div 
         className={cn(
           'absolute right-0 top-0 bottom-0 w-8 z-[5]',
-          'bg-gradient-to-l from-slate-950 to-transparent',
+          'bg-gradient-to-l from-background to-transparent',
           'pointer-events-none transition-opacity duration-300',
           showRightFade ? 'opacity-100' : 'opacity-0'
         )} 

@@ -42,8 +42,8 @@ const EstablishmentHero = ({
   return (
     <>
       <div ref={containerRef} className="relative">
-        {/* ========== FOTO DE CAPA - MAIOR E COM PARALLAX ========== */}
-        <div className="relative w-full h-56 sm:h-64 md:h-80 overflow-hidden">
+        {/* ========== FOTO DE CAPA - 60vh FULLSCREEN ========== */}
+        <div className="relative w-full h-[50vh] sm:h-[55vh] md:h-[60vh] overflow-hidden">
           {/* Skeleton enquanto carrega */}
           {!imageLoaded && (
             <div className="absolute inset-0 img-skeleton" />
@@ -158,163 +158,90 @@ const EstablishmentHero = ({
           </motion.div>
         </div>
 
-        {/* ========== FOTO DE PERFIL - Clean sem holographic ========== */}
-        <div className="flex justify-center -mt-20 sm:-mt-24 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ delay: 0.3, type: "spring", damping: 20 }}
-          >
-            <button 
-              onClick={() => establishment.photo_url && setShowFullImage(true)}
-              aria-label="Ver foto em tela cheia"
-              className="relative group"
+        {/* ========== INFO SECTION - HORIZONTAL LAYOUT ========== */}
+        <div className="bg-background px-4 sm:px-6 py-6">
+          <div className="max-w-3xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, type: "spring", damping: 20 }}
+              className="flex items-start gap-5"
             >
-              {/* Glow sutil por trás */}
-              <div 
-                className="
-                  absolute -inset-3
-                  bg-[#240046]/40
-                  rounded-2xl
-                  blur-xl
-                  opacity-60
-                  group-hover:opacity-80
-                  transition-opacity
-                "
-              />
-              
-              {/* Borda com gradiente */}
-              <div 
-                className="
-                  absolute -inset-1 
-                  bg-gradient-to-tr from-[#240046] to-[#3C096C]
-                  rounded-2xl
-                  opacity-90
-                "
-              />
-              
-              {/* Container da foto */}
-              <div className="
-                relative 
-                w-28 h-28 sm:w-32 sm:h-32
-                rounded-2xl 
-                border-4 border-background 
-                overflow-hidden 
-                shadow-2xl
-                bg-background
-                transition-transform duration-300
-                group-hover:scale-105
-              ">
-                {establishment.photo_url ? (
-                  <img 
-                    src={coverImage} 
-                    alt={establishment.nome_fantasia}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#240046] to-[#3C096C] flex items-center justify-center">
-                    <span className="text-4xl font-bold text-white drop-shadow-lg">{inicialNome}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Sparkles flutuantes */}
-              <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Sparkles className="w-5 h-5 text-[#A78BFA] animate-pulse" />
-              </div>
-            </button>
-          </motion.div>
-        </div>
-
-        {/* ========== INFORMAÇÕES DO ESTABELECIMENTO ========== */}
-        <div className="mt-5 pb-2 text-center px-4">
-          {/* Nome */}
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="
-              text-3xl sm:text-4xl 
-              font-bold 
-              text-foreground 
-              tracking-tight
-            "
-          >
-            {establishment.nome_fantasia}
-          </motion.h1>
-          
-          {/* Categoria e Localização */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="flex items-center justify-center gap-3 mt-4 flex-wrap"
-          >
-            {/* Badge de Categoria Premium */}
-            <span 
-              className="
-                inline-flex items-center gap-1.5 
-                bg-[#240046]/15
-                text-[#240046]
-                dark:text-[#A78BFA]
-                px-5 py-2 
-                rounded-full 
-                text-sm 
-                font-semibold
-                border border-[#240046]/30
-              "
-            >
-              {categoria}
-            </span>
-            
-            {/* Localização com ícone */}
-            <span className="inline-flex items-center gap-1.5 text-muted-foreground text-sm">
-              <MapPin className="w-4 h-4 text-[#240046]" />
-              {establishment.bairro || establishment.cidade}
-            </span>
-          </motion.div>
-          
-          {/* Indicadores de Confiança */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="flex items-center justify-center gap-3 mt-5"
-          >
-            {[
-              { icon: Shield, label: 'Verificado', bgColor: 'bg-green-500/10', borderColor: 'border-green-500/20', iconColor: 'text-green-500' },
-              { icon: Zap, label: 'Responde rápido', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/20', iconColor: 'text-blue-500' },
-              { icon: Gift, label: 'Benefício ativo', bgColor: 'bg-[#240046]/10', borderColor: 'border-[#240046]/20', iconColor: 'text-[#240046]' },
-            ].map((item, index) => (
-              <motion.div
-                key={item.label}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.7 + index * 0.1 }}
-                whileHover={{ scale: 1.05, y: -2 }}
-                className={`
-                  flex items-center gap-2 
-                  px-3 py-2 
-                  rounded-xl
-                  ${item.bgColor}
-                  border ${item.borderColor}
-                  cursor-default
-                  transition-all duration-300
-                `}
+              {/* Avatar/Logo - Lado esquerdo */}
+              <button 
+                onClick={() => establishment.photo_url && setShowFullImage(true)}
+                aria-label="Ver foto em tela cheia"
+                className="relative group flex-shrink-0"
               >
-                <div className={`
-                  w-6 h-6 
-                  rounded-full 
-                  ${item.bgColor}
-                  flex items-center justify-center
-                `}>
-                  <item.icon className={`w-3.5 h-3.5 ${item.iconColor}`} />
+                {/* Glow sutil por trás */}
+                <div className="absolute -inset-2 bg-primary/30 rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity" />
+                
+                {/* Borda com gradiente */}
+                <div className="absolute -inset-1 bg-gradient-to-tr from-primary to-primary/60 rounded-2xl opacity-90" />
+                
+                {/* Container da foto */}
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-4 border-background overflow-hidden shadow-2xl bg-background transition-transform duration-300 group-hover:scale-105">
+                  {establishment.photo_url ? (
+                    <img 
+                      src={coverImage} 
+                      alt={establishment.nome_fantasia}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                      <span className="text-3xl font-bold text-white drop-shadow-lg">{inicialNome}</span>
+                    </div>
+                  )}
                 </div>
-                <span className="text-xs text-muted-foreground font-medium">{item.label}</span>
-              </motion.div>
-            ))}
-          </motion.div>
+
+                {/* Sparkles flutuantes */}
+                <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                </div>
+              </button>
+
+              {/* Nome e Info - Lado direito */}
+              <div className="flex-1 min-w-0 pt-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight truncate">
+                  {establishment.nome_fantasia}
+                </h1>
+                
+                <div className="flex items-center gap-3 mt-2 flex-wrap">
+                  {/* Badge de Categoria */}
+                  <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-semibold border border-primary/20">
+                    {categoria}
+                  </span>
+                  
+                  {/* Localização */}
+                  <span className="inline-flex items-center gap-1.5 text-muted-foreground text-sm">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    {establishment.bairro || establishment.cidade}
+                  </span>
+                </div>
+
+                {/* Indicadores de Confiança - Em linha */}
+                <div className="flex items-center gap-2 mt-4 flex-wrap">
+                  {[
+                    { icon: Shield, label: 'Verificado', color: 'text-green-500', bg: 'bg-green-500/10' },
+                    { icon: Zap, label: 'Responde rápido', color: 'text-blue-500', bg: 'bg-blue-500/10' },
+                    { icon: Gift, label: 'Benefício ativo', color: 'text-primary', bg: 'bg-primary/10' },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${item.bg}`}
+                    >
+                      <item.icon className={`w-3.5 h-3.5 ${item.color}`} />
+                      <span className="text-xs text-muted-foreground font-medium">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
+
+        {/* Separador visual */}
+        <div className="h-px bg-border" />
       </div>
 
       {/* ========== MODAL FULLSCREEN DA FOTO ========== */}

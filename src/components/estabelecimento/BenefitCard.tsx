@@ -135,12 +135,12 @@ const BenefitCard = ({
             >
               {/* Header */}
               <div className="sticky top-0 bg-white border-b border-[#EBEBEB] px-5 py-4 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-[#222222]">Como usar seu benefício</h2>
+                <h2 className="text-lg font-bold text-[#240046]">Como usar seu benefício</h2>
                 <button
                   onClick={() => setModalAberto(false)}
-                  className="w-8 h-8 rounded-full bg-[#F7F7F7] flex items-center justify-center hover:bg-[#EBEBEB] transition-colors"
+                  className="w-8 h-8 rounded-full bg-[#240046]/10 flex items-center justify-center hover:bg-[#240046]/20 transition-colors"
                 >
-                  <X className="w-4 h-4 text-[#717171]" />
+                  <X className="w-4 h-4 text-[#3C096C]" />
                 </button>
               </div>
 
@@ -153,22 +153,22 @@ const BenefitCard = ({
                 </div>
 
                 {/* Validade */}
-                <div className="bg-[#F7F7F7] rounded-xl p-4">
-                  <p className="text-sm text-[#717171] mb-1">Validade</p>
-                  <p className="text-[#222222] font-medium">{getValidadeTexto(validadeTexto)}</p>
+                <div className="bg-[#240046]/5 rounded-xl p-4">
+                  <p className="text-sm text-[#3C096C] mb-1">Validade</p>
+                  <p className="text-[#240046] font-medium">{getValidadeTexto(validadeTexto)}</p>
                 </div>
 
                 {/* Regras */}
                 {regras && (
-                  <div className="bg-[#F7F7F7] rounded-xl p-4">
-                    <p className="text-sm text-[#717171] mb-2">Regras de utilização</p>
-                    <p className="text-[#222222] text-sm leading-relaxed whitespace-pre-line">{regras}</p>
+                  <div className="bg-[#240046]/5 rounded-xl p-4">
+                    <p className="text-sm text-[#3C096C] mb-2">Regras de utilização</p>
+                    <p className="text-[#240046] text-sm leading-relaxed whitespace-pre-line">{regras}</p>
                   </div>
                 )}
 
                 {/* Passos */}
-                <div className="border border-[#EBEBEB] rounded-xl p-4">
-                  <p className="text-sm text-[#717171] mb-3 font-medium">Passo a passo</p>
+                <div className="border border-[#240046]/10 rounded-xl p-4">
+                  <p className="text-sm text-[#3C096C] mb-3 font-medium">Passo a passo</p>
                   <ul className="space-y-3">
                     {[
                       "Vá até o estabelecimento",
@@ -176,7 +176,7 @@ const BenefitCard = ({
                       "Mostre documento com data de nascimento",
                       "Aproveite! 🎉",
                     ].map((step, i) => (
-                      <li key={i} className="flex items-center gap-3 text-[#222222] text-sm">
+                      <li key={i} className="flex items-center gap-3 text-[#240046] text-sm">
                         <div className="w-6 h-6 rounded-full bg-[#240046] flex items-center justify-center flex-shrink-0">
                           <Check className="w-3.5 h-3.5 text-white" />
                         </div>
@@ -221,12 +221,12 @@ const BenefitCard = ({
                   onClick={() => setModalAberto(false)}
                   className="
                     w-full py-3
-                    bg-[#F7F7F7]
-                    text-[#717171]
+                    bg-[#240046]/5
+                    text-[#3C096C]
                     font-medium
                     rounded-xl
                     transition-colors
-                    hover:bg-[#EBEBEB]
+                    hover:bg-[#240046]/10
                   "
                 >
                   Fechar

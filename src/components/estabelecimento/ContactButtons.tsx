@@ -1,6 +1,6 @@
 // ContactButtons.tsx - Botões de Contato Clean
 
-import { MessageCircle, Instagram, Phone, Globe } from "lucide-react";
+import { MessageCircle, Instagram, Phone, Globe, UtensilsCrossed } from "lucide-react";
 import { formatWhatsApp, formatInstagram, formatPhoneLink, formatWebsite } from "@/lib/contactUtils";
 
 interface ContactButtonsProps {
@@ -8,10 +8,12 @@ interface ContactButtonsProps {
   instagram?: string | null;
   phone?: string | null;
   site?: string | null;
+  cardapio?: string | null;
   onWhatsApp?: () => void;
   onInstagram?: () => void;
   onPhone?: () => void;
   onSite?: () => void;
+  onCardapio?: () => void;
 }
 
 const ContactButtons = ({
@@ -19,15 +21,18 @@ const ContactButtons = ({
   instagram,
   phone,
   site,
+  cardapio,
   onWhatsApp,
   onInstagram,
   onPhone,
   onSite,
+  onCardapio,
 }: ContactButtonsProps) => {
   const hasWhatsApp = !!formatWhatsApp(whatsapp);
   const hasInstagram = !!formatInstagram(instagram);
   const hasPhone = !!formatPhoneLink(phone);
   const hasSite = !!formatWebsite(site);
+  const hasCardapio = !!cardapio;
 
   const buttons = [
     {
@@ -59,30 +64,44 @@ const ContactButtons = ({
       icon: Globe,
       onClick: onSite,
       available: hasSite,
-      bgColor: "bg-[#240046]",
-      hoverColor: "hover:bg-[#3C096C]",
+      bgColor: "bg-[#6366f1]",
+      hoverColor: "hover:bg-[#4f46e5]",
+    },
+    {
+      name: "Cardápio",
+      icon: UtensilsCrossed,
+      onClick: onCardapio,
+      available: hasCardapio,
+      bgColor: "bg-[#f97316]",
+      hoverColor: "hover:bg-[#ea580c]",
     },
   ].filter((btn) => btn.available);
 
   if (buttons.length === 0) return null;
 
+  // Grid responsivo baseado na quantidade de botões
+  const getGridClass = () => {
+    const count = buttons.length;
+
+    // Mobile: máximo 3 por linha, desktop: até 5
+    if (count === 1) return "grid-cols-1";
+    if (count === 2) return "grid-cols-2";
+    if (count === 3) return "grid-cols-3";
+    if (count === 4) return "grid-cols-2 sm:grid-cols-4";
+    if (count === 5) return "grid-cols-3 sm:grid-cols-5";
+    return "grid-cols-3 sm:grid-cols-6";
+  };
+
   return (
     <div className="mx-4 sm:mx-6 mt-4 sm:mt-6">
       <div className="max-w-3xl mx-auto">
-        {/* Grid 2 colunas no mobile pequeno, adapta conforme quantidade */}
-        <div
-          className={`grid gap-2 sm:gap-3 ${
-            buttons.length === 1
-              ? "grid-cols-1"
-              : buttons.length === 2
-                ? "grid-cols-2"
-                : buttons.length === 3
-                  ? "grid-cols-3"
-                  : "grid-cols-2 sm:grid-cols-4"
-          }`}
-        >
+        <div className={`grid gap-2 sm:gap-3 ${getGridClass()}`}>
           {buttons.map((button) => {
             const Icon = button.icon;
+            const count = buttons.length;
+
+            // Texto menor quando tem muitos botões no mobile
+            const showText = count <= 4;
 
             return (
               <button
@@ -94,16 +113,20 @@ const ContactButtons = ({
                   text-white
                   font-medium
                   min-h-[48px]
-                  py-3 sm:py-3.5 px-3 sm:px-4
+                  py-3 sm:py-3.5 px-2 sm:px-4
                   rounded-xl
-                  flex items-center justify-center gap-2
+                  flex items-center justify-center gap-1.5 sm:gap-2
                   transition-all duration-200
                   active:scale-[0.98]
                   shadow-sm
                 `}
               >
-                <Icon className="w-5 h-5" />
-                <span className="text-sm">{button.name}</span>
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                {showText ? (
+                  <span className="text-xs sm:text-sm truncate">{button.name}</span>
+                ) : (
+                  <span className="text-xs sm:text-sm hidden sm:inline">{button.name}</span>
+                )}
               </button>
             );
           })}

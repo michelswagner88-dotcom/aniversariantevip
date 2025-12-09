@@ -78,17 +78,17 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
       </div>
 
       <div className="space-y-0.5">
-        <h3 className="font-semibold text-[15px] text-[#222222] truncate">
+        <h3 className="font-semibold text-[15px] text-[#240046] truncate">
           {est.nome_fantasia || est.razao_social || "Estabelecimento"}
         </h3>
 
-        <p className="text-[15px] text-[#717171] truncate">{est.bairro || est.cidade}</p>
+        <p className="text-[15px] text-[#3C096C] truncate">{est.bairro || est.cidade}</p>
 
-        <p className="text-[15px] text-[#717171]">{categoria || "Estabelecimento"}</p>
+        <p className="text-[15px] text-[#3C096C]">{categoria || "Estabelecimento"}</p>
 
         {temBeneficio && (
-          <p className="text-[15px] text-[#222222] mt-1">
-            <span className="font-semibold">🎁 Benefício</span> no aniversário
+          <p className="text-[15px] text-[#3C096C] mt-1">
+            <span className="font-semibold text-[#240046]">🎁 Benefício</span> no aniversário
           </p>
         )}
       </div>
@@ -124,11 +124,11 @@ const ViewMoreCard = ({ linkHref }: { linkHref: string }) => (
       shadow-md
     "
     >
-      <ArrowRight className="w-8 h-8 text-[#222222]" />
+      <ArrowRight className="w-8 h-8 text-[#240046]" />
     </div>
     <div className="text-center">
-      <p className="text-[#222222] font-semibold text-[15px]">Ver todos</p>
-      <p className="text-[#717171] text-sm">Explorar categoria</p>
+      <p className="text-[#240046] font-semibold text-[15px]">Ver todos</p>
+      <p className="text-[#3C096C] text-sm">Explorar categoria</p>
     </div>
   </Link>
 );
@@ -225,15 +225,15 @@ export const CategoryCarousel = ({
       {/* Header da seção */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-[22px] font-semibold text-[#222222]">{title}</h2>
-          {subtitle && <p className="text-sm text-[#717171] mt-0.5">{subtitle}</p>}
+          <h2 className="text-[22px] font-semibold text-[#240046]">{title}</h2>
+          {subtitle && <p className="text-sm text-[#3C096C] mt-0.5">{subtitle}</p>}
         </div>
         {(linkHref || onVerTodos) && estabelecimentos.length > 4 && (
           <div>
             {linkHref ? (
               <Link
                 to={linkHref}
-                className="group/link flex items-center gap-1 text-sm font-semibold text-[#222222] hover:underline"
+                className="group/link flex items-center gap-1 text-sm font-semibold text-[#240046] hover:underline"
               >
                 Ver todos
                 <span className="transition-transform group-hover/link:translate-x-1">›</span>
@@ -241,7 +241,7 @@ export const CategoryCarousel = ({
             ) : onVerTodos ? (
               <button
                 onClick={onVerTodos}
-                className="group/link flex items-center gap-1 text-sm font-semibold text-[#222222] hover:underline"
+                className="group/link flex items-center gap-1 text-sm font-semibold text-[#240046] hover:underline"
               >
                 Ver todos
                 <span className="transition-transform group-hover/link:translate-x-1">›</span>
@@ -266,7 +266,7 @@ export const CategoryCarousel = ({
             !canScrollLeft && "!opacity-0 pointer-events-none",
           )}
         >
-          <ChevronLeft className="w-4 h-4 text-[#222222]" />
+          <ChevronLeft className="w-4 h-4 text-[#240046]" />
         </button>
 
         {/* Carrossel - SEM FRAMER MOTION */}
@@ -312,7 +312,7 @@ export const CategoryCarousel = ({
             !canScrollRight && "!opacity-0 pointer-events-none",
           )}
         >
-          <ChevronRightIcon className="w-4 h-4 text-[#222222]" />
+          <ChevronRightIcon className="w-4 h-4 text-[#240046]" />
         </button>
       </div>
 
@@ -326,11 +326,11 @@ export const CategoryCarousel = ({
               aria-label={`Ir para página ${i + 1}`}
               className={cn(
                 "w-1.5 h-1.5 rounded-full transition-all duration-300",
-                activeIndex === i ? "bg-[#222222] w-4" : "bg-[#DDDDDD] hover:bg-[#717171]",
+                activeIndex === i ? "bg-[#240046] w-4" : "bg-[#DDDDDD] hover:bg-[#3C096C]",
               )}
             />
           ))}
-          {totalDots > 5 && <span className="text-xs text-[#717171] ml-1">+{totalDots - 5}</span>}
+          {totalDots > 5 && <span className="text-xs text-[#3C096C] ml-1">+{totalDots - 5}</span>}
         </div>
       )}
 
@@ -344,7 +344,7 @@ export const CategoryCarousel = ({
             flex items-center justify-center gap-2
             mt-4
             py-3
-            text-[#222222]
+            text-[#240046]
             hover:underline
             transition-colors
             font-semibold

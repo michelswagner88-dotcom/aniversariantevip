@@ -98,10 +98,6 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  // Largura fixa do card + gap
-  const cardWidth = variant === "featured" ? 300 : variant === "compact" ? 240 : 280;
-  const gap = 24;
-
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
@@ -126,9 +122,17 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
     const { scrollLeft, scrollWidth, clientWidth } = container;
     const maxScroll = scrollWidth - clientWidth;
 
-    // Calcular quantos cards cabem inteiros na tela
-    const cardsVisiveis = Math.floor(clientWidth / (cardWidth + gap));
-    const scrollAmount = cardsVisiveis * (cardWidth + gap);
+    // Pegar largura real do primeiro card
+    const firstCard = container.querySelector("[data-card]") as HTMLElement;
+    if (!firstCard) return;
+
+    const cardWidth = firstCard.offsetWidth;
+    const gap = 24;
+
+    // No mobile, avança 1 card. No desktop, avança quantos cabem
+    const isMobile = clientWidth < 640;
+    const cardsToScroll = isMobile ? 1 : Math.floor(clientWidth / (cardWidth + gap));
+    const scrollAmount = cardsToScroll * (cardWidth + gap);
 
     if (direction === "right") {
       if (scrollLeft >= maxScroll - 10) {
@@ -177,17 +181,27 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
         {/* Carrossel */}
         <div
           ref={scrollRef}
-          className="flex gap-6 overflow-x-auto scrollbar-hide pb-2 snap-x snap-mandatory"
+          className="flex gap-6 overflow-x-auto scrollbar-hide pb-2"
           style={{
+            scrollSnapType: "x mandatory",
             WebkitOverflowScrolling: "touch",
           }}
         >
-          {estabelecimentos.map((est) => (
+          {estabelecimentos.map((est, index) => (
             <div
               key={est.id}
-              className="flex-shrink-0 snap-start"
+              data-card
+              className={cn(
+                "flex-shrink-0",
+                // Mobile: card grande centralizado (quase tela toda)
+                "w-[85vw]",
+                // Tablet
+                "sm:w-[45vw]",
+                // Desktop: largura fixa
+                "md:w-[280px]",
+              )}
               style={{
-                width: `${cardWidth}px`,
+                scrollSnapAlign: "center",
               }}
             >
               <CarouselCard estabelecimento={est} />

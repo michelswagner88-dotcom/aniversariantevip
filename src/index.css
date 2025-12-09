@@ -561,11 +561,16 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
 
-    /* Cosmic Celebration Variables */
-    --cosmic-violet: 271 81% 56%;
-    --cosmic-fuchsia: 328 86% 70%;
-    --cosmic-pink: 330 81% 60%;
-    --cosmic-glow: 271 81% 56%;
+    /* Cosmic Celebration Variables - Deep Purple Theme */
+    --cosmic-violet: 271 100% 14%; /* #240046 */
+    --cosmic-secondary: 271 100% 21%; /* #3C096C */
+    --cosmic-accent: 263 70% 76%; /* #A78BFA */
+    --cosmic-glow: 271 100% 14%;
+    
+    /* Deep Purple Brand Colors */
+    --brand-primary: 271 100% 14%; /* #240046 */
+    --brand-secondary: 271 100% 21%; /* #3C096C */
+    --brand-accent: 263 70% 76%; /* #A78BFA */
     
     /* Premium Design Tokens */
     --surface-base: 222 47% 11%;
@@ -650,11 +655,16 @@ All colors MUST be HSL.
     --input: 222 47% 20%;
     --ring: 271 81% 56%;
 
-    /* Cosmic Celebration Dark Variables */
-    --cosmic-violet: 271 81% 56%;
-    --cosmic-fuchsia: 328 86% 70%;
-    --cosmic-pink: 330 81% 60%;
-    --cosmic-glow: 271 81% 56%;
+    /* Cosmic Celebration Dark Variables - Deep Purple Theme */
+    --cosmic-violet: 271 100% 14%; /* #240046 */
+    --cosmic-secondary: 271 100% 21%; /* #3C096C */
+    --cosmic-accent: 263 70% 76%; /* #A78BFA */
+    --cosmic-glow: 271 100% 14%;
+    
+    /* Deep Purple Brand Colors */
+    --brand-primary: 271 100% 14%; /* #240046 */
+    --brand-secondary: 271 100% 21%; /* #3C096C */
+    --brand-accent: 263 70% 76%; /* #A78BFA */
     
     /* Glassmorphism Dark */
     --glass-bg: 0 0% 100%;

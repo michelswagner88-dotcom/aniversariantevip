@@ -151,13 +151,13 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
           {/* Nome */}
           <h3 className={cn(
             "font-semibold text-base sm:text-[16px] leading-snug truncate transition-colors duration-300",
-            isHovered ? "text-violet-600 dark:text-violet-400" : "text-slate-900 dark:text-white"
+            isHovered ? "text-[#240046] dark:text-[#A78BFA]" : "text-gray-900 dark:text-white"
           )}>
             {est.nome_fantasia || est.razao_social || 'Estabelecimento'}
           </h3>
           
           {/* Bairro */}
-          <p className="text-sm text-muted-foreground truncate">
+          <p className="text-sm text-gray-500 dark:text-muted-foreground truncate">
             {est.bairro || est.cidade}
           </p>
         </div>
@@ -173,33 +173,33 @@ const ViewMoreCard = ({ linkHref }: { linkHref: string }) => (
     className="
       flex-shrink-0 w-[calc(100vw-3rem)] sm:w-[280px] md:w-[300px]
       aspect-[4/3]
-      bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-violet-500/10
-      hover:from-violet-500/20 hover:via-fuchsia-500/10 hover:to-violet-500/20
-      border border-violet-500/20
-      hover:border-violet-500/40
+      bg-gradient-to-br from-[#240046]/10 via-[#3C096C]/5 to-[#240046]/10
+      hover:from-[#240046]/20 hover:via-[#3C096C]/10 hover:to-[#240046]/20
+      border border-[#240046]/20
+      hover:border-[#240046]/40
       rounded-xl
       flex flex-col items-center justify-center
       gap-4
       transition-all duration-300
       hover:scale-[1.02]
-      hover:shadow-xl hover:shadow-violet-500/10
+      hover:shadow-xl hover:shadow-[#240046]/10
       group
     "
   >
     <div className="
       w-16 h-16
-      bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20
+      bg-gradient-to-br from-[#240046]/20 to-[#3C096C]/20
       rounded-2xl
       flex items-center justify-center
       transition-all duration-300
       group-hover:scale-110
       group-hover:rotate-3
     ">
-      <ArrowRight className="w-8 h-8 text-violet-400" />
+      <ArrowRight className="w-8 h-8 text-[#240046] dark:text-[#A78BFA]" />
     </div>
     <div className="text-center">
-      <p className="text-violet-300 font-semibold">Ver todos</p>
-      <p className="text-muted-foreground text-sm">Explorar categoria</p>
+      <p className="text-[#240046] dark:text-[#A78BFA] font-semibold">Ver todos</p>
+      <p className="text-gray-500 dark:text-muted-foreground text-sm">Explorar categoria</p>
     </div>
   </Link>
 );
@@ -310,11 +310,11 @@ export const CategoryCarousel = ({
         variants={titleVariants}
       >
         <div>
-          <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
+          <h2 className="text-xl md:text-2xl font-semibold text-gray-900 dark:text-white">
             {title}
           </h2>
           {subtitle && (
-            <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
+            <p className="text-sm text-gray-500 dark:text-muted-foreground mt-0.5">{subtitle}</p>
           )}
         </div>
         {(linkHref || onVerTodos) && estabelecimentos.length > 4 && (
@@ -355,7 +355,7 @@ export const CategoryCarousel = ({
         {/* Fade esquerda */}
         <div 
           className={cn(
-            "absolute left-0 top-0 bottom-2 w-12 bg-gradient-to-r from-white dark:from-slate-950 to-transparent z-[5] pointer-events-none transition-opacity duration-300",
+            "absolute left-0 top-0 bottom-2 w-12 bg-gradient-to-r from-white to-transparent z-[5] pointer-events-none transition-opacity duration-300",
             canScrollLeft ? "opacity-100" : "opacity-0"
           )}
         />
@@ -363,7 +363,7 @@ export const CategoryCarousel = ({
         {/* Fade direita */}
         <div 
           className={cn(
-            "absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-white dark:from-slate-950 to-transparent z-[5] pointer-events-none transition-opacity duration-300",
+            "absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-white to-transparent z-[5] pointer-events-none transition-opacity duration-300",
             canScrollRight ? "opacity-100" : "opacity-0"
           )}
         />
@@ -374,9 +374,9 @@ export const CategoryCarousel = ({
           aria-label="Anterior"
           className={cn(
             "absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10",
-            "w-12 h-12 bg-background/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full",
-            "shadow-lg border border-border flex items-center justify-center",
-            "transition-all duration-300 hover:scale-110 hover:border-violet-500/30 active:scale-95",
+            "w-12 h-12 bg-white dark:bg-slate-800/90 backdrop-blur-md rounded-full",
+            "shadow-lg border border-gray-200 dark:border-border flex items-center justify-center",
+            "transition-all duration-300 hover:scale-110 hover:border-[#240046]/30 active:scale-95",
             "opacity-0 group-hover/section:opacity-100",
             !canScrollLeft && "!opacity-40"
           )}
@@ -431,9 +431,9 @@ export const CategoryCarousel = ({
           aria-label="Próximo"
           className={cn(
             "absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10",
-            "w-12 h-12 bg-background/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full",
-            "shadow-lg border border-border flex items-center justify-center",
-            "transition-all duration-300 hover:scale-110 hover:border-violet-500/30 active:scale-95",
+            "w-12 h-12 bg-white dark:bg-slate-800/90 backdrop-blur-md rounded-full",
+            "shadow-lg border border-gray-200 dark:border-border flex items-center justify-center",
+            "transition-all duration-300 hover:scale-110 hover:border-[#240046]/30 active:scale-95",
             "opacity-0 group-hover/section:opacity-100",
             !canScrollRight && "!opacity-40"
           )}
@@ -452,8 +452,8 @@ export const CategoryCarousel = ({
               className={cn(
                 'w-2 h-2 rounded-full transition-all duration-300',
                 activeIndex === i 
-                  ? 'bg-violet-500 w-4' 
-                  : 'bg-slate-300 dark:bg-slate-600 hover:bg-slate-400'
+                  ? 'bg-[#240046] w-4' 
+                  : 'bg-gray-300 dark:bg-slate-600 hover:bg-gray-400'
               )}
             />
           ))}
@@ -472,8 +472,8 @@ export const CategoryCarousel = ({
             flex items-center justify-center gap-2
             mt-4
             py-3
-            text-violet-500 
-            hover:text-violet-400
+            text-[#240046] dark:text-[#A78BFA]
+            hover:text-[#3C096C] dark:hover:text-[#A78BFA]/80
             transition-colors
             font-medium
           "

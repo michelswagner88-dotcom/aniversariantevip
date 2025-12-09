@@ -276,10 +276,10 @@ const Index = () => {
   };
   
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-white dark:bg-slate-950">
       <Header />
       
-      <main className="pb-24">
+      <main className="pb-24 bg-white dark:bg-slate-950">
         {/* Hero Section - Apenas na home sem filtros */}
         {!isFiltered && (
           <HeroSection
@@ -306,8 +306,8 @@ const Index = () => {
           </div>
         )}
         
-        {/* Pills de categorias estilo Airbnb + Botão de Filtros */}
-        <div className="border-b border-slate-200 dark:border-slate-800 sticky top-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-lg z-30">
+        {/* Pills de categorias estilo Airbnb + Botão de Filtros - MANTÉM FUNDO ESCURO */}
+        <div className="border-b border-slate-200 dark:border-slate-800 sticky top-16 bg-slate-50 dark:bg-slate-950/80 backdrop-blur-lg z-30">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
             <div className="flex items-center gap-3">
               <div className="flex-1 overflow-hidden">
@@ -331,7 +331,7 @@ const Index = () => {
                 <SlidersHorizontal className="h-4 w-4" />
                 <span className="hidden sm:inline">Filtros</span>
                 {activeFiltersCount > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-violet-500 text-white">
+                  <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-[#240046] text-white">
                     {activeFiltersCount}
                   </Badge>
                 )}
@@ -355,8 +355,8 @@ const Index = () => {
           </div>
         )}
         
-        {/* Container principal com padding respirado */}
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-8 pb-16">
+        {/* Container principal com padding respirado - ÁREA BRANCA */}
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-8 pb-16 bg-white dark:bg-slate-950">
           
           {/* Loading state com skeletons */}
           {isLoadingEstabelecimentos ? (
@@ -370,8 +370,8 @@ const Index = () => {
             <div className="space-y-8 md:space-y-12">
               {/* Aviso quando mostrando de outras cidades */}
               {usandoFallback && cidadeFinal && (
-                <div className="mx-4 sm:mx-6 lg:mx-12 xl:mx-20 bg-violet-500/10 border border-violet-500/20 rounded-xl px-6 py-4">
-                  <p className="text-sm text-violet-600 dark:text-violet-300 text-center">
+                <div className="mx-4 sm:mx-6 lg:mx-12 xl:mx-20 bg-[#240046]/10 border border-[#240046]/20 rounded-xl px-6 py-4">
+                  <p className="text-sm text-[#240046] dark:text-[#A78BFA] text-center">
                     <span className="font-medium">Ainda não temos estabelecimentos em {cidadeFinal}.</span>
                     {' '}Mostrando lugares de outras cidades disponíveis.
                   </p>

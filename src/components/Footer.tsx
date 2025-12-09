@@ -43,9 +43,9 @@ export const Footer = () => {
             viewport={{ once: true }}
             className="max-w-2xl mx-auto text-center"
           >
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-full px-4 py-1.5 mb-4">
-              <Gift className="w-4 h-4 text-purple-500" />
-              <span className="text-sm font-medium text-purple-600 dark:text-purple-400">Newsletter exclusiva</span>
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#240046]/10 to-[#3C096C]/10 border border-[#240046]/20 rounded-full px-4 py-1.5 mb-4">
+              <Gift className="w-4 h-4 text-[#240046] dark:text-[#A78BFA]" />
+              <span className="text-sm font-medium text-[#240046] dark:text-[#A78BFA]">Newsletter exclusiva</span>
             </div>
             
             <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">
@@ -83,22 +83,22 @@ export const Footer = () => {
                       text-slate-900 dark:text-white
                       placeholder-slate-400
                       outline-none
-                      transition-all duration-300
-                      focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20
-                    "
-                  />
+                    transition-all duration-300
+                    focus:border-[#240046] focus:ring-2 focus:ring-[#240046]/20
+                  "
+                />
                 </div>
                 <button
                   type="submit"
                   disabled={isSubmitting}
                   className="
                     group
-                    bg-gradient-to-r from-purple-500 to-pink-500
+                    bg-gradient-to-r from-[#240046] to-[#3C096C]
                     text-white font-semibold
                     px-6 py-3.5
                     rounded-full
                     transition-all duration-300
-                    hover:scale-105 hover:shadow-lg hover:shadow-purple-500/30
+                    hover:scale-105 hover:shadow-lg hover:shadow-[#240046]/30
                     active:scale-95
                     disabled:opacity-70 disabled:cursor-not-allowed
                     flex items-center justify-center gap-2
@@ -126,10 +126,10 @@ export const Footer = () => {
           {/* Logo e Descrição */}
           <div className="lg:col-span-2">
             <Link to="/" className="group inline-flex items-center gap-3 mb-4">
-              <div className="w-11 h-11 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 transition-transform group-hover:scale-110 group-hover:rotate-6">
+              <div className="w-11 h-11 bg-gradient-to-br from-[#240046] to-[#3C096C] rounded-xl flex items-center justify-center shadow-lg shadow-[#240046]/20 transition-transform group-hover:scale-110 group-hover:rotate-6">
                 <Gift className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500">
+              <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#240046] via-[#3C096C] to-[#240046] dark:from-[#A78BFA] dark:via-[#A78BFA] dark:to-[#A78BFA]">
                 ANIVERSARIANTE VIP
               </span>
             </Link>
@@ -146,18 +146,18 @@ export const Footer = () => {
                 rel="noopener noreferrer"
                 className="
                   w-11 h-11
-                  bg-gradient-to-br from-pink-500/10 to-purple-500/10
-                  hover:from-pink-500 hover:to-purple-500
-                  border border-pink-500/20 hover:border-transparent
+                  bg-gradient-to-br from-[#240046]/10 to-[#3C096C]/10
+                  hover:from-[#240046] hover:to-[#3C096C]
+                  border border-[#240046]/20 hover:border-transparent
                   rounded-xl
                   flex items-center justify-center
                   transition-all duration-300
-                  hover:scale-110 hover:shadow-lg hover:shadow-pink-500/30
+                  hover:scale-110 hover:shadow-lg hover:shadow-[#240046]/30
                   group
                 "
                 aria-label="Instagram"
               >
-                <Instagram className="w-5 h-5 text-pink-500 group-hover:text-white transition-colors" />
+                <Instagram className="w-5 h-5 text-[#240046] dark:text-[#A78BFA] group-hover:text-white transition-colors" />
               </a>
               <a 
                 href="https://wa.me/5561999999999" 
@@ -202,16 +202,16 @@ export const Footer = () => {
           <div>
             <h4 className="font-semibold text-slate-900 dark:text-white mb-4">Descubra</h4>
             <nav className="flex flex-col gap-3">
-              <Link to="/sobre" className="text-sm text-slate-600 dark:text-slate-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors">
+              <Link to="/sobre" className="text-sm text-slate-600 dark:text-slate-400 hover:text-[#240046] dark:hover:text-[#A78BFA] transition-colors">
                 Sobre Nós
               </Link>
-              <Link to="/como-funciona" className="text-sm text-slate-600 dark:text-slate-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors">
+              <Link to="/como-funciona" className="text-sm text-slate-600 dark:text-slate-400 hover:text-[#240046] dark:hover:text-[#A78BFA] transition-colors">
                 Como Funciona
               </Link>
-              <Link to="/explorar" className="text-sm text-slate-600 dark:text-slate-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors">
+              <Link to="/explorar" className="text-sm text-slate-600 dark:text-slate-400 hover:text-[#240046] dark:hover:text-[#A78BFA] transition-colors">
                 Explorar
               </Link>
-              <Link to="/faq" className="text-sm text-slate-600 dark:text-slate-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors">
+              <Link to="/faq" className="text-sm text-slate-600 dark:text-slate-400 hover:text-[#240046] dark:hover:text-[#A78BFA] transition-colors">
                 Central de Ajuda
               </Link>
             </nav>
@@ -221,13 +221,13 @@ export const Footer = () => {
           <div>
             <h4 className="font-semibold text-slate-900 dark:text-white mb-4">Parceiros</h4>
             <nav className="flex flex-col gap-3">
-              <Link to="/seja-parceiro" className="text-sm text-slate-600 dark:text-slate-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors">
+              <Link to="/seja-parceiro" className="text-sm text-slate-600 dark:text-slate-400 hover:text-[#240046] dark:hover:text-[#A78BFA] transition-colors">
                 Seja Parceiro
               </Link>
-              <Link to="/login/estabelecimento" className="text-sm text-slate-600 dark:text-slate-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors">
+              <Link to="/login/estabelecimento" className="text-sm text-slate-600 dark:text-slate-400 hover:text-[#240046] dark:hover:text-[#A78BFA] transition-colors">
                 Área do Parceiro
               </Link>
-              <Link to="/afiliado" className="text-sm text-slate-600 dark:text-slate-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors">
+              <Link to="/afiliado" className="text-sm text-slate-600 dark:text-slate-400 hover:text-[#240046] dark:hover:text-[#A78BFA] transition-colors">
                 Indique e Ganhe
               </Link>
             </nav>
@@ -239,18 +239,18 @@ export const Footer = () => {
             <nav className="flex flex-col gap-3">
               <button 
                 onClick={abrirCarol}
-                className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors text-left"
+                className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-[#240046] dark:hover:text-[#A78BFA] transition-colors text-left"
               >
                 <MessageCircle size={14} />
                 Fale com a Carol
               </button>
-              <Link to="/faq" className="text-sm text-slate-600 dark:text-slate-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors">
+              <Link to="/faq" className="text-sm text-slate-600 dark:text-slate-400 hover:text-[#240046] dark:hover:text-[#A78BFA] transition-colors">
                 FAQ
               </Link>
-              <Link to="/politica-privacidade" className="text-sm text-slate-600 dark:text-slate-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors">
+              <Link to="/politica-privacidade" className="text-sm text-slate-600 dark:text-slate-400 hover:text-[#240046] dark:hover:text-[#A78BFA] transition-colors">
                 Privacidade
               </Link>
-              <Link to="/termos-uso" className="text-sm text-slate-600 dark:text-slate-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors">
+              <Link to="/termos-uso" className="text-sm text-slate-600 dark:text-slate-400 hover:text-[#240046] dark:hover:text-[#A78BFA] transition-colors">
                 Termos de Uso
               </Link>
             </nav>
@@ -268,7 +268,7 @@ export const Footer = () => {
             <span>LGPD Compliant</span>
           </div>
           <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
-            <CreditCard className="w-5 h-5 text-purple-500" />
+            <CreditCard className="w-5 h-5 text-[#240046] dark:text-[#A78BFA]" />
             <span>Pagamento Seguro</span>
           </div>
         </div>

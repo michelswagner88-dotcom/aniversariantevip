@@ -134,9 +134,12 @@ export const AirbnbCategoryPills = ({
         <button
           onClick={() => scrollBy("left")}
           aria-label="Categorias anteriores"
-          className={cn(
-            "hidden sm:flex flex-shrink-0 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 items-center justify-center transition-all",
-            !showFadeLeft && "opacity-30 pointer-events-none",
+         className={cn(
+  "hidden sm:flex flex-shrink-0 w-8 h-8 rounded-full bg-white hover:bg-white/90 items-center justify-center transition-all",
+  !showFadeLeft && "opacity-30 pointer-events-none",
+)}
+>
+  <ChevronLeft className="w-4 h-4 text-[#240046]" />
           )}
         >
           <ChevronLeft className="w-4 h-4 text-white" />
@@ -199,8 +202,8 @@ export const AirbnbCategoryPills = ({
           onClick={() => scrollBy("right")}
           aria-label="Próximas categorias"
           className={cn(
-            "hidden sm:flex flex-shrink-0 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 items-center justify-center transition-all",
-            !showFadeRight && "opacity-30 pointer-events-none",
+            "hidden sm:flex flex-shrink-0 w-8 h-8 rounded-full bg-white hover:bg-white/90 items-center justify-center transition-all",
+  !showFadeRight && "opacity-30 pointer-events-none",
           )}
         >
           <ChevronRight className="w-4 h-4 text-white" />

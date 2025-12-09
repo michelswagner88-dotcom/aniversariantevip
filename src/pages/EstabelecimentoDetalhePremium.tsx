@@ -30,6 +30,7 @@ import ContactButtons from "@/components/estabelecimento/ContactButtons";
 import BusinessHours from "@/components/estabelecimento/BusinessHours";
 import LocationSection from "@/components/estabelecimento/LocationSection";
 import PartnerCTA from "@/components/estabelecimento/PartnerCTA";
+import PhotoGallery from "@/components/estabelecimento/PhotoGallery";
 import BottomNav from "@/components/BottomNav";
 
 interface EstabelecimentoDetalhePremiumProps {
@@ -346,6 +347,11 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
         onShare={handleShare}
         isFavorited={id ? isFavorito(id) : false}
       />
+
+      {/* Galeria de Fotos */}
+      {galeriaFotos.length > 1 && (
+        <PhotoGallery photos={galeriaFotos} establishmentName={estabelecimento.nome_fantasia} />
+      )}
 
       {/* Benefício */}
       <BenefitCard

@@ -102,12 +102,12 @@ const LocationSection = ({ establishment, onOpenMaps, onOpenWaze, onOpenUber, on
           {/* Header com endereço */}
           <div className="p-4 sm:p-5">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#F7F7F7] flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-[#240046]/10 flex items-center justify-center flex-shrink-0">
                 <MapPin className="w-5 h-5 text-[#240046]" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-[#222222] mb-1">Como chegar</h3>
-                <p className="text-[#717171] text-sm leading-relaxed">
+                <h3 className="text-lg font-semibold text-[#240046] mb-1">Como chegar</h3>
+                <p className="text-[#3C096C] text-sm leading-relaxed">
                   {formatAddress()}
                   {establishment.bairro && (
                     <>
@@ -150,8 +150,8 @@ const LocationSection = ({ establishment, onOpenMaps, onOpenWaze, onOpenUber, on
               ) : mapVisible && !hasValidCoordinates ? (
                 <div className="w-full h-40 sm:h-44 bg-[#F7F7F7] flex items-center justify-center">
                   <div className="text-center">
-                    <Navigation className="w-8 h-8 text-[#DDDDDD] mx-auto mb-2" />
-                    <p className="text-sm text-[#717171]">Mapa indisponível</p>
+                    <Navigation className="w-8 h-8 text-[#3C096C]/30 mx-auto mb-2" />
+                    <p className="text-sm text-[#3C096C]">Mapa indisponível</p>
                   </div>
                 </div>
               ) : (
@@ -170,8 +170,8 @@ const LocationSection = ({ establishment, onOpenMaps, onOpenWaze, onOpenUber, on
                   flex flex-col items-center justify-center
                   min-h-[56px]
                   py-2.5 sm:py-3 px-2
-                  bg-[#F7F7F7]
-                  hover:bg-[#EBEBEB]
+                  bg-[#240046]/5
+                  hover:bg-[#240046]/10
                   rounded-xl
                   transition-colors duration-200
                   active:scale-[0.98]
@@ -180,7 +180,7 @@ const LocationSection = ({ establishment, onOpenMaps, onOpenWaze, onOpenUber, on
                 <div className="mb-1 sm:mb-1.5">
                   <app.Icon />
                 </div>
-                <span className="text-[11px] sm:text-xs text-[#717171] font-medium">{app.name}</span>
+                <span className="text-[11px] sm:text-xs text-[#3C096C] font-medium">{app.name}</span>
               </button>
             ))}
           </div>

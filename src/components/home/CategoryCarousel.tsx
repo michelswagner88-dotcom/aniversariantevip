@@ -94,57 +94,57 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
 };
 
 export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = "default" }: CategoryCarouselProps) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [cardsPerPage, setCardsPerPage] = useState(4);
 
+  // Calcular quantos cards cabem por página baseado na largura da tela
   useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const updateScrollState = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = container;
-      const maxScroll = scrollWidth - clientWidth;
-
-      setCanScrollLeft(scrollLeft > 10);
-      setCanScrollRight(scrollLeft < maxScroll - 10);
+    const calculateCardsPerPage = () => {
+      const width = window.innerWidth;
+      if (width < 640) {
+        setCardsPerPage(1); // Mobile: 1 card
+      } else if (width < 768) {
+        setCardsPerPage(2); // Tablet pequeno: 2 cards
+      } else if (width < 1024) {
+        setCardsPerPage(3); // Tablet: 3 cards
+      } else if (width < 1280) {
+        setCardsPerPage(4); // Desktop: 4 cards
+      } else if (width < 1536) {
+        setCardsPerPage(5); // Desktop grande: 5 cards
+      } else {
+        setCardsPerPage(6); // Ultra wide: 6 cards
+      }
     };
 
-    updateScrollState();
-    container.addEventListener("scroll", updateScrollState);
-    return () => container.removeEventListener("scroll", updateScrollState);
-  }, [estabelecimentos]);
+    calculateCardsPerPage();
+    window.addEventListener("resize", calculateCardsPerPage);
+    return () => window.removeEventListener("resize", calculateCardsPerPage);
+  }, []);
+
+  // Total de páginas
+  const totalPages = Math.ceil(estabelecimentos.length / cardsPerPage);
+
+  // Cards da página atual
+  const startIndex = currentPage * cardsPerPage;
+  const visibleCards = estabelecimentos.slice(startIndex, startIndex + cardsPerPage);
+
+  // Navegação
+  const canScrollLeft = currentPage > 0;
+  const canScrollRight = currentPage < totalPages - 1;
 
   const scroll = (direction: "left" | "right") => {
-    if (!scrollRef.current) return;
-
-    const container = scrollRef.current;
-    const { scrollLeft, scrollWidth, clientWidth } = container;
-    const maxScroll = scrollWidth - clientWidth;
-
-    // Pegar largura real do primeiro card
-    const firstCard = container.querySelector("[data-card]") as HTMLElement;
-    if (!firstCard) return;
-
-    const cardWidth = firstCard.offsetWidth;
-    const gap = 24;
-
-    // No mobile, avança 1 card. No desktop, avança quantos cabem
-    const isMobile = clientWidth < 640;
-    const cardsToScroll = isMobile ? 1 : Math.floor(clientWidth / (cardWidth + gap));
-    const scrollAmount = cardsToScroll * (cardWidth + gap);
-
     if (direction === "right") {
-      if (scrollLeft >= maxScroll - 10) {
-        container.scrollTo({ left: 0, behavior: "smooth" });
+      if (currentPage < totalPages - 1) {
+        setCurrentPage(currentPage + 1);
       } else {
-        container.scrollBy({ left: scrollAmount, behavior: "smooth" });
+        setCurrentPage(0); // Volta pro início
       }
     } else {
-      if (scrollLeft <= 10) {
-        container.scrollTo({ left: maxScroll, behavior: "smooth" });
+      if (currentPage > 0) {
+        setCurrentPage(currentPage - 1);
       } else {
-        container.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+        setCurrentPage(totalPages - 1); // Vai pro final
       }
     }
   };
@@ -159,51 +159,46 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
           <h2 className="text-[22px] font-semibold text-[#240046]">{title}</h2>
           {subtitle && <p className="text-sm text-[#3C096C] mt-0.5">{subtitle}</p>}
         </div>
+
+        {/* Indicador de página */}
+        {totalPages > 1 && (
+          <div className="text-sm text-[#3C096C]">
+            {currentPage + 1} / {totalPages}
+          </div>
+        )}
       </div>
 
       {/* Container do carrossel */}
-      <div className="relative">
+      <div className="relative" ref={containerRef}>
         {/* Botão esquerda */}
         <button
           onClick={() => scroll("left")}
           aria-label="Anterior"
           className={cn(
-            "absolute left-2 top-1/3 -translate-y-1/2 z-10",
+            "absolute -left-4 top-1/3 -translate-y-1/2 z-10",
             "w-10 h-10 bg-white rounded-full",
             "shadow-lg border border-[#DDDDDD] flex items-center justify-center",
             "transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95",
-            !canScrollLeft && "opacity-0 pointer-events-none",
+            !canScrollLeft && "opacity-40 cursor-not-allowed hover:scale-100",
           )}
         >
           <ChevronLeft className="w-5 h-5 text-[#240046]" />
         </button>
 
-        {/* Carrossel */}
+        {/* Grid de Cards */}
         <div
-          ref={scrollRef}
-          className="flex gap-6 overflow-x-auto scrollbar-hide pb-2"
-          style={{
-            scrollSnapType: "x mandatory",
-            WebkitOverflowScrolling: "touch",
-          }}
+          className={cn(
+            "grid gap-6 transition-opacity duration-300",
+            cardsPerPage === 1 && "grid-cols-1",
+            cardsPerPage === 2 && "grid-cols-2",
+            cardsPerPage === 3 && "grid-cols-3",
+            cardsPerPage === 4 && "grid-cols-4",
+            cardsPerPage === 5 && "grid-cols-5",
+            cardsPerPage === 6 && "grid-cols-6",
+          )}
         >
-          {estabelecimentos.map((est, index) => (
-            <div
-              key={est.id}
-              data-card
-              className={cn(
-                "flex-shrink-0",
-                // Mobile: card grande centralizado (quase tela toda)
-                "w-[85vw]",
-                // Tablet
-                "sm:w-[45vw]",
-                // Desktop: largura fixa
-                "md:w-[280px]",
-              )}
-              style={{
-                scrollSnapAlign: "center",
-              }}
-            >
+          {visibleCards.map((est) => (
+            <div key={est.id}>
               <CarouselCard estabelecimento={est} />
             </div>
           ))}
@@ -214,16 +209,33 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
           onClick={() => scroll("right")}
           aria-label="Próximo"
           className={cn(
-            "absolute right-2 top-1/3 -translate-y-1/2 z-10",
+            "absolute -right-4 top-1/3 -translate-y-1/2 z-10",
             "w-10 h-10 bg-white rounded-full",
             "shadow-lg border border-[#DDDDDD] flex items-center justify-center",
             "transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95",
-            !canScrollRight && "opacity-0 pointer-events-none",
+            !canScrollRight && "opacity-40 cursor-not-allowed hover:scale-100",
           )}
         >
           <ChevronRightIcon className="w-5 h-5 text-[#240046]" />
         </button>
       </div>
+
+      {/* Dots indicadores */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-1.5 mt-4">
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i)}
+              aria-label={`Ir para página ${i + 1}`}
+              className={cn(
+                "w-2 h-2 rounded-full transition-all duration-300",
+                currentPage === i ? "bg-[#240046] w-4" : "bg-[#DDDDDD] hover:bg-[#3C096C]",
+              )}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 };

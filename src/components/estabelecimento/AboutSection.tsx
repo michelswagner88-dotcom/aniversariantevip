@@ -14,14 +14,14 @@ const AboutSection = ({ bio, tags = [] }: AboutSectionProps) => {
         <div className="bg-white border border-[#EBEBEB] rounded-2xl p-4 sm:p-5">
           {/* Header */}
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-[#F7F7F7] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-[#240046]/10 flex items-center justify-center">
               <Store className="w-5 h-5 text-[#240046]" />
             </div>
-            <h2 className="text-lg font-semibold text-[#222222]">Sobre</h2>
+            <h2 className="text-lg font-semibold text-[#240046]">Sobre</h2>
           </div>
 
           {/* Bio */}
-          <p className="text-[#717171] leading-relaxed text-[15px]">{bio}</p>
+          <p className="text-[#3C096C] leading-relaxed text-[15px]">{bio}</p>
 
           {/* Tags */}
           {tags.length > 0 && (
@@ -33,9 +33,9 @@ const AboutSection = ({ bio, tags = [] }: AboutSectionProps) => {
                     px-3 py-1.5 
                     rounded-full 
                     text-sm 
-                    bg-[#F7F7F7] 
-                    text-[#717171]
-                    border border-[#EBEBEB]
+                    bg-[#240046]/5
+                    text-[#3C096C]
+                    border border-[#240046]/10
                   "
                 >
                   {tag}

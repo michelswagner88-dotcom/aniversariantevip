@@ -346,7 +346,7 @@ const Index = () => {
         )}
 
         {/* Pills de categorias */}
-        <div className="bg-background border-b border-white/10 sticky top-16 backdrop-blur-lg z-30">
+        <div className="bg-[#240046] sticky top-16 z-30">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
             <div className="flex items-center gap-3">
               <div className="flex-1 overflow-hidden">

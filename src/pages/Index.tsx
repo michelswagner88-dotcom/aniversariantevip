@@ -242,15 +242,18 @@ const Index = () => {
   const secoesDinamicas = useMemo(() => {
     if (!estabelecimentos || categoriaParam || buscaParam) return [];
     
+    // Usar estabelecimentos filtrados, ou TODOS se filtrados estiver vazio (fallback)
+    const dadosBase = estabelecimentosFiltrados.length > 0 ? estabelecimentosFiltrados : estabelecimentos;
+    
     return rotatingSections.map(section => {
       let ests: any[] = [];
       
       if (section.category === 'all') {
         // Seção "Em alta" - mostrar os mais populares (primeiros 10)
-        ests = estabelecimentosFiltrados.slice(0, 10);
+        ests = dadosBase.slice(0, 10);
       } else {
         // Filtrar por categoria específica
-        ests = estabelecimentosFiltrados.filter(est => {
+        ests = dadosBase.filter(est => {
           const cats = Array.isArray(est.categoria) ? est.categoria : [est.categoria];
           return cats.some(cat => cat?.toLowerCase() === section.category.toLowerCase());
         }).slice(0, 10);
@@ -259,7 +262,7 @@ const Index = () => {
       return {
         ...section,
         estabelecimentos: ests,
-        hasContent: ests.length >= 2,
+        hasContent: ests.length >= 1, // Mostrar seção mesmo com 1 estabelecimento
       };
     }).filter(section => section.hasContent);
   }, [estabelecimentos, estabelecimentosFiltrados, rotatingSections, categoriaParam, buscaParam]);
@@ -267,8 +270,9 @@ const Index = () => {
   // Mostrar carrosséis apenas quando não há filtro ativo E tem seções com conteúdo
   const mostrarCarrosseis = !categoriaParam && !buscaParam && secoesDinamicas.length > 0;
   
-  // Fallback: mostrar grid simples quando não há seções dinâmicas
-  const mostrarGridSimples = !isLoadingEstabelecimentos && !mostrarCarrosseis && !categoriaParam && !buscaParam && estabelecimentosFiltrados.length > 0;
+  // Fallback: mostrar grid simples quando não há seções dinâmicas mas TEM dados
+  const mostrarGridSimples = !isLoadingEstabelecimentos && !mostrarCarrosseis && !categoriaParam && !buscaParam && 
+    (estabelecimentosFiltrados.length > 0 || (estabelecimentos && estabelecimentos.length > 0));
   
   // Estado para controlar se mostra Hero ou modo filtrado
   const isFiltered = !!(categoriaParam || buscaParam);
@@ -310,7 +314,7 @@ const Index = () => {
         )}
         
         {/* Pills de categorias - MESMO FUNDO DO HERO (slate-950) */}
-        <div className="bg-slate-950 border-b border-white/10 sticky top-16 backdrop-blur-lg z-30">
+        <div className="bg-[#0F0A1A] border-b border-white/10 sticky top-16 backdrop-blur-lg z-30">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
             <div className="flex items-center gap-3">
               <div className="flex-1 overflow-hidden">
@@ -447,7 +451,7 @@ const Index = () => {
               
               {/* Grid de cards */}
               <AirbnbCardGrid
-                estabelecimentos={estabelecimentosFiltrados}
+                estabelecimentos={estabelecimentosFiltrados.length > 0 ? estabelecimentosFiltrados : (estabelecimentos || [])}
                 isLoading={false}
                 userLocation={userLocation}
               />

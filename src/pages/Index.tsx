@@ -424,12 +424,10 @@ const Index = () => {
                 {secoesDinamicas.map((section, index) => (
                   <div key={`${section.id}-${animationKey}`}>
                     <div className="" style={{ animationDelay: `${index * 0.1}s` }}>
-                    <CategoryCarousel
-  title={section.title}
-  subtitle={section.subtitle}
-  estabelecimentos={section.estabelecimentos}
-/>
-                        }
+                      <CategoryCarousel
+                        title={section.title}
+                        subtitle={section.subtitle}
+                        estabelecimentos={section.estabelecimentos}
                       />
                     </div>
 

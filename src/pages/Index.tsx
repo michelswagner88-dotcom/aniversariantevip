@@ -147,9 +147,19 @@ const Index = () => {
     return { estabelecimentosFiltrados: filtrados, usandoFallback: usouFallback };
   }, [estabelecimentos, cidadeFinal, estadoFinal, categoriaParam, buscaParam, selectedSubcategories, filterDistance, userLocation]);
   
-  // Transformar estabelecimentos filtrados para o formato do mapa
+  // Dados para exibição - SEMPRE ter algo para mostrar
+  const dadosParaExibir = useMemo(() => {
+    // Se tem dados filtrados, usar; senão usar TODOS os estabelecimentos
+    if (estabelecimentosFiltrados && estabelecimentosFiltrados.length > 0) {
+      return estabelecimentosFiltrados;
+    }
+    // FALLBACK GARANTIDO: Sempre usar todos os estabelecimentos se filtrados estiver vazio
+    return estabelecimentos || [];
+  }, [estabelecimentosFiltrados, estabelecimentos]);
+
+  // Transformar estabelecimentos para o formato do mapa (usa dadosParaExibir com fallback)
   const estabelecimentosParaMapa = useMemo(() => {
-    return estabelecimentosFiltrados
+    return dadosParaExibir
       .filter(est => est.latitude && est.longitude && est.latitude !== 0 && est.longitude !== 0)
       .map(est => ({
         id: est.id,
@@ -164,7 +174,7 @@ const Index = () => {
         estado: est.estado || '',
         slug: est.slug || null,
       }));
-  }, [estabelecimentosFiltrados]);
+  }, [dadosParaExibir]);
   
   // Contagem de filtros ativos
   const activeFiltersCount = useMemo(() => {
@@ -240,10 +250,12 @@ const Index = () => {
 
   // Agrupar estabelecimentos por categoria para as seções rotativas
   const secoesDinamicas = useMemo(() => {
-    if (!estabelecimentos || categoriaParam || buscaParam) return [];
+    // Sem dados base ou com filtros ativos, não mostrar carrosséis
+    if (!estabelecimentos || estabelecimentos.length === 0) return [];
+    if (categoriaParam || buscaParam) return [];
     
-    // Usar estabelecimentos filtrados, ou TODOS se filtrados estiver vazio (fallback)
-    const dadosBase = estabelecimentosFiltrados.length > 0 ? estabelecimentosFiltrados : estabelecimentos;
+    // CORREÇÃO CRÍTICA: Usar dadosParaExibir que SEMPRE tem dados (fallback garantido)
+    const dadosBase = dadosParaExibir.length > 0 ? dadosParaExibir : estabelecimentos;
     
     return rotatingSections.map(section => {
       let ests: any[] = [];
@@ -265,14 +277,14 @@ const Index = () => {
         hasContent: ests.length >= 1, // Mostrar seção mesmo com 1 estabelecimento
       };
     }).filter(section => section.hasContent);
-  }, [estabelecimentos, estabelecimentosFiltrados, rotatingSections, categoriaParam, buscaParam]);
+  }, [estabelecimentos, dadosParaExibir, rotatingSections, categoriaParam, buscaParam]);
 
   // Mostrar carrosséis apenas quando não há filtro ativo E tem seções com conteúdo
   const mostrarCarrosseis = !categoriaParam && !buscaParam && secoesDinamicas.length > 0;
   
   // Fallback: mostrar grid simples quando não há seções dinâmicas mas TEM dados
-  const mostrarGridSimples = !isLoadingEstabelecimentos && !mostrarCarrosseis && !categoriaParam && !buscaParam && 
-    (estabelecimentosFiltrados.length > 0 || (estabelecimentos && estabelecimentos.length > 0));
+  // SIMPLIFICADO: Se não tem carrosséis e não está carregando, mostrar grid
+  const mostrarGridSimples = !isLoadingEstabelecimentos && !mostrarCarrosseis && !categoriaParam && !buscaParam;
   
   // Estado para controlar se mostra Hero ou modo filtrado
   const isFiltered = !!(categoriaParam || buscaParam);
@@ -423,8 +435,9 @@ const Index = () => {
             </div>
           )}
           
-          {/* MODO GRID SIMPLES: Fallback quando não há seções dinâmicas mas tem dados */}
-          {mostrarGridSimples && (
+          {/* MODO GRID SIMPLES: Fallback quando não há seções dinâmicas */}
+          {/* CORREÇÃO DEFINITIVA: Sempre mostrar se não está carregando e não tem carrosséis */}
+          {!isLoadingEstabelecimentos && !mostrarCarrosseis && !categoriaParam && !buscaParam && (
             <div className="space-y-8">
               {/* Aviso quando mostrando de outras cidades */}
               {usandoFallback && cidadeFinal && (
@@ -445,13 +458,13 @@ const Index = () => {
                   <p className="text-sm text-[#717171] mt-0.5">{destaquesConfig.subtitulo}</p>
                 </div>
                 <span className="text-sm text-[#717171]">
-                  {estabelecimentosFiltrados.length} {estabelecimentosFiltrados.length === 1 ? 'lugar' : 'lugares'}
+                  {dadosParaExibir.length} {dadosParaExibir.length === 1 ? 'lugar' : 'lugares'}
                 </span>
               </div>
               
-              {/* Grid de cards */}
+              {/* Grid de cards - SEMPRE usa dadosParaExibir que tem fallback garantido */}
               <AirbnbCardGrid
-                estabelecimentos={estabelecimentosFiltrados.length > 0 ? estabelecimentosFiltrados : (estabelecimentos || [])}
+                estabelecimentos={dadosParaExibir}
                 isLoading={false}
                 userLocation={userLocation}
               />
@@ -461,7 +474,7 @@ const Index = () => {
           )}
           
           {/* MODO GRID COM MAPA: Quando há filtro de categoria ou busca */}
-          {!isLoadingEstabelecimentos && !mostrarCarrosseis && !mostrarGridSimples && (
+          {!isLoadingEstabelecimentos && !mostrarCarrosseis && !mostrarGridSimples && (categoriaParam || buscaParam) && (
             /* MODO GRID COM MAPA: Quando há filtro de categoria ou busca */
             <AirbnbMapLayout
               establishments={estabelecimentosParaMapa}
@@ -513,6 +526,40 @@ const Index = () => {
                 userLocation={userLocation}
               />
             </AirbnbMapLayout>
+          )}
+          
+          {/* FALLBACK ABSOLUTO: Se nada mais renderizou mas temos dados, mostrar grid */}
+          {!isLoadingEstabelecimentos && !mostrarCarrosseis && !mostrarGridSimples && !(categoriaParam || buscaParam) && dadosParaExibir.length > 0 && (
+            <div className="space-y-8">
+              {usandoFallback && cidadeFinal && (
+                <div className="bg-[#240046]/10 border border-[#240046]/20 rounded-xl px-6 py-4">
+                  <p className="text-sm text-[#222222] text-center">
+                    <span className="font-medium">Ainda não temos estabelecimentos em {cidadeFinal}.</span>
+                    {' '}Mostrando lugares de outras cidades disponíveis.
+                  </p>
+                </div>
+              )}
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl md:text-2xl font-semibold text-[#222222]">
+                    {destaquesConfig.titulo}
+                  </h2>
+                  <p className="text-sm text-[#717171] mt-0.5">{destaquesConfig.subtitulo}</p>
+                </div>
+                <span className="text-sm text-[#717171]">
+                  {dadosParaExibir.length} {dadosParaExibir.length === 1 ? 'lugar' : 'lugares'}
+                </span>
+              </div>
+              
+              <AirbnbCardGrid
+                estabelecimentos={dadosParaExibir}
+                isLoading={false}
+                userLocation={userLocation}
+              />
+              
+              <CTABanner variant="register" />
+            </div>
           )}
         </div>
         </div>

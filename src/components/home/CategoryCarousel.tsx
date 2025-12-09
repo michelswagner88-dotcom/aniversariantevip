@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight as ChevronRightIcon, Heart } from "lucide-rea
 import { getEstabelecimentoUrl } from "@/lib/slugUtils";
 import { cn } from "@/lib/utils";
 import { getFotoEstabelecimento, getPlaceholderPorCategoria } from "@/lib/photoUtils";
+import { CATEGORIAS } from "@/constants/categories";
 
 interface CategoryCarouselProps {
   title: string;
@@ -11,6 +12,22 @@ interface CategoryCarouselProps {
   estabelecimentos: any[];
   variant?: "default" | "featured" | "compact";
 }
+
+// Função para converter categoria para singular
+const getCategoriaLabel = (categoria: string): string => {
+  if (!categoria) return "Estabelecimento";
+
+  // Procurar na lista de categorias
+  const cat = CATEGORIAS.find(
+    (c) =>
+      c.label.toLowerCase() === categoria.toLowerCase() ||
+      c.plural.toLowerCase() === categoria.toLowerCase() ||
+      c.id === categoria.toLowerCase(),
+  );
+
+  // Retornar o label (singular) se encontrou, senão retorna o original
+  return cat?.label || categoria;
+};
 
 // Card individual - Estilo Airbnb LIMPO
 const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
@@ -36,7 +53,8 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
     setTimeout(() => setIsAnimating(false), 400);
   };
 
-  const categoria = Array.isArray(est.categoria) ? est.categoria[0] : est.categoria;
+  const categoriaRaw = Array.isArray(est.categoria) ? est.categoria[0] : est.categoria;
+  const categoria = getCategoriaLabel(categoriaRaw);
   const temBeneficio = !!est.descricao_beneficio;
 
   const fotoUrl = getFotoEstabelecimento(est.logo_url, null, est.galeria_fotos, est.categoria);
@@ -81,7 +99,7 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
 
         <p className="text-[15px] text-[#3C096C] truncate">{est.bairro || est.cidade}</p>
 
-        <p className="text-[15px] text-[#3C096C]">{categoria || "Estabelecimento"}</p>
+        <p className="text-[15px] text-[#3C096C]">{categoria}</p>
 
         {temBeneficio && (
           <p className="text-[15px] text-[#3C096C] mt-1">

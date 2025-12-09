@@ -14,12 +14,12 @@ const BusinessHours = ({ hours }: BusinessHoursProps) => {
       <div className="max-w-3xl mx-auto">
         <div className="bg-white border border-[#EBEBEB] rounded-2xl p-4 sm:p-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#F7F7F7] flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-[#240046]/10 flex items-center justify-center flex-shrink-0">
               <Clock className="w-5 h-5 text-[#240046]" />
             </div>
             <div>
-              <h3 className="text-sm text-[#717171] mb-0.5">Horário de funcionamento</h3>
-              <p className="text-[#222222] font-medium">{hours}</p>
+              <h3 className="text-sm text-[#3C096C] mb-0.5">Horário de funcionamento</h3>
+              <p className="text-[#240046] font-medium">{hours}</p>
             </div>
           </div>
         </div>

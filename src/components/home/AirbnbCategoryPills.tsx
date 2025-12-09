@@ -1,3 +1,6 @@
+Certo! Aqui vai só o código:
+
+```tsx
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { CATEGORIAS } from '@/constants/categories';
@@ -22,137 +25,22 @@ import {
   type LucideIcon
 } from 'lucide-react';
 
-// Mapeamento categoria ID → ícone + cores
-interface CategoryStyle {
-  icon: LucideIcon;
-  color: string;
-  bgColor: string;       // Cor sólida para o quadrado
-  bgColorLight: string;  // Cor clara para hover/active
-  borderColor: string;
-  activeGlow: string;
-}
-
-const CATEGORIA_STYLES: Record<string, CategoryStyle> = {
-  'todos': {
-    icon: Sparkles,
-    color: 'text-white',
-    bgColor: 'bg-violet-500',
-    bgColorLight: 'bg-violet-500/15',
-    borderColor: 'border-violet-500/40',
-    activeGlow: 'shadow-violet-500/30'
-  },
-  'academia': {
-    icon: Dumbbell,
-    color: 'text-white',
-    bgColor: 'bg-orange-500',
-    bgColorLight: 'bg-orange-500/15',
-    borderColor: 'border-orange-500/40',
-    activeGlow: 'shadow-orange-500/30'
-  },
-  'bar': {
-    icon: Beer,
-    color: 'text-white',
-    bgColor: 'bg-red-500',
-    bgColorLight: 'bg-red-500/15',
-    borderColor: 'border-red-500/40',
-    activeGlow: 'shadow-red-500/30'
-  },
-  'barbearia': {
-    icon: Scissors,
-    color: 'text-white',
-    bgColor: 'bg-blue-500',
-    bgColorLight: 'bg-blue-500/15',
-    borderColor: 'border-blue-500/40',
-    activeGlow: 'shadow-blue-500/30'
-  },
-  'cafeteria': {
-    icon: Coffee,
-    color: 'text-white',
-    bgColor: 'bg-amber-500',
-    bgColorLight: 'bg-amber-500/15',
-    borderColor: 'border-amber-500/40',
-    activeGlow: 'shadow-amber-500/30'
-  },
-  'casa-noturna': {
-    icon: PartyPopper,
-    color: 'text-white',
-    bgColor: 'bg-purple-500',
-    bgColorLight: 'bg-purple-500/15',
-    borderColor: 'border-purple-500/40',
-    activeGlow: 'shadow-purple-500/30'
-  },
-  'confeitaria': {
-    icon: Cake,
-    color: 'text-white',
-    bgColor: 'bg-pink-500',
-    bgColorLight: 'bg-pink-500/15',
-    borderColor: 'border-pink-500/40',
-    activeGlow: 'shadow-pink-500/30'
-  },
-  'entretenimento': {
-    icon: Clapperboard,
-    color: 'text-white',
-    bgColor: 'bg-cyan-500',
-    bgColorLight: 'bg-cyan-500/15',
-    borderColor: 'border-cyan-500/40',
-    activeGlow: 'shadow-cyan-500/30'
-  },
-  'hospedagem': {
-    icon: Hotel,
-    color: 'text-white',
-    bgColor: 'bg-teal-500',
-    bgColorLight: 'bg-teal-500/15',
-    borderColor: 'border-teal-500/40',
-    activeGlow: 'shadow-teal-500/30'
-  },
-  'loja': {
-    icon: ShoppingBag,
-    color: 'text-white',
-    bgColor: 'bg-emerald-500',
-    bgColorLight: 'bg-emerald-500/15',
-    borderColor: 'border-emerald-500/40',
-    activeGlow: 'shadow-emerald-500/30'
-  },
-  'restaurante': {
-    icon: UtensilsCrossed,
-    color: 'text-white',
-    bgColor: 'bg-yellow-500',
-    bgColorLight: 'bg-yellow-500/15',
-    borderColor: 'border-yellow-500/40',
-    activeGlow: 'shadow-yellow-500/30'
-  },
-  'salao': {
-    icon: Sparkle,
-    color: 'text-white',
-    bgColor: 'bg-rose-500',
-    bgColorLight: 'bg-rose-500/15',
-    borderColor: 'border-rose-500/40',
-    activeGlow: 'shadow-rose-500/30'
-  },
-  'servicos': {
-    icon: Wrench,
-    color: 'text-white',
-    bgColor: 'bg-slate-500',
-    bgColorLight: 'bg-slate-500/15',
-    borderColor: 'border-slate-500/40',
-    activeGlow: 'shadow-slate-500/30'
-  },
-  'sorveteria': {
-    icon: IceCream,
-    color: 'text-white',
-    bgColor: 'bg-sky-500',
-    bgColorLight: 'bg-sky-500/15',
-    borderColor: 'border-sky-500/40',
-    activeGlow: 'shadow-sky-500/30'
-  },
-  'outros': {
-    icon: Store,
-    color: 'text-white',
-    bgColor: 'bg-gray-500',
-    bgColorLight: 'bg-gray-500/15',
-    borderColor: 'border-gray-500/40',
-    activeGlow: 'shadow-gray-500/30'
-  },
+const CATEGORIA_ICONS: Record<string, LucideIcon> = {
+  'todos': Sparkles,
+  'academia': Dumbbell,
+  'bar': Beer,
+  'barbearia': Scissors,
+  'cafeteria': Coffee,
+  'casa-noturna': PartyPopper,
+  'confeitaria': Cake,
+  'entretenimento': Clapperboard,
+  'hospedagem': Hotel,
+  'loja': ShoppingBag,
+  'restaurante': UtensilsCrossed,
+  'salao': Sparkle,
+  'servicos': Wrench,
+  'sorveteria': IceCream,
+  'outros': Store,
 };
 
 interface AirbnbCategoryPillsProps {
@@ -170,7 +58,6 @@ export const AirbnbCategoryPills = ({
   const [showFadeLeft, setShowFadeLeft] = useState(false);
   const [showFadeRight, setShowFadeRight] = useState(true);
 
-  // Verifica scroll position pra mostrar/esconder fades
   const checkScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
@@ -194,7 +81,6 @@ export const AirbnbCategoryPills = ({
     };
   }, [estabelecimentos]);
 
-  // Scroll pro item selecionado
   useEffect(() => {
     if (!scrollRef.current) return;
     
@@ -208,7 +94,6 @@ export const AirbnbCategoryPills = ({
     }
   }, [categoriaAtiva]);
 
-  // Scroll com botões (desktop)
   const scrollBy = (direction: 'left' | 'right') => {
     const el = scrollRef.current;
     if (!el) return;
@@ -220,25 +105,7 @@ export const AirbnbCategoryPills = ({
     });
   };
   
-  // Contar estabelecimentos por categoria
-  const contagens = useMemo(() => {
-    const counts: Record<string, number> = { todos: estabelecimentos.length };
-    
-    estabelecimentos.forEach(est => {
-      const cats = Array.isArray(est.categoria) ? est.categoria : [est.categoria];
-      cats.forEach((cat: string) => {
-        if (cat) {
-          counts[cat] = (counts[cat] || 0) + 1;
-        }
-      });
-    });
-    
-    return counts;
-  }, [estabelecimentos]);
-  
-  // Mapear categorias do sistema com estilos - SEMPRE mostra todas em ordem alfabética
   const categoriasConfig = useMemo(() => {
-    // Ordenar CATEGORIAS alfabeticamente pelo plural (nome que aparece)
     const categoriasOrdenadas = [...CATEGORIAS].sort((a, b) => 
       a.plural.localeCompare(b.plural, 'pt-BR')
     );
@@ -247,19 +114,19 @@ export const AirbnbCategoryPills = ({
       id: string | null; 
       categoryId: string;
       nome: string; 
-      style: CategoryStyle;
+      icon: LucideIcon;
     }> = [
       { 
         id: null, 
         categoryId: 'todos',
         nome: 'Todos', 
-        style: CATEGORIA_STYLES['todos']
+        icon: CATEGORIA_ICONS['todos']
       },
       ...categoriasOrdenadas.map(cat => ({
         id: cat.label,
         categoryId: cat.id,
-        nome: cat.label, // Singular ao invés de plural
-        style: CATEGORIA_STYLES[cat.id] || CATEGORIA_STYLES['outros']
+        nome: cat.label,
+        icon: CATEGORIA_ICONS[cat.id] || CATEGORIA_ICONS['outros']
       }))
     ];
     
@@ -267,84 +134,83 @@ export const AirbnbCategoryPills = ({
   }, []);
   
   return (
-    <div className="relative flex items-center gap-2">
-      {/* Botão seta esquerda - FORA do scroll */}
-      <button
-        onClick={() => scrollBy('left')}
-        aria-label="Categorias anteriores"
-        className={cn(
-          "hidden sm:flex flex-shrink-0 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 items-center justify-center transition-all",
-          !showFadeLeft && "opacity-30 pointer-events-none"
-        )}
-      >
-        <ChevronLeft className="w-4 h-4 text-gray-400" />
-      </button>
+    <div className="bg-[#240046] py-4">
+      <div className="relative flex items-center gap-2 max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
+        <button
+          onClick={() => scrollBy('left')}
+          aria-label="Categorias anteriores"
+          className={cn(
+            "hidden sm:flex flex-shrink-0 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 items-center justify-center transition-all",
+            !showFadeLeft && "opacity-30 pointer-events-none"
+          )}
+        >
+          <ChevronLeft className="w-4 h-4 text-white" />
+        </button>
 
-      {/* Scroll container - sem padding lateral para não cortar "Todos" */}
-      <div 
-        ref={scrollRef}
-        className="flex-1 flex gap-3 sm:gap-4 overflow-x-auto py-4 scrollbar-hide scroll-smooth"
-        style={{ WebkitOverflowScrolling: 'touch' }}
-      >
-        <div className="flex gap-3 sm:gap-4 px-1 min-w-max">
-          {categoriasConfig.map((cat, index) => {
-            const isActive = categoriaAtiva === cat.id;
-            const IconComponent = cat.style.icon;
-            const style = cat.style;
-            
-            return (
-              <button
-                key={cat.id || 'todos'}
-                data-categoria={cat.id ?? 'todos'}
-                onClick={() => onCategoriaChange(cat.id)}
-                aria-label={`Filtrar por ${cat.nome}`}
-                aria-pressed={isActive}
-                style={{ animationDelay: `${index * 30}ms` }}
-                className={cn(
-                  'category-chip group flex flex-col items-center gap-2 min-w-[72px] sm:min-w-[80px] px-3 py-3 rounded-xl border transition-all duration-300',
-                  'animate-fade-in flex-shrink-0',
-                  isActive
-                    ? `${style.bgColorLight} ${style.borderColor} scale-105 shadow-lg ${style.activeGlow}`
-                    : 'bg-transparent border-transparent hover:bg-white/5 hover:border-white/10'
-                )}
-              >
-                {/* Ícone dentro do quadrado colorido com cor SÓLIDA */}
-                <div className={cn(
-                  'flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300',
-                  style.bgColor,
-                  isActive ? 'scale-110 shadow-lg' : 'group-hover:scale-110'
-                )}>
+        <div 
+          ref={scrollRef}
+          className="flex-1 flex gap-2 sm:gap-3 overflow-x-auto py-2 scrollbar-hide scroll-smooth"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          <div className="flex gap-2 sm:gap-3 px-1 min-w-max">
+            {categoriasConfig.map((cat) => {
+              const isActive = categoriaAtiva === cat.id;
+              const IconComponent = cat.icon;
+              
+              return (
+                <button
+                  key={cat.id || 'todos'}
+                  data-categoria={cat.id ?? 'todos'}
+                  onClick={() => onCategoriaChange(cat.id)}
+                  aria-label={`Filtrar por ${cat.nome}`}
+                  aria-pressed={isActive}
+                  className={cn(
+                    'group flex flex-col items-center gap-1.5 min-w-[64px] sm:min-w-[72px] px-3 py-2 rounded-xl transition-all duration-300',
+                    'flex-shrink-0',
+                    isActive
+                      ? 'bg-white/15'
+                      : 'bg-transparent hover:bg-white/10'
+                  )}
+                >
                   <IconComponent 
-                    size={22} 
+                    size={24} 
                     strokeWidth={1.5} 
-                    className="text-white transition-all duration-300"
+                    className={cn(
+                      "transition-all duration-300",
+                      isActive ? "text-white scale-110" : "text-white/70 group-hover:text-white group-hover:scale-110"
+                    )}
                   />
-                </div>
-                
-                {/* Label - sempre branco */}
-                <span className={cn(
-                  'text-xs font-medium whitespace-nowrap transition-colors duration-300 text-white',
-                  isActive && 'font-semibold'
-                )}>
-                  {cat.nome}
-                </span>
-              </button>
-            );
-          })}
+                  
+                  <span className={cn(
+                    'text-xs whitespace-nowrap transition-all duration-300',
+                    isActive ? 'text-white font-semibold' : 'text-white/70 group-hover:text-white'
+                  )}>
+                    {cat.nome}
+                  </span>
+
+                  <div className={cn(
+                    "h-0.5 rounded-full transition-all duration-300",
+                    isActive ? "w-6 bg-white" : "w-0 bg-transparent"
+                  )} />
+                </button>
+              );
+            })}
+          </div>
         </div>
+        
+        <button
+          onClick={() => scrollBy('right')}
+          aria-label="Próximas categorias"
+          className={cn(
+            "hidden sm:flex flex-shrink-0 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 items-center justify-center transition-all",
+            !showFadeRight && "opacity-30 pointer-events-none"
+          )}
+        >
+          <ChevronRight className="w-4 h-4 text-white" />
+        </button>
       </div>
-      
-      {/* Botão seta direita - FORA do scroll */}
-      <button
-        onClick={() => scrollBy('right')}
-        aria-label="Próximas categorias"
-        className={cn(
-          "hidden sm:flex flex-shrink-0 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 items-center justify-center transition-all",
-          !showFadeRight && "opacity-30 pointer-events-none"
-        )}
-      >
-        <ChevronRight className="w-4 h-4 text-gray-400" />
-      </button>
     </div>
   );
 };
+```
+

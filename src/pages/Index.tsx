@@ -421,28 +421,37 @@ const Index = () => {
                   </div>
                 )}
 
-                {secoesDinamicas.map((section, index) => (
-                  <div key={`${section.id}-${animationKey}`}>
-                    <div className="" style={{ animationDelay: `${index * 0.1}s` }}>
-                      <CategoryCarousel
-                        title={section.title}
-                        subtitle={section.subtitle}
-                        estabelecimentos={section.estabelecimentos}
-                      />
-                    </div>
+                {secoesDinamicas.map((section, index) => {
+  // Primeira seção: título com cidade
+  const isFeatured = index === 0 && section.priority === 'featured';
+  const displayTitle = isFeatured && cidadeFinal 
+    ? `${section.title} em ${cidadeFinal}`
+    : section.title;
 
-                    {index === 0 && (
-                      <div className="vazio mt-8">
-                        <CTABanner variant="register" />
-                      </div>
-                    )}
+  return (
+    <div key={`${section.id}-${animationKey}`}>
+      <div className="" style={{ animationDelay: `${index * 0.1}s` }}>
+        <CategoryCarousel
+          title={displayTitle}
+          subtitle={section.subtitle}
+          estabelecimentos={section.estabelecimentos}
+        />
+      </div>
 
-                    {index === 2 && (
-                      <div className="vazio mt-8">
-                        <CTABanner variant="partner" />
-                      </div>
-                    )}
-                  </div>
+      {index === 0 && (
+        <div className="vazio mt-8">
+          <CTABanner variant="register" />
+        </div>
+      )}
+
+      {index === 2 && (
+        <div className="vazio mt-8">
+          <CTABanner variant="partner" />
+        </div>
+      )}
+    </div>
+  );
+})}
                 ))}
               </div>
             )}

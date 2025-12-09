@@ -158,8 +158,8 @@ export const Header = () => {
                     Entrar
                   </Link>
                   <Link
-                    to="/auth"
-                    className="relative bg-white text-[#240046] font-semibold px-6 py-2.5 rounded-full transition-all duration-300 hover:bg-white/90 hover:scale-105 active:scale-95 text-sm"
+                    to="/auth?tipo=aniversariante"
+                    className="relative bg-white text-[#240046] font-semibold px-6 py-2.5 rounded-full transition-all duration-300 hover:bg-white/90 hover:scale-105 active:scale-95 text-sm animate-pulse"
                   >
                     Cadastro Gratuito
                   </Link>
@@ -238,9 +238,9 @@ export const Header = () => {
                       Entrar
                     </Link>
                     <Link
-                      to="/auth"
+                      to="/auth?tipo=aniversariante"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="mt-2 bg-white text-[#240046] font-semibold py-3 px-6 rounded-full text-center transition-all duration-300 active:scale-95 text-sm"
+                      className="mt-2 bg-white text-[#240046] font-semibold py-3 px-6 rounded-full text-center transition-all duration-300 active:scale-95 text-sm animate-pulse"
                     >
                       Cadastro Gratuito
                     </Link>

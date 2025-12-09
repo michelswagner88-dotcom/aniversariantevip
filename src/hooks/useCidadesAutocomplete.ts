@@ -1,176 +1,151 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { sanitizarInput } from '@/lib/sanitize';
-
-interface Cidade {
-  nome: string;
-  estado: string;
-  disponivel?: boolean;
-}
+import { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { sanitizarInput } from "@/lib/sanitize";
 
 interface CidadeDisponivel {
   cidade: string;
   estado: string;
+  total: number;
 }
-
-// Cache em memória
-let cidadesCache: any[] | null = null;
-
-const getCidadesBrasil = async (): Promise<any[]> => {
-  // Verificar cache em memória primeiro
-  if (cidadesCache) return cidadesCache;
-
-  // Verificar localStorage (cache de 24h)
-  const cachedData = localStorage.getItem('cidades_brasil');
-  const cachedTimestamp = localStorage.getItem('cidades_brasil_timestamp');
-  
-  if (cachedData && cachedTimestamp) {
-    const now = Date.now();
-    const timestamp = parseInt(cachedTimestamp);
-    const dayInMs = 24 * 60 * 60 * 1000;
-    
-    if (now - timestamp < dayInMs) {
-      cidadesCache = JSON.parse(cachedData);
-      return cidadesCache;
-    }
-  }
-
-  // Buscar da API do IBGE
-  const response = await fetch(
-    'https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome'
-  );
-  cidadesCache = await response.json();
-  
-  // Salvar no localStorage
-  localStorage.setItem('cidades_brasil', JSON.stringify(cidadesCache));
-  localStorage.setItem('cidades_brasil_timestamp', Date.now().toString());
-  
-  return cidadesCache;
-};
 
 // Normalizar string removendo acentos
 const normalizeString = (str: string): string => {
   return str
     .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 };
 
 export const useCidadesAutocomplete = (searchTerm: string) => {
-  const [cidades, setCidades] = useState<Cidade[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [cidadesFiltradas, setCidadesFiltradas] = useState<CidadeDisponivel[]>([]);
 
-  // Buscar cidades que têm estabelecimentos cadastrados
-  const { data: cidadesDisponiveis } = useQuery({
-    queryKey: ['cidades-disponiveis'],
+  // Buscar APENAS cidades que têm estabelecimentos cadastrados
+  const { data: cidadesDisponiveis, isLoading: isLoadingCidades } = useQuery({
+    queryKey: ["cidades-disponiveis-unicas"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('estabelecimentos')
-        .select('cidade, estado')
-        .not('cidade', 'is', null)
-        .not('estado', 'is', null);
-      
+        .from("estabelecimentos")
+        .select("cidade, estado")
+        .eq("ativo", true)
+        .not("cidade", "is", null)
+        .not("estado", "is", null);
+
       if (error) {
-        console.error('Erro ao buscar cidades disponíveis:', error);
+        console.error("[Cidades] Erro ao buscar:", error);
         return [];
       }
 
-      // Criar lista única normalizada
-      const cidadesUnicas = new Map<string, CidadeDisponivel>();
+      // Agrupar e contar por cidade/estado
+      const cidadesMap = new Map<string, CidadeDisponivel>();
+
       data?.forEach((e) => {
         if (e.cidade && e.estado) {
           const key = `${normalizeString(e.cidade)}-${e.estado.toLowerCase()}`;
-          if (!cidadesUnicas.has(key)) {
-            cidadesUnicas.set(key, {
+
+          if (cidadesMap.has(key)) {
+            cidadesMap.get(key)!.total++;
+          } else {
+            cidadesMap.set(key, {
               cidade: e.cidade,
-              estado: e.estado,
+              estado: e.estado.toUpperCase(),
+              total: 1,
             });
           }
         }
       });
-      
-      const result = Array.from(cidadesUnicas.values());
-      console.log('Cidades disponíveis no banco:', result);
-      return result;
+
+      // Converter para array e ordenar por total (mais estabelecimentos primeiro)
+      const resultado = Array.from(cidadesMap.values()).sort((a, b) => b.total - a.total);
+
+      console.log("[Cidades] Disponíveis:", resultado.length);
+      return resultado;
     },
-    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+    staleTime: 10 * 60 * 1000, // Cache por 10 minutos
+    gcTime: 30 * 60 * 1000,
   });
 
+  // Filtrar cidades baseado no termo de busca
   useEffect(() => {
-    // Só buscar com 3+ caracteres
-    if (searchTerm.length < 3) {
-      setCidades([]);
+    if (!cidadesDisponiveis || cidadesDisponiveis.length === 0) {
+      setCidadesFiltradas([]);
       return;
     }
 
-    const buscarCidades = async () => {
-      setIsLoading(true);
-      try {
-        const data = await getCidadesBrasil();
-        
-        // Sanitizar e normalizar termo de busca
-        const searchSanitizado = sanitizarInput(searchTerm, 50);
-        const searchNormalizado = normalizeString(searchSanitizado);
-        console.log('Buscando por:', searchSanitizado, '(normalizado:', searchNormalizado + ')');
-        
-        // Filtrar pelo termo digitado (case insensitive e sem acentos)
-        // Primeiro: cidades que COMEÇAM com o termo
-        // Segundo: cidades que CONTÊM o termo
-        const cidadesQueComecam: any[] = [];
-        const cidadesQueContem: any[] = [];
-        
-        data.forEach((cidade: any) => {
-          const cidadeNormalizada = normalizeString(cidade.nome);
-          if (cidadeNormalizada.startsWith(searchNormalizado)) {
-            cidadesQueComecam.push(cidade);
-          } else if (cidadeNormalizada.includes(searchNormalizado)) {
-            cidadesQueContem.push(cidade);
-          }
-        });
-        
-        // Combinar: primeiro as que começam, depois as que contêm
-        const todasFiltradas = [...cidadesQueComecam, ...cidadesQueContem]
-          .slice(0, 10) // Limitar a 10 resultados
-          .map((cidade: any) => {
-            const estado = cidade.microrregiao.mesorregiao.UF.sigla;
-            
-            // Verificar se esta cidade tem estabelecimentos
-            const disponivel = cidadesDisponiveis?.some((cd) => {
-              const cidadeMatch = normalizeString(cd.cidade) === normalizeString(cidade.nome);
-              const estadoMatch = cd.estado.toLowerCase() === estado.toLowerCase();
-              return cidadeMatch && estadoMatch;
-            }) || false;
+    // Se não tem termo, mostrar top 5 por quantidade
+    if (!searchTerm || searchTerm.length < 2) {
+      setCidadesFiltradas(cidadesDisponiveis.slice(0, 5));
+      return;
+    }
 
-            return {
-              nome: cidade.nome,
-              estado,
-              disponivel,
-            };
-          });
-        
-        // Ordenar: cidades disponíveis primeiro, mantendo ordem de relevância
-        const filtradas = todasFiltradas.sort((a, b) => {
-          // Prioridade 1: disponíveis primeiro
-          if (a.disponivel && !b.disponivel) return -1;
-          if (!a.disponivel && b.disponivel) return 1;
-          // Prioridade 2: manter ordem original (começam > contêm)
-          return 0;
-        });
-        
-        setCidades(filtradas);
-      } catch (error) {
-        console.error('Erro ao buscar cidades:', error);
-        setCidades([]);
-      } finally {
-        setIsLoading(false);
+    const searchSanitizado = sanitizarInput(searchTerm, 50);
+    const searchNormalizado = normalizeString(searchSanitizado);
+
+    // Filtrar: primeiro as que COMEÇAM, depois as que CONTÊM
+    const queComecam: CidadeDisponivel[] = [];
+    const queContem: CidadeDisponivel[] = [];
+
+    cidadesDisponiveis.forEach((cidade) => {
+      const cidadeNormalizada = normalizeString(cidade.cidade);
+
+      if (cidadeNormalizada.startsWith(searchNormalizado)) {
+        queComecam.push(cidade);
+      } else if (cidadeNormalizada.includes(searchNormalizado)) {
+        queContem.push(cidade);
       }
-    };
+    });
 
-    // Debounce de 300ms
-    const timer = setTimeout(buscarCidades, 300);
-    return () => clearTimeout(timer);
+    // Combinar e limitar a 8 resultados
+    const resultado = [...queComecam, ...queContem].slice(0, 8);
+    setCidadesFiltradas(resultado);
   }, [searchTerm, cidadesDisponiveis]);
 
-  return { cidades, isLoading };
+  return {
+    cidades: cidadesFiltradas,
+    isLoading: isLoadingCidades,
+    todasCidades: cidadesDisponiveis || [],
+  };
+};
+
+// Hook separado para listar TODAS as cidades disponíveis (para dropdown)
+export const useCidadesDisponiveis = () => {
+  return useQuery({
+    queryKey: ["cidades-disponiveis-todas"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("estabelecimentos")
+        .select("cidade, estado")
+        .eq("ativo", true)
+        .not("cidade", "is", null)
+        .not("estado", "is", null);
+
+      if (error) {
+        console.error("[Cidades] Erro:", error);
+        return [];
+      }
+
+      // Agrupar e contar
+      const cidadesMap = new Map<string, CidadeDisponivel>();
+
+      data?.forEach((e) => {
+        if (e.cidade && e.estado) {
+          const key = `${normalizeString(e.cidade)}-${e.estado.toLowerCase()}`;
+
+          if (cidadesMap.has(key)) {
+            cidadesMap.get(key)!.total++;
+          } else {
+            cidadesMap.set(key, {
+              cidade: e.cidade,
+              estado: e.estado.toUpperCase(),
+              total: 1,
+            });
+          }
+        }
+      });
+
+      return Array.from(cidadesMap.values()).sort((a, b) => b.total - a.total);
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
 };

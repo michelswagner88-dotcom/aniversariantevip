@@ -16,10 +16,11 @@ interface HeroSectionProps {
 interface EstabelecimentoSugestao {
   id: string;
   nome_fantasia: string;
-  categoria: string;
+  categoria: string[] | string;
   cidade: string;
   estado: string;
   slug: string;
+  foraDaCidade?: boolean;
 }
 
 const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }: HeroSectionProps) => {
@@ -155,7 +156,7 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
             .limit(5);
 
           if (dataBrasil && dataBrasil.length > 0) {
-            setBuscaEstabelecimentos(dataBrasil.map((e) => ({ ...e, foraDaCidade: true }) as any));
+            setBuscaEstabelecimentos(dataBrasil.map((e) => ({ ...e, foraDaCidade: true })));
           }
         }
       } catch (err) {
@@ -452,8 +453,9 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
                           >
                             <p className="text-[#240046] font-semibold text-sm">{est.nome_fantasia}</p>
                             <p className="text-[#240046]/60 text-xs">
-                              {est.categoria} • {est.cidade}, {est.estado}
-                              {(est as any).foraDaCidade && <span className="ml-2 text-amber-600">(outra cidade)</span>}
+                              {Array.isArray(est.categoria) ? est.categoria[0] : est.categoria} • {est.cidade},{" "}
+                              {est.estado}
+                              {est.foraDaCidade && <span className="ml-2 text-amber-600">(outra cidade)</span>}
                             </p>
                           </li>
                         ))}

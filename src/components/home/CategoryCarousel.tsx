@@ -173,7 +173,7 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
   if (estabelecimentos.length === 0) return null;
 
   return (
-    <section className="relative group/section">
+    <section className="relative">
       {/* Header da seção */}
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -183,21 +183,20 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
       </div>
 
       {/* Container do carrossel */}
-      <div className="relative">
-        {/* Botão esquerda */}
+      <div className="relative overflow-hidden">
+        {/* Botão esquerda - sempre visível quando pode scrollar */}
         <button
           onClick={() => scroll("left")}
           aria-label="Anterior"
           className={cn(
-            "absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10",
-            "w-8 h-8 bg-white rounded-full",
-            "shadow-md border border-[#DDDDDD] flex items-center justify-center",
-            "transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95",
-            "opacity-0 group-hover/section:opacity-100",
-            !canScrollLeft && "!opacity-0 pointer-events-none",
+            "absolute left-2 top-1/3 -translate-y-1/2 z-10",
+            "w-10 h-10 bg-white rounded-full",
+            "shadow-lg border border-[#DDDDDD] flex items-center justify-center",
+            "transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95",
+            !canScrollLeft && "opacity-0 pointer-events-none",
           )}
         >
-          <ChevronLeft className="w-4 h-4 text-[#240046]" />
+          <ChevronLeft className="w-5 h-5 text-[#240046]" />
         </button>
 
         {/* Carrossel */}
@@ -223,20 +222,19 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
           ))}
         </div>
 
-        {/* Botão direita */}
+        {/* Botão direita - sempre visível quando pode scrollar */}
         <button
           onClick={() => scroll("right")}
           aria-label="Próximo"
           className={cn(
-            "absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10",
-            "w-8 h-8 bg-white rounded-full",
-            "shadow-md border border-[#DDDDDD] flex items-center justify-center",
-            "transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95",
-            "opacity-0 group-hover/section:opacity-100",
-            !canScrollRight && "!opacity-0 pointer-events-none",
+            "absolute right-2 top-1/3 -translate-y-1/2 z-10",
+            "w-10 h-10 bg-white rounded-full",
+            "shadow-lg border border-[#DDDDDD] flex items-center justify-center",
+            "transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95",
+            !canScrollRight && "opacity-0 pointer-events-none",
           )}
         >
-          <ChevronRightIcon className="w-4 h-4 text-[#240046]" />
+          <ChevronRightIcon className="w-5 h-5 text-[#240046]" />
         </button>
       </div>
 

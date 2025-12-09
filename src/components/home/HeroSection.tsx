@@ -277,7 +277,7 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
         >
           <Gift className="w-4 h-4 text-amber-400 animate-pulse" />
           <span className="text-xs sm:text-sm text-white font-medium whitespace-nowrap">
-            O maior guia de benefícios para aniversariantes
+            Cadastro gratuito para aniversariantes
           </span>
         </motion.button>
 

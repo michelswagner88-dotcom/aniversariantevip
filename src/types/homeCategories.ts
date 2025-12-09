@@ -7,7 +7,7 @@ export interface HomeSection {
   viewAllLink: string;
 }
 
-// Seções de DESTAQUE - Alternam na primeira posição com título "[Categoria] em destaque em [cidade]"
+// Seções de DESTAQUE - Alternam na primeira posição
 export const FEATURED_SECTIONS: HomeSection[] = [
   {
     id: "destaque-restaurantes",
@@ -115,7 +115,7 @@ export const FEATURED_SECTIONS: HomeSection[] = [
   },
 ];
 
-// Pool completo de seções disponíveis (ROTATIVAS - aparecem depois da featured)
+// Pool completo de seções ROTATIVAS (aparecem depois da featured)
 export const ALL_HOME_SECTIONS: HomeSection[] = [
   {
     id: "restaurantes",
@@ -224,9 +224,9 @@ export const ALL_HOME_SECTIONS: HomeSection[] = [
 ];
 
 // Helper para pegar título com cidade
-export const getFeaturedTitleWithCity = (section: HomeSection, cidade?: string): string => {
+export const getTitleWithCity = (title: string, cidade?: string): string => {
   if (cidade) {
-    return `${section.title} em ${cidade}`;
+    return `${title} em ${cidade}`;
   }
-  return section.title;
+  return title;
 };

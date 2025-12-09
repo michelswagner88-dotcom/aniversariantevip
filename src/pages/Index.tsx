@@ -401,7 +401,7 @@ const Index = () => {
 
         {/* Container principal */}
         <div className="bg-white min-h-[50vh]">
-          <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-8 pb-24">
+          <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-8 pb-12">
             {/* Loading state */}
             {isLoadingEstabelecimentos && (
               <div className="space-y-16 md:space-y-20">

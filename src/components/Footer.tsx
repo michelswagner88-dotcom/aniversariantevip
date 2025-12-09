@@ -110,7 +110,10 @@ export const Footer = () => {
               <div className="w-11 h-11 bg-white/10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-6">
                 <Gift className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-white">ANIVERSARIANTE VIP</span>
+              <span className="text-xl font-bold">
+                <span className="bg-gradient-to-r from-[#9D4EDD] to-[#22D3EE] bg-clip-text text-transparent">ANIVERSARIANTE </span>
+                <span className="bg-gradient-to-r from-[#C77DFF] to-[#22D3EE] bg-clip-text text-transparent">VIP</span>
+              </span>
             </Link>
             <p className="text-white/70 text-sm mb-6 max-w-xs leading-relaxed">
               O maior guia de benefícios para aniversariantes do Brasil. Descubra vantagens exclusivas para o seu dia

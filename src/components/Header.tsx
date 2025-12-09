@@ -92,8 +92,8 @@ export const Header = () => {
                 <Gift className="w-5 h-5 text-white" />
               </div>
               <span className="hidden sm:flex items-center gap-1 font-display font-extrabold text-base lg:text-lg tracking-tight transition-transform duration-300 group-hover:scale-105">
-                <span className="text-white">ANIVERSARIANTE</span>
-                <span className="text-white/80">VIP</span>
+                <span className="bg-gradient-to-r from-[#9D4EDD] to-[#22D3EE] bg-clip-text text-transparent">ANIVERSARIANTE</span>
+                <span className="bg-gradient-to-r from-[#C77DFF] to-[#22D3EE] bg-clip-text text-transparent">VIP</span>
               </span>
             </Link>
 

@@ -153,23 +153,20 @@ const EstablishmentHero = ({
       <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-[#EBEBEB]">
         <div className="max-w-3xl mx-auto">
           {/* Nome - menor no mobile */}
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#222222] leading-tight">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#240046] leading-tight">
             {establishment.nome_fantasia}
           </h1>
 
           {/* Categoria + Localização */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
-            <span className="text-[15px] text-[#222222] font-medium">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
+            <span className="text-[15px] text-[#240046] font-medium">
               {getCategoriaIcon(categoria)} {categoria}
             </span>
 
             {(establishment.bairro || establishment.cidade) && (
               <>
                 <span className="text-[#DDDDDD]">•</span>
-                <span className="flex items-center gap-1 text-[15px] text-[#717171]">
-                  <MapPin className="w-4 h-4" />
-                  {establishment.bairro || establishment.cidade}
-                </span>
+                <span className="text-[15px] text-[#3C096C]">{establishment.bairro || establishment.cidade}</span>
               </>
             )}
           </div>
@@ -184,9 +181,9 @@ const EstablishmentHero = ({
                     px-3 py-1 
                     rounded-full 
                     text-sm 
-                    bg-[#F7F7F7] 
-                    text-[#717171]
-                    border border-[#EBEBEB]
+                    bg-[#240046]/5
+                    text-[#3C096C]
+                    border border-[#240046]/10
                   "
                 >
                   {spec}

@@ -11,13 +11,14 @@ interface CategoryCarouselProps {
   subtitle?: string;
   estabelecimentos: any[];
   variant?: "default" | "featured" | "compact";
+  sectionId?: string; // ID da seção para controle de trava
+  onUserInteraction?: (sectionId: string) => void; // Callback quando usuário interage
 }
 
 // Função para converter categoria para singular
 const getCategoriaLabel = (categoria: string): string => {
   if (!categoria) return "Estabelecimento";
 
-  // Procurar na lista de categorias
   const cat = CATEGORIAS.find(
     (c) =>
       c.label.toLowerCase() === categoria.toLowerCase() ||
@@ -25,7 +26,6 @@ const getCategoriaLabel = (categoria: string): string => {
       c.id === categoria.toLowerCase(),
   );
 
-  // Retornar o label (singular) se encontrou, senão retorna o original
   return cat?.label || categoria;
 };
 
@@ -111,27 +111,41 @@ const CarouselCard = ({ estabelecimento }: { estabelecimento: any }) => {
   );
 };
 
-export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = "default" }: CategoryCarouselProps) => {
+export const CategoryCarousel = ({
+  title,
+  subtitle,
+  estabelecimentos,
+  variant = "default",
+  sectionId,
+  onUserInteraction,
+}: CategoryCarouselProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [cardsPerPage, setCardsPerPage] = useState(4);
+
+  // Notifica interação do usuário
+  const notifyInteraction = () => {
+    if (sectionId && onUserInteraction) {
+      onUserInteraction(sectionId);
+    }
+  };
 
   // Calcular quantos cards cabem por página baseado na largura da tela
   useEffect(() => {
     const calculateCardsPerPage = () => {
       const width = window.innerWidth;
       if (width < 640) {
-        setCardsPerPage(1); // Mobile: 1 card
+        setCardsPerPage(1);
       } else if (width < 768) {
-        setCardsPerPage(2); // Tablet pequeno: 2 cards
+        setCardsPerPage(2);
       } else if (width < 1024) {
-        setCardsPerPage(3); // Tablet: 3 cards
+        setCardsPerPage(3);
       } else if (width < 1280) {
-        setCardsPerPage(4); // Desktop: 4 cards
+        setCardsPerPage(4);
       } else if (width < 1536) {
-        setCardsPerPage(5); // Desktop grande: 5 cards
+        setCardsPerPage(5);
       } else {
-        setCardsPerPage(6); // Ultra wide: 6 cards
+        setCardsPerPage(6);
       }
     };
 
@@ -152,19 +166,28 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
   const canScrollRight = currentPage < totalPages - 1;
 
   const scroll = (direction: "left" | "right") => {
+    // Notifica que usuário interagiu - TRAVA ROTAÇÃO
+    notifyInteraction();
+
     if (direction === "right") {
       if (currentPage < totalPages - 1) {
         setCurrentPage(currentPage + 1);
       } else {
-        setCurrentPage(0); // Volta pro início
+        setCurrentPage(0);
       }
     } else {
       if (currentPage > 0) {
         setCurrentPage(currentPage - 1);
       } else {
-        setCurrentPage(totalPages - 1); // Vai pro final
+        setCurrentPage(totalPages - 1);
       }
     }
+  };
+
+  // Clique nos dots também notifica interação
+  const goToPage = (page: number) => {
+    notifyInteraction();
+    setCurrentPage(page);
   };
 
   if (estabelecimentos.length === 0) return null;
@@ -244,7 +267,7 @@ export const CategoryCarousel = ({ title, subtitle, estabelecimentos, variant = 
           {Array.from({ length: totalPages }).map((_, i) => (
             <button
               key={i}
-              onClick={() => setCurrentPage(i)}
+              onClick={() => goToPage(i)}
               aria-label={`Ir para página ${i + 1}`}
               className={cn(
                 "w-2 h-2 rounded-full transition-all duration-300",

@@ -16,20 +16,10 @@ export const Header = () => {
   const [userName, setUserName] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [dataNascimento, setDataNascimento] = useState<string | null>(null);
-  const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
   const { isBirthday } = useBirthdayTheme(dataNascimento);
-  const { isVisible, isAtTop } = useScrollHeader({ threshold: 80, sensitivity: 8 });
+  const { isVisible } = useScrollHeader({ threshold: 80, sensitivity: 8 });
   const isMobile = useIsMobile();
-
-  // Detectar scroll para glassmorphism
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     checkUser();
@@ -54,7 +44,6 @@ export const Header = () => {
       setUserName(profile?.nome || session.user.email?.split('@')[0] || 'Usuário');
       setUserRole(roles?.[0]?.role || null);
       
-      // Buscar data de nascimento para banner de aniversário
       if (roles?.[0]?.role === 'aniversariante') {
         const { data: aniversarianteData } = await supabase
           .from('aniversariantes')
@@ -98,66 +87,53 @@ export const Header = () => {
           fixed left-0 right-0 z-50 
           transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
           ${isMobile && !isVisible ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'}
-          ${isScrolled 
-            ? 'header-blur py-3' 
-            : 'bg-transparent py-4'
-          }
+          bg-[#240046] py-3
         `}
         style={{ top: isBirthday && userName ? '48px' : '0' }}
       >
         <nav className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
         <div className="flex items-center justify-between h-14">
-          {/* Logo com ícone animado */}
+          {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-              {/* Ícone Gift com gradiente roxo → ciano */}
               <div 
                 className="
                   w-10 h-10 
                   rounded-xl 
                   flex items-center justify-center
-                  shadow-lg shadow-[#240046]/25
+                  bg-white/10
                   transition-all duration-300
                   group-hover:scale-110 group-hover:rotate-6
-                  group-hover:shadow-xl group-hover:shadow-[#240046]/40
+                  group-hover:bg-white/20
                 "
-                style={{ background: 'linear-gradient(135deg, #240046 0%, #5B21B6 50%, #06B6D4 100%)' }}
               >
               <Gift className="w-5 h-5 text-white" />
             </div>
             
-            {/* Texto com gradiente roxo → ciano */}
             <span className="hidden sm:flex items-center gap-1 font-display font-extrabold text-base lg:text-lg tracking-tight transition-transform duration-300 group-hover:scale-105">
-              <span 
-                className="text-transparent bg-clip-text"
-                style={{ backgroundImage: 'linear-gradient(90deg, #9D4EDD 0%, #06B6D4 100%)' }}
-              >
+              <span className="text-white">
                 ANIVERSARIANTE
               </span>
-              <span 
-                className="text-transparent bg-clip-text"
-                style={{ backgroundImage: 'linear-gradient(90deg, #C77DFF 0%, #22D3EE 100%)' }}
-              >
+              <span className="text-white/80">
                 VIP
               </span>
             </span>
           </Link>
 
-          {/* Links Centro - Desktop com underline animado */}
+          {/* Links Centro - Desktop */}
           <div className="hidden lg:flex items-center justify-center flex-1 gap-1 min-w-0 mx-4">
             <NavLink 
               to="/como-funciona" 
               className="
-                relative text-sm font-medium text-slate-300 
+                relative text-sm font-medium text-white/80 
                 hover:text-white transition-colors duration-200 
                 px-4 py-2 group
               "
               activeClassName="text-white"
             >
               Como Funciona
-              {/* Underline animado */}
               <span className="
                 absolute -bottom-0.5 left-4 right-4 h-0.5 
-                bg-gradient-to-r from-[#240046] to-[#3C096C]
+                bg-white
                 scale-x-0 group-hover:scale-x-100
                 transition-transform duration-300 origin-left
               "/>
@@ -165,7 +141,7 @@ export const Header = () => {
             <NavLink 
               to="/seja-parceiro" 
               className="
-                relative text-sm font-medium text-slate-300 
+                relative text-sm font-medium text-white/80 
                 hover:text-white transition-colors duration-200 
                 px-4 py-2 group
               "
@@ -174,7 +150,7 @@ export const Header = () => {
               Seja Parceiro
               <span className="
                 absolute -bottom-0.5 left-4 right-4 h-0.5 
-                bg-gradient-to-r from-[#240046] to-[#3C096C]
+                bg-white
                 scale-x-0 group-hover:scale-x-100
                 transition-transform duration-300 origin-left
               "/>
@@ -185,19 +161,17 @@ export const Header = () => {
           <div className="hidden lg:flex items-center gap-4 flex-shrink-0">
             {userName ? (
               <>
-                {/* Greeting - apenas desktop grande */}
                 <div className="hidden xl:block">
                   <PersonalGreeting userName={userName} />
                 </div>
                 
-                {/* Avatar + Nome */}
                 <Button
                   variant="ghost"
                   onClick={() => navigate(getAreaLink())}
                   className="flex items-center gap-2 px-3 h-10 hover:bg-white/10 transition-all duration-200"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#240046] to-[#3C096C] p-0.5">
-                    <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-white/20 p-0.5">
+                    <div className="w-full h-full rounded-full bg-[#240046] flex items-center justify-center">
                       <span className="text-xs font-bold text-white">
                         {userName.slice(0, 2).toUpperCase()}
                       </span>
@@ -222,7 +196,7 @@ export const Header = () => {
                 <Link 
                   to="/selecionar-perfil"
                   className="
-                    text-slate-300 hover:text-white 
+                    text-white/80 hover:text-white 
                     transition-colors duration-200
                     px-4 py-2 text-sm font-medium
                   "
@@ -230,34 +204,23 @@ export const Header = () => {
                   Entrar
                 </Link>
                 
-                {/* Botão CTA com shimmer */}
+                {/* Botão CTA branco */}
                 <Link
                   to="/auth"
                   className="
                     relative
-                    bg-gradient-to-r from-[#240046] to-[#3C096C]
-                    text-white font-semibold
+                    bg-white
+                    text-[#240046] font-semibold
                     px-6 py-2.5
                     rounded-full
-                    shadow-lg shadow-[#240046]/30
                     transition-all duration-300
-                    hover:shadow-xl hover:shadow-[#240046]/40
+                    hover:bg-white/90
                     hover:scale-105
                     active:scale-95
-                    group
-                    overflow-hidden
                     text-sm
                   "
                 >
-                  {/* Shimmer effect */}
-                  <span className="
-                    absolute inset-0 
-                    bg-gradient-to-r from-transparent via-white/25 to-transparent
-                    -translate-x-full
-                    group-hover:translate-x-full
-                    transition-transform duration-700
-                  "/>
-                  <span className="relative">Cadastro Gratuito</span>
+                  Cadastro Gratuito
                 </Link>
               </>
             )}
@@ -274,14 +237,13 @@ export const Header = () => {
           </button>
         </div>
 
-        {/* Menu Mobile Premium */}
+        {/* Menu Mobile */}
         {mobileMenuOpen && (
           <div className="
             lg:hidden 
             mt-4 
             p-4 
-            bg-slate-900/95 
-            backdrop-blur-xl 
+            bg-[#1a0033]
             rounded-2xl
             border border-white/10
             shadow-2xl shadow-black/40
@@ -291,7 +253,7 @@ export const Header = () => {
               <NavLink
                 to="/como-funciona"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200"
+                className="text-sm font-medium text-white/80 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200"
                 activeClassName="text-white bg-white/5"
               >
                 Como Funciona
@@ -299,7 +261,7 @@ export const Header = () => {
               <NavLink
                 to="/seja-parceiro"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200"
+                className="text-sm font-medium text-white/80 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200"
                 activeClassName="text-white bg-white/5"
               >
                 Seja Parceiro
@@ -337,7 +299,7 @@ export const Header = () => {
                   <Link 
                     to="/selecionar-perfil"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-slate-300 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200"
+                    className="text-white/80 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200"
                   >
                     Entrar
                   </Link>
@@ -346,10 +308,9 @@ export const Header = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className="
                       mt-2
-                      bg-gradient-to-r from-[#240046] to-[#3C096C]
-                      text-white font-semibold
+                      bg-white
+                      text-[#240046] font-semibold
                       py-3 px-6 rounded-full text-center
-                      shadow-lg shadow-[#240046]/30
                       transition-all duration-300
                       active:scale-95
                     "
@@ -366,3 +327,28 @@ export const Header = () => {
     </>
   );
 };
+```
+
+---
+
+## O QUE MUDOU
+
+| Elemento | Antes | Depois |
+|----------|-------|--------|
+| **Fundo header** | Transparente/glassmorphism | `bg-[#240046]` (roxo sólido) |
+| **Logo texto** | Gradiente colorido | `text-white` |
+| **Links menu** | `text-slate-300` | `text-white/80` |
+| **Underline hover** | Gradiente roxo | `bg-white` |
+| **Botão CTA** | Gradiente roxo | `bg-white text-[#240046]` |
+| **Menu mobile** | `bg-slate-900` | `bg-[#1a0033]` (roxo escuro) |
+| **Ícone logo** | Gradiente | `bg-white/10` |
+
+---
+
+## RESULTADO VISUAL
+```
+┌─────────────────────────────────────────┐
+│  ████████████ ROXO #240046 ████████████ │
+│  [🎁] ANIVERSARIANTE VIP    Entrar  [Cadastro] │
+│         (branco)            (branco) (botão branco) │
+└─────────────────────────────────────────┘

@@ -30,24 +30,27 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
     queryFn: async () => {
       console.log("[useEstabelecimentos] Executando query com filtros:", filters);
 
+      // SEMPRE buscar todos os estabelecimentos ativos
       let q = supabase
         .from("public_estabelecimentos")
         .select("*")
         .eq("ativo", true)
         .order("created_at", { ascending: false });
 
-      if (filters.cidade && !filters.showAll) {
+      // Só aplicar filtro de cidade se NÃO for showAll e tiver cidade
+      if (filters.cidade && filters.estado && !filters.showAll) {
         const cidadeSanitizada = sanitizarInput(filters.cidade, 100);
-        console.log("[useEstabelecimentos] Filtrando por cidade:", cidadeSanitizada);
+        const estadoSanitizado = sanitizarInput(filters.estado, 2);
+        console.log("[useEstabelecimentos] Filtrando por cidade:", cidadeSanitizada, estadoSanitizado);
         q = q.ilike("cidade", `%${cidadeSanitizada}%`);
+        q = q.ilike("estado", estadoSanitizado);
       }
-      if (filters.estado && !filters.showAll) {
-        q = q.ilike("estado", sanitizarInput(filters.estado, 2));
-      }
+      
       if (filters.categoria && filters.categoria.length > 0) {
         const categoriasSanitizadas = filters.categoria.map((c) => sanitizarInput(c, 50));
         q = q.overlaps("categoria", categoriasSanitizadas);
       }
+      
       if (filters.search) {
         const searchSanitizado = sanitizarInput(filters.search, 100);
         q = q.or(`nome_fantasia.ilike.%${searchSanitizado}%,razao_social.ilike.%${searchSanitizado}%`);
@@ -56,31 +59,36 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
       const { data, error } = await q;
 
       console.log("[useEstabelecimentos] Resultado:", {
-        count: data?.length,
+        count: data?.length || 0,
         error: error?.message,
-        filters,
+        primeiroItem: data?.[0]?.nome_fantasia,
       });
 
-      if (error) throw error;
-      return data as Estabelecimento[];
+      if (error) {
+        console.error("[useEstabelecimentos] Erro na query:", error);
+        throw error;
+      }
+      
+      // GARANTIR que sempre retorna array
+      return (data || []) as Estabelecimento[];
     },
-    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
-    gcTime: 10 * 60 * 1000, // Manter em cache por 10 minutos
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     enabled: filters.enabled !== false,
+    // ADICIONAR: Dados iniciais vazios para evitar undefined
+    placeholderData: [],
   });
 
   // REALTIME: Singleton - apenas UMA subscription global
   useEffect(() => {
-    // Evitar setup duplicado no mesmo componente
     if (hasSetupRealtime.current) return;
     hasSetupRealtime.current = true;
 
     realtimeSubscribers++;
     console.log("[Realtime] Subscribers:", realtimeSubscribers);
 
-    // Só criar channel se ainda não existe
     if (!realtimeChannel) {
       console.log("[Realtime] Criando channel único...");
 
@@ -95,10 +103,9 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
           },
           (payload) => {
             console.log("[Realtime] Mudança detectada:", payload.eventType);
-            // Invalidar queries de forma controlada (não agressiva)
             queryClient.invalidateQueries({
               queryKey: ["estabelecimentos"],
-              refetchType: "none", // Não refetch imediato, só marca como stale
+              refetchType: "none",
             });
           },
         )
@@ -111,7 +118,6 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
       realtimeSubscribers--;
       console.log("[Realtime] Subscribers restantes:", realtimeSubscribers);
 
-      // Só remove o channel quando TODOS os subscribers saírem
       if (realtimeSubscribers === 0 && realtimeChannel) {
         console.log("[Realtime] Removendo channel...");
         supabase.removeChannel(realtimeChannel);
@@ -141,7 +147,7 @@ export const useEstabelecimento = (id: string | undefined) => {
       return data as Estabelecimento;
     },
     enabled: !!id,
-    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+    staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -169,3 +175,24 @@ export const useTrackView = () => {
     },
   });
 };
+```
+
+---
+
+## O QUE MUDOU
+
+| Antes | Depois |
+|-------|--------|
+| Podia retornar `undefined` | `placeholderData: []` garante array |
+| Log genérico | Log mostra primeiro item pra debug |
+| Filtro separado cidade/estado | Filtro junto só quando ambos existem |
+
+---
+
+## APLICA E TESTA
+
+1. Substitui o arquivo
+2. Abre o site
+3. Olha o Console - deve mostrar:
+```
+   [useEstabelecimentos] Resultado: { count: 334, primeiroItem: "Nome do lugar" }

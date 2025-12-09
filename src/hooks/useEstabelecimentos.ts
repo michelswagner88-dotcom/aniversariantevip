@@ -16,11 +16,9 @@ interface EstabelecimentoFilters {
   enabled?: boolean;
 }
 
-// Variável global para garantir APENAS UMA subscription de Realtime
 let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
 let realtimeSubscribers = 0;
 
-// Hook otimizado para listar estabelecimentos com cache e filtros
 export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
   const queryClient = useQueryClient();
   const hasSetupRealtime = useRef(false);
@@ -30,14 +28,12 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
     queryFn: async () => {
       console.log("[useEstabelecimentos] Executando query com filtros:", filters);
 
-      // SEMPRE buscar todos os estabelecimentos ativos
       let q = supabase
         .from("public_estabelecimentos")
         .select("*")
         .eq("ativo", true)
         .order("created_at", { ascending: false });
 
-      // Só aplicar filtro de cidade se NÃO for showAll e tiver cidade
       if (filters.cidade && filters.estado && !filters.showAll) {
         const cidadeSanitizada = sanitizarInput(filters.cidade, 100);
         const estadoSanitizado = sanitizarInput(filters.estado, 2);
@@ -45,12 +41,12 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
         q = q.ilike("cidade", `%${cidadeSanitizada}%`);
         q = q.ilike("estado", estadoSanitizado);
       }
-      
+
       if (filters.categoria && filters.categoria.length > 0) {
         const categoriasSanitizadas = filters.categoria.map((c) => sanitizarInput(c, 50));
         q = q.overlaps("categoria", categoriasSanitizadas);
       }
-      
+
       if (filters.search) {
         const searchSanitizado = sanitizarInput(filters.search, 100);
         q = q.or(`nome_fantasia.ilike.%${searchSanitizado}%,razao_social.ilike.%${searchSanitizado}%`);
@@ -68,8 +64,7 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
         console.error("[useEstabelecimentos] Erro na query:", error);
         throw error;
       }
-      
-      // GARANTIR que sempre retorna array
+
       return (data || []) as Estabelecimento[];
     },
     staleTime: 5 * 60 * 1000,
@@ -77,11 +72,9 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     enabled: filters.enabled !== false,
-    // ADICIONAR: Dados iniciais vazios para evitar undefined
     placeholderData: [],
   });
 
-  // REALTIME: Singleton - apenas UMA subscription global
   useEffect(() => {
     if (hasSetupRealtime.current) return;
     hasSetupRealtime.current = true;
@@ -129,7 +122,6 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
   return query;
 };
 
-// Hook para obter detalhes de um estabelecimento específico
 export const useEstabelecimento = (id: string | undefined) => {
   return useQuery({
     queryKey: queryKeys.estabelecimentos.detail(id || ""),
@@ -154,7 +146,6 @@ export const useEstabelecimento = (id: string | undefined) => {
   });
 };
 
-// Mutation para registrar visualização (analytics)
 export const useTrackView = () => {
   const queryClient = useQueryClient();
 
@@ -175,24 +166,3 @@ export const useTrackView = () => {
     },
   });
 };
-```
-
----
-
-## O QUE MUDOU
-
-| Antes | Depois |
-|-------|--------|
-| Podia retornar `undefined` | `placeholderData: []` garante array |
-| Log genérico | Log mostra primeiro item pra debug |
-| Filtro separado cidade/estado | Filtro junto só quando ambos existem |
-
----
-
-## APLICA E TESTA
-
-1. Substitui o arquivo
-2. Abre o site
-3. Olha o Console - deve mostrar:
-```
-   [useEstabelecimentos] Resultado: { count: 334, primeiroItem: "Nome do lugar" }

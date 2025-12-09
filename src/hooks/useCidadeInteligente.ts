@@ -17,6 +17,9 @@ interface UseCidadeInteligenteReturn {
   error: string | null;
   temEstabelecimentos: boolean | null;
   quantidadeEstabelecimentos: number;
+  // Novos campos para fallback de capital
+  usouFallbackCapital: boolean;
+  cidadeOriginal: string | null; // Cidade detectada antes do fallback
   setCidadeManual: (cidade: string, estado: string) => void;
   limparCidade: () => void;
   redetectar: () => void;
@@ -60,6 +63,43 @@ const ESTADOS_BR = [
   "TO",
 ];
 
+// Mapeamento de capitais por estado
+const CAPITAIS_BR: Record<string, string> = {
+  AC: "Rio Branco",
+  AL: "Maceió",
+  AP: "Macapá",
+  AM: "Manaus",
+  BA: "Salvador",
+  CE: "Fortaleza",
+  DF: "Brasília",
+  ES: "Vitória",
+  GO: "Goiânia",
+  MA: "São Luís",
+  MT: "Cuiabá",
+  MS: "Campo Grande",
+  MG: "Belo Horizonte",
+  PA: "Belém",
+  PB: "João Pessoa",
+  PR: "Curitiba",
+  PE: "Recife",
+  PI: "Teresina",
+  RJ: "Rio de Janeiro",
+  RN: "Natal",
+  RS: "Porto Alegre",
+  RO: "Porto Velho",
+  RR: "Boa Vista",
+  SC: "Florianópolis",
+  SP: "São Paulo",
+  SE: "Aracaju",
+  TO: "Palmas",
+};
+
+// Obter capital do estado
+const getCapitalDoEstado = (estado: string): string | null => {
+  const estadoNormalizado = estado.length === 2 ? estado.toUpperCase() : normalizarEstado(estado);
+  return CAPITAIS_BR[estadoNormalizado] || null;
+};
+
 // Função para verificar se é localização brasileira
 const isBrazilianLocation = (estado: string): boolean => {
   if (!estado) return false;
@@ -67,22 +107,34 @@ const isBrazilianLocation = (estado: string): boolean => {
   return ESTADOS_BR.includes(normalizado.toUpperCase());
 };
 
-// APIs de IP (fallback chain) - CORRIGIDO: Todas HTTPS
+// APIs de IP (fallback chain) - incluindo validação de país
 const IP_APIS = [
   {
     name: "ipapi.co",
     url: "https://ipapi.co/json/",
-    extract: (data: any) => ({ cidade: data.city, estado: data.region_code }),
+    extract: (data: any) => ({
+      cidade: data.city,
+      estado: data.region_code,
+      pais: data.country_code, // BR, US, etc
+    }),
   },
   {
     name: "ipwho.is",
     url: "https://ipwho.is/",
-    extract: (data: any) => ({ cidade: data.city, estado: data.region }),
+    extract: (data: any) => ({
+      cidade: data.city,
+      estado: data.region,
+      pais: data.country_code,
+    }),
   },
   {
     name: "ipapi.is",
     url: "https://api.ipapi.is/",
-    extract: (data: any) => ({ cidade: data.location?.city, estado: data.location?.state }),
+    extract: (data: any) => ({
+      cidade: data.location?.city,
+      estado: data.location?.state,
+      pais: data.location?.country_code,
+    }),
   },
 ];
 
@@ -135,16 +187,22 @@ const reverseGeocode = async (lat: number, lng: number): Promise<CidadeDetectada
     const data = await response.json();
     const address = data.address;
 
+    // Validar país primeiro
+    const pais = address.country_code?.toUpperCase();
+    if (pais && pais !== "BR") {
+      console.log("[Geo] GPS retornou país estrangeiro:", pais);
+      return null;
+    }
+
     const cidade = address.city || address.town || address.village || address.municipality;
     const estado = normalizarEstado(address.state || "");
 
-    // VALIDAÇÃO CRÍTICA: Só retornar se for localização brasileira
+    // VALIDAÇÃO: Só retornar se for localização brasileira
     if (cidade && estado && isBrazilianLocation(estado)) {
       return { cidade, estado, origem: "gps" };
     }
 
-    // Localização estrangeira detectada via GPS - retornar null
-    console.log("[Geo] Localização GPS ESTRANGEIRA ignorada:", cidade, estado);
+    console.log("[Geo] Localização GPS não-brasileira ignorada:", cidade, estado);
     return null;
   } catch (error) {
     console.error("[Geo] Erro no reverse geocoding:", error);
@@ -152,7 +210,7 @@ const reverseGeocode = async (lat: number, lng: number): Promise<CidadeDetectada
   }
 };
 
-// Função para detectar por IP
+// Função para detectar por IP - COM VALIDAÇÃO DE PAÍS INTERNA
 const detectarPorIP = async (): Promise<CidadeDetectada | null> => {
   for (const api of IP_APIS) {
     try {
@@ -165,13 +223,27 @@ const detectarPorIP = async (): Promise<CidadeDetectada | null> => {
       if (!response.ok) continue;
 
       const data = await response.json();
-      const { cidade, estado } = api.extract(data);
+      const { cidade, estado, pais } = api.extract(data);
+
+      // VALIDAÇÃO CRÍTICA: Verificar país ANTES de retornar
+      if (pais && pais.toUpperCase() !== "BR") {
+        console.log(`[Geo] ${api.name} retornou país estrangeiro:`, pais, "- ignorando");
+        continue; // Tentar próxima API
+      }
 
       if (cidade && estado) {
-        console.log(`[Geo] Cidade detectada via ${api.name}:`, cidade, estado);
+        const estadoNormalizado = normalizarEstado(estado);
+
+        // VALIDAÇÃO DUPLA: Verificar se estado é brasileiro
+        if (!isBrazilianLocation(estadoNormalizado)) {
+          console.log(`[Geo] ${api.name} retornou estado não-brasileiro:`, estado, "- ignorando");
+          continue;
+        }
+
+        console.log(`[Geo] Cidade brasileira detectada via ${api.name}:`, cidade, estadoNormalizado);
         return {
           cidade,
-          estado: normalizarEstado(estado),
+          estado: estadoNormalizado,
           origem: "ip",
         };
       }
@@ -181,6 +253,8 @@ const detectarPorIP = async (): Promise<CidadeDetectada | null> => {
     }
   }
 
+  // Nenhuma API retornou localização brasileira válida
+  console.log("[Geo] Nenhuma API retornou localização brasileira válida");
   return null;
 };
 
@@ -204,6 +278,60 @@ const verificarEstabelecimentos = async (cidade: string, estado: string): Promis
     console.error("[Geo] Erro ao verificar estabelecimentos:", error);
     return 0;
   }
+};
+
+// Função para encontrar melhor cidade (cidade do usuário ou capital do estado)
+const encontrarMelhorCidade = async (
+  cidadeOriginal: string,
+  estado: string,
+): Promise<{ cidade: string; estado: string; usouFallback: boolean; qtdEstabelecimentos: number }> => {
+  const estadoNormalizado = estado.length === 2 ? estado.toUpperCase() : normalizarEstado(estado);
+  const capital = getCapitalDoEstado(estadoNormalizado);
+
+  // 1. Tentar cidade original primeiro
+  const qtdOriginal = await verificarEstabelecimentos(cidadeOriginal, estadoNormalizado);
+
+  if (qtdOriginal > 0) {
+    console.log(`[Geo] Cidade ${cidadeOriginal} tem ${qtdOriginal} estabelecimentos`);
+    return {
+      cidade: cidadeOriginal,
+      estado: estadoNormalizado,
+      usouFallback: false,
+      qtdEstabelecimentos: qtdOriginal,
+    };
+  }
+
+  // 2. Não tem na cidade - usar capital do estado (SEMPRE terá estabelecimentos)
+  if (capital) {
+    // Se a cidade original JÁ É a capital, retorna ela mesmo (sem fallback)
+    if (capital.toLowerCase() === cidadeOriginal.toLowerCase()) {
+      console.log(`[Geo] Cidade ${cidadeOriginal} é a capital, sem estabelecimentos ainda`);
+      return {
+        cidade: cidadeOriginal,
+        estado: estadoNormalizado,
+        usouFallback: false,
+        qtdEstabelecimentos: 0,
+      };
+    }
+
+    const qtdCapital = await verificarEstabelecimentos(capital, estadoNormalizado);
+    console.log(`[Geo] Fallback para capital ${capital} com ${qtdCapital} estabelecimentos`);
+
+    return {
+      cidade: capital,
+      estado: estadoNormalizado,
+      usouFallback: true,
+      qtdEstabelecimentos: qtdCapital,
+    };
+  }
+
+  // 3. Sem capital mapeada (não deveria acontecer) - retorna cidade original
+  return {
+    cidade: cidadeOriginal,
+    estado: estadoNormalizado,
+    usouFallback: false,
+    qtdEstabelecimentos: 0,
+  };
 };
 
 // Função para buscar cidade do perfil do usuário logado
@@ -252,9 +380,9 @@ const getCachedCity = (): CidadeDetectada | null => {
 
     // VALIDAR: Verificar se a cidade em cache é brasileira
     if (data.estado && !isBrazilianLocation(data.estado)) {
-      console.log("[Geo] Cidade ESTRANGEIRA em cache detectada e REMOVIDA:", data.cidade, data.estado);
+      console.log("[Geo] Cidade estrangeira em cache removida:", data.cidade, data.estado);
       localStorage.removeItem(STORAGE_KEY);
-      return null; // Forçar nova detecção
+      return null;
     }
 
     return {
@@ -269,6 +397,12 @@ const getCachedCity = (): CidadeDetectada | null => {
 
 // Salvar no cache
 const saveToCache = (cidade: string, estado: string, origem: CidadeDetectada["origem"]) => {
+  // VALIDAÇÃO: Só salvar se for brasileiro
+  if (!isBrazilianLocation(estado)) {
+    console.log("[Geo] Tentativa de salvar cidade estrangeira bloqueada:", cidade, estado);
+    return;
+  }
+
   const cache = {
     cidade,
     estado,
@@ -285,42 +419,50 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
     estado: null,
     origem: null,
   });
-  const [isLoading, setIsLoading] = useState(false); // CORRIGIDO: Começa false pra não bloquear
+  const [isLoading, setIsLoading] = useState(false);
   const [isDetecting, setIsDetecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [quantidadeEstabelecimentos, setQuantidadeEstabelecimentos] = useState(0);
   const [temEstabelecimentos, setTemEstabelecimentos] = useState<boolean | null>(null);
 
+  // Novos estados para fallback de capital
+  const [usouFallbackCapital, setUsouFallbackCapital] = useState(false);
+  const [cidadeOriginal, setCidadeOriginal] = useState<string | null>(null);
+
   // Refs para controle de execução única
   const hasInitialized = useRef(false);
   const safetyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Detectar cidade (lógica principal com try/finally)
+  // Detectar cidade (lógica principal)
   const detectarCidadeAsync = useCallback(async () => {
     try {
       setIsDetecting(true);
       setError(null);
-
-      console.log("[Geo] Iniciando detecção de cidade...");
+      setUsouFallbackCapital(false);
+      setCidadeOriginal(null);
 
       // 1. Verificar perfil do usuário logado
       const perfilCidade = await buscarCidadeDoPerfil();
       if (perfilCidade && perfilCidade.cidade && perfilCidade.estado) {
-        console.log("[Geo] Cidade encontrada no perfil:", perfilCidade.cidade);
-        setCidadeData(perfilCidade);
-        saveToCache(perfilCidade.cidade, perfilCidade.estado, "perfil");
+        // Verificar se tem estabelecimentos ou fazer fallback
+        const resultado = await encontrarMelhorCidade(perfilCidade.cidade, perfilCidade.estado);
 
-        const qtd = await verificarEstabelecimentos(perfilCidade.cidade, perfilCidade.estado);
-        setQuantidadeEstabelecimentos(qtd);
-        setTemEstabelecimentos(qtd > 0);
+        setCidadeOriginal(perfilCidade.cidade);
+        setUsouFallbackCapital(resultado.usouFallback);
+        setCidadeData({
+          cidade: resultado.cidade,
+          estado: resultado.estado,
+          origem: "perfil",
+        });
+        saveToCache(resultado.cidade, resultado.estado, "perfil");
+        setQuantidadeEstabelecimentos(resultado.qtdEstabelecimentos);
+        setTemEstabelecimentos(resultado.qtdEstabelecimentos > 0);
         return;
       }
 
       // 2. Tentar GPS (mais preciso)
       if ("geolocation" in navigator) {
         try {
-          console.log("[Geo] Tentando GPS...");
-
           const position = await new Promise<GeolocationPosition>((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
               enableHighAccuracy: false,
@@ -330,61 +472,67 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
           });
 
           const { latitude, longitude } = position.coords;
-          console.log("[Geo] GPS obtido:", latitude, longitude);
-
           const cidadeGPS = await reverseGeocode(latitude, longitude);
 
           if (cidadeGPS && cidadeGPS.cidade && cidadeGPS.estado) {
-            console.log("[Geo] Cidade via GPS:", cidadeGPS.cidade);
-            setCidadeData(cidadeGPS);
-            saveToCache(cidadeGPS.cidade, cidadeGPS.estado, "gps");
+            // Verificar se tem estabelecimentos ou fazer fallback para capital
+            const resultado = await encontrarMelhorCidade(cidadeGPS.cidade, cidadeGPS.estado);
 
-            const qtd = await verificarEstabelecimentos(cidadeGPS.cidade, cidadeGPS.estado);
-            setQuantidadeEstabelecimentos(qtd);
-            setTemEstabelecimentos(qtd > 0);
+            setCidadeOriginal(cidadeGPS.cidade);
+            setUsouFallbackCapital(resultado.usouFallback);
+            setCidadeData({
+              cidade: resultado.cidade,
+              estado: resultado.estado,
+              origem: "gps",
+            });
+            saveToCache(resultado.cidade, resultado.estado, "gps");
+            setQuantidadeEstabelecimentos(resultado.qtdEstabelecimentos);
+            setTemEstabelecimentos(resultado.qtdEstabelecimentos > 0);
             return;
           }
         } catch (gpsError: any) {
-          console.log("[Geo] GPS não disponível ou negado:", gpsError.message);
+          // GPS não disponível ou negado - continuar para IP
         }
       }
 
-      // 3. Fallback: Detectar por IP
-      console.log("[Geo] Tentando detecção por IP...");
+      // 3. Fallback: Detectar por IP (já valida internamente se é BR)
       const cidadeIP = await detectarPorIP();
 
       if (cidadeIP && cidadeIP.cidade && cidadeIP.estado) {
-        // VALIDAR: Verificar se é localização brasileira antes de aceitar
-        if (isBrazilianLocation(cidadeIP.estado)) {
-          console.log("[Geo] Localização brasileira confirmada:", cidadeIP.cidade, cidadeIP.estado);
-          setCidadeData(cidadeIP);
-          saveToCache(cidadeIP.cidade, cidadeIP.estado, "ip");
+        // Verificar se tem estabelecimentos ou fazer fallback para capital
+        const resultado = await encontrarMelhorCidade(cidadeIP.cidade, cidadeIP.estado);
 
-          const qtd = await verificarEstabelecimentos(cidadeIP.cidade, cidadeIP.estado);
-          setQuantidadeEstabelecimentos(qtd);
-          setTemEstabelecimentos(qtd > 0);
-          return;
-        } else {
-          // Localização estrangeira detectada - ignorar e mostrar "Todo o Brasil"
-          console.log("[Geo] Localização ESTRANGEIRA detectada e IGNORADA:", cidadeIP.cidade, cidadeIP.estado);
-          // NÃO definir cidade - deixar como "Todo o Brasil"
-        }
+        setCidadeOriginal(cidadeIP.cidade);
+        setUsouFallbackCapital(resultado.usouFallback);
+        setCidadeData({
+          cidade: resultado.cidade,
+          estado: resultado.estado,
+          origem: "ip",
+        });
+        saveToCache(resultado.cidade, resultado.estado, "ip");
+        setQuantidadeEstabelecimentos(resultado.qtdEstabelecimentos);
+        setTemEstabelecimentos(resultado.qtdEstabelecimentos > 0);
+        return;
       }
 
-      // 4. Nenhum método funcionou ou localização é estrangeira
-      console.log('[Geo] Sem cidade brasileira detectada - usuário verá "Todo o Brasil"');
-      // NÃO mostrar erro - apenas deixar cidade como null (Todo o Brasil)
-      setCidadeData({ cidade: null, estado: null, origem: null });
-      setTemEstabelecimentos(null);
+      // 4. Nenhum método funcionou - fallback para São Paulo (maior cobertura)
+      console.log("[Geo] Não foi possível detectar localização - usando São Paulo como padrão");
+
+      const qtdSP = await verificarEstabelecimentos("São Paulo", "SP");
+
+      setCidadeOriginal(null);
+      setUsouFallbackCapital(true); // Indica que usou fallback
+      setCidadeData({ cidade: "São Paulo", estado: "SP", origem: "ip" });
+      saveToCache("São Paulo", "SP", "ip");
+      setQuantidadeEstabelecimentos(qtdSP);
+      setTemEstabelecimentos(qtdSP > 0);
     } catch (err) {
-      console.error("[Geo] Erro fatal na detecção:", err);
+      console.error("[Geo] Erro na detecção:", err);
       setError("Erro ao detectar localização");
     } finally {
-      // GARANTIR que loading termine, não importa o que aconteça
       setIsLoading(false);
       setIsDetecting(false);
 
-      // Limpar timeout de segurança
       if (safetyTimeoutRef.current) {
         clearTimeout(safetyTimeoutRef.current);
         safetyTimeoutRef.current = null;
@@ -394,22 +542,25 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
 
   // Definir cidade manualmente
   const setCidadeManual = useCallback(async (cidade: string, estado: string) => {
-    console.log("[Geo] Cidade definida manualmente:", cidade, estado);
+    // Verificar se tem estabelecimentos ou fazer fallback
+    const resultado = await encontrarMelhorCidade(cidade, estado);
 
-    setCidadeData({ cidade, estado, origem: "manual" });
-    saveToCache(cidade, estado, "manual");
-
-    const qtd = await verificarEstabelecimentos(cidade, estado);
-    setQuantidadeEstabelecimentos(qtd);
-    setTemEstabelecimentos(qtd > 0);
+    setCidadeOriginal(cidade);
+    setUsouFallbackCapital(resultado.usouFallback);
+    setCidadeData({ cidade: resultado.cidade, estado: resultado.estado, origem: "manual" });
+    saveToCache(resultado.cidade, resultado.estado, "manual");
+    setQuantidadeEstabelecimentos(resultado.qtdEstabelecimentos);
+    setTemEstabelecimentos(resultado.qtdEstabelecimentos > 0);
   }, []);
 
-  // Limpar cidade (forçar nova seleção)
+  // Limpar cidade
   const limparCidade = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
     setCidadeData({ cidade: null, estado: null, origem: null });
     setTemEstabelecimentos(null);
     setQuantidadeEstabelecimentos(0);
+    setUsouFallbackCapital(false);
+    setCidadeOriginal(null);
   }, []);
 
   // Redetectar cidade
@@ -418,7 +569,6 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
     setIsLoading(true);
     hasInitialized.current = false;
 
-    // Re-executar detecção
     const cached = getCachedCity();
     if (cached && cached.cidade && cached.estado) {
       setCidadeData(cached);
@@ -432,35 +582,29 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
     }
   }, [detectarCidadeAsync]);
 
-  // Efeito de inicialização - executa APENAS uma vez
+  // Inicialização - executa APENAS uma vez
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
-    console.log("[Geo] Inicializando hook de cidade...");
-
-    // Timeout de segurança - forçar fim do loading após 15s
+    // Timeout de segurança
     safetyTimeoutRef.current = setTimeout(() => {
-      console.warn("[Geo] Safety timeout - forçando fim do loading");
       setIsLoading(false);
       setIsDetecting(false);
     }, SAFETY_TIMEOUT);
 
-    // 1. Tentar carregar do cache SINCRONAMENTE primeiro
+    // 1. Tentar carregar do cache primeiro
     const cached = getCachedCity();
 
     if (cached && cached.cidade && cached.estado) {
-      console.log("[Geo] Cidade encontrada no cache:", cached.cidade);
       setCidadeData(cached);
-      setIsLoading(false); // Libera a tela IMEDIATAMENTE
+      setIsLoading(false);
 
-      // Verificar estabelecimentos em BACKGROUND (não bloqueia UI)
       verificarEstabelecimentos(cached.cidade, cached.estado).then((qtd) => {
         setQuantidadeEstabelecimentos(qtd);
         setTemEstabelecimentos(qtd > 0);
       });
 
-      // Limpar timeout de segurança já que carregou
       if (safetyTimeoutRef.current) {
         clearTimeout(safetyTimeoutRef.current);
         safetyTimeoutRef.current = null;
@@ -469,10 +613,9 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
       return;
     }
 
-    // 2. Sem cache - fazer detecção assíncrona (não bloqueia renderização)
+    // 2. Sem cache - fazer detecção assíncrona
     detectarCidadeAsync();
 
-    // Cleanup
     return () => {
       if (safetyTimeoutRef.current) {
         clearTimeout(safetyTimeoutRef.current);
@@ -489,6 +632,10 @@ export const useCidadeInteligente = (): UseCidadeInteligenteReturn => {
     error,
     temEstabelecimentos,
     quantidadeEstabelecimentos,
+    // Novos campos
+    usouFallbackCapital,
+    cidadeOriginal,
+    // Funções
     setCidadeManual,
     limparCidade,
     redetectar,

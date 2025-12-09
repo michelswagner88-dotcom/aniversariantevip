@@ -306,8 +306,8 @@ const Index = () => {
           </div>
         )}
         
-        {/* Pills de categorias estilo Airbnb + Botão de Filtros - MANTÉM FUNDO ESCURO */}
-        <div className="border-b border-slate-200 dark:border-slate-800 sticky top-16 bg-slate-50 dark:bg-slate-950/80 backdrop-blur-lg z-30">
+        {/* Pills de categorias estilo Airbnb + Botão de Filtros - FUNDO ESCURO igual Hero */}
+        <div className="bg-[#0F0A1A] border-b border-white/10 sticky top-16 backdrop-blur-lg z-30">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
             <div className="flex items-center gap-3">
               <div className="flex-1 overflow-hidden">
@@ -321,17 +321,17 @@ const Index = () => {
                 />
               </div>
               
-              {/* Botão de Filtros */}
+              {/* Botão de Filtros - estilo escuro */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowFilters(true)}
-                className="shrink-0 gap-2 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="shrink-0 gap-2 border-white/20 text-gray-300 hover:bg-white/10 hover:border-white/40 bg-transparent"
               >
                 <SlidersHorizontal className="h-4 w-4" />
                 <span className="hidden sm:inline">Filtros</span>
                 {activeFiltersCount > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-[#240046] text-white">
+                  <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-gradient-to-r from-[#240046] to-[#3C096C] text-white border-0">
                     {activeFiltersCount}
                   </Badge>
                 )}
@@ -355,8 +355,9 @@ const Index = () => {
           </div>
         )}
         
-        {/* Container principal - ÁREA BRANCA FIXA (estilo Airbnb) */}
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-8 pb-16 bg-white">
+        {/* Container principal - ÁREA BRANCA FIXA vai direto até o footer */}
+        <div className="bg-white">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-8 pb-16">
           
           {/* Loading state com skeletons */}
           {isLoadingEstabelecimentos ? (
@@ -463,6 +464,7 @@ const Index = () => {
               />
             </AirbnbMapLayout>
           )}
+        </div>
         </div>
       </main>
       

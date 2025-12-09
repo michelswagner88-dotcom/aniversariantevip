@@ -5,7 +5,18 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
-import { Gift, X, Copy, MessageCircle, Send, Facebook, Linkedin, Instagram } from "lucide-react";
+import {
+  Gift,
+  X,
+  Copy,
+  MessageCircle,
+  Send,
+  Facebook,
+  Linkedin,
+  Instagram,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useWindowSize } from "@/hooks/useWindowSize";
 import { useSEO } from "@/hooks/useSEO";
 import { getEstabelecimentoSEO } from "@/constants/seo";
@@ -30,8 +41,256 @@ import ContactButtons from "@/components/estabelecimento/ContactButtons";
 import BusinessHours from "@/components/estabelecimento/BusinessHours";
 import LocationSection from "@/components/estabelecimento/LocationSection";
 import PartnerCTA from "@/components/estabelecimento/PartnerCTA";
-import PhotoGallery from "@/components/estabelecimento/PhotoGallery";
 import BottomNav from "@/components/BottomNav";
+
+// ===== GALERIA DE FOTOS INLINE =====
+interface GaleriaFotosInlineProps {
+  photos: string[];
+  establishmentName: string;
+}
+
+const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlineProps) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  // Limitar a 10 fotos
+  const displayPhotos = photos.slice(0, 10);
+
+  if (displayPhotos.length === 0) return null;
+
+  // Verificar scroll
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  // Scroll horizontal
+  const scroll = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      const scrollAmount = scrollRef.current.clientWidth * 0.8;
+      scrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+      setTimeout(checkScroll, 300);
+    }
+  };
+
+  // Abrir lightbox
+  const openLightbox = (index: number) => {
+    setCurrentIndex(index);
+    setLightboxOpen(true);
+  };
+
+  // Navegação no lightbox
+  const goToPrevious = () => {
+    setCurrentIndex((prev) => (prev === 0 ? displayPhotos.length - 1 : prev - 1));
+  };
+
+  const goToNext = () => {
+    setCurrentIndex((prev) => (prev === displayPhotos.length - 1 ? 0 : prev + 1));
+  };
+
+  return (
+    <>
+      {/* GALERIA CARROSSEL */}
+      <div className="relative mx-4 sm:mx-6 mt-4 sm:mt-6">
+        <div className="max-w-3xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base sm:text-lg font-semibold text-[#240046]">Fotos</h2>
+            <span className="text-xs sm:text-sm text-[#3C096C]">
+              {displayPhotos.length} {displayPhotos.length === 1 ? "foto" : "fotos"}
+            </span>
+          </div>
+
+          {/* Container do carrossel */}
+          <div className="relative group">
+            {/* Botão esquerda - só desktop */}
+            {displayPhotos.length > 2 && (
+              <button
+                onClick={() => scroll("left")}
+                className={`
+                  absolute left-2 top-1/2 -translate-y-1/2 z-10
+                  w-9 h-9 rounded-full bg-white shadow-lg
+                  hidden sm:flex items-center justify-center
+                  transition-all duration-200
+                  ${canScrollLeft ? "opacity-100 hover:scale-110" : "opacity-0 pointer-events-none"}
+                `}
+              >
+                <ChevronLeft className="w-5 h-5 text-[#240046]" />
+              </button>
+            )}
+
+            {/* Scroll container */}
+            <div
+              ref={scrollRef}
+              onScroll={checkScroll}
+              className="
+                flex gap-2 sm:gap-3
+                overflow-x-auto
+                scroll-smooth
+                snap-x snap-mandatory
+                -mx-4 px-4 sm:mx-0 sm:px-0
+                pb-2
+              "
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {displayPhotos.map((photo, index) => (
+                <button
+                  key={index}
+                  onClick={() => openLightbox(index)}
+                  className={`
+                    flex-shrink-0 snap-start
+                    overflow-hidden rounded-xl
+                    transition-transform duration-200
+                    active:scale-[0.98]
+                    ${displayPhotos.length === 1 ? "w-full aspect-video" : "w-[65vw] sm:w-[260px] aspect-[4/3]"}
+                  `}
+                >
+                  <img
+                    src={photo}
+                    alt={`${establishmentName} - Foto ${index + 1}`}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </button>
+              ))}
+            </div>
+
+            {/* Botão direita - só desktop */}
+            {displayPhotos.length > 2 && (
+              <button
+                onClick={() => scroll("right")}
+                className={`
+                  absolute right-2 top-1/2 -translate-y-1/2 z-10
+                  w-9 h-9 rounded-full bg-white shadow-lg
+                  hidden sm:flex items-center justify-center
+                  transition-all duration-200
+                  ${canScrollRight ? "opacity-100 hover:scale-110" : "opacity-0 pointer-events-none"}
+                `}
+              >
+                <ChevronRight className="w-5 h-5 text-[#240046]" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* LIGHTBOX */}
+      <AnimatePresence>
+        {lightboxOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+            onClick={() => setLightboxOpen(false)}
+          >
+            {/* Botão fechar */}
+            <button
+              onClick={() => setLightboxOpen(false)}
+              className="absolute top-4 right-4 z-10 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+
+            {/* Contador */}
+            <div className="absolute top-4 left-4 text-white/70 text-sm">
+              {currentIndex + 1} / {displayPhotos.length}
+            </div>
+
+            {/* Navegação */}
+            {displayPhotos.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goToPrevious();
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                >
+                  <ChevronLeft className="w-6 h-6 text-white" />
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goToNext();
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                >
+                  <ChevronRight className="w-6 h-6 text-white" />
+                </button>
+              </>
+            )}
+
+            {/* Imagem */}
+            <motion.img
+              key={currentIndex}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
+              src={displayPhotos[currentIndex]}
+              alt={`${establishmentName} - Foto ${currentIndex + 1}`}
+              className="max-w-[90vw] max-h-[80vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            {/* Miniaturas - só desktop */}
+            {displayPhotos.length > 1 && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden sm:flex gap-2">
+                {displayPhotos.map((photo, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentIndex(index);
+                    }}
+                    className={`
+                      w-14 h-10 rounded-lg overflow-hidden transition-all duration-200
+                      ${index === currentIndex ? "ring-2 ring-white scale-110" : "opacity-50 hover:opacity-80"}
+                    `}
+                  >
+                    <img src={photo} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Dots - só mobile */}
+            {displayPhotos.length > 1 && (
+              <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-1.5 sm:hidden">
+                {displayPhotos.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentIndex(index);
+                    }}
+                    className={`
+                      h-2 rounded-full transition-all duration-300
+                      ${index === currentIndex ? "w-6 bg-white" : "w-2 bg-white/40"}
+                    `}
+                  />
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+// ===== FIM GALERIA DE FOTOS INLINE =====
 
 interface EstabelecimentoDetalhePremiumProps {
   estabelecimentoIdProp?: string | null;
@@ -348,9 +607,9 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
         isFavorited={id ? isFavorito(id) : false}
       />
 
-      {/* Galeria de Fotos */}
+      {/* Galeria de Fotos - Inline */}
       {galeriaFotos.length > 1 && (
-        <PhotoGallery photos={galeriaFotos} establishmentName={estabelecimento.nome_fantasia} />
+        <GaleriaFotosInline photos={galeriaFotos} establishmentName={estabelecimento.nome_fantasia} />
       )}
 
       {/* Benefício */}

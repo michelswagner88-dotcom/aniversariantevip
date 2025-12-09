@@ -7,7 +7,7 @@ interface UseRotatingSectionsOptions {
   rotationInterval?: number;
   featuredRotationInterval?: number;
   rotateOnMount?: boolean;
-  lockDuration?: number; // Tempo que a seção fica travada após interação (ms)
+  lockDuration?: number;
 }
 
 // Função para embaralhar array (Fisher-Yates)
@@ -23,14 +23,20 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 export const useRotatingSections = (allSections: HomeSection[], options: UseRotatingSectionsOptions = {}) => {
   const {
     rotatingCount = 5,
-    rotationInterval = 30000, // 30 segundos padrão
+    rotationInterval = 30000,
     featuredRotationInterval = 10000,
     rotateOnMount = true,
-    lockDuration = 10000, // 10 segundos de trava após interação
+    lockDuration = 10000,
   } = options;
 
-  // Separar seções rotativas
+  // Refs para valores estáveis (evita re-criar intervals)
+  const lockDurationRef = useRef(lockDuration);
+  lockDurationRef.current = lockDuration;
+
+  // Separar seções rotativas - memoizado com referência estável
   const rotatingSections = useMemo(() => allSections.filter((s) => s.priority === "rotating"), [allSections]);
+  const rotatingSectionsRef = useRef(rotatingSections);
+  rotatingSectionsRef.current = rotatingSections;
 
   // Estado da seção FEATURED atual (primeira posição)
   const [currentFeaturedIndex, setCurrentFeaturedIndex] = useState(0);
@@ -47,75 +53,68 @@ export const useRotatingSections = (allSections: HomeSection[], options: UseRota
   const [animationKey, setAnimationKey] = useState(0);
 
   // === SISTEMA DE TRAVA POR INTERAÇÃO ===
-  // Map de sectionId -> timestamp da última interação
   const lockedSectionsRef = useRef<Map<string, number>>(new Map());
-
-  // Estado para forçar re-render quando locks mudam (opcional, para debug)
   const [lockedCount, setLockedCount] = useState(0);
 
-  // Função para travar uma seção (chamada pelo carrossel)
-  const lockSection = useCallback(
-    (sectionId: string) => {
-      lockedSectionsRef.current.set(sectionId, Date.now());
-      setLockedCount(lockedSectionsRef.current.size);
+  // Função para travar uma seção (estável com useCallback)
+  const lockSection = useCallback((sectionId: string) => {
+    lockedSectionsRef.current.set(sectionId, Date.now());
+    setLockedCount(lockedSectionsRef.current.size);
 
-      // Auto-destrava após lockDuration
-      setTimeout(() => {
-        const lockTime = lockedSectionsRef.current.get(sectionId);
-        // Só remove se não teve nova interação
-        if (lockTime && Date.now() - lockTime >= lockDuration - 100) {
-          lockedSectionsRef.current.delete(sectionId);
-          setLockedCount(lockedSectionsRef.current.size);
-        }
-      }, lockDuration);
-    },
-    [lockDuration],
-  );
-
-  // Verifica se uma seção está travada
-  const isSectionLocked = useCallback(
-    (sectionId: string): boolean => {
+    // Auto-destrava após lockDuration
+    setTimeout(() => {
       const lockTime = lockedSectionsRef.current.get(sectionId);
-      if (!lockTime) return false;
-
-      // Verifica se ainda está dentro do período de trava
-      const isLocked = Date.now() - lockTime < lockDuration;
-      if (!isLocked) {
+      if (lockTime && Date.now() - lockTime >= lockDurationRef.current - 100) {
         lockedSectionsRef.current.delete(sectionId);
+        setLockedCount(lockedSectionsRef.current.size);
       }
-      return isLocked;
-    },
-    [lockDuration],
-  );
+    }, lockDurationRef.current);
+  }, []); // Sem dependências - usa refs
 
-  // Rotação automática da seção FEATURED (só se não estiver travada)
+  // Verifica se uma seção está travada (função pura, não precisa de useCallback)
+  const checkIfLocked = (sectionId: string): boolean => {
+    const lockTime = lockedSectionsRef.current.get(sectionId);
+    if (!lockTime) return false;
+    const isLocked = Date.now() - lockTime < lockDurationRef.current;
+    if (!isLocked) {
+      lockedSectionsRef.current.delete(sectionId);
+    }
+    return isLocked;
+  };
+
+  // Rotação automática da seção FEATURED
   useEffect(() => {
-    if (featuredRotationInterval <= 0) return;
+    // Early return robusto
+    if (!featuredRotationInterval || featuredRotationInterval <= 0) return;
 
     const interval = setInterval(() => {
       // Verifica se featured está travada
-      const featuredId = FEATURED_SECTIONS[currentFeaturedIndex]?.id;
-      if (featuredId && isSectionLocked(featuredId)) {
-        return; // Pula esta rotação
-      }
-
-      setCurrentFeaturedIndex((prev) => (prev + 1) % FEATURED_SECTIONS.length);
+      setCurrentFeaturedIndex((prev) => {
+        const featuredId = FEATURED_SECTIONS[prev]?.id;
+        if (featuredId && checkIfLocked(featuredId)) {
+          return prev; // Pula esta rotação
+        }
+        return (prev + 1) % FEATURED_SECTIONS.length;
+      });
       setAnimationKey((k) => k + 1);
     }, featuredRotationInterval);
 
     return () => clearInterval(interval);
-  }, [featuredRotationInterval, currentFeaturedIndex, isSectionLocked]);
+  }, [featuredRotationInterval]); // APENAS featuredRotationInterval como dependência
 
-  // Rotação automática das outras seções (pula as travadas)
+  // Rotação automática das outras seções
   useEffect(() => {
-    if (rotationInterval <= 0) return;
+    // Early return robusto
+    if (!rotationInterval || rotationInterval <= 0) return;
 
     const interval = setInterval(() => {
       setSelectedRotating((prev) => {
+        const currentRotatingSections = rotatingSectionsRef.current;
+
         // Encontra índices das seções NÃO travadas
         const unlockableIndices = prev
           .map((section, index) => ({ section, index }))
-          .filter(({ section }) => !isSectionLocked(section.id))
+          .filter(({ section }) => !checkIfLocked(section.id))
           .map(({ index }) => index);
 
         // Se todas estão travadas, não faz nada
@@ -125,12 +124,12 @@ export const useRotatingSections = (allSections: HomeSection[], options: UseRota
 
         // IDs atuais para não repetir
         const currentIds = new Set(prev.map((s) => s.id));
-        const available = rotatingSections.filter((s) => !currentIds.has(s.id));
+        const available = currentRotatingSections.filter((s) => !currentIds.has(s.id));
 
         // Se não tem disponíveis, embaralha tudo (exceto travadas)
         if (available.length === 0) {
           const newSections = [...prev];
-          const shuffled = shuffleArray(rotatingSections);
+          const shuffled = shuffleArray(currentRotatingSections);
           let shuffledIndex = 0;
 
           for (const idx of unlockableIndices) {
@@ -153,7 +152,7 @@ export const useRotatingSections = (allSections: HomeSection[], options: UseRota
     }, rotationInterval);
 
     return () => clearInterval(interval);
-  }, [rotatingSections, rotatingCount, rotationInterval, isSectionLocked]);
+  }, [rotationInterval, rotatingCount]); // APENAS rotationInterval e rotatingCount
 
   // Seção featured atual
   const currentFeatured = FEATURED_SECTIONS[currentFeaturedIndex];
@@ -166,9 +165,14 @@ export const useRotatingSections = (allSections: HomeSection[], options: UseRota
   // Função para forçar rotação manual
   const forceRotate = useCallback(() => {
     setCurrentFeaturedIndex((prev) => (prev + 1) % FEATURED_SECTIONS.length);
-    setSelectedRotating(shuffleArray(rotatingSections).slice(0, rotatingCount));
+    setSelectedRotating(shuffleArray(rotatingSectionsRef.current).slice(0, rotatingCount));
     setAnimationKey((k) => k + 1);
-  }, [rotatingSections, rotatingCount]);
+  }, [rotatingCount]);
+
+  // Wrapper estável para isSectionLocked (para uso externo)
+  const isSectionLocked = useCallback((sectionId: string): boolean => {
+    return checkIfLocked(sectionId);
+  }, []);
 
   return {
     sections: visibleSections,
@@ -176,9 +180,8 @@ export const useRotatingSections = (allSections: HomeSection[], options: UseRota
     forceRotate,
     isRotating: rotationInterval > 0 || featuredRotationInterval > 0,
     animationKey,
-    // Novas funções para controle de trava
     lockSection,
     isSectionLocked,
-    lockedCount, // Para debug se quiser mostrar quantas estão travadas
+    lockedCount,
   };
 };

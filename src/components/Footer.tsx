@@ -72,9 +72,6 @@ export const Footer = () => {
               <Link to="/explorar" className="text-sm text-white/70 hover:text-white transition-colors">
                 Explorar
               </Link>
-              <Link to="/faq" className="text-sm text-white/70 hover:text-white transition-colors">
-                Central de Ajuda
-              </Link>
             </nav>
           </div>
 

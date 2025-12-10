@@ -55,7 +55,9 @@ const ComoFunciona = () => {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-2 mb-6">
               <Sparkles className="w-4 h-4 text-[#C77DFF]" />
-              <span className="text-sm text-white/90 font-medium">Simples, rápido e gratuito</span>
+              <span className="text-sm text-white/90 font-medium">
+                O maior guia de benefícios para aniversariantes do Brasil
+              </span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-5 leading-tight">

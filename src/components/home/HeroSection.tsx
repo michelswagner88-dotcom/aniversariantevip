@@ -268,7 +268,7 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
         {/* Badge - Pulsando Suave e Clicável - Vai para Cadastro */}
         <motion.button
           onClick={handleBadgeClick}
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/20 to-pink-500/20 border border-amber-400/30 rounded-full px-4 sm:px-5 py-2.5 mb-5 sm:mb-6 hover:from-amber-500/30 hover:to-pink-500/30 transition-all cursor-pointer shadow-lg shadow-amber-500/10"
+          className="inline-flex items-center gap-2 bg-[#3C096C] border border-white/40 rounded-full px-4 sm:px-5 py-2.5 mb-5 sm:mb-6 hover:bg-[#5B21B6] hover:border-white/60 transition-all cursor-pointer shadow-lg shadow-black/20"
           initial={{ opacity: 0, y: 20 }}
           animate={{
             opacity: 1,
@@ -286,11 +286,10 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          <Gift className="w-4 h-4 text-amber-400" />
+          <Gift className="w-4 h-4 text-white" />
           <span className="text-xs sm:text-sm text-white font-semibold whitespace-nowrap">
             Cadastro gratuito para aniversariantes
           </span>
-          <span className="text-amber-400 text-xs">→</span>
         </motion.button>
 
         {/* Título */}
@@ -307,12 +306,12 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
 
         {/* Subtítulo */}
         <motion.p
-          className="text-sm sm:text-base text-white/80 mb-6 sm:mb-8 max-w-xl mx-auto px-2"
+          className="text-sm sm:text-base text-white/80 mb-6 sm:mb-8 max-w-xl mx-auto px-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          Descubra restaurantes, bares, lojas e muito mais
+          Descubra restaurantes, bares, lojas e muito mais para você aproveitar
         </motion.p>
 
         {/* Barra de Busca */}

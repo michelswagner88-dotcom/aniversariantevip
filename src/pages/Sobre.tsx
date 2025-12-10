@@ -222,7 +222,7 @@ const Sobre = () => {
                   Hoje, trabalhamos para expandir nossa rede de parceiros e levar benefícios exclusivos para
                   aniversariantes em todas as cidades do país.{" "}
                   <span className="text-white font-medium">
-                    Porque todo mundo merece se sentir VIP no seu dia especial.
+                    Porque todo mundo merece se sentir VIP no seu aniversário.
                   </span>
                 </p>
               </div>

@@ -30,33 +30,35 @@ export default function SejaParceiro() {
 
   const vantagens = [
     {
-      titulo: "Mais clientes, mais vendas",
-      descricao: "Aniversariante raramente celebra sozinho. Um benefício pode trazer amigos, família e colegas junto.",
-      icon: TrendingUp,
-    },
-    {
-      titulo: "Visibilidade garantida",
-      descricao: "Seu negócio aparece em uma plataforma 100% focada em celebrações. Destaque onde importa.",
-      icon: Star,
-    },
-    {
-      titulo: "Público pronto para consumir",
-      descricao: "Quem acessa já quer aproveitar o aniversário. Cliente com intenção real de compra.",
+      titulo: "Seja encontrado",
+      descricao:
+        "Muita gente não sabe quais lugares oferecem benefício de aniversário. Aqui, seu estabelecimento vira vitrine para quem está ativamente buscando.",
       icon: Target,
     },
     {
-      titulo: "Investimento inteligente",
-      descricao: "Mais barato que anúncio tradicional, com retorno mensurável mês após mês.",
+      titulo: "Mais visibilidade, mais movimento",
+      descricao: "Você aparece para um público específico, com interesse real em aproveitar o mês especial.",
+      icon: TrendingUp,
+    },
+    {
+      titulo: "Público com alta intenção",
+      descricao: "Quem acessa está decidido a aproveitar. Menos curiosos, mais clientes prontos para consumir.",
+      icon: Star,
+    },
+    {
+      titulo: "Investimento previsível",
+      descricao: "Mais estável que anúncios tradicionais e com retorno contínuo ao longo do mês.",
       icon: DollarSign,
     },
   ];
 
   const diferenciais = [
-    "Apareça para milhares de aniversariantes",
-    "Painel completo para gerenciar seu perfil",
+    "Visibilidade para aniversariantes na sua cidade",
+    "Página do estabelecimento com benefício e regras claras",
+    "Painel para gerenciar seu perfil e informações",
     "Métricas de visualizações e interesse",
-    "Suporte dedicado para parceiros",
-    "Destaque na sua categoria e cidade",
+    "Destaque por categoria e localização",
+    "Suporte para parceiros",
     "Sem taxa por cliente atendido",
   ];
 
@@ -83,15 +85,15 @@ export default function SejaParceiro() {
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-5 leading-tight">
-              Atraia clientes que{" "}
+              Atraia clientes no{" "}
               <span className="bg-gradient-to-r from-[#9D4EDD] to-[#C77DFF] bg-clip-text text-transparent">
-                querem celebrar
+                momento certo
               </span>
             </h1>
 
             <p className="text-base sm:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed mb-8">
-              Cadastre seu estabelecimento e receba aniversariantes prontos para comemorar. Eles trazem amigos, família
-              e vontade de gastar.
+              Muitos aniversariantes nem sabem que seu estabelecimento oferece benefício. Apareça para quem está
+              buscando — e transforme sua oferta em movimento real.
             </p>
 
             <Button
@@ -191,14 +193,16 @@ export default function SejaParceiro() {
           <div className="text-center mb-12">
             <span className="text-[#C77DFF] text-sm font-semibold uppercase tracking-wider">Vantagens</span>
             <h2 className="text-2xl sm:text-3xl font-bold text-white mt-2 mb-3">Por que ser parceiro?</h2>
-            <p className="text-white/60 max-w-xl mx-auto">Benefícios reais para o seu negócio crescer</p>
+            <p className="text-white/60 max-w-xl mx-auto">
+              Benefícios reais para o seu negócio crescer com consistência
+            </p>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-5">
             {vantagens.map((vantagem, index) => (
               <div
                 key={index}
-                className="bg-[#1a0033] border border-white/10 rounded-2xl p-6 hover:border-[#7C3AED]/30 transition-all"
+                className="bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#7C3AED]/30 transition-all"
               >
                 <div className="flex gap-4">
                   <div className="w-12 h-12 bg-[#7C3AED]/20 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -250,7 +254,7 @@ export default function SejaParceiro() {
 
               <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">Pronto para crescer?</h3>
               <p className="text-white/70 mb-8 max-w-sm mx-auto">
-                Cadastre seu estabelecimento agora e comece a receber aniversariantes
+                Cadastre seu estabelecimento agora e comece a aparecer para aniversariantes
               </p>
 
               <Button

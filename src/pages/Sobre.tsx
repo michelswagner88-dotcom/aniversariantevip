@@ -19,23 +19,27 @@ const Sobre = () => {
   const valores = [
     {
       icon: Heart,
-      titulo: "Paixão por celebrar",
-      descricao: "Todo aniversário merece ser especial. Trabalhamos para criar momentos que ficam na memória.",
+      titulo: "A Magia do Aniversário",
+      descricao:
+        "Todo aniversário é único. Trabalhamos para criar momentos que ficam na memória, transformando uma data comum em algo inesquecível.",
     },
     {
       icon: Shield,
-      titulo: "Transparência total",
-      descricao: "Benefícios claros, sem pegadinhas. O que você vê é exatamente o que vai receber.",
+      titulo: "Benefícios Sem Pegadinhas",
+      descricao:
+        "Nossas ofertas são claras e diretas. O que você vê na plataforma é exatamente o que vai receber no estabelecimento.",
     },
     {
       icon: Users,
-      titulo: "Conexão real",
-      descricao: "Unimos aniversariantes e estabelecimentos em uma rede onde todo mundo ganha.",
+      titulo: "Onde Todos Ganham",
+      descricao:
+        "Unimos aniversariantes que querem celebrar e estabelecimentos que querem receber. Uma rede de valor para os dois lados.",
     },
     {
       icon: Sparkles,
-      titulo: "Experiência impecável",
-      descricao: "Tecnologia moderna para você encontrar benefícios sem complicação.",
+      titulo: "Tecnologia a Seu Favor",
+      descricao:
+        "Utilizamos tecnologia moderna para você encontrar benefícios de forma rápida, intuitiva e sem complicação.",
     },
   ];
 
@@ -73,11 +77,10 @@ const Sobre = () => {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-5 leading-tight"
               >
-                O maior guia de benefícios para{" "}
+                O Seu Passaporte VIP para o{" "}
                 <span className="bg-gradient-to-r from-[#9D4EDD] to-[#C77DFF] bg-clip-text text-transparent">
-                  aniversariantes
-                </span>{" "}
-                do Brasil
+                  Aniversário Perfeito
+                </span>
               </motion.h1>
 
               <motion.p
@@ -86,15 +89,15 @@ const Sobre = () => {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="text-base sm:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed"
               >
-                Conectamos você aos melhores benefícios da sua cidade. Porque todo mundo merece se sentir VIP no dia do
-                seu aniversário.
+                O Aniversariante VIP nasceu com uma missão simples: transformar o mês do seu aniversário em uma
+                experiência verdadeiramente especial. Somos o maior guia de benefícios para aniversariantes do Brasil.
               </motion.p>
             </div>
           </div>
         </section>
 
         {/* Nossa Missão */}
-        <section className="py-16 px-4 bg-[#1a0033]/50">
+        <section className="py-16 px-4 bg-[#3C096C]/30">
           <div className="max-w-5xl mx-auto">
             <div className="grid md:grid-cols-2 gap-10 items-center">
               <motion.div
@@ -107,12 +110,12 @@ const Sobre = () => {
                   <div className="w-10 h-10 bg-[#7C3AED]/20 rounded-xl flex items-center justify-center">
                     <Target className="w-5 h-5 text-[#C77DFF]" />
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-white">Nossa missão</h2>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white">Democratizar a Celebração</h2>
                 </div>
 
                 <p className="text-white/70 mb-4 leading-relaxed">
-                  Democratizar o acesso a benefícios de aniversário para todos os brasileiros. Acreditamos que celebrar
-                  mais um ano de vida deve vir com experiências especiais.
+                  Tornar o acesso a benefícios de aniversário fácil e transparente para todos aproveitarem. Acreditamos
+                  que celebrar mais um ano de vida deve vir com experiências especiais.
                 </p>
 
                 <p className="text-white/70 leading-relaxed">
@@ -162,7 +165,7 @@ const Sobre = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-[#1a0033] border border-white/10 rounded-2xl p-6 hover:border-[#7C3AED]/30 transition-all group"
+                  className="bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#7C3AED]/30 transition-all group"
                 >
                   <div className="w-12 h-12 bg-[#7C3AED]/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <valor.icon className="w-6 h-6 text-[#C77DFF]" />
@@ -176,7 +179,7 @@ const Sobre = () => {
         </section>
 
         {/* Nossa História */}
-        <section className="py-16 px-4 bg-[#1a0033]/50">
+        <section className="py-16 px-4 bg-[#3C096C]/30">
           <div className="max-w-3xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -245,19 +248,30 @@ const Sobre = () => {
                   <Gift className="w-8 h-8 text-white" />
                 </div>
 
-                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">Pronto para celebrar?</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">Pronto para Celebrar com a Gente?</h2>
                 <p className="text-white/70 mb-8 max-w-sm mx-auto">
-                  Cadastre-se gratuitamente e descubra os benefícios disponíveis na sua cidade
+                  Encontre benefícios exclusivos ou cadastre seu estabelecimento como parceiro
                 </p>
 
-                <Button
-                  onClick={() => navigate("/cadastro")}
-                  size="lg"
-                  className="bg-white text-[#240046] hover:bg-white/90 font-semibold px-8 py-6 h-auto text-base rounded-full shadow-xl shadow-black/20 hover:scale-105 transition-all duration-300"
-                >
-                  Criar minha conta grátis
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button
+                    onClick={() => navigate("/explorar")}
+                    size="lg"
+                    className="bg-white text-[#240046] hover:bg-white/90 font-semibold px-8 py-6 h-auto text-base rounded-full shadow-xl shadow-black/20 hover:scale-105 transition-all duration-300"
+                  >
+                    Encontrar Benefícios
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+
+                  <Button
+                    onClick={() => navigate("/seja-parceiro")}
+                    size="lg"
+                    variant="outline"
+                    className="border-white/30 text-white hover:bg-white/10 font-semibold px-8 py-6 h-auto text-base rounded-full hover:scale-105 transition-all duration-300"
+                  >
+                    Seja Parceiro
+                  </Button>
+                </div>
               </div>
             </motion.div>
           </div>

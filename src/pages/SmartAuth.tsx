@@ -1,109 +1,127 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Loader2, AlertCircle, Mail, Lock, User, ChevronDown, ChevronUp, Eye, EyeOff, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import MaskedInput from '@/components/MaskedInput';
-import BuscaCepPorEndereco from '@/components/BuscaCepPorEndereco';
-import { BackButton } from '@/components/BackButton';
-import { TelaConfirmacaoEmail } from '@/components/TelaConfirmacaoEmail';
-import { useInputMask } from '@/hooks/useInputMask';
-import { useCheckCpfExists } from '@/hooks/useCheckCpfExists';
-import { useCepLookup } from '@/hooks/useCepLookup';
-import { getFriendlyErrorMessage } from '@/lib/errorTranslator';
-import { useSEO } from '@/hooks/useSEO';
-import { SEO_CONTENT } from '@/constants/seo';
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Loader2, AlertCircle, Mail, Lock, User, ChevronDown, ChevronUp, Eye, EyeOff, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import MaskedInput from "@/components/MaskedInput";
+import BuscaCepPorEndereco from "@/components/BuscaCepPorEndereco";
+import { BackButton } from "@/components/BackButton";
+import { TelaConfirmacaoEmail } from "@/components/TelaConfirmacaoEmail";
+import { useInputMask } from "@/hooks/useInputMask";
+import { useCheckCpfExists } from "@/hooks/useCheckCpfExists";
+import { useCepLookup } from "@/hooks/useCepLookup";
+import { getFriendlyErrorMessage } from "@/lib/errorTranslator";
+import { useSEO } from "@/hooks/useSEO";
+import { SEO_CONTENT } from "@/constants/seo";
 
 const SmartAuth = () => {
-  // SEO
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Determinar modo inicial baseado na rota
+  const getInitialMode = () => {
+    const path = location.pathname.toLowerCase();
+    // Se a rota for /cadastro, começar em modo cadastro
+    if (path === "/cadastro" || path === "/cadastro/aniversariante") {
+      return false; // isLogin = false = modo cadastro
+    }
+    // Se a rota for /login ou /auth, começar em modo login
+    return true; // isLogin = true = modo login
+  };
+
+  // SEO dinâmico baseado no modo
+  const isInitiallyLogin = getInitialMode();
   useSEO({
-    title: SEO_CONTENT.auth.title,
-    description: SEO_CONTENT.auth.description,
+    title: isInitiallyLogin ? SEO_CONTENT.auth.title : "Cadastro Gratuito | Aniversariante VIP",
+    description: isInitiallyLogin
+      ? SEO_CONTENT.auth.description
+      : "Crie sua conta gratuita e descubra benefícios exclusivos para seu aniversário.",
   });
+
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
-  const [isLogin, setIsLogin] = useState(true); // Prioriza LOGIN
+  const [isLogin, setIsLogin] = useState(getInitialMode()); // Usa a rota pra definir modo inicial
   const [showCepSearch, setShowCepSearch] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isGoogleUser, setIsGoogleUser] = useState(false); // Flag para usuário Google
+  const [isGoogleUser, setIsGoogleUser] = useState(false);
   const [mostrarTelaConfirmacao, setMostrarTelaConfirmacao] = useState(false);
-  const [emailParaConfirmar, setEmailParaConfirmar] = useState('');
-  
+  const [emailParaConfirmar, setEmailParaConfirmar] = useState("");
+
   // Refs para controle de race condition
   const isProcessingRef = useRef(false);
   const hasProcessedRef = useRef(false);
-  
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  const { 
-    phoneMask, 
-    cpfMask, 
-    cepMask, 
-    dateMask,
-    validateCPF,
-    validatePhone,
-    validateBirthDate,
-    validateFullName,
-  } = useInputMask();
-  
+
+  const { phoneMask, cpfMask, cepMask, dateMask, validateCPF, validatePhone, validateBirthDate, validateFullName } =
+    useInputMask();
+
   const { fetchCep, loading: cepLoading } = useCepLookup();
 
   // Step 1: Basic info
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   // Step 2: Complete registration
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [cpf, setCpf] = useState('');
-  const [birthDate, setBirthDate] = useState('');
-  const [cep, setCep] = useState('');
-  const [estado, setEstado] = useState('');
-  const [cidade, setCidade] = useState('');
-  const [bairro, setBairro] = useState('');
-  const [logradouro, setLogradouro] = useState('');
-  const [numero, setNumero] = useState('');
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [cep, setCep] = useState("");
+  const [estado, setEstado] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [logradouro, setLogradouro] = useState("");
+  const [numero, setNumero] = useState("");
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
-  
+
   // Validation states
-  const [nameError, setNameError] = useState('');
-  const [phoneError, setPhoneError] = useState('');
-  const [cpfError, setCpfError] = useState('');
-  const [birthDateError, setBirthDateError] = useState('');
-  const [cepError, setCepError] = useState('');
-  
+  const [nameError, setNameError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [cpfError, setCpfError] = useState("");
+  const [birthDateError, setBirthDateError] = useState("");
+  const [cepError, setCepError] = useState("");
+
   const isNameValid = name.trim() && validateFullName(name) && !nameError;
-  const isPhoneValid = phone.replace(/\D/g, '').length === 11 && validatePhone(phone) && !phoneError;
-  const isCpfValid = cpf.replace(/\D/g, '').length === 11 && validateCPF(cpf) && !cpfError;
-  const isBirthDateValid = birthDate.replace(/\D/g, '').length === 8 && validateBirthDate(birthDate).valid && !birthDateError;
-  const isCepValid = cep.replace(/\D/g, '').length === 8 && estado && cidade && bairro && logradouro && !cepError;
-  
+  const isPhoneValid = phone.replace(/\D/g, "").length === 11 && validatePhone(phone) && !phoneError;
+  const isCpfValid = cpf.replace(/\D/g, "").length === 11 && validateCPF(cpf) && !cpfError;
+  const isBirthDateValid =
+    birthDate.replace(/\D/g, "").length === 8 && validateBirthDate(birthDate).valid && !birthDateError;
+  const isCepValid = cep.replace(/\D/g, "").length === 8 && estado && cidade && bairro && logradouro && !cepError;
+
   // Verificação de CPF duplicado em tempo real (após declarações)
   const { exists: cpfExists, loading: cpfChecking } = useCheckCpfExists(cpf, isCpfValid && !cpfError);
-  
-  const isStep2Valid = isNameValid && isPhoneValid && isCpfValid && !cpfExists && !cpfChecking && isBirthDateValid && isCepValid;
+
+  const isStep2Valid =
+    isNameValid && isPhoneValid && isCpfValid && !cpfExists && !cpfChecking && isBirthDateValid && isCepValid;
+
+  // Atualizar modo quando a rota mudar
+  useEffect(() => {
+    const path = location.pathname.toLowerCase();
+    if (path === "/cadastro" || path === "/cadastro/aniversariante") {
+      setIsLogin(false);
+    } else if (path === "/login" || path === "/login/aniversariante") {
+      setIsLogin(true);
+    }
+  }, [location.pathname]);
 
   // Função auxiliar para verificar rate limit
-  const checkRateLimit = async (identifier: string, action: 'login' | 'signup'): Promise<boolean> => {
+  const checkRateLimit = async (identifier: string, action: "login" | "signup"): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.functions.invoke('check-auth-rate-limit', {
-        body: { identifier, action }
+      const { data, error } = await supabase.functions.invoke("check-auth-rate-limit", {
+        body: { identifier, action },
       });
 
       if (error) {
-        console.error('Erro ao verificar rate limit:', error);
-        // Em caso de erro, permitir tentativa (fail open para não bloquear usuário legítimo)
+        console.error("Erro ao verificar rate limit:", error);
         return true;
       }
 
       if (!data.allowed) {
-        toast.error('Muitas tentativas', {
+        toast.error("Muitas tentativas", {
           description: data.message || `Aguarde ${data.retryAfter} minutos e tente novamente.`,
           duration: 6000,
         });
@@ -111,15 +129,14 @@ const SmartAuth = () => {
       }
 
       if (data.remaining <= 1) {
-        toast.warning('Atenção', {
+        toast.warning("Atenção", {
           description: `Você tem apenas ${data.remaining} tentativa(s) restante(s).`,
         });
       }
 
       return true;
     } catch (err) {
-      console.error('Erro ao verificar rate limit:', err);
-      // Em caso de erro, permitir tentativa
+      console.error("Erro ao verificar rate limit:", err);
       return true;
     }
   };
@@ -129,114 +146,108 @@ const SmartAuth = () => {
     const hasMinLength = password.length >= 8;
     const hasUppercase = /[A-Z]/.test(password);
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    
+
     return hasMinLength && hasUppercase && hasSpecialChar;
   };
 
   // Verificar sessão inicial
   useEffect(() => {
     const checkSession = async () => {
-      // PROTEÇÃO 1: Se já está processando ou já foi para Step 2, ignorar
       if (isProcessingRef.current) {
-        console.log('🔵 checkSession IGNORADO - já está processando');
+        console.log("🔵 checkSession IGNORADO - já está processando");
         return;
       }
-      
+
       if (hasProcessedRef.current && step === 2) {
-        console.log('🔵 checkSession IGNORADO - já processou para Step 2');
+        console.log("🔵 checkSession IGNORADO - já processou para Step 2");
         return;
       }
-      
+
       isProcessingRef.current = true;
-      
+
       try {
-        // PROTEÇÃO 2: Verificar flags PRIMEIRO, antes de qualquer outra coisa
-        const forceStep2 = sessionStorage.getItem('forceStep2');
-        const needsCompletion = sessionStorage.getItem('needsCompletion');
-        
-        if (forceStep2 === 'true' || needsCompletion === 'true') {
-          console.log('🔵 FLAGS DETECTADAS - Forçando Step 2');
-          
-          // Remover flags SOMENTE depois de confirmar sessão
-          const { data: { session } } = await supabase.auth.getSession();
+        const forceStep2 = sessionStorage.getItem("forceStep2");
+        const needsCompletion = sessionStorage.getItem("needsCompletion");
+
+        if (forceStep2 === "true" || needsCompletion === "true") {
+          console.log("🔵 FLAGS DETECTADAS - Forçando Step 2");
+
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
           if (session) {
-            // AGORA sim remove as flags
-            sessionStorage.removeItem('forceStep2');
-            sessionStorage.removeItem('needsCompletion');
-            
-            // Preencher dados do usuário Google
+            sessionStorage.removeItem("forceStep2");
+            sessionStorage.removeItem("needsCompletion");
+
             setUserId(session.user.id);
-            setEmail(session.user.email || '');
-            setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
-            setIsGoogleUser(true); // Marcar como usuário Google
+            setEmail(session.user.email || "");
+            setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || "");
+            setIsGoogleUser(true);
             setStep(2);
-            hasProcessedRef.current = true; // Marca que já processou
-            
-            console.log('✅ Step 2 configurado com sucesso para usuário Google');
+            hasProcessedRef.current = true;
+
+            console.log("✅ Step 2 configurado com sucesso para usuário Google");
           }
-          return; // PARA AQUI - não faz mais nada
+          return;
         }
-        
-        // Resto da lógica para usuários que NÃO vieram do callback
-        const { data: { session } } = await supabase.auth.getSession();
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session) {
-          console.log('🔵 Sessão encontrada:', session.user.email);
-          
-          // Verificar se tem role
+          console.log("🔵 Sessão encontrada:", session.user.email);
+
           const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
             .maybeSingle();
 
-          // Se não tem role, criar APENAS o profile (role será criado APÓS completar cadastro)
           if (!roleData) {
-            console.log('📝 Criando perfil para novo usuário Google (SEM ROLE ainda)...');
-            
+            console.log("📝 Criando perfil para novo usuário Google (SEM ROLE ainda)...");
+
             try {
-              await supabase.from('profiles').insert({
+              await supabase.from("profiles").insert({
                 id: session.user.id,
                 email: session.user.email!,
-                nome: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
+                nome: session.user.user_metadata?.full_name || session.user.user_metadata?.name || "",
               });
-              
-              console.log('✅ Profile criado. Role será criado APÓS completar cadastro.');
+
+              console.log("✅ Profile criado. Role será criado APÓS completar cadastro.");
             } catch (err) {
-              console.error('Erro ao criar profile:', err);
+              console.error("Erro ao criar profile:", err);
             }
           }
 
-          // Verificar se precisa completar cadastro
           const { data: anivData } = await supabase
-            .from('aniversariantes')
-            .select('cpf, data_nascimento')
-            .eq('id', session.user.id)
+            .from("aniversariantes")
+            .select("cpf, data_nascimento")
+            .eq("id", session.user.id)
             .maybeSingle();
 
-          console.log('🔍 Dados aniversariante:', anivData);
-          
-          // PROTEÇÃO 3: Nunca redirecionar para home se step === 2 ou userId está setado
+          console.log("🔍 Dados aniversariante:", anivData);
+
           if (step === 2 || userId) {
-            console.log('⛔ Bloqueando redirecionamento - usuário está completando cadastro');
+            console.log("⛔ Bloqueando redirecionamento - usuário está completando cadastro");
             return;
           }
 
           if (!anivData?.cpf || !anivData?.data_nascimento) {
-            console.log('📋 Precisa completar cadastro, mantendo no Step 2...');
+            console.log("📋 Precisa completar cadastro, mantendo no Step 2...");
             setUserId(session.user.id);
-            setEmail(session.user.email || '');
-            setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || '');
-            setIsGoogleUser(true); // Marcar como usuário Google
+            setEmail(session.user.email || "");
+            setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || "");
+            setIsGoogleUser(true);
             setStep(2);
           } else {
-            console.log('✅ Cadastro completo, redirecionando...');
-            const redirectTo = sessionStorage.getItem('redirectAfterLogin');
-            sessionStorage.removeItem('redirectAfterLogin');
-            
+            console.log("✅ Cadastro completo, redirecionando...");
+            const redirectTo = sessionStorage.getItem("redirectAfterLogin");
+            sessionStorage.removeItem("redirectAfterLogin");
+
             if (redirectTo) {
               navigate(redirectTo, { replace: true });
             } else {
-              navigate('/', { replace: true });
+              navigate("/", { replace: true });
             }
           }
         }
@@ -244,33 +255,32 @@ const SmartAuth = () => {
         isProcessingRef.current = false;
       }
     };
-    
+
     checkSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // PROTEÇÃO 4: Bloquear se flags estão ativas
-      const forceStep2 = sessionStorage.getItem('forceStep2');
-      const needsCompletion = sessionStorage.getItem('needsCompletion');
-      
-      if (forceStep2 === 'true' || needsCompletion === 'true') {
-        console.log('🔵 onAuthStateChange BLOQUEADO por flags');
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      const forceStep2 = sessionStorage.getItem("forceStep2");
+      const needsCompletion = sessionStorage.getItem("needsCompletion");
+
+      if (forceStep2 === "true" || needsCompletion === "true") {
+        console.log("🔵 onAuthStateChange BLOQUEADO por flags");
         return;
       }
-      
-      // PROTEÇÃO 5: Bloquear se já está no Step 2
+
       if (step === 2) {
-        console.log('🔵 onAuthStateChange BLOQUEADO - já no Step 2');
+        console.log("🔵 onAuthStateChange BLOQUEADO - já no Step 2");
         return;
       }
-      
-      // PROTEÇÃO 6: Bloquear se já processou para Step 2
+
       if (hasProcessedRef.current) {
-        console.log('🔵 onAuthStateChange BLOQUEADO - hasProcessedRef true');
+        console.log("🔵 onAuthStateChange BLOQUEADO - hasProcessedRef true");
         return;
       }
-      
-      if (event === 'SIGNED_IN' && session) {
-        console.log('🔵 onAuthStateChange: SIGNED_IN - chamando checkSession');
+
+      if (event === "SIGNED_IN" && session) {
+        console.log("🔵 onAuthStateChange: SIGNED_IN - chamando checkSession");
         checkSession();
       }
     });
@@ -281,111 +291,109 @@ const SmartAuth = () => {
   // Limpar sessionStorage se usuário sair da página sem fazer login
   useEffect(() => {
     const handleBeforeUnload = () => {
-      // Só limpar se não estiver autenticado
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (!session) {
-          sessionStorage.removeItem('redirectAfterLogin');
+          sessionStorage.removeItem("redirectAfterLogin");
         }
       });
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
   // Validações em tempo real
   const handleNameChange = (value: string) => {
     setName(value);
     if (value.trim() && !validateFullName(value)) {
-      setNameError('Digite seu nome completo (nome e sobrenome)');
+      setNameError("Digite seu nome completo (nome e sobrenome)");
     } else {
-      setNameError('');
+      setNameError("");
     }
   };
 
   const handlePhoneChange = (value: string) => {
     setPhone(value);
-    const numbers = value.replace(/\D/g, '');
+    const numbers = value.replace(/\D/g, "");
     if (numbers.length === 11) {
       if (!validatePhone(value)) {
-        setPhoneError('Digite um celular válido com DDD');
+        setPhoneError("Digite um celular válido com DDD");
       } else {
-        setPhoneError('');
+        setPhoneError("");
       }
     } else {
-      setPhoneError('');
+      setPhoneError("");
     }
   };
 
   const handleCpfChange = (value: string) => {
     setCpf(value);
-    const numbers = value.replace(/\D/g, '');
+    const numbers = value.replace(/\D/g, "");
     if (numbers.length === 11) {
       if (!validateCPF(value)) {
-        setCpfError('CPF inválido');
+        setCpfError("CPF inválido");
       } else if (cpfExists) {
-        setCpfError('Este CPF já está cadastrado. Se for você, tente fazer login.');
+        setCpfError("Este CPF já está cadastrado. Se for você, tente fazer login.");
       } else {
-        setCpfError('');
+        setCpfError("");
       }
     } else {
-      setCpfError('');
+      setCpfError("");
     }
   };
 
   const handleBirthDateChange = (value: string) => {
     setBirthDate(value);
-    const numbers = value.replace(/\D/g, '');
+    const numbers = value.replace(/\D/g, "");
     if (numbers.length === 8) {
       const validation = validateBirthDate(value);
       if (!validation.valid) {
-        setBirthDateError(validation.message || 'Data de nascimento inválida');
+        setBirthDateError(validation.message || "Data de nascimento inválida");
       } else {
-        setBirthDateError('');
+        setBirthDateError("");
       }
     } else {
-      setBirthDateError('');
+      setBirthDateError("");
     }
   };
 
   const handleCepChange = async (value: string) => {
     setCep(value);
-    const numbers = value.replace(/\D/g, '');
-    
+    const numbers = value.replace(/\D/g, "");
+
     if (numbers.length === 8) {
-      setCepError('');
+      setCepError("");
       const cepData = await fetchCep(value);
-      
+
       if (cepData) {
         setEstado(cepData.uf);
         setCidade(cepData.localidade);
         setBairro(cepData.bairro);
         setLogradouro(cepData.logradouro);
-        
-        // Geocode para latitude/longitude
+
         try {
           const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
           if (googleMapsKey) {
             const address = `${cepData.logradouro}, ${cepData.localidade}, ${cepData.uf}`;
             const geoResponse = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleMapsKey}`
+              `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleMapsKey}`,
             );
             const geoData = await geoResponse.json();
-            
+
             if (geoData.results && geoData.results[0]) {
               setLatitude(geoData.results[0].geometry.location.lat);
               setLongitude(geoData.results[0].geometry.location.lng);
             }
           }
         } catch (error) {
-          console.error('Erro ao buscar coordenadas:', error);
+          console.error("Erro ao buscar coordenadas:", error);
         }
       } else {
-        setCepError('CEP não encontrado');
-        setEstado('');
-        setCidade('');
-        setBairro('');
-        setLogradouro('');
+        setCepError("CEP não encontrado");
+        setEstado("");
+        setCidade("");
+        setBairro("");
+        setLogradouro("");
       }
     }
   };
@@ -399,11 +407,10 @@ const SmartAuth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
-      // VERIFICAR RATE LIMIT ANTES DE TENTAR LOGIN
-      const rateLimitOk = await checkRateLimit(email, 'login');
+      const rateLimitOk = await checkRateLimit(email, "login");
       if (!rateLimitOk) {
         setIsLoading(false);
         return;
@@ -415,60 +422,51 @@ const SmartAuth = () => {
       });
 
       if (error) {
-        // Detectar email não confirmado
-        if (error.message.includes('Email not confirmed')) {
-          toast.error('Confirme seu email antes de fazer login. Verifique sua caixa de entrada.');
+        if (error.message.includes("Email not confirmed")) {
+          toast.error("Confirme seu email antes de fazer login. Verifique sua caixa de entrada.");
           setIsLoading(false);
           return;
         }
         throw error;
       }
 
-      // Verificar role
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', data.user.id)
-        .single();
+      const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id).single();
 
-      if (roleData?.role !== 'aniversariante') {
+      if (roleData?.role !== "aniversariante") {
         await supabase.auth.signOut();
-        throw new Error('Esta conta não é de aniversariante.');
+        throw new Error("Esta conta não é de aniversariante.");
       }
 
-      // Verificar se cadastro está COMPLETO (com CPF)
       const { data: anivData } = await supabase
-        .from('aniversariantes')
-        .select('cpf, data_nascimento')
-        .eq('id', data.user.id)
+        .from("aniversariantes")
+        .select("cpf, data_nascimento")
+        .eq("id", data.user.id)
         .maybeSingle();
 
       if (!anivData?.cpf || !anivData?.data_nascimento) {
-        // Cadastro incompleto - redirecionar para Step 2
         setUserId(data.user.id);
         setStep(2);
-        toast.warning('Complete seu cadastro para continuar', {
-          description: 'Preencha os dados restantes para acessar sua conta.',
+        toast.warning("Complete seu cadastro para continuar", {
+          description: "Preencha os dados restantes para acessar sua conta.",
         });
         return;
       }
 
-      toast.success('Login realizado!', {
-        description: 'Bem-vindo de volta!',
+      toast.success("Login realizado!", {
+        description: "Bem-vindo de volta!",
       });
 
-      // Verificar se há redirecionamento pendente
-      const redirectTo = sessionStorage.getItem('redirectAfterLogin');
+      const redirectTo = sessionStorage.getItem("redirectAfterLogin");
       if (redirectTo) {
-        sessionStorage.removeItem('redirectAfterLogin');
+        sessionStorage.removeItem("redirectAfterLogin");
         navigate(redirectTo, { replace: true });
       } else {
-        navigate('/', { replace: true });
+        navigate("/", { replace: true });
       }
     } catch (err: any) {
       const friendlyMessage = getFriendlyErrorMessage(err);
       setError(friendlyMessage);
-      toast.error('Erro ao fazer login', {
+      toast.error("Erro ao fazer login", {
         description: friendlyMessage,
       });
     } finally {
@@ -476,40 +474,37 @@ const SmartAuth = () => {
     }
   };
 
-  // Cadastro básico (Step 1) - APENAS VALIDA, NÃO CRIA CONTA, COM RATE LIMITING
+  // Cadastro básico (Step 1)
   const handleBasicSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
       if (!email || !password) {
-        throw new Error('Preencha email e senha');
+        throw new Error("Preencha email e senha");
       }
 
       if (!isPasswordValid()) {
-        throw new Error('A senha não atende aos requisitos mínimos');
+        throw new Error("A senha não atende aos requisitos mínimos");
       }
 
-      // VERIFICAR RATE LIMIT ANTES DE VALIDAR CADASTRO
-      const rateLimitOk = await checkRateLimit(email, 'signup');
+      const rateLimitOk = await checkRateLimit(email, "signup");
       if (!rateLimitOk) {
         setIsLoading(false);
         return;
       }
 
-      // Verificar se email já existe (sem criar conta)
       const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', email)
+        .from("profiles")
+        .select("email")
+        .eq("email", email)
         .maybeSingle();
 
       if (existingProfile) {
-        throw new Error('Este email já está cadastrado. Faça login ou use outro email.');
+        throw new Error("Este email já está cadastrado. Faça login ou use outro email.");
       }
 
-      // Criar conta no Supabase Auth com confirmação de email
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -520,25 +515,23 @@ const SmartAuth = () => {
 
       if (signUpError) throw signUpError;
 
-      // Se não tem sessão, precisa confirmar email
       if (signUpData.user && !signUpData.session) {
-        toast.success('Cadastro iniciado!');
+        toast.success("Cadastro iniciado!");
         setEmailParaConfirmar(email);
         setMostrarTelaConfirmacao(true);
         setIsLoading(false);
         return;
       }
 
-      // Se tem sessão (auto-confirmação ativa), avança para Step 2
       if (signUpData.session) {
         setUserId(signUpData.user.id);
         setStep(2);
-        toast.success('Dados validados! Complete seu cadastro.');
+        toast.success("Dados validados! Complete seu cadastro.");
       }
     } catch (err: any) {
       const friendlyMessage = getFriendlyErrorMessage(err);
       setError(friendlyMessage);
-      toast.error('Erro na validação', {
+      toast.error("Erro na validação", {
         description: friendlyMessage,
       });
     } finally {
@@ -546,110 +539,105 @@ const SmartAuth = () => {
     }
   };
 
-  // Google OAuth (funciona para login E cadastro)
+  // Google OAuth
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
-      setError('');
+      setError("");
 
       const redirectUrl = `${window.location.origin}/auth/callback`;
-      
-      console.log('🔵 Iniciando Google OAuth...');
-      console.log('🔵 Redirect URL:', redirectUrl);
-      
+
+      console.log("🔵 Iniciando Google OAuth...");
+      console.log("🔵 Redirect URL:", redirectUrl);
+
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
           redirectTo: redirectUrl,
           queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
+            access_type: "offline",
+            prompt: "consent",
           },
-        }
+        },
       });
 
-      console.log('🔵 Google OAuth response:', { data, error });
+      console.log("🔵 Google OAuth response:", { data, error });
 
       if (error) {
-        console.error('❌ Erro Google OAuth:', error);
-        setError('Não foi possível conectar com Google. Tente novamente.');
-        toast.error('Erro ao conectar com Google', {
-          description: 'Verifique sua conexão e tente novamente.',
+        console.error("❌ Erro Google OAuth:", error);
+        setError("Não foi possível conectar com Google. Tente novamente.");
+        toast.error("Erro ao conectar com Google", {
+          description: "Verifique sua conexão e tente novamente.",
         });
         setIsLoading(false);
         return;
       }
-      
-      // Se chegou aqui sem erro, o navegador DEVE redirecionar para o Google
-      // Se não redirecionou, há algo errado com a configuração
-      console.log('✅ Redirecionando para Google...');
-      
+
+      console.log("✅ Redirecionando para Google...");
     } catch (err: any) {
-      console.error('❌ Erro catch Google:', err);
-      setError('Erro ao conectar com Google. Tente novamente.');
-      toast.error('Erro inesperado', {
-        description: 'Ocorreu um erro ao tentar conectar com o Google.',
+      console.error("❌ Erro catch Google:", err);
+      setError("Erro ao conectar com Google. Tente novamente.");
+      toast.error("Erro inesperado", {
+        description: "Ocorreu um erro ao tentar conectar com o Google.",
       });
       setIsLoading(false);
     }
   };
 
-  // Completar cadastro (Step 2) - CRIA CONTA COMPLETA APÓS TODAS AS VALIDAÇÕES
+  // Completar cadastro (Step 2)
   const handleCompletion = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isStep2Valid) {
-      toast.error('Por favor, preencha todos os campos corretamente');
+      toast.error("Por favor, preencha todos os campos corretamente");
       return;
     }
-    
+
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
-      // Verificar se é novo cadastro (não tem userId) ou completar Google OAuth
       let currentUserId = userId;
       let isNewSignup = false;
-      
+
       if (!currentUserId) {
-        // Verificar se tem sessão do Google OAuth
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session) {
           currentUserId = session.user.id;
         } else {
-          // É novo cadastro via email/senha - precisa criar conta AGORA
           isNewSignup = true;
         }
       }
 
-      // Verificar duplicação de CPF ANTES de criar conta
-      const cpfLimpo = cpf.replace(/\D/g, '');
+      const cpfLimpo = cpf.replace(/\D/g, "");
       const { data: cpfDuplicado } = await supabase
-        .from('aniversariantes')
-        .select('id')
-        .eq('cpf', cpfLimpo)
+        .from("aniversariantes")
+        .select("id")
+        .eq("cpf", cpfLimpo)
         .maybeSingle();
 
       if (cpfDuplicado && cpfDuplicado.id !== currentUserId) {
-        throw new Error('Este CPF já está cadastrado em outra conta. Se você já tem uma conta, faça login com ela.');
+        throw new Error("Este CPF já está cadastrado em outra conta. Se você já tem uma conta, faça login com ela.");
       }
 
-      // Verificar duplicação de telefone ANTES de criar conta
-      const telefoneLimpo = phone.replace(/\D/g, '');
+      const telefoneLimpo = phone.replace(/\D/g, "");
       const { data: telefoneDuplicado } = await supabase
-        .from('aniversariantes')
-        .select('id')
-        .eq('telefone', telefoneLimpo)
+        .from("aniversariantes")
+        .select("id")
+        .eq("telefone", telefoneLimpo)
         .maybeSingle();
 
       if (telefoneDuplicado && telefoneDuplicado.id !== currentUserId) {
-        throw new Error('Este telefone já está cadastrado em outra conta. Se você já tem uma conta, faça login com ela.');
+        throw new Error(
+          "Este telefone já está cadastrado em outra conta. Se você já tem uma conta, faça login com ela.",
+        );
       }
 
-      // SE É NOVO CADASTRO, CRIAR CONTA AGORA (após todas as validações)
       if (isNewSignup) {
-        console.log('🔐 Criando conta COMPLETA após validações...');
-        
+        console.log("🔐 Criando conta COMPLETA após validações...");
+
         const redirectUrl = `${window.location.origin}/`;
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
@@ -658,110 +646,95 @@ const SmartAuth = () => {
             emailRedirectTo: redirectUrl,
             data: {
               nome: name,
-            }
-          }
+            },
+          },
         });
 
         if (authError) throw authError;
-        if (!authData.user) throw new Error('Erro ao criar usuário');
+        if (!authData.user) throw new Error("Erro ao criar usuário");
 
         currentUserId = authData.user.id;
 
-        // Criar profile
-        await supabase.from('profiles').insert({
+        await supabase.from("profiles").insert({
           id: authData.user.id,
           email: email,
           nome: name,
         });
 
-        // Criar role
-        await supabase.from('user_roles').insert({
+        await supabase.from("user_roles").insert({
           user_id: authData.user.id,
-          role: 'aniversariante',
+          role: "aniversariante",
         });
       }
 
-      // Converter data de DD/MM/YYYY para YYYY-MM-DD
-      const [day, month, year] = birthDate.split('/');
+      const [day, month, year] = birthDate.split("/");
       const formattedDate = `${year}-${month}-${day}`;
 
-      // TRANSAÇÃO ATÔMICA: Inserir dados completos do aniversariante COM cadastro_completo = true
-      const { error: insertError } = await supabase
-        .from('aniversariantes')
-        .upsert({
-          id: currentUserId,
-          cpf: cpfLimpo,
-          telefone: telefoneLimpo,
-          data_nascimento: formattedDate,
-          cep: cep.replace(/\D/g, ''),
-          estado,
-          cidade,
-          bairro,
-          logradouro,
-          numero: numero || 'S/N',
-          latitude,
-          longitude,
-          cadastro_completo: true, // MARCAR COMO COMPLETO
-        });
+      const { error: insertError } = await supabase.from("aniversariantes").upsert({
+        id: currentUserId,
+        cpf: cpfLimpo,
+        telefone: telefoneLimpo,
+        data_nascimento: formattedDate,
+        cep: cep.replace(/\D/g, ""),
+        estado,
+        cidade,
+        bairro,
+        logradouro,
+        numero: numero || "S/N",
+        latitude,
+        longitude,
+        cadastro_completo: true,
+      });
 
       if (insertError) {
-        console.error('Erro ao salvar dados:', insertError);
+        console.error("Erro ao salvar dados:", insertError);
         throw insertError;
       }
 
-      // Atualizar nome no perfil (para casos Google OAuth)
       if (!isNewSignup) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ nome: name })
-          .eq('id', currentUserId);
+        const { error: profileError } = await supabase.from("profiles").update({ nome: name }).eq("id", currentUserId);
 
         if (profileError) {
-          console.error('Erro ao atualizar perfil:', profileError);
-        }
-      }
-      
-      // AGORA SIM: Criar role SOMENTE APÓS cadastro estar COMPLETO
-      // Verificar se role já existe (pode já existir para usuários antigos)
-      const { data: existingRole } = await supabase
-        .from('user_roles')
-        .select('id')
-        .eq('user_id', currentUserId)
-        .eq('role', 'aniversariante')
-        .maybeSingle();
-      
-      if (!existingRole) {
-        console.log('🔐 Criando role de aniversariante APÓS cadastro completo...');
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: currentUserId,
-            role: 'aniversariante',
-          });
-        
-        if (roleError) {
-          console.error('Erro ao criar role:', roleError);
-          throw new Error('Erro ao finalizar cadastro. Tente novamente.');
+          console.error("Erro ao atualizar perfil:", profileError);
         }
       }
 
-      toast.success('Cadastro completo!', {
-        description: 'Bem-vindo ao Aniversariante VIP!',
+      const { data: existingRole } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", currentUserId)
+        .eq("role", "aniversariante")
+        .maybeSingle();
+
+      if (!existingRole) {
+        console.log("🔐 Criando role de aniversariante APÓS cadastro completo...");
+        const { error: roleError } = await supabase.from("user_roles").insert({
+          user_id: currentUserId,
+          role: "aniversariante",
+        });
+
+        if (roleError) {
+          console.error("Erro ao criar role:", roleError);
+          throw new Error("Erro ao finalizar cadastro. Tente novamente.");
+        }
+      }
+
+      toast.success("Cadastro completo!", {
+        description: "Bem-vindo ao Aniversariante VIP!",
       });
 
-      // Verificar se há redirecionamento pendente
-      const redirectTo = sessionStorage.getItem('redirectAfterLogin');
+      const redirectTo = sessionStorage.getItem("redirectAfterLogin");
       if (redirectTo) {
-        sessionStorage.removeItem('redirectAfterLogin');
+        sessionStorage.removeItem("redirectAfterLogin");
         navigate(redirectTo, { replace: true });
       } else {
-        navigate('/', { replace: true });
+        navigate("/", { replace: true });
       }
     } catch (err: any) {
-      console.error('Erro ao completar cadastro:', err);
+      console.error("Erro ao completar cadastro:", err);
       const friendlyMessage = getFriendlyErrorMessage(err);
       setError(friendlyMessage);
-      toast.error('Erro ao completar cadastro', {
+      toast.error("Erro ao completar cadastro", {
         description: friendlyMessage,
       });
     } finally {
@@ -769,14 +742,14 @@ const SmartAuth = () => {
     }
   };
 
-  // Se está mostrando tela de confirmação de email, exibir componente dedicado
+  // Tela de confirmação de email
   if (mostrarTelaConfirmacao) {
     return (
-      <TelaConfirmacaoEmail 
+      <TelaConfirmacaoEmail
         email={emailParaConfirmar}
         onVoltar={() => {
           setMostrarTelaConfirmacao(false);
-          setEmailParaConfirmar('');
+          setEmailParaConfirmar("");
           setIsLogin(true);
         }}
       />
@@ -785,8 +758,8 @@ const SmartAuth = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 relative overflow-hidden">
-      <BackButton to="/entrar" />
-      
+      <BackButton to="/" />
+
       {/* Background effects */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
       <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-violet-600/30 rounded-full blur-[120px]" />
@@ -794,12 +767,11 @@ const SmartAuth = () => {
 
       <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12 pb-32 sm:pb-12">
         <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl backdrop-blur-xl">
-          
           {/* Progress bar */}
           <div className="h-1.5 w-full bg-slate-800">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-violet-500 to-pink-500 transition-all duration-500 ease-out"
-              style={{ width: step === 1 ? '30%' : '100%' }}
+              style={{ width: step === 1 ? "30%" : "100%" }}
             />
           </div>
 
@@ -807,12 +779,14 @@ const SmartAuth = () => {
             {/* Header */}
             <div className="space-y-2 text-center">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-                {step === 1 ? (isLogin ? 'Entre para ver o benefício' : 'Criar conta VIP') : 'Complete seu cadastro'}
+                {step === 1 ? (isLogin ? "Entre para ver o benefício" : "Criar conta VIP") : "Complete seu cadastro"}
               </h1>
               <p className="text-slate-400 text-sm sm:text-base">
-                {step === 1 
-                  ? (isLogin ? 'Acesse sua conta Aniversariante VIP' : 'Cadastre-se grátis em segundos') 
-                  : 'Só mais alguns dados para finalizar'}
+                {step === 1
+                  ? isLogin
+                    ? "Acesse sua conta Aniversariante VIP"
+                    : "Cadastre-se grátis em segundos"
+                  : "Só mais alguns dados para finalizar"}
               </p>
             </div>
 
@@ -826,7 +800,7 @@ const SmartAuth = () => {
             {/* Step 1: Login ou Cadastro Básico */}
             {step === 1 && (
               <div className="space-y-5">
-                {/* Google Button - aparece tanto em login quanto cadastro */}
+                {/* Google Button */}
                 <Button
                   type="button"
                   onClick={handleGoogleLogin}
@@ -837,13 +811,25 @@ const SmartAuth = () => {
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   ) : (
                     <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      <path
+                        fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      />
                     </svg>
                   )}
-                  {isLoading ? 'Conectando...' : 'Continuar com Google'}
+                  {isLoading ? "Conectando..." : "Continuar com Google"}
                 </Button>
 
                 <div className="flex items-center gap-4">
@@ -865,8 +851,8 @@ const SmartAuth = () => {
                         placeholder="seu@email.com"
                         className={`h-[52px] text-base bg-white/5 text-white pl-11 focus:ring-2 transition-all ${
                           email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-                            : 'border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20'
+                            ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                            : "border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20"
                         }`}
                         required
                       />
@@ -892,8 +878,8 @@ const SmartAuth = () => {
                         placeholder="••••••••"
                         className={`h-[52px] text-base bg-white/5 text-white pl-11 pr-12 focus:ring-2 transition-all ${
                           !isLogin && password && !isPasswordValid()
-                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-                            : 'border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20'
+                            ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                            : "border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20"
                         }`}
                         required
                         minLength={8}
@@ -904,7 +890,7 @@ const SmartAuth = () => {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-all"
                         tabIndex={-1}
-                        aria-label={showPassword ? 'Esconder senha' : 'Mostrar senha'}
+                        aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -913,21 +899,33 @@ const SmartAuth = () => {
                       <div className="space-y-2 mt-3 p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
                         <p className="text-xs text-slate-400 font-medium">A senha deve conter:</p>
                         <ul className="text-xs space-y-1.5">
-                          <li className={`flex items-center gap-2 ${password.length >= 8 ? 'text-green-400' : 'text-slate-500'}`}>
-                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${password.length >= 8 ? 'bg-green-500/20' : 'bg-slate-700'}`}>
-                              {password.length >= 8 ? '✓' : ''}
+                          <li
+                            className={`flex items-center gap-2 ${password.length >= 8 ? "text-green-400" : "text-slate-500"}`}
+                          >
+                            <span
+                              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${password.length >= 8 ? "bg-green-500/20" : "bg-slate-700"}`}
+                            >
+                              {password.length >= 8 ? "✓" : ""}
                             </span>
                             Mínimo 8 caracteres
                           </li>
-                          <li className={`flex items-center gap-2 ${/[A-Z]/.test(password) ? 'text-green-400' : 'text-slate-500'}`}>
-                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${/[A-Z]/.test(password) ? 'bg-green-500/20' : 'bg-slate-700'}`}>
-                              {/[A-Z]/.test(password) ? '✓' : ''}
+                          <li
+                            className={`flex items-center gap-2 ${/[A-Z]/.test(password) ? "text-green-400" : "text-slate-500"}`}
+                          >
+                            <span
+                              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${/[A-Z]/.test(password) ? "bg-green-500/20" : "bg-slate-700"}`}
+                            >
+                              {/[A-Z]/.test(password) ? "✓" : ""}
                             </span>
                             Uma letra maiúscula
                           </li>
-                          <li className={`flex items-center gap-2 ${/[!@#$%^&*(),.?":{}|<>]/.test(password) ? 'text-green-400' : 'text-slate-500'}`}>
-                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${/[!@#$%^&*(),.?":{}|<>]/.test(password) ? 'bg-green-500/20' : 'bg-slate-700'}`}>
-                              {/[!@#$%^&*(),.?":{}|<>]/.test(password) ? '✓' : ''}
+                          <li
+                            className={`flex items-center gap-2 ${/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "text-green-400" : "text-slate-500"}`}
+                          >
+                            <span
+                              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "bg-green-500/20" : "bg-slate-700"}`}
+                            >
+                              {/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "✓" : ""}
                             </span>
                             Um caractere especial (!@#$%...)
                           </li>
@@ -955,20 +953,27 @@ const SmartAuth = () => {
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        {isLogin ? 'Entrando...' : 'Criando conta...'}
+                        {isLogin ? "Entrando..." : "Criando conta..."}
                       </>
+                    ) : isLogin ? (
+                      "Entrar"
                     ) : (
-                      isLogin ? 'Entrar' : 'Criar conta'
+                      "Criar conta"
                     )}
                   </Button>
                 </form>
 
                 <div className="text-center pt-2">
                   <button
-                    onClick={() => setIsLogin(!isLogin)}
+                    onClick={() => {
+                      setIsLogin(!isLogin);
+                      // Atualizar URL sem recarregar página
+                      const newPath = isLogin ? "/cadastro" : "/login";
+                      window.history.replaceState(null, "", newPath);
+                    }}
                     className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium"
                   >
-                    {isLogin ? 'Primeira vez aqui? Crie sua conta grátis' : 'Já tem conta? Faça login'}
+                    {isLogin ? "Primeira vez aqui? Crie sua conta grátis" : "Já tem conta? Faça login"}
                   </button>
                 </div>
               </div>
@@ -1023,9 +1028,9 @@ const SmartAuth = () => {
                     onChange={handleCpfChange}
                     mask={cpfMask}
                     placeholder="000.000.000-00"
-                    error={cpfError || (cpfExists ? 'Este CPF já está cadastrado em outra conta.' : '')}
+                    error={cpfError || (cpfExists ? "Este CPF já está cadastrado em outra conta." : "")}
                     isValid={isCpfValid && !cpfExists && !cpfChecking}
-                    loading={cpfChecking && cpf.replace(/\D/g, '').length === 11}
+                    loading={cpfChecking && cpf.replace(/\D/g, "").length === 11}
                     required
                   />
                 </div>
@@ -1053,7 +1058,7 @@ const SmartAuth = () => {
                     loading={cepLoading}
                     required
                   />
-                  
+
                   <button
                     type="button"
                     onClick={() => setShowCepSearch(!showCepSearch)}
@@ -1072,9 +1077,7 @@ const SmartAuth = () => {
                     )}
                   </button>
 
-                  {showCepSearch && (
-                    <BuscaCepPorEndereco onCepFound={handleCepFoundBySearch} />
-                  )}
+                  {showCepSearch && <BuscaCepPorEndereco onCepFound={handleCepFoundBySearch} />}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -1129,7 +1132,7 @@ const SmartAuth = () => {
                   <Input
                     type="text"
                     value={numero}
-                    onChange={(e) => setNumero(e.target.value.replace(/\D/g, ''))}
+                    onChange={(e) => setNumero(e.target.value.replace(/\D/g, ""))}
                     placeholder="123"
                     className="h-[52px] text-base bg-white/5 border-white/10 text-white focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
                   />
@@ -1146,7 +1149,7 @@ const SmartAuth = () => {
                       Finalizando...
                     </>
                   ) : (
-                    'Completar Cadastro'
+                    "Completar Cadastro"
                   )}
                 </Button>
               </form>

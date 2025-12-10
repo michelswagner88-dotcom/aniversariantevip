@@ -242,7 +242,7 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
   };
 
   const handleBadgeClick = () => {
-    navigate("/login");
+    navigate("/cadastro");
   };
 
   // Fechar dropdowns ao clicar fora
@@ -263,22 +263,34 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
   }, []);
 
   return (
-    <section className="relative min-h-[380px] sm:min-h-[420px] md:min-h-[480px] flex items-center justify-center overflow-hidden pt-16 sm:pt-20 pb-8 sm:pb-12 px-3 sm:px-4 bg-[#240046]">
+    <section className="relative min-h-[420px] sm:min-h-[450px] md:min-h-[500px] flex items-center justify-center overflow-hidden pt-24 sm:pt-28 pb-8 sm:pb-12 px-3 sm:px-4 bg-[#240046]">
       <div className="relative z-10 container mx-auto px-2 sm:px-4 text-center">
-        {/* Badge - Pulsando e Clicável */}
+        {/* Badge - Pulsando Suave e Clicável - Vai para Cadastro */}
         <motion.button
           onClick={handleBadgeClick}
-          className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 sm:px-4 py-2 mb-5 sm:mb-6 hover:bg-white/20 transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/20 to-pink-500/20 border border-amber-400/30 rounded-full px-4 sm:px-5 py-2.5 mb-5 sm:mb-6 hover:from-amber-500/30 hover:to-pink-500/30 transition-all cursor-pointer shadow-lg shadow-amber-500/10"
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          animate={{
+            opacity: 1,
+            y: 0,
+            scale: [1, 1.02, 1],
+          }}
+          transition={{
+            duration: 0.6,
+            scale: {
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            },
+          }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          <Gift className="w-4 h-4 text-amber-400 animate-pulse" />
-          <span className="text-xs sm:text-sm text-white font-medium whitespace-nowrap">
+          <Gift className="w-4 h-4 text-amber-400" />
+          <span className="text-xs sm:text-sm text-white font-semibold whitespace-nowrap">
             Cadastro gratuito para aniversariantes
           </span>
+          <span className="text-amber-400 text-xs">→</span>
         </motion.button>
 
         {/* Título */}

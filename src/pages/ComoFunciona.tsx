@@ -52,12 +52,19 @@ const ComoFunciona = () => {
           </div>
 
           <div className="text-center">
-            {/* Badge */}
+            {/* Badge - Dinâmico */}
             <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-2 mb-6">
-              <Sparkles className="w-4 h-4 text-[#C77DFF]" />
-              <span className="text-sm text-white/90 font-medium">
-                O maior guia de benefícios para aniversariantes do Brasil
-              </span>
+              {activeTab === "aniversariante" ? (
+                <>
+                  <Cake className="w-4 h-4 text-[#C77DFF]" />
+                  <span className="text-sm text-white/90 font-medium">Para você que está fazendo aniversário</span>
+                </>
+              ) : (
+                <>
+                  <Store className="w-4 h-4 text-[#C77DFF]" />
+                  <span className="text-sm text-white/90 font-medium">Para estabelecimentos que querem crescer</span>
+                </>
+              )}
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-5 leading-tight">
@@ -70,8 +77,9 @@ const ComoFunciona = () => {
             </h1>
 
             <p className="text-base sm:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed">
-              Conectamos aniversariantes a estabelecimentos que oferecem benefícios exclusivos. Você ganha, o
-              estabelecimento ganha. Todo mundo celebra.
+              {activeTab === "aniversariante"
+                ? "Encontre benefícios exclusivos no seu mês de aniversário. Restaurantes, bares, lojas, salões e muito mais — tudo em um só lugar."
+                : "Conectamos seu negócio a clientes com alta intenção de consumo. Você define o benefício, nós trazemos os aniversariantes."}
             </p>
           </div>
         </div>

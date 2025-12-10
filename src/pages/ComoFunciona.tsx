@@ -122,7 +122,7 @@ const ComoFunciona = () => {
 
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {/* Passo 1 */}
-                <div className="group relative bg-[#1a0033] border border-white/10 rounded-2xl p-6 hover:border-[#7C3AED]/50 transition-all duration-300">
+                <div className="group relative bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#7C3AED]/50 transition-all duration-300">
                   <div className="absolute -top-3 -left-3 w-10 h-10 bg-gradient-to-br from-[#7C3AED] to-[#9D4EDD] rounded-xl flex items-center justify-center shadow-lg shadow-[#7C3AED]/30">
                     <span className="text-white font-bold">1</span>
                   </div>
@@ -138,7 +138,7 @@ const ComoFunciona = () => {
                 </div>
 
                 {/* Passo 2 */}
-                <div className="group relative bg-[#1a0033] border border-white/10 rounded-2xl p-6 hover:border-[#9D4EDD]/50 transition-all duration-300">
+                <div className="group relative bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#9D4EDD]/50 transition-all duration-300">
                   <div className="absolute -top-3 -left-3 w-10 h-10 bg-gradient-to-br from-[#9D4EDD] to-[#C77DFF] rounded-xl flex items-center justify-center shadow-lg shadow-[#9D4EDD]/30">
                     <span className="text-white font-bold">2</span>
                   </div>
@@ -154,7 +154,7 @@ const ComoFunciona = () => {
                 </div>
 
                 {/* Passo 3 */}
-                <div className="group relative bg-[#1a0033] border border-white/10 rounded-2xl p-6 hover:border-[#C77DFF]/50 transition-all duration-300">
+                <div className="group relative bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#C77DFF]/50 transition-all duration-300">
                   <div className="absolute -top-3 -left-3 w-10 h-10 bg-gradient-to-br from-[#C77DFF] to-[#E0AAFF] rounded-xl flex items-center justify-center shadow-lg shadow-[#C77DFF]/30">
                     <span className="text-[#240046] font-bold">3</span>
                   </div>
@@ -170,7 +170,7 @@ const ComoFunciona = () => {
                 </div>
 
                 {/* Passo 4 */}
-                <div className="group relative bg-[#1a0033] border border-white/10 rounded-2xl p-6 hover:border-[#E0AAFF]/50 transition-all duration-300">
+                <div className="group relative bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#E0AAFF]/50 transition-all duration-300">
                   <div className="absolute -top-3 -left-3 w-10 h-10 bg-gradient-to-br from-[#E0AAFF] to-white rounded-xl flex items-center justify-center shadow-lg shadow-[#E0AAFF]/30">
                     <span className="text-[#240046] font-bold">4</span>
                   </div>

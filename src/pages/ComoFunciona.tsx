@@ -17,12 +17,12 @@ import {
   Star,
   ArrowRight,
   CheckCircle2,
-  Smartphone,
-  Zap,
   MapPin,
-  Shield,
-  Heart,
   Sparkles,
+  LayoutGrid,
+  Calendar,
+  Smartphone,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
@@ -188,23 +188,26 @@ const ComoFunciona = () => {
             </div>
           </section>
 
-          {/* Diferenciais da Plataforma */}
+          {/* Vantagens Reais */}
           <section className="py-16 px-4 bg-[#1a0033]/50">
-            <div className="max-w-5xl mx-auto">
+            <div className="max-w-6xl mx-auto">
               <div className="text-center mb-12">
                 <span className="text-[#C77DFF] text-sm font-semibold uppercase tracking-wider">Por que usar</span>
-                <h2 className="text-2xl sm:text-3xl font-bold text-white mt-2 mb-3">Mais que um guia de benefícios</h2>
-                <p className="text-white/60 max-w-xl mx-auto">Uma experiência pensada do início ao fim para você</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mt-2 mb-3">Vantagens de ser VIP</h2>
+                <p className="text-white/60 max-w-xl mx-auto">
+                  Descubra por que milhares de aniversariantes já usam a plataforma
+                </p>
               </div>
 
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {/* Novos - Benefícios reais */}
                 <div className="bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#7C3AED]/30 transition-all group">
                   <div className="w-12 h-12 bg-gradient-to-br from-[#7C3AED]/20 to-[#9D4EDD]/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Smartphone className="w-6 h-6 text-[#C77DFF]" />
+                    <LayoutGrid className="w-6 h-6 text-[#C77DFF]" />
                   </div>
-                  <h3 className="font-semibold text-white mb-2">Design intuitivo</h3>
+                  <h3 className="font-semibold text-white mb-2">Tudo em um só lugar</h3>
                   <p className="text-white/60 text-sm leading-relaxed">
-                    Interface limpa que funciona perfeitamente no celular ou computador.
+                    Chega de pesquisar estabelecimento por estabelecimento. Aqui você vê todos os benefícios de uma vez.
                   </p>
                 </div>
 
@@ -212,49 +215,70 @@ const ComoFunciona = () => {
                   <div className="w-12 h-12 bg-gradient-to-br from-[#9D4EDD]/20 to-[#C77DFF]/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <MapPin className="w-6 h-6 text-[#C77DFF]" />
                   </div>
-                  <h3 className="font-semibold text-white mb-2">Busca inteligente</h3>
+                  <h3 className="font-semibold text-white mb-2">Na sua cidade ou viajando</h3>
                   <p className="text-white/60 text-sm leading-relaxed">
-                    Filtre por cidade, categoria ou encontre o que está perto de você.
+                    Benefícios em todo o Brasil. Aproveite onde você mora ou onde for comemorar.
                   </p>
                 </div>
 
                 <div className="bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#C77DFF]/30 transition-all group">
                   <div className="w-12 h-12 bg-gradient-to-br from-[#C77DFF]/20 to-[#E0AAFF]/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Zap className="w-6 h-6 text-[#E0AAFF]" />
+                    <Calendar className="w-6 h-6 text-[#E0AAFF]" />
                   </div>
-                  <h3 className="font-semibold text-white mb-2">Rápido e leve</h3>
+                  <h3 className="font-semibold text-white mb-2">Mês inteiro para aproveitar</h3>
                   <p className="text-white/60 text-sm leading-relaxed">
-                    Plataforma otimizada para carregar em segundos, mesmo no 4G.
+                    Muitos lugares liberam o benefício durante todo o mês do seu aniversário.
                   </p>
                 </div>
 
                 <div className="bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#7C3AED]/30 transition-all group">
                   <div className="w-12 h-12 bg-gradient-to-br from-[#7C3AED]/20 to-[#9D4EDD]/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Shield className="w-6 h-6 text-[#C77DFF]" />
+                    <Sparkles className="w-6 h-6 text-[#C77DFF]" />
                   </div>
-                  <h3 className="font-semibold text-white mb-2">Seus dados seguros</h3>
+                  <h3 className="font-semibold text-white mb-2">Descubra o que você não sabia</h3>
                   <p className="text-white/60 text-sm leading-relaxed">
-                    Criptografia de ponta a ponta. Sua privacidade é prioridade.
+                    Tem lugar perto de você que já oferece benefício e você nem sabe.
                   </p>
                 </div>
 
+                {/* Originais - Características da plataforma */}
                 <div className="bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#9D4EDD]/30 transition-all group">
                   <div className="w-12 h-12 bg-gradient-to-br from-[#9D4EDD]/20 to-[#C77DFF]/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <Gift className="w-6 h-6 text-[#C77DFF]" />
                   </div>
                   <h3 className="font-semibold text-white mb-2">100% gratuito</h3>
                   <p className="text-white/60 text-sm leading-relaxed">
-                    Para o aniversariante, não custa nada. Nunca. Zero taxas escondidas.
+                    Para o aniversariante não custa nada. Nunca. Sem taxa, sem pegadinha.
                   </p>
                 </div>
 
                 <div className="bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#C77DFF]/30 transition-all group">
                   <div className="w-12 h-12 bg-gradient-to-br from-[#C77DFF]/20 to-[#E0AAFF]/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Heart className="w-6 h-6 text-[#E0AAFF]" />
+                    <Store className="w-6 h-6 text-[#E0AAFF]" />
                   </div>
-                  <h3 className="font-semibold text-white mb-2">Feito no Brasil</h3>
+                  <h3 className="font-semibold text-white mb-2">Diversas categorias</h3>
                   <p className="text-white/60 text-sm leading-relaxed">
-                    Pensado para o brasileiro, com carinho em cada detalhe.
+                    Restaurantes, bares, salões, academias, lojas e muito mais.
+                  </p>
+                </div>
+
+                <div className="bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#7C3AED]/30 transition-all group">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#7C3AED]/20 to-[#9D4EDD]/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Smartphone className="w-6 h-6 text-[#C77DFF]" />
+                  </div>
+                  <h3 className="font-semibold text-white mb-2">Fácil de usar</h3>
+                  <p className="text-white/60 text-sm leading-relaxed">
+                    Interface simples que funciona perfeitamente no celular ou computador.
+                  </p>
+                </div>
+
+                <div className="bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#9D4EDD]/30 transition-all group">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#9D4EDD]/20 to-[#C77DFF]/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Shield className="w-6 h-6 text-[#C77DFF]" />
+                  </div>
+                  <h3 className="font-semibold text-white mb-2">Seus dados seguros</h3>
+                  <p className="text-white/60 text-sm leading-relaxed">
+                    Sua privacidade é prioridade. Dados protegidos com criptografia.
                   </p>
                 </div>
               </div>

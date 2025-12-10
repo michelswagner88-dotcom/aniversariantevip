@@ -323,9 +323,12 @@ const ComoFunciona = () => {
           {/* Header Estabelecimento */}
           <section className="py-8 px-4">
             <div className="max-w-4xl mx-auto text-center">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">Atraia clientes que querem celebrar</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+                Atraia clientes no momento de maior intenção
+              </h2>
               <p className="text-white/60 max-w-xl mx-auto">
-                Aniversariantes raramente comemoram sozinhos. Um benefício pode trazer uma mesa cheia.
+                Quem acessa o Aniversariante VIP já está decidindo onde aproveitar. É tráfego qualificado direto para
+                seu negócio.
               </p>
             </div>
           </section>
@@ -335,7 +338,7 @@ const ComoFunciona = () => {
             <div className="max-w-5xl mx-auto">
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {/* Passo 1 */}
-                <div className="group relative bg-[#1a0033] border border-white/10 rounded-2xl p-6 hover:border-[#7C3AED]/50 transition-all duration-300">
+                <div className="group relative bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#7C3AED]/50 transition-all duration-300">
                   <div className="absolute -top-3 -left-3 w-10 h-10 bg-gradient-to-br from-[#7C3AED] to-[#9D4EDD] rounded-xl flex items-center justify-center shadow-lg shadow-[#7C3AED]/30">
                     <span className="text-white font-bold">1</span>
                   </div>
@@ -343,15 +346,15 @@ const ComoFunciona = () => {
                     <div className="w-12 h-12 bg-[#7C3AED]/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                       <Building className="w-6 h-6 text-[#C77DFF]" />
                     </div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Cadastre-se</h3>
+                    <h3 className="font-semibold text-white text-lg mb-2">Cadastre seu negócio</h3>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      Informe os dados do seu negócio em um formulário simples e direto.
+                      Formulário simples com as informações essenciais. Leva poucos minutos.
                     </p>
                   </div>
                 </div>
 
                 {/* Passo 2 */}
-                <div className="group relative bg-[#1a0033] border border-white/10 rounded-2xl p-6 hover:border-[#9D4EDD]/50 transition-all duration-300">
+                <div className="group relative bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#9D4EDD]/50 transition-all duration-300">
                   <div className="absolute -top-3 -left-3 w-10 h-10 bg-gradient-to-br from-[#9D4EDD] to-[#C77DFF] rounded-xl flex items-center justify-center shadow-lg shadow-[#9D4EDD]/30">
                     <span className="text-white font-bold">2</span>
                   </div>
@@ -359,15 +362,15 @@ const ComoFunciona = () => {
                     <div className="w-12 h-12 bg-[#9D4EDD]/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                       <Settings className="w-6 h-6 text-[#C77DFF]" />
                     </div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Defina o benefício</h3>
+                    <h3 className="font-semibold text-white text-lg mb-2">Defina seu benefício</h3>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      Escolha o que oferecer: desconto, brinde, cortesia. Você decide as regras.
+                      Desconto, brinde, cortesia, upgrade ou condição especial. Você escolhe e define as regras.
                     </p>
                   </div>
                 </div>
 
                 {/* Passo 3 */}
-                <div className="group relative bg-[#1a0033] border border-white/10 rounded-2xl p-6 hover:border-[#C77DFF]/50 transition-all duration-300">
+                <div className="group relative bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#C77DFF]/50 transition-all duration-300">
                   <div className="absolute -top-3 -left-3 w-10 h-10 bg-gradient-to-br from-[#C77DFF] to-[#E0AAFF] rounded-xl flex items-center justify-center shadow-lg shadow-[#C77DFF]/30">
                     <span className="text-[#240046] font-bold">3</span>
                   </div>
@@ -377,13 +380,13 @@ const ComoFunciona = () => {
                     </div>
                     <h3 className="font-semibold text-white text-lg mb-2">Escolha seu plano</h3>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      Planos acessíveis com retorno garantido. Investimento que se paga.
+                      Planos acessíveis para manter seu perfil ativo e visível para quem está buscando.
                     </p>
                   </div>
                 </div>
 
                 {/* Passo 4 */}
-                <div className="group relative bg-[#1a0033] border border-white/10 rounded-2xl p-6 hover:border-[#E0AAFF]/50 transition-all duration-300">
+                <div className="group relative bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#E0AAFF]/50 transition-all duration-300">
                   <div className="absolute -top-3 -left-3 w-10 h-10 bg-gradient-to-br from-[#E0AAFF] to-white rounded-xl flex items-center justify-center shadow-lg shadow-[#E0AAFF]/30">
                     <span className="text-[#240046] font-bold">4</span>
                   </div>
@@ -391,9 +394,9 @@ const ComoFunciona = () => {
                     <div className="w-12 h-12 bg-[#E0AAFF]/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                       <Users className="w-6 h-6 text-[#E0AAFF]" />
                     </div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Receba clientes</h3>
+                    <h3 className="font-semibold text-white text-lg mb-2">Receba novos clientes</h3>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      Aniversariantes encontram você na plataforma e vão até seu estabelecimento.
+                      Aniversariantes encontram seu perfil, entendem o benefício e vão até você.
                     </p>
                   </div>
                 </div>
@@ -407,20 +410,20 @@ const ComoFunciona = () => {
               <div className="text-center mb-12">
                 <span className="text-[#C77DFF] text-sm font-semibold uppercase tracking-wider">Vantagens</span>
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mt-2 mb-3">Por que ser parceiro?</h2>
-                <p className="text-white/60 max-w-xl mx-auto">Retorno real com investimento inteligente</p>
+                <p className="text-white/60 max-w-xl mx-auto">Crescimento real com investimento inteligente</p>
               </div>
 
               <div className="grid sm:grid-cols-2 gap-5">
                 <div className="bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#7C3AED]/30 transition-all">
                   <div className="flex gap-4">
                     <div className="w-12 h-12 bg-[#7C3AED]/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <TrendingUp className="w-6 h-6 text-[#C77DFF]" />
+                      <Target className="w-6 h-6 text-[#C77DFF]" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-white text-lg mb-2">Mais clientes, mais vendas</h4>
+                      <h4 className="font-semibold text-white text-lg mb-2">Clientes com alta intenção</h4>
                       <p className="text-white/60 text-sm leading-relaxed">
-                        Aniversariante raramente celebra sozinho. Um benefício pode trazer amigos, família e colegas
-                        junto.
+                        Quem entra no Aniversariante VIP já está procurando onde aproveitar. É tráfego qualificado, não
+                        visitante casual.
                       </p>
                     </div>
                   </div>
@@ -432,9 +435,10 @@ const ComoFunciona = () => {
                       <Star className="w-6 h-6 text-[#C77DFF]" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-white text-lg mb-2">Visibilidade garantida</h4>
+                      <h4 className="font-semibold text-white text-lg mb-2">Visibilidade onde importa</h4>
                       <p className="text-white/60 text-sm leading-relaxed">
-                        Seu negócio aparece em uma plataforma 100% focada em celebrações. Destaque onde importa.
+                        Seu negócio aparece para pessoas da sua cidade no momento exato em que elas estão decidindo onde
+                        ir.
                       </p>
                     </div>
                   </div>
@@ -443,12 +447,13 @@ const ComoFunciona = () => {
                 <div className="bg-[#240046] border border-white/10 rounded-2xl p-6 hover:border-[#C77DFF]/30 transition-all">
                   <div className="flex gap-4">
                     <div className="w-12 h-12 bg-[#C77DFF]/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Target className="w-6 h-6 text-[#E0AAFF]" />
+                      <Settings className="w-6 h-6 text-[#E0AAFF]" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-white text-lg mb-2">Público pronto para consumir</h4>
+                      <h4 className="font-semibold text-white text-lg mb-2">Benefício como ferramenta</h4>
                       <p className="text-white/60 text-sm leading-relaxed">
-                        Quem acessa já quer aproveitar o aniversário. Cliente com intenção real de compra.
+                        Você define regras e limites. O benefício vira uma forma inteligente de atrair e converter
+                        clientes.
                       </p>
                     </div>
                   </div>
@@ -460,9 +465,9 @@ const ComoFunciona = () => {
                       <DollarSign className="w-6 h-6 text-[#E0AAFF]" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-white text-lg mb-2">Investimento inteligente</h4>
+                      <h4 className="font-semibold text-white text-lg mb-2">Investimento eficiente</h4>
                       <p className="text-white/60 text-sm leading-relaxed">
-                        Mais barato que anúncio tradicional, com retorno mensurável mês após mês.
+                        Mais previsível que anúncio tradicional e com retorno consistente ao longo do mês.
                       </p>
                     </div>
                   </div>

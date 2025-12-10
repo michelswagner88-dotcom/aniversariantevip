@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Heart, Users, Shield, Sparkles, Gift, Target, ArrowRight, Rocket } from "lucide-react";
+import { Heart, Users, Shield, Sparkles, Gift, Target, ArrowRight, Rocket, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -24,10 +24,10 @@ const Sobre = () => {
         "Todo aniversário é único. Trabalhamos para criar momentos que ficam na memória, transformando uma data comum em algo inesquecível.",
     },
     {
-      icon: Shield,
-      titulo: "Benefícios Sem Pegadinhas",
+      icon: Calendar,
+      titulo: "O Mês Inteiro é Seu",
       descricao:
-        "Nossas ofertas são claras e diretas. O que você vê na plataforma é exatamente o que vai receber no estabelecimento.",
+        "Muitos estabelecimentos liberam o benefício durante todo o mês do aniversário. Mais tempo para você escolher quando e onde celebrar.",
     },
     {
       icon: Users,

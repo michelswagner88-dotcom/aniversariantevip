@@ -266,8 +266,7 @@ const Sobre = () => {
                   <Button
                     onClick={() => navigate("/seja-parceiro")}
                     size="lg"
-                    variant="outline"
-                    className="border-white/30 text-white hover:bg-white/10 font-semibold px-8 py-6 h-auto text-base rounded-full hover:scale-105 transition-all duration-300"
+                    className="bg-[#7C3AED] text-white hover:bg-[#9D4EDD] font-semibold px-8 py-6 h-auto text-base rounded-full hover:scale-105 transition-all duration-300"
                   >
                     Seja Parceiro
                   </Button>

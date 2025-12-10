@@ -1,86 +1,102 @@
 import { motion } from "framer-motion";
-import { Heart, Users, Shield, Sparkles, Gift, Target } from "lucide-react";
+import { Heart, Users, Shield, Sparkles, Gift, Target, ArrowRight, Rocket } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { BackButton } from "@/components/BackButton";
+import { Button } from "@/components/ui/button";
 import { useSEO } from "@/hooks/useSEO";
 
 const Sobre = () => {
+  const navigate = useNavigate();
+
   useSEO({
     title: "Sobre Nós | Aniversariante VIP",
-    description: "Conheça o Aniversariante VIP - o maior guia de benefícios para aniversariantes do Brasil. Nossa missão é tornar cada aniversário especial."
+    description:
+      "Conheça o Aniversariante VIP - o maior guia de benefícios para aniversariantes do Brasil. Nossa missão é tornar cada aniversário especial.",
   });
 
   const valores = [
     {
       icon: Heart,
-      titulo: "Paixão por Celebrar",
-      descricao: "Acreditamos que todo aniversário merece ser especial. Trabalhamos para criar momentos inesquecíveis."
+      titulo: "Paixão por celebrar",
+      descricao: "Todo aniversário merece ser especial. Trabalhamos para criar momentos que ficam na memória.",
     },
     {
       icon: Shield,
-      titulo: "Transparência",
-      descricao: "Benefícios claros, sem letras miúdas. O que você vê é o que você recebe."
+      titulo: "Transparência total",
+      descricao: "Benefícios claros, sem pegadinhas. O que você vê é exatamente o que vai receber.",
     },
     {
       icon: Users,
-      titulo: "Comunidade",
-      descricao: "Conectamos aniversariantes a estabelecimentos parceiros, criando uma rede de celebração."
+      titulo: "Conexão real",
+      descricao: "Unimos aniversariantes e estabelecimentos em uma rede onde todo mundo ganha.",
     },
     {
       icon: Sparkles,
-      titulo: "Inovação",
-      descricao: "Tecnologia de ponta para facilitar sua experiência e garantir benefícios exclusivos."
-    }
+      titulo: "Experiência impecável",
+      descricao: "Tecnologia moderna para você encontrar benefícios sem complicação.",
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#240046]">
       <Header />
-      
-      <main className="pt-20">
-        {/* Botão Voltar */}
-        <div className="max-w-6xl mx-auto px-4 mb-4">
-          <BackButton />
-        </div>
+
+      <main>
         {/* Hero Section */}
-        <section className="relative py-16 sm:py-24 overflow-hidden">
-          {/* Background Effects */}
-          <div className="absolute inset-0 bg-gradient-to-b from-violet-500/5 via-transparent to-transparent" />
-          <div className="absolute top-20 left-1/4 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-fuchsia-500/10 rounded-full blur-3xl" />
-          
-          <div className="relative max-w-4xl mx-auto px-4 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 text-violet-400 text-sm font-medium mb-6">
-                <Gift className="w-4 h-4" />
-                Sobre Nós
-              </span>
-              
-              <h1 className="text-3xl sm:text-5xl font-display font-bold text-foreground mb-6">
-                O Maior Guia de Benefícios para{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400">
-                  Aniversariantes
+        <section className="relative pt-24 sm:pt-28 pb-16 px-4 overflow-hidden">
+          {/* Background Glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[#7C3AED]/20 rounded-full blur-[120px] pointer-events-none" />
+
+          <div className="relative max-w-4xl mx-auto">
+            {/* Botão Voltar */}
+            <div className="mb-8">
+              <BackButton />
+            </div>
+
+            <div className="text-center">
+              {/* Badge */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-2 mb-6"
+              >
+                <Gift className="w-4 h-4 text-[#C77DFF]" />
+                <span className="text-sm text-white/90 font-medium">Sobre nós</span>
+              </motion.div>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-5 leading-tight"
+              >
+                O maior guia de benefícios para{" "}
+                <span className="bg-gradient-to-r from-[#9D4EDD] to-[#C77DFF] bg-clip-text text-transparent">
+                  aniversariantes
                 </span>{" "}
                 do Brasil
-              </h1>
-              
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Nascemos com uma missão simples: fazer de cada aniversário uma celebração inesquecível, 
-                conectando você aos melhores benefícios da sua cidade.
-              </p>
-            </motion.div>
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="text-base sm:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed"
+              >
+                Conectamos você aos melhores benefícios da sua cidade. Porque todo mundo merece se sentir VIP no dia do
+                seu aniversário.
+              </motion.p>
+            </div>
           </div>
         </section>
 
         {/* Nossa Missão */}
-        <section className="py-16 bg-muted/30">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
+        <section className="py-16 px-4 bg-[#1a0033]/50">
+          <div className="max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-10 items-center">
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -88,36 +104,34 @@ const Sobre = () => {
                 transition={{ duration: 0.6 }}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <Target className="w-6 h-6 text-violet-400" />
-                  <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
-                    Nossa Missão
-                  </h2>
+                  <div className="w-10 h-10 bg-[#7C3AED]/20 rounded-xl flex items-center justify-center">
+                    <Target className="w-5 h-5 text-[#C77DFF]" />
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white">Nossa missão</h2>
                 </div>
-                <p className="text-muted-foreground mb-4">
-                  Democratizar o acesso a benefícios exclusivos de aniversário para todos os brasileiros. 
-                  Acreditamos que celebrar mais um ano de vida deveria vir acompanhado de experiências especiais.
+
+                <p className="text-white/70 mb-4 leading-relaxed">
+                  Democratizar o acesso a benefícios de aniversário para todos os brasileiros. Acreditamos que celebrar
+                  mais um ano de vida deve vir com experiências especiais.
                 </p>
-                <p className="text-muted-foreground">
-                  Por isso, criamos uma plataforma que conecta você diretamente aos melhores estabelecimentos 
-                  da sua região, oferecendo benefícios reais e sem complicação.
+
+                <p className="text-white/70 leading-relaxed">
+                  Criamos uma plataforma que conecta você diretamente aos melhores estabelecimentos da sua região, com
+                  benefícios reais e sem complicação.
                 </p>
               </motion.div>
-              
+
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="relative"
               >
-                <div className="aspect-square rounded-2xl bg-gradient-to-br from-violet-500/20 via-fuchsia-500/20 to-pink-500/20 flex items-center justify-center">
+                <div className="aspect-square rounded-3xl bg-gradient-to-br from-[#3C096C] to-[#240046] border border-[#7C3AED]/20 flex items-center justify-center">
                   <div className="text-center p-8">
-                    <div className="text-6xl sm:text-8xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400 mb-2">
-                      🎂
-                    </div>
-                    <p className="text-lg font-medium text-foreground">
-                      Celebre com a gente
-                    </p>
+                    <div className="text-7xl sm:text-8xl mb-4">🎂</div>
+                    <p className="text-lg font-semibold text-white">Celebre com a gente</p>
+                    <p className="text-white/60 text-sm mt-1">Todo dia é dia de alguém</p>
                   </div>
                 </div>
               </motion.div>
@@ -126,104 +140,125 @@ const Sobre = () => {
         </section>
 
         {/* Nossos Valores */}
-        <section className="py-16">
-          <div className="max-w-6xl mx-auto px-4">
+        <section className="py-16 px-4">
+          <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.5 }}
               className="text-center mb-12"
             >
-              <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-4">
-                Nossos Valores
-              </h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                O que nos guia todos os dias na construção da melhor experiência para você.
-              </p>
+              <span className="text-[#C77DFF] text-sm font-semibold uppercase tracking-wider">O que nos guia</span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mt-2 mb-3">Nossos valores</h2>
+              <p className="text-white/60 max-w-xl mx-auto">Princípios que direcionam cada decisão que tomamos</p>
             </motion.div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {valores.map((valor, index) => (
                 <motion.div
                   key={valor.titulo}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="p-6 rounded-2xl bg-card border border-border hover:border-violet-500/30 transition-colors"
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="bg-[#1a0033] border border-white/10 rounded-2xl p-6 hover:border-[#7C3AED]/30 transition-all group"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center mb-4">
-                    <valor.icon className="w-6 h-6 text-violet-400" />
+                  <div className="w-12 h-12 bg-[#7C3AED]/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <valor.icon className="w-6 h-6 text-[#C77DFF]" />
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    {valor.titulo}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {valor.descricao}
-                  </p>
+                  <h3 className="text-lg font-semibold text-white mb-2">{valor.titulo}</h3>
+                  <p className="text-white/60 text-sm leading-relaxed">{valor.descricao}</p>
                 </motion.div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Como Surgimos */}
-        <section className="py-16 bg-muted/30">
-          <div className="max-w-4xl mx-auto px-4">
+        {/* Nossa História */}
+        <section className="py-16 px-4 bg-[#1a0033]/50">
+          <div className="max-w-3xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center"
+              transition={{ duration: 0.5 }}
+              className="text-center mb-10"
             >
-              <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-6">
-                Como Surgimos
-              </h2>
-              <div className="prose prose-slate dark:prose-invert max-w-none text-left">
-                <p className="text-muted-foreground mb-4">
-                  A ideia do Aniversariante VIP nasceu de uma percepção simples: muitos estabelecimentos 
-                  oferecem benefícios incríveis para aniversariantes, mas as pessoas simplesmente não sabem disso.
+              <div className="inline-flex items-center gap-2 mb-4">
+                <div className="w-10 h-10 bg-[#7C3AED]/20 rounded-xl flex items-center justify-center">
+                  <Rocket className="w-5 h-5 text-[#C77DFF]" />
+                </div>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">Como surgimos</h2>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="bg-[#240046] border border-white/10 rounded-2xl p-6 sm:p-8"
+            >
+              <div className="space-y-4 text-white/70 leading-relaxed">
+                <p>
+                  A ideia nasceu de uma percepção simples:{" "}
+                  <span className="text-white font-medium">
+                    muitos estabelecimentos oferecem benefícios incríveis para aniversariantes, mas as pessoas
+                    simplesmente não sabem.
+                  </span>
                 </p>
-                <p className="text-muted-foreground mb-4">
-                  Em 2024, decidimos resolver esse problema criando o maior guia de benefícios de aniversário 
-                  do Brasil. Nossa plataforma conecta você diretamente aos estabelecimentos parceiros, 
-                  mostrando exatamente o que cada um oferece e como aproveitar.
+
+                <p>
+                  Em 2024, decidimos resolver esse problema. Criamos o maior guia de benefícios de aniversário do
+                  Brasil, uma plataforma que conecta você diretamente aos estabelecimentos parceiros, mostrando
+                  exatamente o que cada um oferece.
                 </p>
-                <p className="text-muted-foreground">
-                  Hoje, trabalhamos incansavelmente para expandir nossa rede de parceiros e levar benefícios 
-                  exclusivos para aniversariantes em todas as cidades do país. Porque acreditamos que todo 
-                  mundo merece se sentir VIP no seu dia especial.
+
+                <p>
+                  Hoje, trabalhamos para expandir nossa rede de parceiros e levar benefícios exclusivos para
+                  aniversariantes em todas as cidades do país.{" "}
+                  <span className="text-white font-medium">
+                    Porque todo mundo merece se sentir VIP no seu dia especial.
+                  </span>
                 </p>
               </div>
             </motion.div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-16">
-          <div className="max-w-4xl mx-auto px-4 text-center">
+        {/* CTA Final */}
+        <section className="py-20 px-4">
+          <div className="max-w-xl mx-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-violet-500/10 via-fuchsia-500/10 to-pink-500/10 border border-violet-500/20"
+              transition={{ duration: 0.5 }}
+              className="relative bg-gradient-to-br from-[#3C096C] to-[#240046] border border-[#7C3AED]/30 rounded-3xl p-8 sm:p-10 text-center overflow-hidden"
             >
-              <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-4">
-                Pronto para Celebrar?
-              </h2>
-              <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-                Cadastre-se gratuitamente e descubra os melhores benefícios de aniversário na sua cidade.
-              </p>
-              <a
-                href="/auth"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-medium hover:opacity-90 transition-opacity"
-              >
-                <Gift className="w-5 h-5" />
-                Criar Conta Grátis
-              </a>
+              {/* Glow */}
+              <div className="absolute top-0 right-0 w-40 h-40 bg-[#7C3AED]/20 rounded-full blur-[80px] pointer-events-none" />
+
+              <div className="relative">
+                <div className="w-16 h-16 bg-gradient-to-br from-[#7C3AED] to-[#9D4EDD] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-[#7C3AED]/30">
+                  <Gift className="w-8 h-8 text-white" />
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">Pronto para celebrar?</h2>
+                <p className="text-white/70 mb-8 max-w-sm mx-auto">
+                  Cadastre-se gratuitamente e descubra os benefícios disponíveis na sua cidade
+                </p>
+
+                <Button
+                  onClick={() => navigate("/cadastro")}
+                  size="lg"
+                  className="bg-white text-[#240046] hover:bg-white/90 font-semibold px-8 py-6 h-auto text-base rounded-full shadow-xl shadow-black/20 hover:scale-105 transition-all duration-300"
+                >
+                  Criar minha conta grátis
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
             </motion.div>
           </div>
         </section>

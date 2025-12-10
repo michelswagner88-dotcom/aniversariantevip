@@ -60,6 +60,7 @@ export default function SejaParceiro() {
     "Destaque por categoria e localização",
     "Suporte para parceiros",
     "Sem taxa por cliente atendido",
+    "Você define as regras do seu benefício",
   ];
 
   return (
@@ -109,7 +110,7 @@ export default function SejaParceiro() {
       </section>
 
       {/* Como Funciona */}
-      <section className="py-16 px-4 bg-[#1a0033]/50">
+      <section className="py-16 px-4 bg-[#3C096C]/30">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-[#C77DFF] text-sm font-semibold uppercase tracking-wider">Passo a passo</span>
@@ -220,7 +221,7 @@ export default function SejaParceiro() {
       </section>
 
       {/* O que você ganha */}
-      <section className="py-16 px-4 bg-[#1a0033]/50">
+      <section className="py-16 px-4 bg-[#3C096C]/30">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-[#C77DFF] text-sm font-semibold uppercase tracking-wider">Incluso</span>

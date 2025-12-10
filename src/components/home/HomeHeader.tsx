@@ -1,135 +1,256 @@
-import { useState } from 'react';
-import { MapPin, Search, ChevronDown, X, RotateCcw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { CityCombobox } from '@/components/CityCombobox';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Link, useNavigate } from "react-router-dom";
+import { NavLink } from "@/components/NavLink";
+import { Button } from "@/components/ui/button";
+import { Menu, X, User, LogOut, Gift } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { PersonalGreeting } from "@/components/PersonalGreeting";
+import { BirthdayBanner } from "@/components/BirthdayBanner";
+import { useBirthdayTheme } from "@/hooks/useBirthdayTheme";
+import { useScrollHeader } from "@/hooks/useScrollHeader";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-interface HomeHeaderProps {
-  cidade: string;
-  estado: string;
-  origem: 'cache' | 'gps' | 'ip' | 'perfil' | 'manual' | null;
-  onMudarCidade: () => void;
-  onCidadeSelect: (cidade: string, estado: string) => void;
-  onBusca: (termo: string) => void;
-  buscaAtual: string;
-}
+export const Header = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [dataNascimento, setDataNascimento] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { isBirthday } = useBirthdayTheme(dataNascimento);
+  const { isVisible } = useScrollHeader({ threshold: 80, sensitivity: 8 });
+  const isMobile = useIsMobile();
 
-export const HomeHeader = ({
-  cidade,
-  estado,
-  origem,
-  onMudarCidade,
-  onCidadeSelect,
-  onBusca,
-  buscaAtual
-}: HomeHeaderProps) => {
-  const [buscaInterna, setBuscaInterna] = useState(buscaAtual);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  
-  // Ícone baseado na origem da detecção
-  const origemIcon = {
-    gps: '📍',
-    ip: '🌐',
-    cache: '💾',
-    perfil: '👤',
-    manual: '✏️'
-  }[origem || 'manual'] || '📍';
-  
-  const handleBuscaSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onBusca(buscaInterna);
-  };
-  
-  const limparBusca = () => {
-    setBuscaInterna('');
-    onBusca('');
+  useEffect(() => {
+    checkUser();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      checkUser();
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkUser = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session) {
+      const { data: profile } = await supabase.from("profiles").select("nome").eq("id", session.user.id).single();
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", session.user.id);
+      setUserName(profile?.nome || session.user.email?.split("@")[0] || "Usuário");
+      setUserRole(roles?.[0]?.role || null);
+
+      if (roles?.[0]?.role === "aniversariante") {
+        const { data: aniversarianteData } = await supabase
+          .from("aniversariantes")
+          .select("data_nascimento")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        if (aniversarianteData?.data_nascimento) {
+          setDataNascimento(aniversarianteData.data_nascimento);
+        }
+      }
+    } else {
+      setUserName(null);
+      setUserRole(null);
+      setDataNascimento(null);
+    }
   };
 
-  const handleCidadeSelect = (novaCidade: string, novoEstado: string) => {
-    onCidadeSelect(novaCidade, novoEstado);
-    setDialogOpen(false);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("Logout realizado com sucesso!");
+    navigate("/");
   };
-  
+
+  const getAreaLink = () => {
+    if (userRole === "aniversariante") return "/area-aniversariante";
+    if (userRole === "estabelecimento") return "/area-estabelecimento";
+    if (userRole === "admin") return "/area-colaborador";
+    return "/";
+  };
+
   return (
-    <div className="space-y-4 mb-6">
-      {/* Linha 1: Cidade detectada */}
-      <div className="flex items-center justify-between">
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <button className="flex items-center gap-2 text-left hover:bg-white/5 rounded-lg px-3 py-2 -ml-3 transition-colors">
-              <span className="text-lg">{origemIcon}</span>
-              <div>
-                <p className="text-white font-semibold text-lg">
-                  {cidade}, {estado}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {origem === 'gps' && 'Localização via GPS'}
-                  {origem === 'ip' && 'Localização aproximada'}
-                  {origem === 'cache' && 'Última localização'}
-                  {origem === 'perfil' && 'Do seu perfil'}
-                  {origem === 'manual' && 'Selecionado por você'}
-                </p>
+    <>
+      {isBirthday && userName && <BirthdayBanner firstName={userName.split(" ")[0]} />}
+
+      <header
+        className={`
+          fixed left-0 right-0 z-50 
+          transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+          ${isMobile && !isVisible ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"}
+          bg-[#240046] py-3
+        `}
+        style={{ top: isBirthday && userName ? "48px" : "0" }}
+      >
+        <nav className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
+          <div className="flex items-center justify-between h-14">
+            {/* Logo + Nome - VISÍVEL EM TODAS AS TELAS */}
+            <Link to="/" className="flex items-center gap-2 group">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center bg-white/10 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:bg-white/20 flex-shrink-0">
+                <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <ChevronDown className="w-4 h-4 text-slate-400 ml-1" />
-            </button>
-          </DialogTrigger>
-          
-          <DialogContent className="bg-slate-900 border-white/10">
-            <DialogHeader>
-              <DialogTitle className="text-white">Mudar cidade</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              <CityCombobox
-                onSelect={handleCidadeSelect}
-                placeholder="Digite o nome da cidade..."
-              />
-            </div>
-            <div className="flex justify-end">
-              <Button
-                variant="ghost"
-                onClick={onMudarCidade}
-                className="text-violet-400 hover:text-violet-300"
+              {/* Nome SEMPRE visível - ajustado para caber no mobile */}
+              <div className="flex items-center gap-0.5 sm:gap-1 font-display font-extrabold text-sm sm:text-base lg:text-lg tracking-tight transition-transform duration-300 group-hover:scale-105">
+                <span className="bg-gradient-to-r from-[#9D4EDD] to-[#C77DFF] bg-clip-text text-transparent">
+                  ANIVERSARIANTE
+                </span>
+                <span className="bg-gradient-to-r from-[#C77DFF] to-[#22D3EE] bg-clip-text text-transparent">VIP</span>
+              </div>
+            </Link>
+
+            {/* Menu Desktop - Links centrais */}
+            <div className="hidden lg:flex items-center justify-center flex-1 gap-1 min-w-0 mx-4">
+              <NavLink
+                to="/como-funciona"
+                className="relative text-sm font-medium text-white hover:text-white transition-colors duration-200 px-4 py-2 group"
+                activeClassName="text-white"
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Detectar novamente
-              </Button>
+                Como Funciona
+                <span className="absolute -bottom-0.5 left-4 right-4 h-0.5 bg-white scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+              </NavLink>
+              <NavLink
+                to="/seja-parceiro"
+                className="relative text-sm font-medium text-white hover:text-white transition-colors duration-200 px-4 py-2 group"
+                activeClassName="text-white"
+              >
+                Seja Parceiro
+                <span className="absolute -bottom-0.5 left-4 right-4 h-0.5 bg-white scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+              </NavLink>
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      {/* Linha 2: Campo de busca */}
-      <form onSubmit={handleBuscaSubmit} className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-        <Input
-          type="text"
-          placeholder="Buscar restaurante, bar, academia..."
-          value={buscaInterna}
-          onChange={(e) => setBuscaInterna(e.target.value)}
-          className="w-full pl-12 pr-10 py-6 bg-white/5 border-white/10 rounded-xl text-white placeholder:text-slate-500 focus:border-violet-500/50 focus:ring-violet-500/20"
-        />
-        {buscaInterna && (
-          <button
-            type="button"
-            onClick={limparBusca}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        )}
-      </form>
-      
-      {/* Slogan */}
-      <p className="text-center text-xs font-medium tracking-[0.08em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-slate-400 via-violet-400 to-slate-400 mt-4 opacity-0 animate-[fadeInSlide_0.8s_ease-out_0.5s_forwards]">
-        ✨ O maior guia de benefícios para aniversariantes do Brasil ✨
-      </p>
-    </div>
+
+            {/* Menu Desktop - Botões direita */}
+            <div className="hidden lg:flex items-center gap-4 flex-shrink-0">
+              {userName ? (
+                <>
+                  <div className="hidden xl:block">
+                    <PersonalGreeting userName={userName} />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate(getAreaLink())}
+                    className="flex items-center gap-2 px-3 h-10 hover:bg-white/10 transition-all duration-200"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-white/20 p-0.5">
+                      <div className="w-full h-full rounded-full bg-[#240046] flex items-center justify-center">
+                        <span className="text-xs font-bold text-white">{userName.slice(0, 2).toUpperCase()}</span>
+                      </div>
+                    </div>
+                    <span className="text-white text-sm hidden sm:block">{userName.split(" ")[0]}</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLogout}
+                    className="text-white hover:bg-white/10 h-9 transition-all duration-200"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="text-white hover:text-white/80 transition-colors duration-200 px-4 py-2 text-sm font-medium"
+                  >
+                    Entrar
+                  </Link>
+                  <Link
+                    to="/cadastro"
+                    className="relative bg-white text-[#240046] font-semibold px-6 py-2.5 rounded-full transition-all duration-300 hover:bg-white/90 hover:scale-105 active:scale-95 text-sm"
+                  >
+                    Cadastro Gratuito
+                  </Link>
+                </>
+              )}
+            </div>
+
+            {/* Botão Menu Hambúrguer - Mobile/Tablet */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2.5 -mr-2 text-white hover:bg-white/10 rounded-xl transition-all duration-200 active:scale-95"
+              style={{ minWidth: "44px", minHeight: "44px" }}
+              aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
+
+          {/* Menu Mobile Expandido */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden mt-4 p-4 bg-[#1a0033] rounded-2xl border border-white/10 shadow-2xl shadow-black/40 animate-fade-in">
+              <div className="flex flex-col gap-1">
+                {/* Links de navegação */}
+                <NavLink
+                  to="/como-funciona"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-sm font-medium text-white/80 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200"
+                  activeClassName="text-white bg-white/5"
+                >
+                  Como Funciona
+                </NavLink>
+                <NavLink
+                  to="/seja-parceiro"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-sm font-medium text-white/80 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200"
+                  activeClassName="text-white bg-white/5"
+                >
+                  Seja Parceiro
+                </NavLink>
+
+                <div className="h-px bg-white/10 my-3" />
+
+                {/* Área do usuário ou botões de login */}
+                {userName ? (
+                  <>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        navigate(getAreaLink());
+                        setMobileMenuOpen(false);
+                      }}
+                      className="justify-start text-white hover:bg-white/10 py-3 h-auto"
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      Minha Área ({userName.split(" ")[0]})
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        handleLogout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="justify-start text-white/70 hover:text-white hover:bg-white/10 py-3 h-auto"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sair
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-white/80 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200 text-sm font-medium"
+                    >
+                      Entrar
+                    </Link>
+                    <Link
+                      to="/cadastro"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="mt-2 bg-white text-[#240046] font-semibold py-3 px-6 rounded-full text-center transition-all duration-300 active:scale-95 text-sm"
+                    >
+                      Cadastro Gratuito
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </nav>
+      </header>
+    </>
   );
 };

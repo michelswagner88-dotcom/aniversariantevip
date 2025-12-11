@@ -16,7 +16,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { rua, numero, bairro, cidade, estado } = await req.json();
+    const { endereco } = await req.json();
+    
+    if (!endereco || typeof endereco !== 'string') {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Endereço é obrigatório' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const apiKey = Deno.env.get('VITE_GOOGLE_MAPS_API_KEY');
     
     if (!apiKey) {
@@ -27,72 +35,69 @@ Deno.serve(async (req) => {
       );
     }
     
-    // Montar endereço completo
-    const partes = [];
-    if (rua) partes.push(rua);
-    if (numero) partes.push(numero);
-    if (bairro) partes.push(bairro);
-    if (cidade) partes.push(cidade);
-    if (estado) partes.push(estado);
-    partes.push('Brasil');
+    // Adicionar ", Brasil" se não tiver
+    let enderecoCompleto = endereco.trim();
+    if (!enderecoCompleto.toLowerCase().includes('brasil')) {
+      enderecoCompleto = `${enderecoCompleto}, Brasil`;
+    }
     
-    const endereco = partes.join(', ');
-    
-    console.log('[Geocode] Geocodificando:', endereco);
+    console.log('[Geocode] Geocodificando:', enderecoCompleto);
 
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(endereco)}&key=${apiKey}&language=pt-BR&region=br`;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(enderecoCompleto)}&key=${apiKey}&language=pt-BR&region=br`;
     
     const response = await fetch(url);
     const data = await response.json();
     
     console.log('[Geocode] Status:', data.status);
     
+    // Tratar erros específicos da API
+    if (data.status === 'ZERO_RESULTS') {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Endereço não encontrado' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (data.status === 'OVER_QUERY_LIMIT') {
+      console.error('[Geocode] Limite de requisições excedido');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Limite de requisições excedido. Tente novamente mais tarde.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (data.status === 'REQUEST_DENIED') {
+      console.error('[Geocode] Requisição negada:', data.error_message);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Serviço de geocodificação indisponível' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     if (data.status === 'OK' && data.results?.[0]?.geometry?.location) {
+      const location = data.results[0].geometry.location;
       return new Response(
         JSON.stringify({
           success: true,
-          latitude: data.results[0].geometry.location.lat,
-          longitude: data.results[0].geometry.location.lng,
-          endereco_formatado: data.results[0].formatted_address,
+          lat: location.lat,
+          lng: location.lng,
+          formatted_address: data.results[0].formatted_address,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    // Fallback: tentar só com cidade + estado
-    if (cidade && estado) {
-      const enderecoSimples = `${cidade}, ${estado}, Brasil`;
-      console.log('[Geocode] Tentando fallback:', enderecoSimples);
-      
-      const urlFallback = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(enderecoSimples)}&key=${apiKey}&language=pt-BR&region=br`;
-      const responseFallback = await fetch(urlFallback);
-      const dataFallback = await responseFallback.json();
-      
-      if (dataFallback.status === 'OK' && dataFallback.results?.[0]?.geometry?.location) {
-        console.log('[Geocode] Fallback sucesso - usando centro da cidade');
-        return new Response(
-          JSON.stringify({
-            success: true,
-            latitude: dataFallback.results[0].geometry.location.lat,
-            longitude: dataFallback.results[0].geometry.location.lng,
-            endereco_formatado: dataFallback.results[0].formatted_address,
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-    
-    console.warn('[Geocode] Falha:', data.status);
+    console.warn('[Geocode] Resposta inesperada:', data.status);
     return new Response(
-      JSON.stringify({ success: false, error: data.status }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: false, error: `Erro na geocodificação: ${data.status}` }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error: any) {
     console.error('[Geocode] Erro:', error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

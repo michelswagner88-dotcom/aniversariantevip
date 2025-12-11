@@ -72,6 +72,14 @@ export const Header = () => {
     return "/";
   };
 
+  // Calcula o top considerando safe-area e birthday banner
+  const getHeaderTop = () => {
+    if (isBirthday && userName) {
+      return "calc(48px + env(safe-area-inset-top, 0px))";
+    }
+    return "env(safe-area-inset-top, 0px)";
+  };
+
   return (
     <>
       {isBirthday && userName && <BirthdayBanner firstName={userName.split(" ")[0]} />}
@@ -83,7 +91,7 @@ export const Header = () => {
           ${isMobile && !isVisible ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"}
           bg-[#240046] py-3
         `}
-        style={{ top: isBirthday && userName ? "48px" : "0" }}
+        style={{ top: getHeaderTop() }}
       >
         <nav className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
           <div className="flex items-center justify-between h-14">
@@ -105,7 +113,7 @@ export const Header = () => {
             <div className="hidden lg:flex items-center justify-center flex-1 gap-1 min-w-0 mx-4">
               <NavLink
                 to="/como-funciona"
-                className="relative text-sm font-medium text-white hover:text-white transition-colors duration-200 px-4 py-2 group"
+                className="relative text-sm font-medium text-white/80 hover:text-white transition-colors duration-200 px-4 py-2 group"
                 activeClassName="text-white"
               >
                 Como Funciona
@@ -113,7 +121,7 @@ export const Header = () => {
               </NavLink>
               <NavLink
                 to="/seja-parceiro"
-                className="relative text-sm font-medium text-white hover:text-white transition-colors duration-200 px-4 py-2 group"
+                className="relative text-sm font-medium text-white/80 hover:text-white transition-colors duration-200 px-4 py-2 group"
                 activeClassName="text-white"
               >
                 Seja Parceiro
@@ -144,7 +152,8 @@ export const Header = () => {
                     variant="ghost"
                     size="sm"
                     onClick={handleLogout}
-                    className="text-white hover:bg-white/10 h-9 transition-all duration-200"
+                    className="text-white hover:bg-white/10 h-9 w-9 p-0 transition-all duration-200"
+                    aria-label="Sair"
                   >
                     <LogOut className="w-4 h-4" />
                   </Button>
@@ -153,7 +162,7 @@ export const Header = () => {
                 <>
                   <Link
                     to="/selecionar-perfil"
-                    className="text-white hover:text-white/80 transition-colors duration-200 px-4 py-2 text-sm font-medium"
+                    className="text-white/80 hover:text-white transition-colors duration-200 px-4 py-2 text-sm font-medium"
                   >
                     Entrar
                   </Link>
@@ -170,9 +179,9 @@ export const Header = () => {
             {/* Botão Menu Hambúrguer - Mobile/Tablet */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2.5 -mr-2 text-white hover:bg-white/10 rounded-xl transition-all duration-200 active:scale-95"
-              style={{ minWidth: "44px", minHeight: "44px" }}
+              className="lg:hidden flex items-center justify-center w-11 h-11 -mr-2 text-white hover:bg-white/10 rounded-xl transition-all duration-200 active:scale-95"
               aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -180,22 +189,27 @@ export const Header = () => {
 
           {/* Menu Mobile Expandido */}
           {mobileMenuOpen && (
-            <div className="lg:hidden mt-4 p-4 bg-[#1a0033] rounded-2xl border border-white/10 shadow-2xl shadow-black/40 animate-fade-in">
+            <div
+              className="lg:hidden mt-4 p-4 bg-[#3C096C]/95 backdrop-blur-sm rounded-2xl border border-white/10 shadow-2xl shadow-black/40"
+              style={{
+                animation: "fadeIn 0.2s ease-out",
+              }}
+            >
               <div className="flex flex-col gap-1">
                 {/* Links de navegação */}
                 <NavLink
                   to="/como-funciona"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-sm font-medium text-white/80 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200"
-                  activeClassName="text-white bg-white/5"
+                  className="text-sm font-medium text-white/80 hover:text-white py-3 px-4 hover:bg-white/10 rounded-xl transition-all duration-200 min-h-[44px] flex items-center"
+                  activeClassName="text-white bg-white/10"
                 >
                   Como Funciona
                 </NavLink>
                 <NavLink
                   to="/seja-parceiro"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-sm font-medium text-white/80 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200"
-                  activeClassName="text-white bg-white/5"
+                  className="text-sm font-medium text-white/80 hover:text-white py-3 px-4 hover:bg-white/10 rounded-xl transition-all duration-200 min-h-[44px] flex items-center"
+                  activeClassName="text-white bg-white/10"
                 >
                   Seja Parceiro
                 </NavLink>
@@ -211,9 +225,9 @@ export const Header = () => {
                         navigate(getAreaLink());
                         setMobileMenuOpen(false);
                       }}
-                      className="justify-start text-white hover:bg-white/10 py-3 h-auto"
+                      className="justify-start text-white hover:bg-white/10 py-3 h-auto min-h-[44px]"
                     >
-                      <User className="w-4 h-4 mr-2" />
+                      <User className="w-5 h-5 mr-3" />
                       Minha Área ({userName.split(" ")[0]})
                     </Button>
                     <Button
@@ -222,9 +236,9 @@ export const Header = () => {
                         handleLogout();
                         setMobileMenuOpen(false);
                       }}
-                      className="justify-start text-white/70 hover:text-white hover:bg-white/10 py-3 h-auto"
+                      className="justify-start text-white/70 hover:text-white hover:bg-white/10 py-3 h-auto min-h-[44px]"
                     >
-                      <LogOut className="w-4 h-4 mr-2" />
+                      <LogOut className="w-5 h-5 mr-3" />
                       Sair
                     </Button>
                   </>
@@ -233,14 +247,14 @@ export const Header = () => {
                     <Link
                       to="/selecionar-perfil"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-white/80 hover:text-white py-3 px-4 hover:bg-white/5 rounded-xl transition-all duration-200 text-sm font-medium"
+                      className="text-white/80 hover:text-white py-3 px-4 hover:bg-white/10 rounded-xl transition-all duration-200 text-sm font-medium min-h-[44px] flex items-center"
                     >
                       Entrar
                     </Link>
                     <Link
                       to="/auth?tipo=aniversariante"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="mt-2 bg-white text-[#240046] font-semibold py-3 px-6 rounded-full text-center transition-all duration-300 active:scale-95 text-sm"
+                      className="mt-2 bg-white text-[#240046] font-semibold py-3 px-6 rounded-full text-center transition-all duration-300 active:scale-95 text-sm min-h-[44px] flex items-center justify-center"
                     >
                       Cadastro Gratuito
                     </Link>
@@ -251,6 +265,20 @@ export const Header = () => {
           )}
         </nav>
       </header>
+
+      {/* CSS para animação inline (fallback caso não tenha no Tailwind config) */}
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </>
   );
 };

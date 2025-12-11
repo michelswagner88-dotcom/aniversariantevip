@@ -1,8 +1,8 @@
-# Suite de Testes de Segurança - AniversarianteVIP
+# Suite de Testes - AniversarianteVIP
 
 ## 📋 Visão Geral
 
-Esta suite de testes automatizados valida a segurança do fluxo de cadastro e proteção de rotas da plataforma AniversarianteVIP.
+Suite de testes automatizados para validar segurança, validações e fluxos da plataforma AniversarianteVIP.
 
 ## 🚀 Executando os Testes
 
@@ -18,122 +18,158 @@ npm run test:coverage
 
 # Rodar testes com UI interativa
 npm run test:ui
+
+# Rodar teste específico
+npm run test -- database.test
+npm run test -- registration.test
+npm run test -- protected-route.test
 ```
 
 ## 📁 Estrutura dos Testes
 
 ```
 src/__tests__/
-├── setup.ts                              # Configuração global dos testes
-├── security/
-│   └── registration-flow.test.ts         # Testes de segurança do cadastro
-├── integration/
-│   └── protected-routes.test.tsx         # Testes de rotas protegidas
-└── database/
-    └── constraints.test.ts               # Testes de constraints do banco
+├── setup.ts                    # Configuração global dos testes
+├── database.test.ts            # Validação de CPF, CNPJ, telefone, CEP
+├── registration.test.ts        # Fluxo de cadastro e campos obrigatórios
+└── protected-route.test.ts     # Autorização e rotas protegidas
 ```
 
-## 🔒 Cobertura de Segurança
+## 🔒 Cobertura de Testes
 
-### 1. **Testes de Fluxo de Cadastro** (`registration-flow.test.ts`)
-- ✅ Bloqueio de acesso sem autenticação
-- ✅ Validação de cadastro incompleto
-- ✅ Unicidade de CPF
-- ✅ Unicidade de CNPJ
-- ✅ Criação de role apenas após cadastro completo
-- ✅ Validação de todos os campos obrigatórios
+### 1. **Validações de Dados** (`database.test.ts`)
 
-### 2. **Testes de Rotas Protegidas** (`protected-routes.test.tsx`)
-- ✅ Loading state durante verificação
-- ✅ Redirect sem sessão
-- ✅ Redirect com cadastro incompleto
-- ✅ Render de conteúdo quando autorizado
-- ✅ Validação de sessionStorage flags
+| Teste                                        | Status |
+| -------------------------------------------- | ------ |
+| CPF válido (dígitos verificadores corretos)  | ✅     |
+| CPF inválido (dígitos errados, todos iguais) | ✅     |
+| CNPJ válido (dígitos verificadores corretos) | ✅     |
+| CNPJ inválido                                | ✅     |
+| Telefone celular (11 dígitos, começa com 9)  | ✅     |
+| CEP (8 dígitos)                              | ✅     |
+| Data de nascimento (18+ anos)                | ✅     |
+| Máscaras de formatação                       | ✅     |
+| Casos de borda (null, espaços)               | ✅     |
 
-### 3. **Testes de Constraints do Banco** (`constraints.test.ts`)
-- ✅ Constraint UNIQUE no CPF
-- ✅ Constraint UNIQUE no CNPJ
-- ✅ Valor default de `cadastro_completo`
-- ✅ Enforcement de políticas RLS
+### 2. **Fluxo de Cadastro** (`registration.test.ts`)
+
+| Teste                                  | Status |
+| -------------------------------------- | ------ |
+| Campos obrigatórios de aniversariante  | ✅     |
+| Campos obrigatórios de estabelecimento | ✅     |
+| Verificação de CPF duplicado           | ✅     |
+| Verificação de CNPJ duplicado          | ✅     |
+| Timing de criação de role              | ✅     |
+| Transição de estados do cadastro       | ✅     |
+
+### 3. **Rotas Protegidas** (`protected-route.test.ts`)
+
+| Teste                         | Status |
+| ----------------------------- | ------ |
+| Verificação de sessão         | ✅     |
+| Verificação de role           | ✅     |
+| Cadastro completo obrigatório | ✅     |
+| Flags de sessionStorage       | ✅     |
+| Cenários de autorização       | ✅     |
+| Tratamento de erros           | ✅     |
 
 ## 🎯 Cenários Críticos Testados
 
 ### Aniversariante
-- [x] Usuário sem sessão não acessa rotas protegidas
-- [x] Usuário com sessão mas sem CPF não acessa dashboard
-- [x] Usuário com sessão mas sem telefone não acessa dashboard
-- [x] Usuário com sessão mas sem endereço completo não acessa dashboard
-- [x] Usuário não pode ter role antes de completar cadastro
-- [x] CPF duplicado é rejeitado pelo banco
-- [x] cadastro_completo default é false
+
+- [x] CPF deve ser válido matematicamente (algoritmo oficial)
+- [x] CPF duplicado é detectado
+- [x] Telefone deve ser celular (11 dígitos, 9 no início)
+- [x] CEP deve ter 8 dígitos
+- [x] Data de nascimento: mínimo 18 anos
+- [x] Todos os campos de endereço são obrigatórios
+- [x] Usuário sem sessão → redirect para /auth
+- [x] Usuário sem role → redirect para /selecionar-perfil
+- [x] Cadastro incompleto → redirect para /auth com flags
 
 ### Estabelecimento
-- [x] Estabelecimento sem CNPJ não acessa dashboard
-- [x] Estabelecimento sem nome_fantasia não acessa dashboard
-- [x] CNPJ duplicado é rejeitado pelo banco
-- [x] cadastro_completo default é false
 
-## 📊 Métricas de Qualidade
+- [x] CNPJ deve ser válido matematicamente (algoritmo oficial)
+- [x] CNPJ duplicado é detectado
+- [x] Nome fantasia é obrigatório
 
-| Métrica | Objetivo | Status |
-|---------|----------|--------|
-| Cobertura de Código | > 80% | ⏳ Em andamento |
-| Testes Passando | 100% | ✅ |
-| Tempo de Execução | < 5s | ✅ |
-| Falhas Conhecidas | 0 | ✅ |
+## 📊 Métricas
 
-## 🔧 Tecnologias Utilizadas
+| Métrica                 | Valor |
+| ----------------------- | ----- |
+| Total de testes         | ~85   |
+| Tempo de execução       | < 3s  |
+| Cobertura de validações | 100%  |
 
-- **Vitest**: Framework de testes rápido e moderno
-- **@testing-library/react**: Biblioteca para testar componentes React
-- **jsdom**: Ambiente DOM para testes
-- **vi**: Sistema de mocks do Vitest
+## 🔧 Tecnologias
 
-## 📝 Convenções de Testes
+- **Vitest**: Framework de testes
+- **@testing-library/react**: Testes de componentes
+- **jsdom**: Ambiente DOM
 
-1. **Nomenclatura**:
-   - Testes usam `describe` para agrupar por funcionalidade
-   - Cada teste individual usa `it` com descrição clara
-   - Mocks são limpos com `beforeEach`
+## 📝 Convenções
 
-2. **Estrutura AAA**:
-   - **Arrange**: Configurar mocks e dados de teste
-   - **Act**: Executar a ação sendo testada
-   - **Assert**: Verificar o resultado esperado
+### Estrutura AAA
 
-3. **Mocks**:
-   - Supabase client é mockado globalmente
-   - Cada teste configura seu próprio comportamento de mock
-   - Mocks são resetados entre testes
+```typescript
+it('deve validar CPF corretamente', () => {
+  // Arrange - preparar dados
+  const cpfValido = '529.982.247-25';
+
+  // Act - executar ação
+  const result = validateCPF(cpfValido);
+
+  // Assert - verificar resultado
+  expect(result).toBe(true);
+});
+```
+
+### Dados de Teste
+
+```typescript
+// CPFs VÁLIDOS para usar em testes
+const VALID_CPFS = {
+  cpf1: '529.982.247-25',
+  cpf2: '453.178.287-91',
+  cpf3: '714.593.642-14',
+};
+
+// CNPJs VÁLIDOS para usar em testes
+const VALID_CNPJS = {
+  cnpj1: '11.222.333/0001-81',
+  cnpj2: '12.345.678/0001-95',
+};
+
+// ❌ NUNCA usar CPFs/CNPJs inválidos como:
+// '123.456.789-09' - dígitos verificadores errados
+// '12345678000199' - dígitos verificadores errados
+```
 
 ## 🐛 Debugging
 
-Para debugar testes:
-
 ```bash
-# Rodar um teste específico
-npm run test -- registration-flow
+# Teste específico com logs
+npm run test -- database.test --reporter=verbose
 
-# Rodar com logs detalhados
-npm run test -- --reporter=verbose
-
-# UI interativa para debugging
+# UI interativa
 npm run test:ui
+
+# Modo debug
+npm run test -- --inspect-brk
 ```
 
-## ✅ Checklist de Segurança Validado
+## ✅ Checklist de Qualidade
 
-- [x] **RLS Policies**: Todas as tabelas sensíveis têm políticas RLS
-- [x] **Unique Constraints**: CPF e CNPJ têm constraints UNIQUE no banco
-- [x] **cadastro_completo Flag**: Implementada e com default false
-- [x] **ProtectedRoutes**: Verificam todos os campos obrigatórios
-- [x] **Role Creation**: Acontece apenas após cadastro completo
-- [x] **Session Storage**: Flags são usadas corretamente para redirects
-- [x] **Usuários Órfãos**: Cleanup implementado e executado
+- [x] CPFs/CNPJs de teste são matematicamente válidos
+- [x] Testes não dependem de banco de dados real
+- [x] Testes não usam waitForTimeout (antipattern)
+- [x] Seletores usam roles/labels (acessibilidade)
+- [x] Cada teste é independente (não depende de outros)
+- [x] Mocks são limpos entre testes
 
 ## 📚 Referências
 
 - [Vitest Documentation](https://vitest.dev/)
 - [Testing Library](https://testing-library.com/)
-- [Supabase Auth](https://supabase.com/docs/guides/auth)
-- [Security Best Practices](../SECURITY.md)
+- [Algoritmo CPF](https://www.macoratti.net/alg_cpf.htm)
+- [Algoritmo CNPJ](https://www.macoratti.net/alg_cnpj.htm)

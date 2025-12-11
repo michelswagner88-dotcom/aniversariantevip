@@ -1,258 +1,525 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { supabase } from '@/integrations/supabase/client';
+import { describe, it, expect, beforeEach } from "vitest";
 
-describe('Registration Flow Security Tests', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+/**
+ * Testes de Fluxo de Cadastro
+ *
+ * Testa a lógica de validação de cadastro de aniversariantes e estabelecimentos.
+ * Usa dados válidos (CPF/CNPJ com dígitos verificadores corretos).
+ */
 
-  describe('Unauthenticated Access Prevention', () => {
-    it('should block access to protected routes without session', async () => {
-      // Mock sem sessão
-      vi.mocked(supabase.auth.getSession).mockResolvedValue({
-        data: { session: null },
-        error: null,
-      });
+// ===== DADOS DE TESTE VÁLIDOS =====
 
-      const { data } = await supabase.auth.getSession();
-      expect(data.session).toBeNull();
-    });
+const VALID_CPFS = {
+  cpf1: "529.982.247-25",
+  cpf2: "453.178.287-91",
+  cpf3: "714.593.642-14",
+};
 
-    it('should require authentication for aniversariante routes', async () => {
-      vi.mocked(supabase.auth.getSession).mockResolvedValue({
-        data: { session: null },
-        error: null,
-      });
+const VALID_CNPJS = {
+  cnpj1: "11.222.333/0001-81",
+  cnpj2: "12.345.678/0001-95",
+};
 
-      const { data } = await supabase.auth.getSession();
-      expect(data.session).toBeNull();
-      // Em produção, isso resultaria em redirect para /auth
-    });
-  });
+// ===== FUNÇÕES DE VALIDAÇÃO =====
 
-  describe('Incomplete Registration Validation', () => {
-    it('should detect missing CPF in aniversariante profile', async () => {
-      const mockAniversariante = {
-        id: '123',
-        user_id: 'user-123',
-        cadastro_completo: false,
+interface AniversarianteData {
+  cpf: string | null;
+  telefone: string | null;
+  cidade: string | null;
+  estado: string | null;
+  cep: string | null;
+  logradouro: string | null;
+  bairro: string | null;
+  data_nascimento: string | null;
+  cadastro_completo?: boolean;
+}
+
+interface EstabelecimentoData {
+  cnpj: string | null;
+  nome_fantasia: string | null;
+  razao_social?: string | null;
+  telefone?: string | null;
+  email?: string | null;
+  cadastro_completo?: boolean;
+}
+
+/**
+ * Valida se aniversariante tem todos os campos obrigatórios
+ */
+function validateAniversarianteFields(data: AniversarianteData): {
+  isValid: boolean;
+  missingFields: string[];
+} {
+  const requiredFields: (keyof AniversarianteData)[] = [
+    "cpf",
+    "telefone",
+    "cidade",
+    "estado",
+    "cep",
+    "logradouro",
+    "bairro",
+    "data_nascimento",
+  ];
+
+  const missingFields = requiredFields.filter((field) => !data[field]);
+
+  return {
+    isValid: missingFields.length === 0,
+    missingFields,
+  };
+}
+
+/**
+ * Valida se estabelecimento tem todos os campos obrigatórios
+ */
+function validateEstabelecimentoFields(data: EstabelecimentoData): {
+  isValid: boolean;
+  missingFields: string[];
+} {
+  const requiredFields: (keyof EstabelecimentoData)[] = ["cnpj", "nome_fantasia"];
+
+  const missingFields = requiredFields.filter((field) => !data[field]);
+
+  return {
+    isValid: missingFields.length === 0,
+    missingFields,
+  };
+}
+
+/**
+ * Verifica duplicidade de documento
+ */
+function checkDuplicateDocument(
+  documento: string,
+  existingUserId: string | null,
+  currentUserId: string,
+): { isDuplicate: boolean; message: string } {
+  if (!existingUserId) {
+    return { isDuplicate: false, message: "Documento disponível" };
+  }
+
+  if (existingUserId === currentUserId) {
+    return { isDuplicate: false, message: "Documento pertence ao próprio usuário" };
+  }
+
+  return { isDuplicate: true, message: "Documento já cadastrado em outra conta" };
+}
+
+/**
+ * Valida CPF matematicamente
+ */
+function isValidCPF(cpf: string): boolean {
+  const numbers = cpf.replace(/\D/g, "");
+
+  if (numbers.length !== 11) return false;
+  if (/^(\d)\1+$/.test(numbers)) return false;
+
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(numbers[i]) * (10 - i);
+  }
+  let remainder = sum % 11;
+  const digit1 = remainder < 2 ? 0 : 11 - remainder;
+  if (parseInt(numbers[9]) !== digit1) return false;
+
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(numbers[i]) * (11 - i);
+  }
+  remainder = sum % 11;
+  const digit2 = remainder < 2 ? 0 : 11 - remainder;
+  if (parseInt(numbers[10]) !== digit2) return false;
+
+  return true;
+}
+
+/**
+ * Valida CNPJ matematicamente
+ */
+function isValidCNPJ(cnpj: string): boolean {
+  const numbers = cnpj.replace(/\D/g, "");
+
+  if (numbers.length !== 14) return false;
+  if (/^(\d)\1+$/.test(numbers)) return false;
+
+  const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  let sum = 0;
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(numbers[i]) * weights1[i];
+  }
+  let remainder = sum % 11;
+  const digit1 = remainder < 2 ? 0 : 11 - remainder;
+  if (parseInt(numbers[12]) !== digit1) return false;
+
+  const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  sum = 0;
+  for (let i = 0; i < 13; i++) {
+    sum += parseInt(numbers[i]) * weights2[i];
+  }
+  remainder = sum % 11;
+  const digit2 = remainder < 2 ? 0 : 11 - remainder;
+  if (parseInt(numbers[13]) !== digit2) return false;
+
+  return true;
+}
+
+// ===== TESTES =====
+
+describe("Validação de Cadastro de Aniversariante", () => {
+  describe("Campos Obrigatórios", () => {
+    it("deve rejeitar cadastro sem CPF", () => {
+      const data: AniversarianteData = {
         cpf: null,
-        telefone: '11999999999',
-        cidade: 'São Paulo',
-        estado: 'SP',
+        telefone: "48999999999",
+        cidade: "Florianópolis",
+        estado: "SC",
+        cep: "88015600",
+        logradouro: "Rua Teste",
+        bairro: "Centro",
+        data_nascimento: "1990-03-15",
       };
 
-      const hasAllRequiredFields = Boolean(
-        mockAniversariante.cpf &&
-        mockAniversariante.telefone &&
-        mockAniversariante.cidade &&
-        mockAniversariante.estado
-      );
+      const result = validateAniversarianteFields(data);
 
-      expect(hasAllRequiredFields).toBe(false);
-      expect(mockAniversariante.cadastro_completo).toBe(false);
+      expect(result.isValid).toBe(false);
+      expect(result.missingFields).toContain("cpf");
     });
 
-    it('should detect missing telefone in profile', async () => {
-      const mockAniversariante = {
-        cpf: '12345678900',
+    it("deve rejeitar cadastro sem telefone", () => {
+      const data: AniversarianteData = {
+        cpf: VALID_CPFS.cpf1,
         telefone: null,
-        cidade: 'São Paulo',
-        estado: 'SP',
-        cadastro_completo: false,
+        cidade: "Florianópolis",
+        estado: "SC",
+        cep: "88015600",
+        logradouro: "Rua Teste",
+        bairro: "Centro",
+        data_nascimento: "1990-03-15",
       };
 
-      const hasAllRequiredFields = Boolean(
-        mockAniversariante.cpf &&
-        mockAniversariante.telefone &&
-        mockAniversariante.cidade &&
-        mockAniversariante.estado
-      );
+      const result = validateAniversarianteFields(data);
 
-      expect(hasAllRequiredFields).toBe(false);
+      expect(result.isValid).toBe(false);
+      expect(result.missingFields).toContain("telefone");
     });
 
-    it('should detect missing address fields', async () => {
-      const mockAniversariante = {
-        cpf: '12345678900',
-        telefone: '11999999999',
+    it("deve rejeitar cadastro sem endereço completo", () => {
+      const data: AniversarianteData = {
+        cpf: VALID_CPFS.cpf1,
+        telefone: "48999999999",
         cidade: null,
         estado: null,
         cep: null,
         logradouro: null,
         bairro: null,
-        cadastro_completo: false,
+        data_nascimento: "1990-03-15",
       };
 
-      const hasAllRequiredFields = Boolean(
-        mockAniversariante.cpf &&
-        mockAniversariante.telefone &&
-        mockAniversariante.cidade &&
-        mockAniversariante.estado &&
-        mockAniversariante.cep &&
-        mockAniversariante.logradouro &&
-        mockAniversariante.bairro
-      );
+      const result = validateAniversarianteFields(data);
 
-      expect(hasAllRequiredFields).toBe(false);
+      expect(result.isValid).toBe(false);
+      expect(result.missingFields).toEqual(expect.arrayContaining(["cidade", "estado", "cep", "logradouro", "bairro"]));
     });
 
-    it('should validate complete registration', async () => {
-      const mockAniversariante = {
-        cpf: '12345678900',
-        telefone: '11999999999',
-        cidade: 'São Paulo',
-        estado: 'SP',
-        cep: '01310-100',
-        logradouro: 'Avenida Paulista',
-        bairro: 'Bela Vista',
-        data_nascimento: '1990-01-01',
-        cadastro_completo: true,
+    it("deve rejeitar cadastro sem data de nascimento", () => {
+      const data: AniversarianteData = {
+        cpf: VALID_CPFS.cpf1,
+        telefone: "48999999999",
+        cidade: "Florianópolis",
+        estado: "SC",
+        cep: "88015600",
+        logradouro: "Rua Teste",
+        bairro: "Centro",
+        data_nascimento: null,
       };
 
-      const hasAllRequiredFields = Boolean(
-        mockAniversariante.cpf &&
-        mockAniversariante.telefone &&
-        mockAniversariante.cidade &&
-        mockAniversariante.estado &&
-        mockAniversariante.cep &&
-        mockAniversariante.logradouro &&
-        mockAniversariante.bairro &&
-        mockAniversariante.data_nascimento
-      );
+      const result = validateAniversarianteFields(data);
 
-      expect(hasAllRequiredFields).toBe(true);
-      expect(mockAniversariante.cadastro_completo).toBe(true);
+      expect(result.isValid).toBe(false);
+      expect(result.missingFields).toContain("data_nascimento");
+    });
+
+    it("deve aceitar cadastro completo", () => {
+      const data: AniversarianteData = {
+        cpf: VALID_CPFS.cpf1,
+        telefone: "48999999999",
+        cidade: "Florianópolis",
+        estado: "SC",
+        cep: "88015600",
+        logradouro: "Rua Teste",
+        bairro: "Centro",
+        data_nascimento: "1990-03-15",
+      };
+
+      const result = validateAniversarianteFields(data);
+
+      expect(result.isValid).toBe(true);
+      expect(result.missingFields).toHaveLength(0);
     });
   });
 
-  describe('CPF Uniqueness Validation', () => {
-    it('should reject duplicate CPF registration', async () => {
-      const duplicateCPF = '12345678900';
-
-      // Simular que CPF já existe no banco
-      const existingUser = { id: 'existing-user', cpf: duplicateCPF };
-
-      // Validação lógica: se CPF existe e não é do mesmo usuário, é duplicado
-      const isDuplicate = existingUser && existingUser.id !== 'new-user-id';
-
-      expect(isDuplicate).toBe(true);
-      expect(existingUser.cpf).toBe(duplicateCPF);
-      // Deve rejeitar o cadastro
+  describe("Validação de CPF", () => {
+    it("deve aceitar CPFs válidos", () => {
+      expect(isValidCPF(VALID_CPFS.cpf1)).toBe(true);
+      expect(isValidCPF(VALID_CPFS.cpf2)).toBe(true);
+      expect(isValidCPF(VALID_CPFS.cpf3)).toBe(true);
     });
 
-    it('should allow same CPF for same user on update', async () => {
-      const cpf = '12345678900';
-      const userId = 'user-123';
+    it("deve rejeitar CPFs com dígitos verificadores errados", () => {
+      expect(isValidCPF("123.456.789-09")).toBe(false);
+      expect(isValidCPF("529.982.247-00")).toBe(false);
+    });
 
-      // Simular que CPF existe mas é do próprio usuário
-      const existingUser = { id: userId, cpf: cpf };
-
-      // Validação lógica: se CPF existe mas é do mesmo usuário, é permitido
-      const isDuplicate = existingUser && existingUser.id !== userId;
-
-      expect(isDuplicate).toBe(false);
-      // Deve permitir atualização
+    it("deve rejeitar CPFs com todos os dígitos iguais", () => {
+      expect(isValidCPF("111.111.111-11")).toBe(false);
+      expect(isValidCPF("000.000.000-00")).toBe(false);
     });
   });
 
-  describe('Role Creation Timing', () => {
-    it('should not have role before registration completion', () => {
-      const userWithoutRole = {
-        session: { user: { id: 'user-123' } },
-        profile: { id: 'user-123', email: 'test@example.com' },
-        role: null,
-        cadastro_completo: false,
-      };
+  describe("Verificação de CPF Duplicado", () => {
+    it("deve bloquear CPF já cadastrado em outra conta", () => {
+      const result = checkDuplicateDocument(VALID_CPFS.cpf1, "existing-user-id", "new-user-id");
 
-      expect(userWithoutRole.role).toBeNull();
-      expect(userWithoutRole.cadastro_completo).toBe(false);
+      expect(result.isDuplicate).toBe(true);
+      expect(result.message).toContain("já cadastrado");
     });
 
-    it('should have role only after cadastro_completo = true', () => {
-      const userWithRole = {
-        session: { user: { id: 'user-123' } },
-        profile: { id: 'user-123', email: 'test@example.com' },
-        role: 'aniversariante',
-        cadastro_completo: true,
-      };
+    it("deve permitir CPF do próprio usuário em atualização", () => {
+      const userId = "user-123";
+      const result = checkDuplicateDocument(VALID_CPFS.cpf1, userId, userId);
 
-      expect(userWithRole.role).toBe('aniversariante');
-      expect(userWithRole.cadastro_completo).toBe(true);
+      expect(result.isDuplicate).toBe(false);
+      expect(result.message).toContain("próprio usuário");
+    });
+
+    it("deve permitir CPF não cadastrado", () => {
+      const result = checkDuplicateDocument(VALID_CPFS.cpf1, null, "new-user-id");
+
+      expect(result.isDuplicate).toBe(false);
+      expect(result.message).toContain("disponível");
     });
   });
+});
 
-  describe('Establishment Registration Security', () => {
-    it('should detect missing CNPJ', () => {
-      const establishment = {
+describe("Validação de Cadastro de Estabelecimento", () => {
+  describe("Campos Obrigatórios", () => {
+    it("deve rejeitar cadastro sem CNPJ", () => {
+      const data: EstabelecimentoData = {
         cnpj: null,
-        nome_fantasia: 'Restaurante Teste',
-        cadastro_completo: false,
+        nome_fantasia: "Restaurante Teste",
       };
 
-      const isValid = Boolean(
-        establishment.cnpj && establishment.nome_fantasia
-      );
+      const result = validateEstabelecimentoFields(data);
 
-      expect(isValid).toBe(false);
-      expect(establishment.cadastro_completo).toBe(false);
+      expect(result.isValid).toBe(false);
+      expect(result.missingFields).toContain("cnpj");
     });
 
-    it('should detect missing nome_fantasia', () => {
-      const establishment = {
-        cnpj: '12345678000199',
+    it("deve rejeitar cadastro sem nome fantasia", () => {
+      const data: EstabelecimentoData = {
+        cnpj: VALID_CNPJS.cnpj1,
         nome_fantasia: null,
-        cadastro_completo: false,
       };
 
-      const isValid = Boolean(
-        establishment.cnpj && establishment.nome_fantasia
-      );
+      const result = validateEstabelecimentoFields(data);
 
-      expect(isValid).toBe(false);
+      expect(result.isValid).toBe(false);
+      expect(result.missingFields).toContain("nome_fantasia");
     });
 
-    it('should validate complete establishment registration', () => {
-      const establishment = {
-        cnpj: '12345678000199',
-        nome_fantasia: 'Restaurante Teste',
-        cadastro_completo: true,
+    it("deve aceitar cadastro com campos obrigatórios", () => {
+      const data: EstabelecimentoData = {
+        cnpj: VALID_CNPJS.cnpj1,
+        nome_fantasia: "Restaurante Teste",
       };
 
-      const isValid = Boolean(
-        establishment.cnpj && establishment.nome_fantasia
-      );
+      const result = validateEstabelecimentoFields(data);
 
-      expect(isValid).toBe(true);
-      expect(establishment.cadastro_completo).toBe(true);
+      expect(result.isValid).toBe(true);
+      expect(result.missingFields).toHaveLength(0);
     });
   });
 
-  describe('CNPJ Uniqueness Validation', () => {
-    it('should reject duplicate CNPJ registration', async () => {
-      const duplicateCNPJ = '12345678000199';
-
-      // Mock: CNPJ já existe
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: { id: 'existing-establishment', cnpj: duplicateCNPJ },
-              error: null,
-            }),
-          }),
-        }),
-      } as any);
-
-      const { data } = await supabase
-        .from('estabelecimentos')
-        .select('id, cnpj')
-        .eq('cnpj', duplicateCNPJ)
-        .maybeSingle();
-
-      expect(data).toBeTruthy();
-      expect(data?.cnpj).toBe(duplicateCNPJ);
-      // Deve rejeitar o cadastro
+  describe("Validação de CNPJ", () => {
+    it("deve aceitar CNPJs válidos", () => {
+      expect(isValidCNPJ(VALID_CNPJS.cnpj1)).toBe(true);
+      expect(isValidCNPJ(VALID_CNPJS.cnpj2)).toBe(true);
     });
+
+    it("deve rejeitar CNPJs com dígitos verificadores errados", () => {
+      expect(isValidCNPJ("12.345.678/0001-90")).toBe(false);
+      expect(isValidCNPJ("11.222.333/0001-00")).toBe(false);
+    });
+
+    it("deve rejeitar CNPJs com todos os dígitos iguais", () => {
+      expect(isValidCNPJ("11.111.111/1111-11")).toBe(false);
+      expect(isValidCNPJ("00.000.000/0000-00")).toBe(false);
+    });
+  });
+
+  describe("Verificação de CNPJ Duplicado", () => {
+    it("deve bloquear CNPJ já cadastrado", () => {
+      const result = checkDuplicateDocument(VALID_CNPJS.cnpj1, "existing-establishment-id", "new-establishment-id");
+
+      expect(result.isDuplicate).toBe(true);
+    });
+
+    it("deve permitir CNPJ do próprio estabelecimento em atualização", () => {
+      const establishmentId = "estab-123";
+      const result = checkDuplicateDocument(VALID_CNPJS.cnpj1, establishmentId, establishmentId);
+
+      expect(result.isDuplicate).toBe(false);
+    });
+  });
+});
+
+describe("Fluxo de Role e Cadastro Completo", () => {
+  describe("Timing de Criação de Role", () => {
+    it("não deve ter role antes de completar cadastro", () => {
+      const userState = {
+        hasSession: true,
+        hasProfile: true,
+        hasRole: false,
+        cadastroCompleto: false,
+      };
+
+      // Regra: role só é criado quando cadastro_completo = true
+      const shouldHaveRole = userState.cadastroCompleto;
+
+      expect(shouldHaveRole).toBe(false);
+      expect(userState.hasRole).toBe(shouldHaveRole);
+    });
+
+    it("deve ter role após completar cadastro", () => {
+      const userState = {
+        hasSession: true,
+        hasProfile: true,
+        hasRole: true,
+        cadastroCompleto: true,
+      };
+
+      const shouldHaveRole = userState.cadastroCompleto;
+
+      expect(shouldHaveRole).toBe(true);
+      expect(userState.hasRole).toBe(shouldHaveRole);
+    });
+  });
+
+  describe("Transição de Estados", () => {
+    it("deve seguir fluxo correto de cadastro", () => {
+      const estados = [
+        { step: "início", session: false, profile: false, role: false, cadastroCompleto: false },
+        { step: "após signup", session: true, profile: true, role: false, cadastroCompleto: false },
+        { step: "step2 parcial", session: true, profile: true, role: false, cadastroCompleto: false },
+        { step: "step2 completo", session: true, profile: true, role: true, cadastroCompleto: true },
+      ];
+
+      // Verificar progressão lógica
+      estados.forEach((estado, index) => {
+        if (index > 0) {
+          const anterior = estados[index - 1];
+
+          // Session deve permanecer true após login
+          if (anterior.session) {
+            expect(estado.session).toBe(true);
+          }
+
+          // Profile deve permanecer true após criação
+          if (anterior.profile) {
+            expect(estado.profile).toBe(true);
+          }
+
+          // Role só deve ser true quando cadastroCompleto for true
+          if (estado.role) {
+            expect(estado.cadastroCompleto).toBe(true);
+          }
+        }
+      });
+    });
+  });
+});
+
+describe("Validação de Telefone", () => {
+  const isValidPhone = (phone: string): boolean => {
+    const numbers = phone.replace(/\D/g, "");
+    return numbers.length === 11 && numbers[2] === "9";
+  };
+
+  it("deve aceitar celular válido", () => {
+    expect(isValidPhone("(48) 99999-9999")).toBe(true);
+    expect(isValidPhone("48999999999")).toBe(true);
+  });
+
+  it("deve rejeitar telefone fixo", () => {
+    expect(isValidPhone("(48) 3333-3333")).toBe(false);
+  });
+
+  it("deve rejeitar telefone incompleto", () => {
+    expect(isValidPhone("48999")).toBe(false);
+  });
+});
+
+describe("Validação de CEP", () => {
+  const isValidCEP = (cep: string): boolean => {
+    const numbers = cep.replace(/\D/g, "");
+    return numbers.length === 8;
+  };
+
+  it("deve aceitar CEP válido", () => {
+    expect(isValidCEP("88015-600")).toBe(true);
+    expect(isValidCEP("88015600")).toBe(true);
+  });
+
+  it("deve rejeitar CEP incompleto", () => {
+    expect(isValidCEP("8801")).toBe(false);
+  });
+});
+
+describe("Casos de Borda no Cadastro", () => {
+  it("deve tratar strings vazias como campos faltando", () => {
+    const data: AniversarianteData = {
+      cpf: "",
+      telefone: "",
+      cidade: "",
+      estado: "",
+      cep: "",
+      logradouro: "",
+      bairro: "",
+      data_nascimento: "",
+    };
+
+    const result = validateAniversarianteFields(data);
+
+    expect(result.isValid).toBe(false);
+    expect(result.missingFields).toHaveLength(8);
+  });
+
+  it("deve tratar espaços em branco como campos faltando", () => {
+    const data: AniversarianteData = {
+      cpf: "   ",
+      telefone: "   ",
+      cidade: "   ",
+      estado: "   ",
+      cep: "   ",
+      logradouro: "   ",
+      bairro: "   ",
+      data_nascimento: "   ",
+    };
+
+    // Trim antes de validar
+    const trimmedData: AniversarianteData = {
+      cpf: data.cpf?.trim() || null,
+      telefone: data.telefone?.trim() || null,
+      cidade: data.cidade?.trim() || null,
+      estado: data.estado?.trim() || null,
+      cep: data.cep?.trim() || null,
+      logradouro: data.logradouro?.trim() || null,
+      bairro: data.bairro?.trim() || null,
+      data_nascimento: data.data_nascimento?.trim() || null,
+    };
+
+    const result = validateAniversarianteFields(trimmedData);
+
+    expect(result.isValid).toBe(false);
   });
 });

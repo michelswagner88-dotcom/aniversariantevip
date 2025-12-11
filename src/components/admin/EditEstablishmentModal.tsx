@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, MapPin, Camera, RefreshCw, Sparkles, AlertTriangle } from "lucide-react";
+import { Loader2, MapPin, Camera, RefreshCw, Sparkles, AlertTriangle, X } from "lucide-react";
 import { processarImagemQuadrada, dataURLtoBlob } from "@/lib/imageUtils";
 import { CATEGORIAS_ESTABELECIMENTO, PERIODOS_VALIDADE } from "@/lib/constants";
 import { getSubcategoriesForCategory } from "@/constants/categorySubcategories";
@@ -57,6 +57,8 @@ interface EditEstablishmentModalProps {
 
 export function EditEstablishmentModal({ establishment, open, onOpenChange, onSuccess }: EditEstablishmentModalProps) {
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [saving, setSaving] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
   const [fetchingPhoto, setFetchingPhoto] = useState(false);
@@ -66,11 +68,11 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
   // Update formData when establishment changes
   useEffect(() => {
     if (establishment) {
-      console.log('Modal: Carregando dados do estabelecimento:', establishment);
       setFormData(establishment);
     }
   }, [establishment]);
 
+  // Recalcular posição via Edge Function (não expõe API key)
   const handleRecalculatePosition = async () => {
     if (!formData?.endereco) {
       toast.error("Endereço completo é necessário para calcular posição");
@@ -79,21 +81,21 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
 
     try {
       setRecalculating(true);
-      
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(formData.endereco)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
-      );
-      
-      const data = await response.json();
-      
-      if (data.status === 'OK' && data.results[0]) {
-        const { lat, lng } = data.results[0].geometry.location;
+
+      // Usar Edge Function ao invés de chamar API direto (segurança)
+      const { data, error } = await supabase.functions.invoke("geocode-address", {
+        body: { endereco: formData.endereco },
+      });
+
+      if (error) throw error;
+
+      if (data?.lat && data?.lng) {
         setFormData({
           ...formData,
-          latitude: lat,
-          longitude: lng,
+          latitude: data.lat,
+          longitude: data.lng,
         });
-        toast.success(`Posição atualizada: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+        toast.success(`Posição atualizada: ${data.lat.toFixed(6)}, ${data.lng.toFixed(6)}`);
       } else {
         toast.error("Não foi possível calcular a posição. Verifique o endereço.");
       }
@@ -105,6 +107,7 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
     }
   };
 
+  // Buscar foto do Google Places
   const handleFetchGooglePhoto = async (forceAnyPhoto = false) => {
     if (!formData?.nome_fantasia && !formData?.razao_social) {
       toast.error("Nome do estabelecimento é necessário para buscar foto");
@@ -113,21 +116,19 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
 
     try {
       setFetchingPhoto(true);
-      
+
       const toastId = toast.loading(
-        forceAnyPhoto 
-          ? "Buscando qualquer foto disponível..." 
-          : "Buscando foto de qualidade no Google..."
+        forceAnyPhoto ? "Buscando qualquer foto disponível..." : "Buscando foto de qualidade no Google...",
       );
-      
-      const { data, error } = await supabase.functions.invoke('fetch-place-photo', {
+
+      const { data, error } = await supabase.functions.invoke("fetch-place-photo", {
         body: {
           nome: formData.nome_fantasia || formData.razao_social,
           endereco: formData.endereco,
           cidade: formData.cidade,
           estado: formData.estado,
-          skipValidation: forceAnyPhoto // Permite forçar qualquer foto
-        }
+          skipValidation: forceAnyPhoto,
+        },
       });
 
       toast.dismiss(toastId);
@@ -139,38 +140,26 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
           ...formData,
           logo_url: data.photo_url,
         });
-        
-        const dimensions = data.photo_dimensions 
-          ? ` (${data.photo_dimensions.width}x${data.photo_dimensions.height})` 
-          : '';
-        
-        toast.success(
-          `✅ Foto encontrada! ${data.place_name || ''}${dimensions}`,
-          { duration: 4000 }
-        );
-        
+
+        const dimensions = data.photo_dimensions
+          ? ` (${data.photo_dimensions.width}x${data.photo_dimensions.height})`
+          : "";
+
+        toast.success(`Foto encontrada! ${data.place_name || ""}${dimensions}`);
+
         if (data.validation_applied && data.photos_available > 1) {
-          toast.info(`📊 Selecionada melhor foto de ${data.photos_available} disponíveis`, { duration: 3000 });
+          toast.info(`Selecionada melhor foto de ${data.photos_available} disponíveis`);
         }
+      } else if (data?.validation_applied && data?.photos_available > 0) {
+        toast.error("Fotos rejeitadas pela validação de qualidade", {
+          description: `${data.photos_available} fotos disponíveis, mas nenhuma passou nos critérios.`,
+          action: {
+            label: "Tentar qualquer foto",
+            onClick: () => handleFetchGooglePhoto(true),
+          },
+        });
       } else {
-        // Se falhou com validação, oferecer opção de tentar sem validação
-        if (data?.validation_applied && data?.photos_available > 0) {
-          toast.error(
-            <div>
-              <p className="font-medium">Fotos rejeitadas pela validação</p>
-              <p className="text-sm opacity-80">{data.photos_available} fotos disponíveis, mas nenhuma passou nos critérios de qualidade</p>
-              <button 
-                onClick={() => handleFetchGooglePhoto(true)}
-                className="mt-2 text-xs underline hover:no-underline"
-              >
-                Tentar buscar qualquer foto →
-              </button>
-            </div>,
-            { duration: 8000 }
-          );
-        } else {
-          toast.error(data?.error || "Estabelecimento não encontrado no Google Places");
-        }
+        toast.error(data?.error || "Estabelecimento não encontrado no Google Places");
       }
     } catch (error) {
       console.error("Erro ao buscar foto:", error);
@@ -184,60 +173,64 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
   const isFotoValida = formData?.logo_url && validarUrlFoto(formData.logo_url);
   const placeholderUrl = getPlaceholderPorCategoria(formData?.categoria);
 
+  // Upload de arquivo
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
-    if (!file.type.startsWith('image/')) {
-      toast.error('Por favor, envie apenas imagens');
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor, envie apenas imagens");
       return;
     }
-    
+
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('Imagem muito grande. Máximo 10MB.');
+      toast.error("Imagem muito grande. Máximo 10MB.");
       return;
     }
-    
+
     try {
       setIsProcessingImage(true);
-      toast.info('Processando imagem...');
-      
-      // Processar e recortar automaticamente para formato quadrado
+      toast.info("Processando imagem...");
+
       const imagemProcessada = await processarImagemQuadrada(file, 400);
-      
-      // Fazer upload para o storage
       const fileName = `estabelecimento_${Date.now()}.jpg`;
       const blob = dataURLtoBlob(imagemProcessada);
-      
-      const { data, error } = await supabase.storage
-        .from('estabelecimento-logos')
-        .upload(fileName, blob, {
-          contentType: 'image/jpeg',
-        });
-      
+
+      const { error } = await supabase.storage
+        .from("estabelecimento-logos")
+        .upload(fileName, blob, { contentType: "image/jpeg" });
+
       if (error) throw error;
-      
-      // Obter URL pública
-      const { data: urlData } = supabase.storage
-        .from('estabelecimento-logos')
-        .getPublicUrl(fileName);
-      
+
+      const { data: urlData } = supabase.storage.from("estabelecimento-logos").getPublicUrl(fileName);
+
       if (formData) {
         setFormData({
           ...formData,
           logo_url: urlData.publicUrl,
         });
       }
-      
-      toast.success('Foto adicionada com sucesso!');
+
+      toast.success("Foto adicionada com sucesso!");
     } catch (err) {
-      console.error('Erro ao processar imagem:', err);
-      toast.error('Erro ao processar imagem. Tente novamente.');
+      console.error("Erro ao processar imagem:", err);
+      toast.error("Erro ao processar imagem. Tente novamente.");
     } finally {
       setIsProcessingImage(false);
     }
   };
 
+  // Máscara de CNPJ
+  const formatCNPJ = (value: string) => {
+    const numbers = value.replace(/\D/g, "").slice(0, 14);
+    return numbers
+      .replace(/(\d{2})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1/$2")
+      .replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+  };
+
+  // Salvar alterações
   const handleSave = async () => {
     if (!formData) return;
 
@@ -245,7 +238,7 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
       setSaving(true);
 
       const { error } = await supabase
-        .from('estabelecimentos')
+        .from("estabelecimentos")
         .update({
           nome_fantasia: formData.nome_fantasia,
           razao_social: formData.razao_social,
@@ -267,17 +260,19 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
           logo_url: formData.logo_url,
           descricao_beneficio: formData.descricao_beneficio,
           periodo_validade_beneficio: formData.periodo_validade_beneficio,
+          regras_utilizacao: formData.regras_utilizacao,
           plan_status: formData.plan_status,
           ativo: formData.ativo,
+          telefone: formData.telefone,
+          email: formData.email,
+          horario_funcionamento: formData.horario_funcionamento,
         })
-        .eq('id', formData.id);
+        .eq("id", formData.id);
 
       if (error) throw error;
 
-      // IMPORTANTE: Invalidar TODAS as queries de estabelecimentos para forçar refetch
-      console.log('[EditEstablishment] Invalidando cache de estabelecimentos...');
-      await queryClient.invalidateQueries({ queryKey: ['estabelecimentos'] });
-      await queryClient.invalidateQueries({ queryKey: ['public_estabelecimentos'] });
+      await queryClient.invalidateQueries({ queryKey: ["estabelecimentos"] });
+      await queryClient.invalidateQueries({ queryKey: ["public_estabelecimentos"] });
 
       toast.success("Estabelecimento atualizado com sucesso!");
       onSuccess();
@@ -290,68 +285,86 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
     }
   };
 
+  const triggerFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+
   if (!formData) return null;
+
+  const isAnyLoading = saving || recalculating || fetchingPhoto || isProcessingImage;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Editar Estabelecimento Completo</DialogTitle>
-          <DialogDescription>
-            Controle total para corrigir e enriquecer dados
-          </DialogDescription>
+          <DialogTitle>Editar Estabelecimento</DialogTitle>
+          <DialogDescription>Edite todos os dados do estabelecimento</DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="basico" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="basico">Básico</TabsTrigger>
-            <TabsTrigger value="localizacao">Endereço</TabsTrigger>
-            <TabsTrigger value="contato">Contato</TabsTrigger>
-            <TabsTrigger value="beneficio">Benefício</TabsTrigger>
-            <TabsTrigger value="imagens">Imagens</TabsTrigger>
-            <TabsTrigger value="config">Config</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="basico" className="min-h-[44px]">
+              Básico
+            </TabsTrigger>
+            <TabsTrigger value="localizacao" className="min-h-[44px]">
+              Endereço
+            </TabsTrigger>
+            <TabsTrigger value="contato" className="min-h-[44px]">
+              Contato
+            </TabsTrigger>
+            <TabsTrigger value="beneficio" className="min-h-[44px]">
+              Benefício
+            </TabsTrigger>
+            <TabsTrigger value="config" className="min-h-[44px]">
+              Config
+            </TabsTrigger>
           </TabsList>
 
           {/* DADOS BÁSICOS */}
           <TabsContent value="basico" className="space-y-4">
             <div>
-              <Label>Nome Fantasia</Label>
+              <Label htmlFor="nome_fantasia">Nome Fantasia</Label>
               <Input
-                value={formData.nome_fantasia || ''}
-                onChange={(e) => setFormData({...formData, nome_fantasia: e.target.value})}
+                id="nome_fantasia"
+                value={formData.nome_fantasia || ""}
+                onChange={(e) => setFormData({ ...formData, nome_fantasia: e.target.value })}
                 placeholder="Nome do estabelecimento"
+                className="min-h-[44px]"
               />
             </div>
 
             <div>
-              <Label>Razão Social</Label>
+              <Label htmlFor="razao_social">Razão Social</Label>
               <Input
+                id="razao_social"
                 value={formData.razao_social}
-                onChange={(e) => setFormData({...formData, razao_social: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, razao_social: e.target.value })}
                 placeholder="Razão social oficial"
+                className="min-h-[44px]"
               />
             </div>
 
             <div>
-              <Label>CNPJ</Label>
+              <Label htmlFor="cnpj">CNPJ</Label>
               <Input
+                id="cnpj"
                 value={formData.cnpj}
-                onChange={(e) => setFormData({...formData, cnpj: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, cnpj: formatCNPJ(e.target.value) })}
                 placeholder="00.000.000/0000-00"
                 maxLength={18}
+                className="min-h-[44px]"
               />
             </div>
 
             <div>
-              <Label>Categoria *</Label>
+              <Label htmlFor="categoria">Categoria *</Label>
               <Select
-                value={formData.categoria?.[0] || ''}
+                value={formData.categoria?.[0] || ""}
                 onValueChange={(value) => {
-                  // Limpar subcategorias ao mudar categoria
-                  setFormData({...formData, categoria: [value], especialidades: []});
+                  setFormData({ ...formData, categoria: [value], especialidades: [] });
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger id="categoria" className="min-h-[44px]">
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
@@ -375,32 +388,35 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
                   Selecione até 3 subcategorias que melhor descrevem o estabelecimento
                 </p>
                 <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-3 bg-muted/30 rounded-lg border">
-                  {getSubcategoriesForCategory(formData.categoria[0]).map(subcategory => {
+                  {getSubcategoriesForCategory(formData.categoria[0]).map((subcategory) => {
                     const currentSubs = formData.especialidades || [];
                     const isSelected = currentSubs.includes(subcategory.label);
                     const isDisabled = currentSubs.length >= 3 && !isSelected;
-                    
+
                     return (
                       <Badge
                         key={subcategory.id}
                         variant={isSelected ? "default" : "outline"}
                         className={`
-                          cursor-pointer transition-all
-                          ${isSelected 
-                            ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white border-transparent hover:from-violet-700 hover:to-fuchsia-700' 
-                            : 'hover:bg-violet-600/20 border-muted-foreground/30 hover:border-violet-500'
-                          }
-                          ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
-                        `}
+                            cursor-pointer transition-all min-h-[32px] px-3
+                            ${
+                              isSelected
+                                ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white border-transparent hover:from-violet-700 hover:to-fuchsia-700"
+                                : "hover:bg-violet-600/20 border-muted-foreground/30 hover:border-violet-500"
+                            }
+                            ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                          `}
                         onClick={() => {
                           if (isDisabled) return;
-                          const newSubs = isSelected 
-                            ? currentSubs.filter(s => s !== subcategory.label)
+                          const newSubs = isSelected
+                            ? currentSubs.filter((s) => s !== subcategory.label)
                             : [...currentSubs, subcategory.label];
-                          setFormData({...formData, especialidades: newSubs});
+                          setFormData({ ...formData, especialidades: newSubs });
                         }}
                       >
-                        <span className="mr-1">{subcategory.icon}</span>
+                        <span className="mr-1" aria-hidden="true">
+                          {subcategory.icon}
+                        </span>
                         {subcategory.label}
                       </Badge>
                     );
@@ -409,9 +425,9 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
                 <p className="text-xs text-muted-foreground">
                   {(formData.especialidades || []).length}/3 selecionadas
                   {(formData.especialidades || []).length > 0 && (
-                    <button 
+                    <button
                       type="button"
-                      onClick={() => setFormData({...formData, especialidades: []})}
+                      onClick={() => setFormData({ ...formData, especialidades: [] })}
                       className="ml-2 text-violet-500 hover:text-violet-400"
                     >
                       (limpar)
@@ -423,17 +439,145 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
 
             {/* Bio */}
             <div>
-              <Label>Bio / Descrição do Estabelecimento</Label>
+              <Label htmlFor="bio">Bio / Descrição do Estabelecimento</Label>
               <Textarea
-                value={formData.bio || ''}
-                onChange={(e) => setFormData({...formData, bio: e.target.value.slice(0, 500)})}
-                placeholder="Descreva o estabelecimento em até 500 caracteres. Ex: Há 15 anos transformando vidas através do fitness. Espaço climatizado com mais de 200 equipamentos."
+                id="bio"
+                value={formData.bio || ""}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value.slice(0, 500) })}
+                placeholder="Descreva o estabelecimento em até 500 caracteres."
                 rows={3}
                 className="resize-none"
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                {(formData.bio || '').length}/500 caracteres
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">{(formData.bio || "").length}/500 caracteres</p>
+            </div>
+
+            {/* Foto */}
+            <div className="space-y-3 pt-4 border-t">
+              <Label>Foto do Estabelecimento</Label>
+
+              {formData.logo_url && !isFotoValida && (
+                <div className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                  <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" aria-hidden="true" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-amber-400">Foto possivelmente inadequada</p>
+                    <p className="text-xs text-amber-400/70">A URL sugere que pode ser um logo, ícone ou placeholder</p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleFetchGooglePhoto(false)}
+                    disabled={fetchingPhoto}
+                    className="shrink-0 min-h-[36px]"
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-1 ${fetchingPhoto ? "animate-spin" : ""}`} aria-hidden="true" />
+                    Buscar nova
+                  </Button>
+                </div>
+              )}
+
+              <div className="flex items-start gap-6">
+                {/* Preview da foto */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    className={`w-40 aspect-[4/3] rounded-xl overflow-hidden border-2 border-dashed 
+                      ${isProcessingImage ? "border-violet-500" : "border-white/20"} 
+                      bg-slate-800 flex items-center justify-center cursor-pointer 
+                      hover:border-violet-500 transition-colors`}
+                    onClick={triggerFileUpload}
+                    disabled={isProcessingImage}
+                    aria-label="Clique para adicionar foto"
+                  >
+                    {isProcessingImage ? (
+                      <div className="text-center">
+                        <Loader2 className="w-8 h-8 text-violet-500 mx-auto mb-2 animate-spin" aria-hidden="true" />
+                        <span className="text-xs text-gray-400">Processando...</span>
+                      </div>
+                    ) : formData.logo_url ? (
+                      <img
+                        src={formData.logo_url}
+                        alt="Foto do estabelecimento"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = placeholderUrl;
+                        }}
+                      />
+                    ) : (
+                      <div className="text-center p-2">
+                        <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" aria-hidden="true" />
+                        <span className="text-xs text-gray-400">Toque para adicionar</span>
+                      </div>
+                    )}
+                  </button>
+
+                  {formData.logo_url && !isProcessingImage && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="destructive"
+                      className="absolute -top-2 -right-2 h-7 w-7 rounded-full"
+                      onClick={() => setFormData({ ...formData, logo_url: "" })}
+                      aria-label="Remover foto"
+                    >
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Opções */}
+                <div className="flex-1 space-y-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    disabled={isProcessingImage}
+                    aria-label="Upload de foto"
+                  />
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={triggerFileUpload}
+                    disabled={isProcessingImage}
+                    className="w-full min-h-[44px]"
+                  >
+                    <Camera className="w-4 h-4 mr-2" aria-hidden="true" />
+                    Enviar Foto Manual
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={() => handleFetchGooglePhoto(false)}
+                    disabled={isAnyLoading}
+                    className="w-full min-h-[44px] bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700"
+                  >
+                    {fetchingPhoto ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 mr-2" aria-hidden="true" />
+                    )}
+                    Buscar Melhor Foto (Google)
+                  </Button>
+
+                  <p className="text-xs text-gray-400">A busca inteligente filtra logos e ícones automaticamente</p>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="logo_url">Ou insira URL da Imagem</Label>
+                <Input
+                  id="logo_url"
+                  value={formData.logo_url || ""}
+                  onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
+                  placeholder="https://exemplo.com/foto.jpg"
+                  disabled={isProcessingImage}
+                  className="min-h-[44px]"
+                />
+              </div>
             </div>
           </TabsContent>
 
@@ -441,58 +585,70 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
           <TabsContent value="localizacao" className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>CEP</Label>
+                <Label htmlFor="cep">CEP</Label>
                 <Input
-                  value={formData.cep || ''}
-                  onChange={(e) => setFormData({...formData, cep: e.target.value})}
+                  id="cep"
+                  value={formData.cep || ""}
+                  onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
                   placeholder="00000-000"
                   maxLength={9}
+                  className="min-h-[44px]"
                 />
               </div>
               <div>
-                <Label>Número</Label>
+                <Label htmlFor="numero">Número</Label>
                 <Input
-                  value={formData.numero || ''}
-                  onChange={(e) => setFormData({...formData, numero: e.target.value})}
+                  id="numero"
+                  value={formData.numero || ""}
+                  onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
                   placeholder="123"
+                  className="min-h-[44px]"
                 />
               </div>
             </div>
 
             <div>
-              <Label>Complemento</Label>
+              <Label htmlFor="complemento">Complemento</Label>
               <Input
-                value={formData.complemento || ''}
-                onChange={(e) => setFormData({...formData, complemento: e.target.value})}
+                id="complemento"
+                value={formData.complemento || ""}
+                onChange={(e) => setFormData({ ...formData, complemento: e.target.value })}
                 placeholder="Sala 45, Shopping Center..."
+                className="min-h-[44px]"
               />
             </div>
 
             <div>
-              <Label>Endereço Completo</Label>
+              <Label htmlFor="endereco">Endereço Completo</Label>
               <Input
-                value={formData.endereco || ''}
-                onChange={(e) => setFormData({...formData, endereco: e.target.value})}
+                id="endereco"
+                value={formData.endereco || ""}
+                onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
                 placeholder="Rua ABC, 123 - Bairro, Cidade - UF"
+                className="min-h-[44px]"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Cidade</Label>
+                <Label htmlFor="cidade">Cidade</Label>
                 <Input
-                  value={formData.cidade || ''}
-                  onChange={(e) => setFormData({...formData, cidade: e.target.value})}
+                  id="cidade"
+                  value={formData.cidade || ""}
+                  onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
                   placeholder="Florianópolis"
+                  className="min-h-[44px]"
                 />
               </div>
               <div>
-                <Label>Estado (UF)</Label>
+                <Label htmlFor="estado">Estado (UF)</Label>
                 <Input
-                  value={formData.estado || ''}
-                  onChange={(e) => setFormData({...formData, estado: e.target.value.toUpperCase()})}
+                  id="estado"
+                  value={formData.estado || ""}
+                  onChange={(e) => setFormData({ ...formData, estado: e.target.value.toUpperCase() })}
                   placeholder="SC"
                   maxLength={2}
+                  className="min-h-[44px]"
                 />
               </div>
             </div>
@@ -501,42 +657,50 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
               <Label className="text-base font-semibold">Coordenadas GPS</Label>
               <div className="grid grid-cols-2 gap-4 mt-2">
                 <div>
-                  <Label className="text-xs">Latitude</Label>
+                  <Label htmlFor="latitude" className="text-xs">
+                    Latitude
+                  </Label>
                   <Input
+                    id="latitude"
                     type="number"
                     step="0.000001"
-                    value={formData.latitude || ''}
-                    onChange={(e) => setFormData({...formData, latitude: parseFloat(e.target.value) || null})}
+                    value={formData.latitude || ""}
+                    onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) || null })}
                     placeholder="-27.5954"
+                    className="min-h-[44px]"
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">Longitude</Label>
+                  <Label htmlFor="longitude" className="text-xs">
+                    Longitude
+                  </Label>
                   <Input
+                    id="longitude"
                     type="number"
                     step="0.000001"
-                    value={formData.longitude || ''}
-                    onChange={(e) => setFormData({...formData, longitude: parseFloat(e.target.value) || null})}
+                    value={formData.longitude || ""}
+                    onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) || null })}
                     placeholder="-48.5480"
+                    className="min-h-[44px]"
                   />
                 </div>
               </div>
               <Button
                 type="button"
                 variant="outline"
-                className="w-full mt-3"
+                className="w-full mt-3 min-h-[44px]"
                 onClick={handleRecalculatePosition}
                 disabled={recalculating || !formData.endereco}
               >
                 {recalculating ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                     Calculando...
                   </>
                 ) : (
                   <>
-                    <MapPin className="mr-2 h-4 w-4" />
-                    📍 Recalcular Posição no Google
+                    <MapPin className="mr-2 h-4 w-4" aria-hidden="true" />
+                    Recalcular Posição
                   </>
                 )}
               </Button>
@@ -546,48 +710,58 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
           {/* CONTATO */}
           <TabsContent value="contato" className="space-y-4">
             <div>
-              <Label>Telefone Fixo</Label>
+              <Label htmlFor="telefone">Telefone Fixo</Label>
               <Input
-                value={formData.telefone || ''}
-                onChange={(e) => setFormData({...formData, telefone: e.target.value})}
+                id="telefone"
+                value={formData.telefone || ""}
+                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
                 placeholder="(48) 3333-3333"
+                className="min-h-[44px]"
               />
             </div>
 
             <div>
-              <Label>WhatsApp</Label>
+              <Label htmlFor="whatsapp">WhatsApp</Label>
               <Input
-                value={formData.whatsapp || ''}
-                onChange={(e) => setFormData({...formData, whatsapp: e.target.value})}
+                id="whatsapp"
+                value={formData.whatsapp || ""}
+                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
                 placeholder="(48) 99999-9999"
+                className="min-h-[44px]"
               />
             </div>
 
             <div>
-              <Label>Email</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
+                id="email"
                 type="email"
-                value={formData.email || ''}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                value={formData.email || ""}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="contato@estabelecimento.com.br"
+                className="min-h-[44px]"
               />
             </div>
 
             <div>
-              <Label>Instagram</Label>
+              <Label htmlFor="instagram">Instagram</Label>
               <Input
-                value={formData.instagram || ''}
-                onChange={(e) => setFormData({...formData, instagram: e.target.value})}
+                id="instagram"
+                value={formData.instagram || ""}
+                onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
                 placeholder="@estabelecimento"
+                className="min-h-[44px]"
               />
             </div>
 
             <div>
-              <Label>Website</Label>
+              <Label htmlFor="site">Website</Label>
               <Input
-                value={formData.site || ''}
-                onChange={(e) => setFormData({...formData, site: e.target.value})}
+                id="site"
+                value={formData.site || ""}
+                onChange={(e) => setFormData({ ...formData, site: e.target.value })}
                 placeholder="https://www.exemplo.com.br"
+                className="min-h-[44px]"
               />
             </div>
 
@@ -595,7 +769,7 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
               <Label>Horário de Funcionamento</Label>
               <HorarioFuncionamentoEditor
                 value={formData.horario_funcionamento}
-                onChange={(json) => setFormData({...formData, horario_funcionamento: json})}
+                onChange={(json) => setFormData({ ...formData, horario_funcionamento: json })}
               />
             </div>
           </TabsContent>
@@ -603,10 +777,11 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
           {/* BENEFÍCIO */}
           <TabsContent value="beneficio" className="space-y-4">
             <div>
-              <Label>Descrição do Benefício</Label>
+              <Label htmlFor="descricao_beneficio">Descrição do Benefício</Label>
               <Textarea
-                value={formData.descricao_beneficio || ''}
-                onChange={(e) => setFormData({...formData, descricao_beneficio: e.target.value})}
+                id="descricao_beneficio"
+                value={formData.descricao_beneficio || ""}
+                onChange={(e) => setFormData({ ...formData, descricao_beneficio: e.target.value })}
                 placeholder="Ex: 10% de desconto no rodízio completo"
                 rows={4}
                 maxLength={200}
@@ -617,22 +792,23 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
             </div>
 
             <div>
-              <Label>Regras de Utilização</Label>
+              <Label htmlFor="regras_utilizacao">Regras de Utilização</Label>
               <Textarea
-                value={formData.regras_utilizacao || ''}
-                onChange={(e) => setFormData({...formData, regras_utilizacao: e.target.value})}
-                placeholder="Ex: Válido apenas para consumo no local. Não cumulativo com outras promoções."
+                id="regras_utilizacao"
+                value={formData.regras_utilizacao || ""}
+                onChange={(e) => setFormData({ ...formData, regras_utilizacao: e.target.value })}
+                placeholder="Ex: Válido apenas para consumo no local. Não cumulativo."
                 rows={4}
               />
             </div>
 
             <div>
-              <Label>Período de Validade</Label>
+              <Label htmlFor="periodo_validade">Período de Validade</Label>
               <Select
-                value={formData.periodo_validade_beneficio || 'dia_aniversario'}
-                onValueChange={(value) => setFormData({...formData, periodo_validade_beneficio: value})}
+                value={formData.periodo_validade_beneficio || "dia_aniversario"}
+                onValueChange={(value) => setFormData({ ...formData, periodo_validade_beneficio: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger id="periodo_validade" className="min-h-[44px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -646,199 +822,27 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
             </div>
           </TabsContent>
 
-          {/* IMAGENS */}
-          <TabsContent value="imagens" className="space-y-4">
-            {/* Alerta se foto atual parece inválida */}
-            {formData.logo_url && !isFotoValida && (
-              <div className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-amber-400">Foto possivelmente inadequada</p>
-                  <p className="text-xs text-amber-400/70">A URL sugere que pode ser um logo, ícone ou placeholder</p>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleFetchGooglePhoto(false)}
-                  disabled={fetchingPhoto}
-                  className="shrink-0"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-1 ${fetchingPhoto ? 'animate-spin' : ''}`} />
-                  Buscar nova
-                </Button>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <Label>Foto do Estabelecimento</Label>
-              
-              <div className="flex items-start gap-6">
-                {/* Preview da foto com aspect-ratio 4:3 */}
-                <div className="relative">
-                  <div 
-                    className={`w-40 aspect-[4/3] rounded-xl overflow-hidden border-2 border-dashed 
-                      ${isProcessingImage ? 'border-violet-500' : 'border-white/20'} 
-                      bg-slate-800 flex items-center justify-center cursor-pointer 
-                      hover:border-violet-500 transition-colors`}
-                    onClick={() => !isProcessingImage && document.getElementById('fileUpload')?.click()}
-                  >
-                    {isProcessingImage ? (
-                      <div className="text-center">
-                        <Loader2 className="w-8 h-8 text-violet-500 mx-auto mb-2 animate-spin" />
-                        <span className="text-xs text-gray-400">Processando...</span>
-                      </div>
-                    ) : formData.logo_url ? (
-                      <img 
-                        src={formData.logo_url} 
-                        alt="Foto do estabelecimento" 
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          // Fallback para placeholder da categoria
-                          e.currentTarget.src = placeholderUrl;
-                        }}
-                      />
-                    ) : (
-                      <div className="text-center p-2">
-                        <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <span className="text-xs text-gray-400">Toque para adicionar</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {formData.logo_url && !isProcessingImage && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="destructive"
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFormData({ ...formData, logo_url: '' });
-                      }}
-                    >
-                      ✕
-                    </Button>
-                  )}
-                </div>
-                
-                {/* Opções */}
-                <div className="flex-1 space-y-3">
-                  <input
-                    id="fileUpload"
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    disabled={isProcessingImage}
-                  />
-                  
-                  <Button 
-                    type="button"
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => document.getElementById('fileUpload')?.click()}
-                    disabled={isProcessingImage}
-                    className="w-full"
-                  >
-                    <Camera className="w-4 h-4 mr-2" />
-                    Enviar Foto Manual
-                  </Button>
-                  
-                  {/* Botão principal de busca no Google */}
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    onClick={() => handleFetchGooglePhoto(false)}
-                    disabled={isProcessingImage || fetchingPhoto}
-                    className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700"
-                  >
-                    {fetchingPhoto ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-4 h-4 mr-2" />
-                    )}
-                    Buscar Melhor Foto (Google)
-                  </Button>
-                  
-                  {/* Botão para limpar foto do Google (quando há conflito) */}
-                  {formData.logo_url && formData.logo_url.includes('googleapis.com') && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        setFormData({ ...formData, logo_url: null });
-                        toast.success('Foto do Google removida. Será usado placeholder ou galeria.');
-                      }}
-                      className="w-full"
-                    >
-                      <AlertTriangle className="w-4 h-4 mr-2" />
-                      🗑️ Remover Foto do Google
-                    </Button>
-                  )}
-                  
-                  {/* Botão secundário para forçar qualquer foto */}
-                  {formData.logo_url && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleFetchGooglePhoto(true)}
-                      disabled={isProcessingImage || fetchingPhoto}
-                      className="w-full text-xs text-muted-foreground"
-                    >
-                      <RefreshCw className="w-3 h-3 mr-1" />
-                      Tentar outra foto (ignorar validação)
-                    </Button>
-                  )}
-                  
-                  <p className="text-xs text-gray-400">
-                    📸 A busca inteligente filtra logos e ícones automaticamente
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <Label>Ou insira URL da Imagem</Label>
-              <Input
-                value={formData.logo_url || ''}
-                onChange={(e) => setFormData({...formData, logo_url: e.target.value})}
-                placeholder="https://exemplo.com/foto.jpg"
-                disabled={isProcessingImage}
-              />
-              {formData.logo_url && !isFotoValida && (
-                <p className="text-xs text-amber-500 mt-1 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  URL pode ser um logo ou placeholder
-                </p>
-              )}
-            </div>
-          </TabsContent>
-
           {/* CONFIGURAÇÕES */}
           <TabsContent value="config" className="space-y-4">
-            <div className="flex items-center justify-between p-4 border border-white/10 rounded-lg">
+            <div className="flex items-center justify-between p-4 border border-white/10 rounded-lg min-h-[72px]">
               <div>
                 <Label className="text-base">Status: Ativo/Inativo</Label>
                 <p className="text-sm text-slate-400">Estabelecimento visível no app</p>
               </div>
               <Switch
                 checked={formData.ativo}
-                onCheckedChange={(checked) => setFormData({...formData, ativo: checked})}
+                onCheckedChange={(checked) => setFormData({ ...formData, ativo: checked })}
+                aria-label="Ativar ou desativar estabelecimento"
               />
             </div>
 
             <div>
-              <Label>Plano (Tier)</Label>
+              <Label htmlFor="plan_status">Plano (Tier)</Label>
               <Select
-                value={formData.plan_status || 'pending'}
-                onValueChange={(value) => setFormData({...formData, plan_status: value})}
+                value={formData.plan_status || "pending"}
+                onValueChange={(value) => setFormData({ ...formData, plan_status: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger id="plan_status" className="min-h-[44px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -846,76 +850,6 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
                   <SelectItem value="active">✅ Active (Gold/Pago)</SelectItem>
                   <SelectItem value="trialing">🎁 Trialing (Teste)</SelectItem>
                   <SelectItem value="canceled">❌ Canceled (Cancelado)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </TabsContent>
-
-          {/* REGRAS DE NEGÓCIO */}
-          <TabsContent value="negocio" className="space-y-4">
-            <div>
-              <Label>Descrição do Benefício</Label>
-              <Textarea
-                value={formData.descricao_beneficio || ''}
-                onChange={(e) => setFormData({...formData, descricao_beneficio: e.target.value})}
-                placeholder="Ex: 10% de desconto no rodízio completo"
-                rows={4}
-                maxLength={200}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                {formData.descricao_beneficio?.length || 0}/200 caracteres
-              </p>
-            </div>
-
-            <div>
-              <Label>Período de Validade</Label>
-              <Select
-                value={formData.periodo_validade_beneficio || 'dia_aniversario'}
-                onValueChange={(value) => setFormData({...formData, periodo_validade_beneficio: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PERIODOS_VALIDADE.map((period) => (
-                    <SelectItem key={period.value} value={period.value}>
-                      {period.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Plano (Tier)</Label>
-              <Select
-                value={formData.plan_status || 'pending'}
-                onValueChange={(value) => setFormData({...formData, plan_status: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">🔵 Pending (Aguardando)</SelectItem>
-                  <SelectItem value="active">✅ Active (Gold/Pago)</SelectItem>
-                  <SelectItem value="trialing">🎁 Trialing (Teste)</SelectItem>
-                  <SelectItem value="canceled">❌ Canceled (Cancelado)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Status de Ativação</Label>
-              <Select
-                value={formData.ativo ? 'active' : 'inactive'}
-                onValueChange={(value) => setFormData({...formData, ativo: value === 'active'})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">🟢 Ativo (Visível no app)</SelectItem>
-                  <SelectItem value="inactive">🔴 Inativo (Oculto)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -923,17 +857,22 @@ export function EditEstablishmentModal({ establishment, open, onOpenChange, onSu
         </Tabs>
 
         <div className="flex gap-2 pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="flex-1 min-h-[44px]"
+            disabled={saving}
+          >
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={saving} className="flex-1">
+          <Button onClick={handleSave} disabled={isAnyLoading} className="flex-1 min-h-[44px]">
             {saving ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                 Salvando...
               </>
             ) : (
-              'Salvar Todas Alterações'
+              "Salvar Alterações"
             )}
           </Button>
         </div>

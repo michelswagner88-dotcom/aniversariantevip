@@ -5,19 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  Gift,
-  X,
-  Copy,
-  MessageCircle,
-  Send,
-  Facebook,
-  Linkedin,
-  Instagram,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import { useWindowSize } from "@/hooks/useWindowSize";
+import { Gift, X, Copy, MessageCircle, Send, Facebook, Instagram, ChevronLeft, ChevronRight } from "lucide-react";
 import { useSEO } from "@/hooks/useSEO";
 import { getEstabelecimentoSEO } from "@/constants/seo";
 import { useFavoritos } from "@/hooks/useFavoritos";
@@ -29,7 +17,7 @@ import {
   formatWebsite,
   getWhatsAppMessage,
 } from "@/lib/contactUtils";
-import { gerarBioAutomatica, separarBeneficio, getValidadeTexto } from "@/lib/bioUtils";
+import { gerarBioAutomatica, separarBeneficio } from "@/lib/bioUtils";
 import CupomModal from "@/components/CupomModal";
 import LoginRequiredModal from "@/components/LoginRequiredModal";
 
@@ -112,15 +100,18 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
 
           {/* Container do carrossel */}
           <div className="relative group">
-            {/* Botão esquerda - só desktop */}
+            {/* Botão esquerda - visível em todas as telas quando há scroll */}
             {displayPhotos.length > 2 && (
               <button
                 onClick={() => scroll("left")}
+                aria-label="Fotos anteriores"
                 className={`
                   absolute left-2 top-1/2 -translate-y-1/2 z-10
-                  w-9 h-9 rounded-full bg-white shadow-lg
-                  hidden sm:flex items-center justify-center
+                  w-10 h-10 sm:w-11 sm:h-11 rounded-full 
+                  bg-white/90 sm:bg-white shadow-lg
+                  flex items-center justify-center
                   transition-all duration-200
+                  active:scale-95
                   ${canScrollLeft ? "opacity-100 hover:scale-110" : "opacity-0 pointer-events-none"}
                 `}
               >
@@ -146,6 +137,7 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
                 <button
                   key={index}
                   onClick={() => openLightbox(index)}
+                  aria-label={`Ver foto ${index + 1} de ${displayPhotos.length}`}
                   className={`
                     flex-shrink-0 snap-start
                     overflow-hidden rounded-xl
@@ -164,15 +156,18 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
               ))}
             </div>
 
-            {/* Botão direita - só desktop */}
+            {/* Botão direita - visível em todas as telas quando há scroll */}
             {displayPhotos.length > 2 && (
               <button
                 onClick={() => scroll("right")}
+                aria-label="Próximas fotos"
                 className={`
                   absolute right-2 top-1/2 -translate-y-1/2 z-10
-                  w-9 h-9 rounded-full bg-white shadow-lg
-                  hidden sm:flex items-center justify-center
+                  w-10 h-10 sm:w-11 sm:h-11 rounded-full 
+                  bg-white/90 sm:bg-white shadow-lg
+                  flex items-center justify-center
                   transition-all duration-200
+                  active:scale-95
                   ${canScrollRight ? "opacity-100 hover:scale-110" : "opacity-0 pointer-events-none"}
                 `}
               >
@@ -192,17 +187,21 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
             onClick={() => setLightboxOpen(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Galeria de fotos em tela cheia"
           >
             {/* Botão fechar */}
             <button
               onClick={() => setLightboxOpen(false)}
-              className="absolute top-4 right-4 z-10 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+              aria-label="Fechar galeria"
+              className="absolute top-4 right-4 z-10 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
             >
               <X className="w-6 h-6 text-white" />
             </button>
 
             {/* Contador */}
-            <div className="absolute top-4 left-4 text-white/70 text-sm">
+            <div className="absolute top-4 left-4 text-white/70 text-sm" aria-live="polite">
               {currentIndex + 1} / {displayPhotos.length}
             </div>
 
@@ -214,7 +213,8 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
                     e.stopPropagation();
                     goToPrevious();
                   }}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                  aria-label="Foto anterior"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
                 >
                   <ChevronLeft className="w-6 h-6 text-white" />
                 </button>
@@ -224,7 +224,8 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
                     e.stopPropagation();
                     goToNext();
                   }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                  aria-label="Próxima foto"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
                 >
                   <ChevronRight className="w-6 h-6 text-white" />
                 </button>
@@ -254,8 +255,10 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
                       e.stopPropagation();
                       setCurrentIndex(index);
                     }}
+                    aria-label={`Ir para foto ${index + 1}`}
+                    aria-current={index === currentIndex ? "true" : "false"}
                     className={`
-                      w-14 h-10 rounded-lg overflow-hidden transition-all duration-200
+                      w-16 h-12 rounded-lg overflow-hidden transition-all duration-200
                       ${index === currentIndex ? "ring-2 ring-white scale-110" : "opacity-50 hover:opacity-80"}
                     `}
                   >
@@ -265,9 +268,9 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
               </div>
             )}
 
-            {/* Dots - só mobile */}
+            {/* Dots - só mobile - AUMENTADOS para touch */}
             {displayPhotos.length > 1 && (
-              <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-1.5 sm:hidden">
+              <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-3 sm:hidden">
                 {displayPhotos.map((_, index) => (
                   <button
                     key={index}
@@ -275,11 +278,17 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
                       e.stopPropagation();
                       setCurrentIndex(index);
                     }}
-                    className={`
-                      h-2 rounded-full transition-all duration-300
-                      ${index === currentIndex ? "w-6 bg-white" : "w-2 bg-white/40"}
-                    `}
-                  />
+                    aria-label={`Ir para foto ${index + 1}`}
+                    aria-current={index === currentIndex ? "true" : "false"}
+                    className="w-11 h-11 flex items-center justify-center"
+                  >
+                    <span
+                      className={`
+                        rounded-full transition-all duration-300
+                        ${index === currentIndex ? "w-6 h-3 bg-white" : "w-3 h-3 bg-white/40"}
+                      `}
+                    />
+                  </button>
                 ))}
               </div>
             )}
@@ -308,13 +317,11 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
   const [showShareModal, setShowShareModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  const { width, height } = useWindowSize();
   const { isFavorito, toggleFavorito } = useFavoritos(userId);
   const hasTrackedView = useRef(false);
 
   const {
     trackPageView,
-    trackBenefitClick,
     trackWhatsAppClick,
     trackPhoneClick,
     trackInstagramClick,
@@ -343,7 +350,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange((_, session) => {
       setUserId(session?.user?.id || null);
     });
     return () => subscription.unsubscribe();
@@ -389,7 +396,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
       document.title = `${data.nome_fantasia} - Aniversariante VIP`;
     };
     fetchEstabelecimento();
-  }, [id, navigate]);
+  }, [id, navigate, trackPageView]);
 
   // === HANDLERS ===
 
@@ -506,11 +513,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
 
   const handleOpen99 = () => {
     if (id) trackDirectionsClick(id, "99");
-    if (estabelecimento.latitude && estabelecimento.longitude) {
-      window.open(`https://99app.com/`, "_blank");
-    } else {
-      window.open(`https://99app.com/`, "_blank");
-    }
+    window.open(`https://99app.com/`, "_blank");
   };
 
   // === SHARE HANDLERS ===
@@ -666,7 +669,6 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
       <PartnerCTA />
 
       {/* === BOTÃO FIXO MOBILE === */}
-      {/* Safe area bottom para iPhones com home indicator */}
       <div
         className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#EBEBEB] md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
@@ -680,6 +682,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
               }
               setShowCupomModal(true);
             }}
+            aria-label="Ver benefício de aniversário"
             className="
               w-full 
               min-h-[52px]
@@ -717,6 +720,9 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="share-modal-title"
           >
             <motion.div
               initial={{ opacity: 0 }}
@@ -732,15 +738,19 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25 }}
               className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-2xl p-6"
+              style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-[#222222]">Compartilhar</h3>
+                <h3 id="share-modal-title" className="text-lg font-bold text-[#222222]">
+                  Compartilhar
+                </h3>
                 <button
                   onClick={() => setShowShareModal(false)}
-                  className="w-8 h-8 rounded-full bg-[#F7F7F7] flex items-center justify-center"
+                  aria-label="Fechar modal de compartilhamento"
+                  className="w-10 h-10 rounded-full bg-[#F7F7F7] flex items-center justify-center hover:bg-[#EBEBEB] active:scale-95 transition-all"
                 >
-                  <X className="w-4 h-4 text-[#717171]" />
+                  <X className="w-5 h-5 text-[#717171]" />
                 </button>
               </div>
 
@@ -760,7 +770,8 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
                   <button
                     key={item.name}
                     onClick={() => shareToNetwork(item.network)}
-                    className="flex flex-col items-center gap-2"
+                    aria-label={`Compartilhar no ${item.name}`}
+                    className="flex flex-col items-center gap-2 min-h-[72px]"
                   >
                     <div className={`w-12 h-12 ${item.color} rounded-full flex items-center justify-center`}>
                       <item.icon className="w-6 h-6 text-white" />
@@ -773,7 +784,8 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
               {/* Copiar link */}
               <button
                 onClick={copyToClipboard}
-                className="w-full py-3.5 bg-[#F7F7F7] hover:bg-[#EBEBEB] rounded-xl flex items-center justify-center gap-2 transition-colors"
+                aria-label="Copiar link para área de transferência"
+                className="w-full py-3.5 min-h-[48px] bg-[#F7F7F7] hover:bg-[#EBEBEB] active:scale-[0.98] rounded-xl flex items-center justify-center gap-2 transition-all"
               >
                 <Copy className="w-5 h-5 text-[#717171]" />
                 <span className="font-medium text-[#222222]">Copiar link</span>

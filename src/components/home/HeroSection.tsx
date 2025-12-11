@@ -57,7 +57,6 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
   const cidadeInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const placeholderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Hook de cidades disponíveis
   const { cidades: cidadesSugestoes, isLoading: isLoadingCidades } = useCidadesAutocomplete(cidadeInput);
@@ -105,9 +104,6 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
 
     return () => {
       clearInterval(interval);
-      if (placeholderTimeoutRef.current) {
-        clearTimeout(placeholderTimeoutRef.current);
-      }
     };
   }, [placeholders.length]);
 
@@ -265,26 +261,16 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
   return (
     <section className="relative min-h-[420px] sm:min-h-[450px] md:min-h-[500px] flex items-center justify-center overflow-hidden pt-24 sm:pt-28 pb-8 sm:pb-12 px-3 sm:px-4 bg-[#240046]">
       <div className="relative z-10 container mx-auto px-2 sm:px-4 text-center">
-        {/* Badge - Pulsando Suave e Clicável - Vai para Cadastro */}
+        {/* Badge - Clicável - Vai para Cadastro */}
         <motion.button
           onClick={handleBadgeClick}
-          className="inline-flex items-center gap-2 bg-[#3C096C] border border-white/40 rounded-full px-4 sm:px-5 py-2.5 mb-5 sm:mb-6 hover:bg-[#5B21B6] hover:border-white/60 transition-all cursor-pointer shadow-lg shadow-black/20"
+          className="inline-flex items-center gap-2 bg-[#3C096C] border border-white/40 rounded-full px-4 sm:px-5 py-2.5 mb-5 sm:mb-6 hover:bg-[#5B21B6] hover:border-white/60 transition-all cursor-pointer shadow-lg shadow-black/20 min-h-[44px]"
           initial={{ opacity: 0, y: 20 }}
-          animate={{
-            opacity: 1,
-            y: 0,
-            scale: [1, 1.02, 1],
-          }}
-          transition={{
-            duration: 0.6,
-            scale: {
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            },
-          }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          aria-label="Fazer cadastro gratuito"
         >
           <Gift className="w-4 h-4 text-white" />
           <span className="text-xs sm:text-sm text-white font-semibold whitespace-nowrap">
@@ -328,8 +314,8 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
             {/* Campo Cidade - Editável Inline */}
             <div className="cidade-container relative">
               {editandoCidade ? (
-                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 sm:border-r border-[#240046]/10 min-w-[140px] sm:min-w-[180px]">
-                  <MapPin className="w-4 sm:w-5 h-4 sm:h-5 text-[#240046] flex-shrink-0" />
+                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 sm:border-r border-[#240046]/10 min-w-[140px] sm:min-w-[180px] min-h-[44px]">
+                  <MapPin className="w-5 h-5 text-[#240046] flex-shrink-0" />
                   <input
                     ref={cidadeInputRef}
                     type="text"
@@ -340,7 +326,8 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
                     }}
                     onBlur={handleCidadeInputBlur}
                     placeholder="Digite a cidade..."
-                    className="flex-1 bg-transparent text-[#240046] placeholder-[#240046]/50 outline-none text-sm min-w-0"
+                    aria-label="Digite o nome da cidade"
+                    className="flex-1 bg-transparent text-[#240046] placeholder-[#240046]/60 outline-none text-sm min-w-0"
                   />
                   <button
                     type="button"
@@ -348,24 +335,27 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
                       setEditandoCidade(false);
                       setShowCidadeDropdown(false);
                     }}
-                    className="p-1 hover:bg-[#240046]/10 rounded-full"
+                    className="w-8 h-8 flex items-center justify-center hover:bg-[#240046]/10 rounded-full transition-colors"
+                    aria-label="Fechar seleção de cidade"
                   >
                     <X className="w-4 h-4 text-[#240046]/60" />
                   </button>
                 </div>
               ) : (
-                <div
+                <button
+                  type="button"
                   onClick={handleCidadeClick}
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 sm:border-r border-[#240046]/10 cursor-pointer hover:bg-[#240046]/5 rounded-xl sm:rounded-l-full transition-colors min-w-[140px] sm:min-w-[180px]"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 sm:border-r border-[#240046]/10 hover:bg-[#240046]/5 rounded-xl sm:rounded-l-full transition-colors min-w-[140px] sm:min-w-[180px] min-h-[44px] text-left"
+                  aria-label="Selecionar cidade"
                 >
-                  <MapPin className="w-4 sm:w-5 h-4 sm:h-5 text-[#240046] flex-shrink-0" />
+                  <MapPin className="w-5 h-5 text-[#240046] flex-shrink-0" />
                   <div className="text-left">
-                    <p className="text-[10px] sm:text-xs text-[#240046]/70 uppercase tracking-wide font-medium">Onde</p>
+                    <p className="text-xs text-[#240046]/70 uppercase tracking-wide font-medium">Onde</p>
                     <p className="text-[#240046] font-semibold text-sm sm:text-base truncate max-w-[100px] sm:max-w-[140px]">
                       {cidade && estado ? `${cidade}, ${estado}` : "Selecionar"}
                     </p>
                   </div>
-                </div>
+                </button>
               )}
 
               {/* Dropdown de Cidades */}
@@ -375,19 +365,20 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-[#240046]/10 overflow-hidden z-50 min-w-[200px]"
+                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-[#240046]/10 overflow-hidden z-50 min-w-[200px] max-w-[calc(100vw-2rem)]"
                   >
                     {isLoadingCidades ? (
                       <div className="p-4 text-center text-[#240046]/60">
                         <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                       </div>
                     ) : cidadesSugestoes.length > 0 ? (
-                      <ul className="max-h-[200px] overflow-y-auto">
+                      <ul className="max-h-[200px] overflow-y-auto" role="listbox" aria-label="Lista de cidades">
                         {cidadesSugestoes.map((c, i) => (
                           <li
                             key={`${c.cidade}-${c.estado}-${i}`}
                             onClick={() => handleCidadeSelect(c.cidade, c.estado)}
-                            className="px-4 py-3 hover:bg-[#240046]/5 cursor-pointer flex items-center justify-between gap-2 border-b border-[#240046]/5 last:border-0"
+                            className="px-4 py-3 hover:bg-[#240046]/5 cursor-pointer flex items-center justify-between gap-2 border-b border-[#240046]/5 last:border-0 min-h-[44px]"
+                            role="option"
                           >
                             <span className="text-[#240046] font-medium text-sm">
                               {c.cidade}, {c.estado}
@@ -409,8 +400,8 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
             </div>
 
             {/* Campo de Busca por Estabelecimento */}
-            <div className="search-container flex-1 flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 relative">
-              <Search className="w-4 sm:w-5 h-4 sm:h-5 text-[#240046] flex-shrink-0" />
+            <div className="search-container flex-1 flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 relative min-h-[44px]">
+              <Search className="w-5 h-5 text-[#240046] flex-shrink-0" />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -419,7 +410,7 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
                 onFocus={() => busca.length >= 2 && setShowEstabelecimentoDropdown(true)}
                 placeholder={placeholders[currentPlaceholder]}
                 aria-label="Buscar estabelecimento por nome"
-                className="flex-1 bg-transparent text-[#240046] placeholder-[#240046]/50 outline-none text-sm sm:text-base min-w-0"
+                className="flex-1 bg-transparent text-[#240046] placeholder-[#240046]/60 outline-none text-sm sm:text-base min-w-0"
               />
 
               {/* Botão Microfone */}
@@ -427,16 +418,13 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
                 <button
                   type="button"
                   onClick={handleMicClick}
-                  className={`p-2 rounded-full transition-colors ${
+                  className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors ${
                     isListening ? "bg-red-100 text-red-600 animate-pulse" : "hover:bg-[#240046]/10 text-[#240046]"
                   }`}
-                  aria-label={isListening ? "Parar gravação" : "Busca por voz"}
+                  aria-label={isListening ? "Parar gravação de voz" : "Iniciar busca por voz"}
+                  aria-pressed={isListening}
                 >
-                  {isListening ? (
-                    <MicOff className="w-4 sm:w-5 h-4 sm:h-5" />
-                  ) : (
-                    <Mic className="w-4 sm:w-5 h-4 sm:h-5" />
-                  )}
+                  {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                 </button>
               )}
 
@@ -447,7 +435,7 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-[#240046]/10 overflow-hidden z-50"
+                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-[#240046]/10 overflow-hidden z-50 max-w-[calc(100vw-2rem)]"
                   >
                     {isSearching ? (
                       <div className="p-4 text-center text-[#240046]/60">
@@ -455,12 +443,17 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
                         <span className="text-sm">Buscando...</span>
                       </div>
                     ) : buscaEstabelecimentos.length > 0 ? (
-                      <ul className="max-h-[280px] overflow-y-auto">
+                      <ul
+                        className="max-h-[280px] overflow-y-auto"
+                        role="listbox"
+                        aria-label="Estabelecimentos encontrados"
+                      >
                         {buscaEstabelecimentos.map((est) => (
                           <li
                             key={est.id}
                             onClick={() => handleEstabelecimentoClick(est)}
-                            className="px-4 py-3 hover:bg-[#240046]/5 cursor-pointer border-b border-[#240046]/5 last:border-0"
+                            className="px-4 py-3 hover:bg-[#240046]/5 cursor-pointer border-b border-[#240046]/5 last:border-0 min-h-[44px]"
+                            role="option"
                           >
                             <p className="text-[#240046] font-semibold text-sm">{est.nome_fantasia}</p>
                             <p className="text-[#240046]/60 text-xs">
@@ -483,7 +476,7 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
                               onCidadeSelect("", "");
                               buscarEstabelecimentos(busca);
                             }}
-                            className="text-[#240046] text-sm font-medium hover:underline"
+                            className="text-[#240046] text-sm font-medium hover:underline min-h-[44px] px-4"
                           >
                             Buscar em todo Brasil
                           </button>
@@ -498,11 +491,11 @@ const HeroSection = ({ cidade, estado, onCidadeSelect, onBuscaChange, onBuscar }
             {/* Botão Buscar */}
             <button
               type="submit"
-              aria-label="Buscar"
-              className="bg-gradient-to-r from-[#240046] to-[#3C096C] text-white font-semibold px-5 sm:px-8 py-2.5 sm:py-3 rounded-xl sm:rounded-full shadow-lg shadow-[#240046]/30 transition-all duration-300 hover:shadow-xl hover:shadow-[#240046]/40 hover:scale-105 active:scale-95 flex items-center justify-center gap-2 w-full sm:w-auto"
+              aria-label="Buscar estabelecimentos"
+              className="bg-gradient-to-r from-[#240046] to-[#3C096C] text-white font-semibold px-5 sm:px-8 py-3 rounded-xl sm:rounded-full shadow-lg shadow-[#240046]/30 transition-all duration-300 hover:shadow-xl hover:shadow-[#240046]/40 hover:scale-105 active:scale-95 flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px]"
             >
-              <Search className="w-4 sm:w-5 h-4 sm:h-5" />
-              <span className="sm:inline">Buscar</span>
+              <Search className="w-5 h-5" />
+              <span>Buscar</span>
             </button>
           </form>
         </motion.div>

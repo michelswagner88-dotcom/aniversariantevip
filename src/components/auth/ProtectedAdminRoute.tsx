@@ -1,45 +1,51 @@
-import { useEffect, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ShieldAlert } from 'lucide-react';
+import { useEffect, useState, useRef } from "react";
+import { useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2, ShieldAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   children: React.ReactNode;
 }
 
 // Verificar se usuário é admin usando função has_role (SECURITY DEFINER)
-const checkIsAdmin = async (userId: string): Promise<{ 
-  isAdmin: boolean; 
+const checkIsAdmin = async (
+  userId: string,
+): Promise<{
+  isAdmin: boolean;
   nivel?: string;
 }> => {
   try {
     // Usar função has_role que bypassa RLS
-    const { data: isAdmin, error: adminError } = await supabase
-      .rpc('has_role', { _user_id: userId, _role: 'admin' });
+    const { data: isAdmin, error: adminError } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
 
     if (adminError) {
-      console.error('Erro ao verificar role admin:', adminError);
+      // Erro silencioso em produção
     }
 
     if (isAdmin) {
-      return { isAdmin: true, nivel: 'admin' };
+      return { isAdmin: true, nivel: "admin" };
     }
 
     // Verificar se é colaborador
-    const { data: isColaborador, error: colabError } = await supabase
-      .rpc('has_role', { _user_id: userId, _role: 'colaborador' });
+    const { data: isColaborador, error: colabError } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "colaborador",
+    });
 
     if (colabError) {
-      console.error('Erro ao verificar role colaborador:', colabError);
+      // Erro silencioso em produção
     }
 
     if (isColaborador) {
-      return { isAdmin: true, nivel: 'colaborador' };
+      return { isAdmin: true, nivel: "colaborador" };
     }
 
     return { isAdmin: false };
-  } catch (error) {
-    console.error('Erro ao verificar admin:', error);
+  } catch {
     return { isAdmin: false };
   }
 };
@@ -50,14 +56,23 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
   const [error, setError] = useState<string | null>(null);
   const location = useLocation();
 
+  // Ref para o interval - permite cleanup correto
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   useEffect(() => {
+    let isMounted = true;
+
     const checkAuth = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
 
         if (sessionError || !session) {
-          console.warn('Admin: Tentativa de acesso sem sessão');
-          setError('Acesso não autorizado');
+          setError("Acesso não autorizado");
           setIsAuthorized(false);
           setLoading(false);
           return;
@@ -67,120 +82,135 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
 
         // Verificar se é admin (role + tabela admins)
         const adminCheck = await checkIsAdmin(user.id);
-        
+
+        if (!isMounted) return;
+
         if (!adminCheck.isAdmin) {
-          console.warn(`Admin: Acesso negado para ${user.email}`);
-          
-          // Log de tentativa de acesso não autorizado - usar tabela dedicada
+          // Log de tentativa de acesso não autorizado
           try {
-            await supabase.from('admin_access_logs').insert({
+            await supabase.from("admin_access_logs").insert({
               user_id: user.id,
-              email: user.email || '',
-              action: 'access_denied',
+              email: user.email || "",
+              action: "access_denied",
               endpoint: location.pathname,
               authorized: false,
               metadata: {
-                reason: 'missing_admin_role',
+                reason: "missing_admin_role",
                 timestamp: new Date().toISOString(),
-              }
+              },
             });
-          } catch (logError) {
-            console.error('Erro ao logar acesso negado:', logError);
+          } catch {
+            // Silencioso
           }
 
-          setError('Você não tem permissão para acessar esta área');
+          setError("Você não tem permissão para acessar esta área");
           setIsAuthorized(false);
           setLoading(false);
           return;
         }
 
-        // 3. Atualizar último acesso
+        // Atualizar último acesso
         try {
-          await supabase.rpc('update_admin_last_access', { 
-            admin_user_id: user.id 
+          await supabase.rpc("update_admin_last_access", {
+            admin_user_id: user.id,
           });
-        } catch (accessError) {
-          console.error('Erro ao atualizar último acesso:', accessError);
+        } catch {
+          // Silencioso
         }
 
-        // 4. Log de acesso autorizado
+        // Log de acesso autorizado
         try {
-          await supabase.from('admin_access_logs').insert({
+          await supabase.from("admin_access_logs").insert({
             user_id: user.id,
-            email: user.email || '',
-            action: 'access_authorized',
+            email: user.email || "",
+            action: "access_authorized",
             endpoint: location.pathname,
             authorized: true,
             metadata: {
               nivel: adminCheck.nivel,
               timestamp: new Date().toISOString(),
-            }
+            },
           });
-        } catch (logError) {
-          console.error('Erro ao logar acesso autorizado:', logError);
+        } catch {
+          // Silencioso
         }
 
-        console.log(`Admin: Acesso autorizado para ${user.email} (${adminCheck.nivel})`);
+        if (!isMounted) return;
+
         setIsAuthorized(true);
-
-        // 5. Verificação periódica de role a cada 5 minutos
-        const roleCheckInterval = setInterval(async () => {
-          const stillAdmin = await checkIsAdmin(user.id);
-          
-          if (!stillAdmin.isAdmin) {
-            console.warn('Admin: Permissões removidas, forçando logout');
-            
-            // Log role removida
-            try {
-              await supabase.from('admin_access_logs').insert({
-                user_id: user.id,
-                email: user.email || '',
-                action: 'role_revoked',
-                endpoint: location.pathname,
-                authorized: false,
-                metadata: { reason: 'permissions_removed_during_session' }
-              });
-            } catch (logError) {
-              console.error('Erro ao logar revogação de permissões:', logError);
-            }
-            
-            // Forçar logout
-            await supabase.auth.signOut();
-            setIsAuthorized(false);
-            setError('Suas permissões foram removidas. Faça login novamente.');
-          }
-        }, 5 * 60 * 1000); // 5 minutos
-
-        // Cleanup do interval quando componente desmontar
-        return () => clearInterval(roleCheckInterval);
-
-      } catch (err) {
-        console.error('Admin: Erro na verificação', err);
-        setError('Erro ao verificar permissões');
-        setIsAuthorized(false);
-      } finally {
         setLoading(false);
+
+        // Verificação periódica de role a cada 5 minutos
+        intervalRef.current = setInterval(
+          async () => {
+            if (!isMounted) return;
+
+            const stillAdmin = await checkIsAdmin(user.id);
+
+            if (!stillAdmin.isAdmin) {
+              // Log role removida
+              try {
+                await supabase.from("admin_access_logs").insert({
+                  user_id: user.id,
+                  email: user.email || "",
+                  action: "role_revoked",
+                  endpoint: location.pathname,
+                  authorized: false,
+                  metadata: { reason: "permissions_removed_during_session" },
+                });
+              } catch {
+                // Silencioso
+              }
+
+              // Forçar logout
+              await supabase.auth.signOut();
+
+              if (isMounted) {
+                setIsAuthorized(false);
+                setError("Suas permissões foram removidas. Faça login novamente.");
+              }
+            }
+          },
+          5 * 60 * 1000,
+        ); // 5 minutos
+      } catch {
+        if (isMounted) {
+          setError("Erro ao verificar permissões");
+          setIsAuthorized(false);
+          setLoading(false);
+        }
       }
     };
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT" && isMounted) {
         setIsAuthorized(false);
-        setError('Sessão encerrada');
+        setError("Sessão encerrada");
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Cleanup correto
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, [location.pathname]);
 
   // Loading
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center" role="status" aria-live="polite">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-violet-500 mx-auto mb-4" />
+          <Loader2 className="w-8 h-8 animate-spin text-violet-500 mx-auto mb-4" aria-hidden="true" />
           <p className="text-gray-400">Verificando permissões...</p>
         </div>
       </div>
@@ -190,19 +220,20 @@ export const ProtectedAdminRoute = ({ children }: Props) => {
   // Não autorizado
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div
+        className="min-h-screen bg-background flex items-center justify-center p-4"
+        role="alert"
+        aria-live="assertive"
+      >
         <div className="max-w-md w-full text-center">
           <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <ShieldAlert className="w-10 h-10 text-red-500" />
+            <ShieldAlert className="w-10 h-10 text-red-500" aria-hidden="true" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Acesso Restrito</h1>
-          <p className="text-gray-400 mb-6">{error || 'Você não tem permissão para acessar esta área.'}</p>
-          <button
-            onClick={() => window.location.href = '/'}
-            className="w-full px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
-          >
+          <p className="text-gray-400 mb-6">{error || "Você não tem permissão para acessar esta área."}</p>
+          <Button onClick={() => (window.location.href = "/")} variant="secondary" className="w-full min-h-[44px]">
             Voltar ao Início
-          </button>
+          </Button>
           <p className="text-xs text-gray-500 mt-3">
             Se você deveria ter acesso, entre em contato com o administrador.
           </p>

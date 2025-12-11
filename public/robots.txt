@@ -1,39 +1,16 @@
 # robots.txt - Aniversariante VIP
 # O maior guia de benefícios para aniversariantes do Brasil
+# https://aniversariantevip.com.br
 
-User-agent: *
-Allow: /
+# ============================================
+# Sitemap - Usar domínio principal
+# ============================================
+Sitemap: https://aniversariantevip.com.br/sitemap.xml
 
-# Sitemap (Edge Function dinâmico)
-Sitemap: https://muwugpcegkdgujfesrfq.supabase.co/functions/v1/sitemap
-
-# Bloquear páginas administrativas e de autenticação
-Disallow: /admin/
-Disallow: /auth
-Disallow: /login/
-Disallow: /cadastro/
-Disallow: /area-colaborador
-Disallow: /area-aniversariante
-Disallow: /area-estabelecimento
-Disallow: /setup-admin
-Disallow: /reset-password
-Disallow: /forgot-password
-
-# Bloquear parâmetros de busca duplicados
-Disallow: /*?*
-
-# Permitir parâmetros importantes
-Allow: /explorar?cidade=
-Allow: /explorar?estado=
-Allow: /explorar?categoria=
-
-# Crawlers de redes sociais - permitir tudo
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
+# ============================================
+# Crawlers de Redes Sociais - Acesso total
+# (Definir ANTES das regras gerais)
+# ============================================
 User-agent: facebookexternalhit
 Allow: /
 
@@ -49,6 +26,90 @@ Allow: /
 User-agent: TelegramBot
 Allow: /
 
-# Crawl-delay para bots genéricos (evita sobrecarga)
+User-agent: Slackbot
+Allow: /
+
+# ============================================
+# Google e Bing - Acesso otimizado
+# ============================================
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /auth
+Disallow: /login/
+Disallow: /cadastro/
+Disallow: /area-colaborador
+Disallow: /area-aniversariante
+Disallow: /area-estabelecimento
+Disallow: /setup-admin
+Disallow: /reset-password
+Disallow: /forgot-password
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+Disallow: /auth
+Disallow: /login/
+Disallow: /cadastro/
+Disallow: /area-colaborador
+Disallow: /area-aniversariante
+Disallow: /area-estabelecimento
+Disallow: /setup-admin
+Disallow: /reset-password
+Disallow: /forgot-password
+
+# ============================================
+# Todos os outros bots
+# ============================================
 User-agent: *
+# Permitir páginas públicas
+Allow: /
+Allow: /explorar
+Allow: /explorar?cidade=*
+Allow: /explorar?estado=*
+Allow: /explorar?categoria=*
+
+# Bloquear páginas administrativas e de autenticação
+Disallow: /admin/
+Disallow: /auth
+Disallow: /login/
+Disallow: /cadastro/
+Disallow: /area-colaborador
+Disallow: /area-aniversariante
+Disallow: /area-estabelecimento
+Disallow: /setup-admin
+Disallow: /reset-password
+Disallow: /forgot-password
+
+# Bloquear parâmetros de busca que geram duplicação
+Disallow: /*?ref=
+Disallow: /*?utm_
+Disallow: /*?fbclid=
+Disallow: /*?gclid=
+
+# Crawl-delay para evitar sobrecarga
 Crawl-delay: 1
+
+# ============================================
+# Bots de AI/Scraping - Bloquear
+# ============================================
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /

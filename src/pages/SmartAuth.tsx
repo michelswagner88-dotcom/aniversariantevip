@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, AlertCircle, Mail, Lock, User, ChevronDown, ChevronUp, Eye, EyeOff, Check } from "lucide-react";
@@ -19,16 +19,25 @@ import { SEO_CONTENT } from "@/constants/seo";
 const SmartAuth = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  // Determinar modo inicial baseado na rota
+  // Determinar modo inicial baseado na rota OU query param
   const getInitialMode = () => {
-    const path = location.pathname.toLowerCase();
-    // Se a rota for /cadastro, começar em modo cadastro
-    if (path === "/cadastro" || path === "/cadastro/aniversariante") {
+    // 1. Primeiro verificar query param ?modo=
+    const modoParam = searchParams.get("modo");
+    if (modoParam === "cadastro") {
       return false; // isLogin = false = modo cadastro
     }
-    // Se a rota for /login ou /auth, começar em modo login
-    return true; // isLogin = true = modo login
+    if (modoParam === "login") {
+      return true; // isLogin = true = modo login
+    }
+
+    // 2. Se não tem query param, usar a rota
+    const path = location.pathname.toLowerCase();
+    if (path === "/cadastro" || path === "/cadastro/aniversariante") {
+      return false;
+    }
+    return true;
   };
 
   // SEO dinâmico baseado no modo
@@ -44,7 +53,7 @@ const SmartAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
-  const [isLogin, setIsLogin] = useState(getInitialMode()); // Usa a rota pra definir modo inicial
+  const [isLogin, setIsLogin] = useState(getInitialMode());
   const [showCepSearch, setShowCepSearch] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleUser, setIsGoogleUser] = useState(false);
@@ -92,21 +101,32 @@ const SmartAuth = () => {
     birthDate.replace(/\D/g, "").length === 8 && validateBirthDate(birthDate).valid && !birthDateError;
   const isCepValid = cep.replace(/\D/g, "").length === 8 && estado && cidade && bairro && logradouro && !cepError;
 
-  // Verificação de CPF duplicado em tempo real (após declarações)
+  // Verificação de CPF duplicado em tempo real
   const { exists: cpfExists, loading: cpfChecking } = useCheckCpfExists(cpf, isCpfValid && !cpfError);
 
   const isStep2Valid =
     isNameValid && isPhoneValid && isCpfValid && !cpfExists && !cpfChecking && isBirthDateValid && isCepValid;
 
-  // Atualizar modo quando a rota mudar
+  // Atualizar modo quando a rota OU query param mudar
   useEffect(() => {
+    const modoParam = searchParams.get("modo");
+
+    if (modoParam === "cadastro") {
+      setIsLogin(false);
+      return;
+    }
+    if (modoParam === "login") {
+      setIsLogin(true);
+      return;
+    }
+
     const path = location.pathname.toLowerCase();
     if (path === "/cadastro" || path === "/cadastro/aniversariante") {
       setIsLogin(false);
     } else if (path === "/login" || path === "/login/aniversariante") {
       setIsLogin(true);
     }
-  }, [location.pathname]);
+  }, [location.pathname, searchParams]);
 
   // Função auxiliar para verificar rate limit
   const checkRateLimit = async (identifier: string, action: "login" | "signup"): Promise<boolean> => {
@@ -142,24 +162,24 @@ const SmartAuth = () => {
   };
 
   // Validação de senha com regras específicas
-  const isPasswordValid = () => {
-    const hasMinLength = password.length >= 8;
-    const hasUppercase = /[A-Z]/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  const passwordChecks = {
+    hasMinLength: password.length >= 8,
+    hasUppercase: /[A-Z]/.test(password),
+    hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+  };
 
-    return hasMinLength && hasUppercase && hasSpecialChar;
+  const isPasswordValid = () => {
+    return passwordChecks.hasMinLength && passwordChecks.hasUppercase && passwordChecks.hasSpecialChar;
   };
 
   // Verificar sessão inicial
   useEffect(() => {
     const checkSession = async () => {
       if (isProcessingRef.current) {
-        console.log("🔵 checkSession IGNORADO - já está processando");
         return;
       }
 
       if (hasProcessedRef.current && step === 2) {
-        console.log("🔵 checkSession IGNORADO - já processou para Step 2");
         return;
       }
 
@@ -170,8 +190,6 @@ const SmartAuth = () => {
         const needsCompletion = sessionStorage.getItem("needsCompletion");
 
         if (forceStep2 === "true" || needsCompletion === "true") {
-          console.log("🔵 FLAGS DETECTADAS - Forçando Step 2");
-
           const {
             data: { session },
           } = await supabase.auth.getSession();
@@ -185,8 +203,6 @@ const SmartAuth = () => {
             setIsGoogleUser(true);
             setStep(2);
             hasProcessedRef.current = true;
-
-            console.log("✅ Step 2 configurado com sucesso para usuário Google");
           }
           return;
         }
@@ -195,8 +211,6 @@ const SmartAuth = () => {
           data: { session },
         } = await supabase.auth.getSession();
         if (session) {
-          console.log("🔵 Sessão encontrada:", session.user.email);
-
           const { data: roleData } = await supabase
             .from("user_roles")
             .select("role")
@@ -204,16 +218,12 @@ const SmartAuth = () => {
             .maybeSingle();
 
           if (!roleData) {
-            console.log("📝 Criando perfil para novo usuário Google (SEM ROLE ainda)...");
-
             try {
               await supabase.from("profiles").insert({
                 id: session.user.id,
                 email: session.user.email!,
                 nome: session.user.user_metadata?.full_name || session.user.user_metadata?.name || "",
               });
-
-              console.log("✅ Profile criado. Role será criado APÓS completar cadastro.");
             } catch (err) {
               console.error("Erro ao criar profile:", err);
             }
@@ -225,22 +235,17 @@ const SmartAuth = () => {
             .eq("id", session.user.id)
             .maybeSingle();
 
-          console.log("🔍 Dados aniversariante:", anivData);
-
           if (step === 2 || userId) {
-            console.log("⛔ Bloqueando redirecionamento - usuário está completando cadastro");
             return;
           }
 
           if (!anivData?.cpf || !anivData?.data_nascimento) {
-            console.log("📋 Precisa completar cadastro, mantendo no Step 2...");
             setUserId(session.user.id);
             setEmail(session.user.email || "");
             setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || "");
             setIsGoogleUser(true);
             setStep(2);
           } else {
-            console.log("✅ Cadastro completo, redirecionando...");
             const redirectTo = sessionStorage.getItem("redirectAfterLogin");
             sessionStorage.removeItem("redirectAfterLogin");
 
@@ -265,22 +270,18 @@ const SmartAuth = () => {
       const needsCompletion = sessionStorage.getItem("needsCompletion");
 
       if (forceStep2 === "true" || needsCompletion === "true") {
-        console.log("🔵 onAuthStateChange BLOQUEADO por flags");
         return;
       }
 
       if (step === 2) {
-        console.log("🔵 onAuthStateChange BLOQUEADO - já no Step 2");
         return;
       }
 
       if (hasProcessedRef.current) {
-        console.log("🔵 onAuthStateChange BLOQUEADO - hasProcessedRef true");
         return;
       }
 
       if (event === "SIGNED_IN" && session) {
-        console.log("🔵 onAuthStateChange: SIGNED_IN - chamando checkSession");
         checkSession();
       }
     });
@@ -403,7 +404,7 @@ const SmartAuth = () => {
     setShowCepSearch(false);
   };
 
-  // Login - COM VERIFICAÇÃO DE CADASTRO COMPLETO E RATE LIMITING
+  // Login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -547,10 +548,7 @@ const SmartAuth = () => {
 
       const redirectUrl = `${window.location.origin}/auth/callback`;
 
-      console.log("🔵 Iniciando Google OAuth...");
-      console.log("🔵 Redirect URL:", redirectUrl);
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: redirectUrl,
@@ -561,10 +559,7 @@ const SmartAuth = () => {
         },
       });
 
-      console.log("🔵 Google OAuth response:", { data, error });
-
       if (error) {
-        console.error("❌ Erro Google OAuth:", error);
         setError("Não foi possível conectar com Google. Tente novamente.");
         toast.error("Erro ao conectar com Google", {
           description: "Verifique sua conexão e tente novamente.",
@@ -572,10 +567,7 @@ const SmartAuth = () => {
         setIsLoading(false);
         return;
       }
-
-      console.log("✅ Redirecionando para Google...");
     } catch (err: any) {
-      console.error("❌ Erro catch Google:", err);
       setError("Erro ao conectar com Google. Tente novamente.");
       toast.error("Erro inesperado", {
         description: "Ocorreu um erro ao tentar conectar com o Google.",
@@ -636,8 +628,6 @@ const SmartAuth = () => {
       }
 
       if (isNewSignup) {
-        console.log("🔐 Criando conta COMPLETA após validações...");
-
         const redirectUrl = `${window.location.origin}/`;
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
@@ -707,7 +697,6 @@ const SmartAuth = () => {
         .maybeSingle();
 
       if (!existingRole) {
-        console.log("🔐 Criando role de aniversariante APÓS cadastro completo...");
         const { error: roleError } = await supabase.from("user_roles").insert({
           user_id: currentUserId,
           role: "aniversariante",
@@ -742,6 +731,14 @@ const SmartAuth = () => {
     }
   };
 
+  // Toggle de modo com atualização da URL
+  const toggleMode = () => {
+    const newIsLogin = !isLogin;
+    setIsLogin(newIsLogin);
+    const newPath = newIsLogin ? "/login" : "/cadastro";
+    window.history.replaceState(null, "", newPath);
+  };
+
   // Tela de confirmação de email
   if (mostrarTelaConfirmacao) {
     return (
@@ -765,13 +762,17 @@ const SmartAuth = () => {
       <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-violet-600/30 rounded-full blur-[120px]" />
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[120px]" />
 
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12 pb-32 sm:pb-12">
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12 pb-24 sm:pb-12">
         <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl backdrop-blur-xl">
           {/* Progress bar */}
           <div className="h-1.5 w-full bg-slate-800">
             <div
               className="h-full bg-gradient-to-r from-violet-500 to-pink-500 transition-all duration-500 ease-out"
               style={{ width: step === 1 ? "30%" : "100%" }}
+              role="progressbar"
+              aria-valuenow={step === 1 ? 30 : 100}
+              aria-valuemin={0}
+              aria-valuemax={100}
             />
           </div>
 
@@ -791,8 +792,11 @@ const SmartAuth = () => {
             </div>
 
             {error && (
-              <div className="flex items-center gap-3 rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
-                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+              <div
+                className="flex items-center gap-3 rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400"
+                role="alert"
+              >
+                <AlertCircle className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
                 <span>{error}</span>
               </div>
             )}
@@ -805,12 +809,12 @@ const SmartAuth = () => {
                   type="button"
                   onClick={handleGoogleLogin}
                   disabled={isLoading}
-                  className="w-full h-[52px] text-base font-semibold bg-white hover:bg-slate-100 text-slate-900 rounded-xl shadow-lg hover:shadow-xl transition-all"
+                  className="w-full min-h-[52px] h-[52px] text-base font-semibold bg-white hover:bg-slate-100 text-slate-900 rounded-xl shadow-lg hover:shadow-xl transition-all"
                 >
                   {isLoading ? (
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
                   ) : (
-                    <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">
+                    <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
                       <path
                         fill="#4285F4"
                         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -840,92 +844,120 @@ const SmartAuth = () => {
 
                 <form onSubmit={isLogin ? handleLogin : handleBasicSignup} className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-200 flex items-center gap-1">
+                    <label htmlFor="email" className="text-sm font-semibold text-slate-200 flex items-center gap-1">
                       Email <span className="text-pink-400">*</span>
                     </label>
                     <div className="relative">
                       <Input
+                        id="email"
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="seu@email.com"
+                        autoComplete="email"
                         className={`h-[52px] text-base bg-white/5 text-white pl-11 focus:ring-2 transition-all ${
                           email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
                             ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
                             : "border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20"
                         }`}
                         required
+                        aria-invalid={email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? "true" : "false"}
+                        aria-describedby={
+                          email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? "email-error" : undefined
+                        }
                       />
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                      <Mail
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
+                        aria-hidden="true"
+                      />
                     </div>
                     {email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && (
-                      <p className="text-sm text-red-400 flex items-center gap-1.5 mt-1">
-                        <AlertCircle className="h-4 w-4" />
+                      <p id="email-error" className="text-sm text-red-400 flex items-center gap-1.5 mt-1">
+                        <AlertCircle className="h-4 w-4" aria-hidden="true" />
                         Digite um email válido
                       </p>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-200 flex items-center gap-1">
+                    <label htmlFor="password" className="text-sm font-semibold text-slate-200 flex items-center gap-1">
                       Senha <span className="text-pink-400">*</span>
                     </label>
                     <div className="relative">
                       <Input
+                        id="password"
                         type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className={`h-[52px] text-base bg-white/5 text-white pl-11 pr-12 focus:ring-2 transition-all ${
+                        autoComplete={isLogin ? "current-password" : "new-password"}
+                        className={`h-[52px] text-base bg-white/5 text-white pl-11 pr-14 focus:ring-2 transition-all ${
                           !isLogin && password && !isPasswordValid()
                             ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
                             : "border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20"
                         }`}
                         required
                         minLength={8}
+                        aria-describedby={!isLogin ? "password-requirements" : undefined}
                       />
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                      <Lock
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
+                        aria-hidden="true"
+                      />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-all"
                         tabIndex={-1}
                         aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
                       >
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" aria-hidden="true" />
+                        ) : (
+                          <Eye className="w-5 h-5" aria-hidden="true" />
+                        )}
                       </button>
                     </div>
                     {!isLogin && (
-                      <div className="space-y-2 mt-3 p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                      <div
+                        id="password-requirements"
+                        className="space-y-2 mt-3 p-3 rounded-lg bg-slate-800/50 border border-slate-700/50"
+                      >
                         <p className="text-xs text-slate-400 font-medium">A senha deve conter:</p>
-                        <ul className="text-xs space-y-1.5">
+                        <ul className="text-xs space-y-1.5" aria-label="Requisitos de senha">
                           <li
-                            className={`flex items-center gap-2 ${password.length >= 8 ? "text-green-400" : "text-slate-500"}`}
+                            className={`flex items-center gap-2 ${passwordChecks.hasMinLength ? "text-green-400" : "text-slate-500"}`}
+                            aria-label={`Mínimo 8 caracteres: ${passwordChecks.hasMinLength ? "atendido" : "não atendido"}`}
                           >
                             <span
-                              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${password.length >= 8 ? "bg-green-500/20" : "bg-slate-700"}`}
+                              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${passwordChecks.hasMinLength ? "bg-green-500/20" : "bg-slate-700"}`}
+                              aria-hidden="true"
                             >
-                              {password.length >= 8 ? "✓" : ""}
+                              {passwordChecks.hasMinLength && <Check className="w-3 h-3" />}
                             </span>
                             Mínimo 8 caracteres
                           </li>
                           <li
-                            className={`flex items-center gap-2 ${/[A-Z]/.test(password) ? "text-green-400" : "text-slate-500"}`}
+                            className={`flex items-center gap-2 ${passwordChecks.hasUppercase ? "text-green-400" : "text-slate-500"}`}
+                            aria-label={`Uma letra maiúscula: ${passwordChecks.hasUppercase ? "atendido" : "não atendido"}`}
                           >
                             <span
-                              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${/[A-Z]/.test(password) ? "bg-green-500/20" : "bg-slate-700"}`}
+                              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${passwordChecks.hasUppercase ? "bg-green-500/20" : "bg-slate-700"}`}
+                              aria-hidden="true"
                             >
-                              {/[A-Z]/.test(password) ? "✓" : ""}
+                              {passwordChecks.hasUppercase && <Check className="w-3 h-3" />}
                             </span>
                             Uma letra maiúscula
                           </li>
                           <li
-                            className={`flex items-center gap-2 ${/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "text-green-400" : "text-slate-500"}`}
+                            className={`flex items-center gap-2 ${passwordChecks.hasSpecialChar ? "text-green-400" : "text-slate-500"}`}
+                            aria-label={`Um caractere especial: ${passwordChecks.hasSpecialChar ? "atendido" : "não atendido"}`}
                           >
                             <span
-                              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "bg-green-500/20" : "bg-slate-700"}`}
+                              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${passwordChecks.hasSpecialChar ? "bg-green-500/20" : "bg-slate-700"}`}
+                              aria-hidden="true"
                             >
-                              {/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "✓" : ""}
+                              {passwordChecks.hasSpecialChar && <Check className="w-3 h-3" />}
                             </span>
                             Um caractere especial (!@#$%...)
                           </li>
@@ -948,11 +980,11 @@ const SmartAuth = () => {
                   <Button
                     type="submit"
                     disabled={isLoading || (!isLogin && (!email || !isPasswordValid()))}
-                    className="w-full h-[52px] text-base font-semibold bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg hover:shadow-xl"
+                    className="w-full min-h-[52px] h-[52px] text-base font-semibold bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg hover:shadow-xl"
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
                         {isLogin ? "Entrando..." : "Criando conta..."}
                       </>
                     ) : isLogin ? (
@@ -965,13 +997,8 @@ const SmartAuth = () => {
 
                 <div className="text-center pt-2">
                   <button
-                    onClick={() => {
-                      setIsLogin(!isLogin);
-                      // Atualizar URL sem recarregar página
-                      const newPath = isLogin ? "/cadastro" : "/login";
-                      window.history.replaceState(null, "", newPath);
-                    }}
-                    className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium"
+                    onClick={toggleMode}
+                    className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium min-h-[44px] px-4 inline-flex items-center"
                   >
                     {isLogin ? "Primeira vez aqui? Crie sua conta grátis" : "Já tem conta? Faça login"}
                   </button>
@@ -986,7 +1013,7 @@ const SmartAuth = () => {
                 {isGoogleUser && email && (
                   <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4 space-y-2">
                     <p className="text-violet-300 text-sm font-medium flex items-center gap-2">
-                      <Check className="h-4 w-4" />
+                      <Check className="h-4 w-4" aria-hidden="true" />
                       Você está cadastrando com sua conta Google
                     </p>
                     <div className="space-y-1">
@@ -1008,6 +1035,7 @@ const SmartAuth = () => {
                   isValid={isNameValid}
                   required
                   icon={<User className="h-5 w-5" />}
+                  autoComplete="name"
                 />
 
                 <MaskedInput
@@ -1019,6 +1047,7 @@ const SmartAuth = () => {
                   error={phoneError}
                   isValid={isPhoneValid}
                   required
+                  autoComplete="tel"
                 />
 
                 <div className="space-y-2">
@@ -1044,6 +1073,7 @@ const SmartAuth = () => {
                   error={birthDateError}
                   isValid={isBirthDateValid}
                   required
+                  autoComplete="bday"
                 />
 
                 <div className="space-y-3">
@@ -1057,21 +1087,22 @@ const SmartAuth = () => {
                     isValid={isCepValid}
                     loading={cepLoading}
                     required
+                    autoComplete="postal-code"
                   />
 
                   <button
                     type="button"
                     onClick={() => setShowCepSearch(!showCepSearch)}
-                    className="text-sm text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1 font-medium"
+                    className="text-sm text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1 font-medium min-h-[44px] px-2"
                   >
                     {showCepSearch ? (
                       <>
-                        <ChevronUp className="h-4 w-4" />
+                        <ChevronUp className="h-4 w-4" aria-hidden="true" />
                         Fechar busca de CEP
                       </>
                     ) : (
                       <>
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-4 w-4" aria-hidden="true" />
                         Não sei meu CEP
                       </>
                     )}
@@ -1082,8 +1113,11 @@ const SmartAuth = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-200">Estado</label>
+                    <label htmlFor="estado" className="text-sm font-semibold text-slate-200">
+                      Estado
+                    </label>
                     <Input
+                      id="estado"
                       type="text"
                       value={estado}
                       readOnly
@@ -1092,8 +1126,11 @@ const SmartAuth = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-200">Cidade</label>
+                    <label htmlFor="cidade" className="text-sm font-semibold text-slate-200">
+                      Cidade
+                    </label>
                     <Input
+                      id="cidade"
                       type="text"
                       value={cidade}
                       readOnly
@@ -1104,8 +1141,11 @@ const SmartAuth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-200">Bairro</label>
+                  <label htmlFor="bairro" className="text-sm font-semibold text-slate-200">
+                    Bairro
+                  </label>
                   <Input
+                    id="bairro"
                     type="text"
                     value={bairro}
                     readOnly
@@ -1115,8 +1155,11 @@ const SmartAuth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-200">Rua/Logradouro</label>
+                  <label htmlFor="logradouro" className="text-sm font-semibold text-slate-200">
+                    Rua/Logradouro
+                  </label>
                   <Input
+                    id="logradouro"
                     type="text"
                     value={logradouro}
                     readOnly
@@ -1126,14 +1169,16 @@ const SmartAuth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-200">
+                  <label htmlFor="numero" className="text-sm font-semibold text-slate-200">
                     Número <span className="text-slate-400 text-xs font-normal">(opcional)</span>
                   </label>
                   <Input
+                    id="numero"
                     type="text"
                     value={numero}
                     onChange={(e) => setNumero(e.target.value.replace(/\D/g, ""))}
                     placeholder="123"
+                    autoComplete="address-line2"
                     className="h-[52px] text-base bg-white/5 border-white/10 text-white focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
                   />
                 </div>
@@ -1141,11 +1186,11 @@ const SmartAuth = () => {
                 <Button
                   type="submit"
                   disabled={isLoading || !isStep2Valid}
-                  className="w-full h-[52px] text-base font-semibold bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg hover:shadow-xl"
+                  className="w-full min-h-[52px] h-[52px] text-base font-semibold bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg hover:shadow-xl"
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
                       Finalizando...
                     </>
                   ) : (

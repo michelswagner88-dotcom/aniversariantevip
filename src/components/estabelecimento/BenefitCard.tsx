@@ -1,6 +1,6 @@
 // BenefitCard.tsx - Card de Benefício Clean Premium
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Gift, Calendar, ChevronRight, X, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,7 +13,9 @@ interface BenefitCardProps {
   regras?: string;
   estabelecimentoId: string;
   userId: string | null;
-  onEmitirCupom: () => void;
+  // Controle externo do modal (opcional)
+  isModalOpen?: boolean;
+  onModalOpenChange?: (open: boolean) => void;
 }
 
 const BenefitCard = ({
@@ -22,11 +24,30 @@ const BenefitCard = ({
   regras,
   estabelecimentoId,
   userId,
-  onEmitirCupom,
+  isModalOpen: externalIsOpen,
+  onModalOpenChange,
 }: BenefitCardProps) => {
   const navigate = useNavigate();
-  const [modalAberto, setModalAberto] = useState(false);
+  const [internalModalAberto, setInternalModalAberto] = useState(false);
   const { trackEvent } = useEstablishmentMetrics();
+
+  // Usar estado externo se fornecido, senão interno
+  const modalAberto = externalIsOpen !== undefined ? externalIsOpen : internalModalAberto;
+
+  const setModalAberto = (open: boolean) => {
+    if (onModalOpenChange) {
+      onModalOpenChange(open);
+    } else {
+      setInternalModalAberto(open);
+    }
+  };
+
+  // Sincronizar estado externo com interno
+  useEffect(() => {
+    if (externalIsOpen !== undefined) {
+      setInternalModalAberto(externalIsOpen);
+    }
+  }, [externalIsOpen]);
 
   const handleVerBeneficio = async () => {
     await trackEvent(estabelecimentoId, "benefit_click");
@@ -42,10 +63,11 @@ const BenefitCard = ({
     setModalAberto(true);
   };
 
+  const fecharModal = () => setModalAberto(false);
+
   return (
     <>
       {/* ===== CARD DE BENEFÍCIO ===== */}
-      {/* mt-4 no mobile, mt-6 no desktop */}
       <div className="mx-4 sm:mx-6 mt-4 sm:mt-6">
         <div className="max-w-3xl mx-auto">
           <div
@@ -72,16 +94,17 @@ const BenefitCard = ({
 
             {/* Validade */}
             <div className="flex items-center gap-2 mt-4 text-white/80">
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-4 h-4" aria-hidden="true" />
               <span className="text-sm">Válido: {getValidadeTexto(validadeTexto)}</span>
             </div>
 
             {/* Botão - min 48px de altura para touch */}
             <button
               onClick={handleVerBeneficio}
+              aria-label="Ver como usar o benefício de aniversário"
               className="
                 w-full mt-4 sm:mt-5
-                py-3.5 sm:py-4 px-4
+                min-h-[48px] py-3.5 sm:py-4 px-4
                 bg-white
                 text-[#240046]
                 font-semibold
@@ -90,10 +113,11 @@ const BenefitCard = ({
                 flex items-center justify-center gap-2
                 transition-all duration-200
                 active:scale-[0.98]
+                hover:bg-gray-50
               "
             >
               Ver como usar
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -107,6 +131,9 @@ const BenefitCard = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-titulo"
           >
             {/* Backdrop */}
             <motion.div
@@ -114,7 +141,8 @@ const BenefitCard = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/60"
-              onClick={() => setModalAberto(false)}
+              onClick={fecharModal}
+              aria-hidden="true"
             />
 
             {/* Modal */}
@@ -135,12 +163,15 @@ const BenefitCard = ({
             >
               {/* Header */}
               <div className="sticky top-0 bg-white border-b border-[#EBEBEB] px-5 py-4 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-[#240046]">Como usar seu benefício</h2>
+                <h2 id="modal-titulo" className="text-lg font-bold text-[#240046]">
+                  Como usar seu benefício
+                </h2>
                 <button
-                  onClick={() => setModalAberto(false)}
-                  className="w-8 h-8 rounded-full bg-[#240046]/10 flex items-center justify-center hover:bg-[#240046]/20 transition-colors"
+                  onClick={fecharModal}
+                  aria-label="Fechar modal"
+                  className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-[#240046]/10 flex items-center justify-center hover:bg-[#240046]/20 transition-colors"
                 >
-                  <X className="w-4 h-4 text-[#3C096C]" />
+                  <X className="w-5 h-5 text-[#3C096C]" aria-hidden="true" />
                 </button>
               </div>
 
@@ -178,7 +209,7 @@ const BenefitCard = ({
                     ].map((step, i) => (
                       <li key={i} className="flex items-center gap-3 text-[#240046] text-sm">
                         <div className="w-6 h-6 rounded-full bg-[#240046] flex items-center justify-center flex-shrink-0">
-                          <Check className="w-3.5 h-3.5 text-white" />
+                          <Check className="w-3.5 h-3.5 text-white" aria-hidden="true" />
                         </div>
                         {step}
                       </li>
@@ -194,15 +225,12 @@ const BenefitCard = ({
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="sticky bottom-0 bg-white border-t border-[#EBEBEB] p-5 space-y-3">
+              {/* Footer - apenas botão fechar */}
+              <div className="sticky bottom-0 bg-white border-t border-[#EBEBEB] p-5">
                 <button
-                  onClick={() => {
-                    setModalAberto(false);
-                    onEmitirCupom();
-                  }}
+                  onClick={fecharModal}
                   className="
-                    w-full py-3.5
+                    w-full min-h-[48px] py-3.5
                     bg-gradient-to-r from-[#240046] to-[#3C096C]
                     text-white
                     font-semibold
@@ -213,23 +241,7 @@ const BenefitCard = ({
                     active:scale-[0.98]
                   "
                 >
-                  <Gift className="w-5 h-5" />
-                  Gerar Meu Cupom
-                </button>
-
-                <button
-                  onClick={() => setModalAberto(false)}
-                  className="
-                    w-full py-3
-                    bg-[#240046]/5
-                    text-[#3C096C]
-                    font-medium
-                    rounded-xl
-                    transition-colors
-                    hover:bg-[#240046]/10
-                  "
-                >
-                  Fechar
+                  Entendi!
                 </button>
               </div>
             </motion.div>

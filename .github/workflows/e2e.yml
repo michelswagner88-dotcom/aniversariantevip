@@ -1,5 +1,4 @@
 name: E2E Tests
-
 on:
   push:
     branches: [main]
@@ -10,30 +9,40 @@ jobs:
   e2e:
     timeout-minutes: 20
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-      
+          node-version: "20"
+          cache: "npm"
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
-      
+
       - name: Run E2E tests
+        id: e2e_tests
         run: npm run test:e2e
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
           CI: true
-      
+        continue-on-error: true
+
+      - name: Set test result
+        run: |
+          if [ "${{ steps.e2e_tests.outcome }}" == "success" ]; then
+            echo "TEST_PASSED=true" >> $GITHUB_ENV
+          else
+            echo "TEST_PASSED=false" >> $GITHUB_ENV
+          fi
+
       - name: Upload test artifacts
         uses: actions/upload-artifact@v4
         if: always()
@@ -41,34 +50,39 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 30
-      
+
       - name: Upload test videos
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: failure() || steps.e2e_tests.outcome == 'failure'
         with:
           name: playwright-videos
           path: test-results/
           retention-days: 7
-      
+
       - name: Comment PR with E2E results
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
+            const testPassed = process.env.TEST_PASSED === 'true';
             let comment = '## 🎭 Resultados dos Testes E2E\n\n';
-            
-            if (process.env.TEST_PASSED === 'true') {
-              comment += '✅ Todos os testes E2E passaram com sucesso!\n\n';
+
+            if (testPassed) {
+              comment += '✅ **Todos os testes E2E passaram com sucesso!**\n\n';
             } else {
-              comment += '❌ Alguns testes E2E falharam. Veja os artefatos para mais detalhes.\n\n';
+              comment += '❌ **Alguns testes E2E falharam.** Veja os artefatos para mais detalhes.\n\n';
             }
-            
-            comment += '[Ver relatório completo](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})';
-            
+
+            comment += `📊 [Ver relatório completo](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\n`;
+            comment += `---\n_Executado em: ${new Date().toISOString()}_`;
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: comment
             });
+
+      - name: Fail if tests failed
+        if: steps.e2e_tests.outcome == 'failure'
+        run: exit 1

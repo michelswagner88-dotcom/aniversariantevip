@@ -18,7 +18,6 @@ import {
   getWhatsAppMessage,
 } from "@/lib/contactUtils";
 import { gerarBioAutomatica, separarBeneficio } from "@/lib/bioUtils";
-import CupomModal from "@/components/CupomModal";
 import LoginRequiredModal from "@/components/LoginRequiredModal";
 
 // Componentes Premium Clean
@@ -100,14 +99,14 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
 
           {/* Container do carrossel */}
           <div className="relative group">
-            {/* Botão esquerda - visível em todas as telas quando há scroll */}
+            {/* Botão esquerda */}
             {displayPhotos.length > 2 && (
               <button
                 onClick={() => scroll("left")}
                 aria-label="Fotos anteriores"
                 className={`
                   absolute left-2 top-1/2 -translate-y-1/2 z-10
-                  w-10 h-10 sm:w-11 sm:h-11 rounded-full 
+                  min-w-[44px] min-h-[44px] w-11 h-11 rounded-full 
                   bg-white/90 sm:bg-white shadow-lg
                   flex items-center justify-center
                   transition-all duration-200
@@ -156,14 +155,14 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
               ))}
             </div>
 
-            {/* Botão direita - visível em todas as telas quando há scroll */}
+            {/* Botão direita */}
             {displayPhotos.length > 2 && (
               <button
                 onClick={() => scroll("right")}
                 aria-label="Próximas fotos"
                 className={`
                   absolute right-2 top-1/2 -translate-y-1/2 z-10
-                  w-10 h-10 sm:w-11 sm:h-11 rounded-full 
+                  min-w-[44px] min-h-[44px] w-11 h-11 rounded-full 
                   bg-white/90 sm:bg-white shadow-lg
                   flex items-center justify-center
                   transition-all duration-200
@@ -195,7 +194,7 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
             <button
               onClick={() => setLightboxOpen(false)}
               aria-label="Fechar galeria"
-              className="absolute top-4 right-4 z-10 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
+              className="absolute top-4 right-4 z-10 min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
             >
               <X className="w-6 h-6 text-white" />
             </button>
@@ -214,7 +213,7 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
                     goToPrevious();
                   }}
                   aria-label="Foto anterior"
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
                 >
                   <ChevronLeft className="w-6 h-6 text-white" />
                 </button>
@@ -225,7 +224,7 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
                     goToNext();
                   }}
                   aria-label="Próxima foto"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
                 >
                   <ChevronRight className="w-6 h-6 text-white" />
                 </button>
@@ -268,7 +267,7 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
               </div>
             )}
 
-            {/* Dots - só mobile - AUMENTADOS para touch */}
+            {/* Dots - só mobile */}
             {displayPhotos.length > 1 && (
               <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-3 sm:hidden">
                 {displayPhotos.map((_, index) => (
@@ -280,7 +279,7 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
                     }}
                     aria-label={`Ir para foto ${index + 1}`}
                     aria-current={index === currentIndex ? "true" : "false"}
-                    className="w-11 h-11 flex items-center justify-center"
+                    className="min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center"
                   >
                     <span
                       className={`
@@ -312,7 +311,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
 
   const [estabelecimento, setEstabelecimento] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [showCupomModal, setShowCupomModal] = useState(false);
+  const [showBenefitModal, setShowBenefitModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -329,6 +328,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
     trackDirectionsClick,
     trackShare,
     trackFavorite,
+    trackEvent,
   } = useEstablishmentMetrics();
 
   // SEO dinâmico
@@ -414,6 +414,21 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
   const handleShare = () => {
     if (id) trackShare(id);
     setShowShareModal(true);
+  };
+
+  // Handler para o botão fixo mobile
+  const handleVerBeneficioMobile = async () => {
+    if (id) {
+      await trackEvent(id, "benefit_click");
+    }
+
+    if (!userId) {
+      sessionStorage.setItem("redirectAfterLogin", window.location.pathname);
+      setShowLoginModal(true);
+      return;
+    }
+
+    setShowBenefitModal(true);
   };
 
   const handleWhatsApp = () => {
@@ -615,14 +630,15 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
         <GaleriaFotosInline photos={galeriaFotos} establishmentName={estabelecimento.nome_fantasia} />
       )}
 
-      {/* Benefício */}
+      {/* Benefício - com controle externo do modal */}
       <BenefitCard
         beneficio={beneficioData.titulo}
         validadeTexto={beneficioData.validade}
         regras={beneficioData.regras}
         estabelecimentoId={id!}
         userId={userId}
-        onEmitirCupom={() => setShowCupomModal(true)}
+        isModalOpen={showBenefitModal}
+        onModalOpenChange={setShowBenefitModal}
       />
 
       {/* Sobre */}
@@ -675,13 +691,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
       >
         <div className="p-4">
           <button
-            onClick={() => {
-              if (!userId) {
-                setShowLoginModal(true);
-                return;
-              }
-              setShowCupomModal(true);
-            }}
+            onClick={handleVerBeneficioMobile}
             aria-label="Ver benefício de aniversário"
             className="
               w-full 
@@ -696,15 +706,13 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
               transition-transform
             "
           >
-            <Gift className="w-5 h-5" />
+            <Gift className="w-5 h-5" aria-hidden="true" />
             Ver Benefício de Aniversário
           </button>
         </div>
       </div>
 
       {/* === MODALS === */}
-
-      <CupomModal isOpen={showCupomModal} onClose={() => setShowCupomModal(false)} estabelecimento={estabelecimento} />
 
       <LoginRequiredModal
         isOpen={showLoginModal}
@@ -748,9 +756,9 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
                 <button
                   onClick={() => setShowShareModal(false)}
                   aria-label="Fechar modal de compartilhamento"
-                  className="w-10 h-10 rounded-full bg-[#F7F7F7] flex items-center justify-center hover:bg-[#EBEBEB] active:scale-95 transition-all"
+                  className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-[#F7F7F7] flex items-center justify-center hover:bg-[#EBEBEB] active:scale-95 transition-all"
                 >
-                  <X className="w-5 h-5 text-[#717171]" />
+                  <X className="w-5 h-5 text-[#717171]" aria-hidden="true" />
                 </button>
               </div>
 
@@ -774,7 +782,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
                     className="flex flex-col items-center gap-2 min-h-[72px]"
                   >
                     <div className={`w-12 h-12 ${item.color} rounded-full flex items-center justify-center`}>
-                      <item.icon className="w-6 h-6 text-white" />
+                      <item.icon className="w-6 h-6 text-white" aria-hidden="true" />
                     </div>
                     <span className="text-xs text-[#717171]">{item.name}</span>
                   </button>
@@ -787,7 +795,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
                 aria-label="Copiar link para área de transferência"
                 className="w-full py-3.5 min-h-[48px] bg-[#F7F7F7] hover:bg-[#EBEBEB] active:scale-[0.98] rounded-xl flex items-center justify-center gap-2 transition-all"
               >
-                <Copy className="w-5 h-5 text-[#717171]" />
+                <Copy className="w-5 h-5 text-[#717171]" aria-hidden="true" />
                 <span className="font-medium text-[#222222]">Copiar link</span>
               </button>
             </motion.div>

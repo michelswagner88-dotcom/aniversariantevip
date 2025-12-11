@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useId } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface DiaHorario {
   aberto: boolean;
@@ -26,32 +27,40 @@ interface HorarioFuncionamentoEditorProps {
 }
 
 const diasSemana = [
-  { key: 'seg', label: 'Segunda' },
-  { key: 'ter', label: 'Terça' },
-  { key: 'qua', label: 'Quarta' },
-  { key: 'qui', label: 'Quinta' },
-  { key: 'sex', label: 'Sexta' },
-  { key: 'sab', label: 'Sábado' },
-  { key: 'dom', label: 'Domingo' },
-];
+  { key: "seg", label: "Segunda-feira" },
+  { key: "ter", label: "Terça-feira" },
+  { key: "qua", label: "Quarta-feira" },
+  { key: "qui", label: "Quinta-feira" },
+  { key: "sex", label: "Sexta-feira" },
+  { key: "sab", label: "Sábado" },
+  { key: "dom", label: "Domingo" },
+] as const;
+
+type DiaKey = (typeof diasSemana)[number]["key"];
+
+const parseValue = (value: string | null): HorarioSemana => {
+  if (!value) return {};
+  try {
+    return JSON.parse(value);
+  } catch {
+    return {};
+  }
+};
 
 export function HorarioFuncionamentoEditor({ value, onChange }: HorarioFuncionamentoEditorProps) {
-  const parseValue = (): HorarioSemana => {
-    if (!value) return {};
-    try {
-      return JSON.parse(value);
-    } catch {
-      return {};
-    }
-  };
+  const [horarios, setHorarios] = useState<HorarioSemana>(() => parseValue(value));
+  const uniqueId = useId();
 
-  const [horarios, setHorarios] = useState<HorarioSemana>(parseValue());
+  // Sincronizar estado quando value mudar externamente
+  useEffect(() => {
+    setHorarios(parseValue(value));
+  }, [value]);
 
-  const updateHorario = (dia: string, updates: Partial<DiaHorario>) => {
+  const updateHorario = (dia: DiaKey, updates: Partial<DiaHorario>) => {
     const newHorarios = {
       ...horarios,
       [dia]: {
-        ...horarios[dia as keyof HorarioSemana],
+        ...horarios[dia],
         ...updates,
       },
     };
@@ -59,63 +68,88 @@ export function HorarioFuncionamentoEditor({ value, onChange }: HorarioFuncionam
     onChange(JSON.stringify(newHorarios));
   };
 
-  const toggleDia = (dia: string) => {
-    const currentDia = horarios[dia as keyof HorarioSemana];
+  const toggleDia = (dia: DiaKey) => {
+    const currentDia = horarios[dia];
     updateHorario(dia, {
       aberto: !currentDia?.aberto,
-      inicio: currentDia?.inicio || '08:00',
-      fim: currentDia?.fim || '18:00',
+      inicio: currentDia?.inicio || "08:00",
+      fim: currentDia?.fim || "18:00",
+    });
+  };
+
+  const toggle24h = (dia: DiaKey, checked: boolean) => {
+    updateHorario(dia, {
+      is24h: checked,
+      inicio: checked ? "00:00" : "08:00",
+      fim: checked ? "23:59" : "18:00",
     });
   };
 
   return (
     <div className="space-y-3">
       {diasSemana.map(({ key, label }) => {
-        const dia = horarios[key as keyof HorarioSemana];
+        const dia = horarios[key];
+        const switchId = `${uniqueId}-${key}-switch`;
+        const aberturaId = `${uniqueId}-${key}-abertura`;
+        const fechamentoId = `${uniqueId}-${key}-fechamento`;
+        const is24hId = `${uniqueId}-${key}-24h`;
+
         return (
           <div key={key} className="border border-white/10 rounded-lg p-3 bg-slate-800/50">
-            <div className="flex items-center justify-between mb-2">
-              <Label className="text-sm font-medium">{label}</Label>
+            <div className="flex items-center justify-between mb-2 min-h-[44px]">
+              <Label htmlFor={switchId} className="text-sm font-medium cursor-pointer">
+                {label}
+              </Label>
               <Switch
+                id={switchId}
                 checked={dia?.aberto || false}
                 onCheckedChange={() => toggleDia(key)}
+                aria-label={`${label} - ${dia?.aberto ? "Aberto" : "Fechado"}`}
               />
             </div>
 
             {dia?.aberto && (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <Label className="text-xs text-slate-400">Abertura</Label>
+                  <Label htmlFor={aberturaId} className="text-xs text-slate-400">
+                    Abertura
+                  </Label>
                   <Input
+                    id={aberturaId}
                     type="time"
-                    value={dia.inicio || '08:00'}
+                    value={dia.inicio || "08:00"}
                     onChange={(e) => updateHorario(key, { inicio: e.target.value })}
-                    className="h-8 text-sm"
+                    className="min-h-[44px]"
+                    disabled={dia.is24h}
                   />
                 </div>
+
                 <div>
-                  <Label className="text-xs text-slate-400">Fechamento</Label>
+                  <Label htmlFor={fechamentoId} className="text-xs text-slate-400">
+                    Fechamento
+                  </Label>
                   <Input
+                    id={fechamentoId}
                     type="time"
-                    value={dia.fim || '18:00'}
+                    value={dia.fim || "18:00"}
                     onChange={(e) => updateHorario(key, { fim: e.target.value })}
-                    className="h-8 text-sm"
+                    className="min-h-[44px]"
+                    disabled={dia.is24h}
                   />
                 </div>
+
                 <div className="flex items-end">
-                  <label className="flex items-center gap-2 text-xs cursor-pointer">
-                    <input
-                      type="checkbox"
+                  <div className="flex items-center gap-2 min-h-[44px]">
+                    <Checkbox
+                      id={is24hId}
                       checked={dia.is24h || false}
-                      onChange={(e) => updateHorario(key, { 
-                        is24h: e.target.checked,
-                        inicio: '00:00',
-                        fim: '23:59'
-                      })}
-                      className="rounded"
+                      onCheckedChange={(checked) => toggle24h(key, checked === true)}
+                      className="h-5 w-5"
                     />
-                    <span className="text-slate-400">24h</span>
-                  </label>
+                    <Label htmlFor={is24hId} className="text-sm text-slate-400 cursor-pointer">
+                      Aberto 24h
+                    </Label>
+                  </div>
                 </div>
               </div>
             )}

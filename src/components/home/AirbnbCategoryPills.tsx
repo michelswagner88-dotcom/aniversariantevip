@@ -131,79 +131,114 @@ export const AirbnbCategoryPills = ({
   return (
     <div className="bg-[#240046] py-4">
       <div className="relative flex items-center gap-2 max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
+        {/* Seta Esquerda - Visível em todas as telas quando há scroll */}
         <button
           onClick={() => scrollBy("left")}
           aria-label="Categorias anteriores"
           className={cn(
-            "hidden sm:flex flex-shrink-0 w-8 h-8 rounded-full bg-white hover:bg-white/90 items-center justify-center transition-all",
-            !showFadeLeft && "opacity-30 pointer-events-none",
+            "flex flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-full items-center justify-center transition-all",
+            "bg-white/10 sm:bg-white hover:bg-white/20 sm:hover:bg-white/90",
+            !showFadeLeft && "opacity-0 pointer-events-none",
           )}
         >
-          <ChevronLeft className="w-4 h-4 text-[#240046]" />
+          <ChevronLeft className="w-5 h-5 text-white sm:text-[#240046]" />
         </button>
 
-        <div
-          ref={scrollRef}
-          className="flex-1 flex gap-2 sm:gap-3 overflow-x-auto py-2 scrollbar-hide scroll-smooth"
-          style={{ WebkitOverflowScrolling: "touch" }}
-        >
-          <div className="flex gap-2 sm:gap-3 px-1 min-w-max">
-            {categoriasConfig.map((cat) => {
-              const isActive = categoriaAtiva === cat.id;
-              const IconComponent = cat.icon;
+        {/* Container com gradientes de fade */}
+        <div className="relative flex-1 overflow-hidden">
+          {/* Fade esquerdo - indicador visual de scroll */}
+          <div
+            className={cn(
+              "absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#240046] to-transparent z-10 pointer-events-none transition-opacity duration-300",
+              showFadeLeft ? "opacity-100" : "opacity-0",
+            )}
+            aria-hidden="true"
+          />
 
-              return (
-                <button
-                  key={cat.id || "todos"}
-                  data-categoria={cat.id ?? "todos"}
-                  onClick={() => onCategoriaChange(cat.id)}
-                  aria-label={`Filtrar por ${cat.nome}`}
-                  aria-pressed={isActive}
-                  className={cn(
-                    "group flex flex-col items-center gap-1.5 min-w-[64px] sm:min-w-[72px] px-3 py-2 rounded-xl transition-all duration-300",
-                    "flex-shrink-0",
-                    isActive ? "bg-white/15" : "bg-transparent hover:bg-white/10",
-                  )}
-                >
-                  <IconComponent
-                    size={24}
-                    strokeWidth={1.5}
-                    className={cn(
-                      "transition-all duration-300",
-                      isActive ? "text-white scale-110" : "text-white group-hover:scale-110",
-                    )}
-                  />
+          {/* Fade direito - indicador visual de scroll */}
+          <div
+            className={cn(
+              "absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#240046] to-transparent z-10 pointer-events-none transition-opacity duration-300",
+              showFadeRight ? "opacity-100" : "opacity-0",
+            )}
+            aria-hidden="true"
+          />
 
-                  <span
+          <div
+            ref={scrollRef}
+            role="tablist"
+            aria-label="Filtrar por categoria"
+            className="flex gap-3 sm:gap-4 overflow-x-auto py-2 scrollbar-hide scroll-smooth"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            <div className="flex gap-3 sm:gap-4 px-1 min-w-max">
+              {categoriasConfig.map((cat) => {
+                const isActive = categoriaAtiva === cat.id;
+                const IconComponent = cat.icon;
+
+                return (
+                  <button
+                    key={cat.id || "todos"}
+                    data-categoria={cat.id ?? "todos"}
+                    onClick={() => onCategoriaChange(cat.id)}
+                    role="tab"
+                    aria-label={`Filtrar por ${cat.nome}`}
+                    aria-selected={isActive}
+                    tabIndex={isActive ? 0 : -1}
                     className={cn(
-                      "text-xs whitespace-nowrap transition-all duration-300",
-                      isActive ? "text-white font-semibold" : "text-white",
+                      "group flex flex-col items-center justify-center gap-1.5",
+                      "min-w-[72px] sm:min-w-[80px] min-h-[68px]",
+                      "px-3 py-2 rounded-xl transition-all duration-300",
+                      "flex-shrink-0",
+                      isActive ? "bg-white/15" : "bg-transparent hover:bg-white/10",
                     )}
                   >
-                    {cat.nome}
-                  </span>
+                    <IconComponent
+                      size={24}
+                      strokeWidth={1.5}
+                      className={cn(
+                        "transition-all duration-300",
+                        isActive
+                          ? "text-white scale-110"
+                          : "text-white/80 group-hover:text-white group-hover:scale-110",
+                      )}
+                    />
 
-                  <div
-                    className={cn(
-                      "h-0.5 rounded-full transition-all duration-300",
-                      isActive ? "w-6 bg-white" : "w-0 bg-transparent",
-                    )}
-                  />
-                </button>
-              );
-            })}
+                    <span
+                      className={cn(
+                        "text-xs sm:text-sm whitespace-nowrap transition-all duration-300",
+                        isActive ? "text-white font-semibold" : "text-white/80 group-hover:text-white",
+                      )}
+                    >
+                      {cat.nome}
+                    </span>
+
+                    {/* Indicador de seleção */}
+                    <div
+                      className={cn(
+                        "h-0.5 rounded-full transition-all duration-300",
+                        isActive ? "w-6 bg-white" : "w-0 bg-transparent",
+                      )}
+                      aria-hidden="true"
+                    />
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
+        {/* Seta Direita - Visível em todas as telas quando há scroll */}
         <button
           onClick={() => scrollBy("right")}
           aria-label="Próximas categorias"
           className={cn(
-            "hidden sm:flex flex-shrink-0 w-8 h-8 rounded-full bg-white hover:bg-white/90 items-center justify-center transition-all",
-            !showFadeRight && "opacity-30 pointer-events-none",
+            "flex flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-full items-center justify-center transition-all",
+            "bg-white/10 sm:bg-white hover:bg-white/20 sm:hover:bg-white/90",
+            !showFadeRight && "opacity-0 pointer-events-none",
           )}
         >
-          <ChevronRight className="w-4 h-4 text-[#240046]" />
+          <ChevronRight className="w-5 h-5 text-white sm:text-[#240046]" />
         </button>
       </div>
     </div>

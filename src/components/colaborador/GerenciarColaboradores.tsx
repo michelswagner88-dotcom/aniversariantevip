@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,36 +16,46 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Store, Search, Loader2, Eye, ToggleLeft, ToggleRight, MapPin, Phone, ExternalLink } from "lucide-react";
-import { Link } from "react-router-dom";
+import { UserPlus, Trash2, Loader2, Edit2, Users, Search } from "lucide-react";
+import { z } from "zod";
 
 // Tipos
-interface Estabelecimento {
+type RoleType = "admin" | "colaborador";
+
+interface Profile {
   id: string;
-  nome_fantasia: string;
-  razao_social: string | null;
-  cnpj: string | null;
-  telefone: string | null;
-  cidade: string | null;
-  estado: string | null;
-  categoria: string[] | null;
-  ativo: boolean;
-  created_at: string;
-  descricao_beneficio: string | null;
+  email: string;
+  nome: string | null;
 }
+
+interface Colaborador {
+  id: string;
+  user_id: string;
+  role: RoleType;
+  created_at: string;
+  profiles: Profile | null;
+}
+
+const colaboradorSchema = z.object({
+  email: z.string().email("Email inválido").max(255, "Email muito longo"),
+  senha: z.string().min(6, "Senha deve ter no mínimo 6 caracteres").max(100, "Senha muito longa"),
+  nome: z.string().trim().min(3, "Nome deve ter no mínimo 3 caracteres").max(100, "Nome muito longo"),
+});
 
 // Skeleton da tabela para loading inicial
 const TableSkeleton = () => (
   <div className="space-y-3">
-    {[...Array(5)].map((_, i) => (
+    {[...Array(3)].map((_, i) => (
       <div key={i} className="flex items-center gap-4 p-4">
-        <Skeleton className="h-4 w-[200px]" />
         <Skeleton className="h-4 w-[150px]" />
+        <Skeleton className="h-4 w-[200px]" />
+        <Skeleton className="h-6 w-[100px] rounded-full" />
         <Skeleton className="h-4 w-[100px]" />
-        <Skeleton className="h-6 w-[80px] rounded-full" />
         <div className="ml-auto flex gap-2">
           <Skeleton className="h-10 w-10 rounded-md" />
           <Skeleton className="h-10 w-10 rounded-md" />
@@ -55,285 +65,434 @@ const TableSkeleton = () => (
   </div>
 );
 
-// Empty state
-const EmptyState = () => (
+// Empty state bonito
+const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
   <div className="flex flex-col items-center justify-center py-12 text-center">
     <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-      <Store className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
+      <Users className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
     </div>
-    <h3 className="text-lg font-semibold mb-1">Nenhum estabelecimento</h3>
-    <p className="text-sm text-muted-foreground mb-4 max-w-sm">Ainda não há estabelecimentos cadastrados no sistema.</p>
+    <h3 className="text-lg font-semibold mb-1">Nenhum colaborador</h3>
+    <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+      Adicione colaboradores para ajudar a gerenciar o sistema. Você pode definir diferentes níveis de permissão.
+    </p>
+    <Button onClick={onAdd} className="min-h-[44px]">
+      <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+      Adicionar Primeiro Colaborador
+    </Button>
   </div>
 );
 
-export const GerenciarEstabelecimentos = () => {
-  const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);
+export const GerenciarColaboradores = () => {
+  const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [loading, setLoading] = useState(true);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filtroStatus, setFiltroStatus] = useState<"todos" | "ativos" | "inativos">("todos");
-  const [filtroCidade, setFiltroCidade] = useState<string>("todas");
 
-  // Lista de cidades únicas para o filtro
-  const cidadesUnicas = Array.from(new Set(estabelecimentos.map((e) => e.cidade).filter(Boolean))).sort() as string[];
+  // Form states
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [nome, setNome] = useState("");
+  const [selectedRole, setSelectedRole] = useState<RoleType>("colaborador");
+  const [editingUser, setEditingUser] = useState<Colaborador | null>(null);
 
   useEffect(() => {
-    carregarEstabelecimentos();
+    carregarColaboradores();
   }, []);
 
-  const carregarEstabelecimentos = async () => {
+  const carregarColaboradores = async () => {
     try {
-      const { data, error } = await supabase
-        .from("estabelecimentos")
+      const { data: roles, error } = await supabase
+        .from("user_roles")
         .select(
-          "id, nome_fantasia, razao_social, cnpj, telefone, cidade, estado, categoria, ativo, created_at, descricao_beneficio",
+          `
+          *,
+          profiles:user_id (
+            id,
+            email,
+            nome
+          )
+        `,
         )
+        .in("role", ["admin", "colaborador"])
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setEstabelecimentos(data || []);
+      setColaboradores((roles as Colaborador[]) || []);
     } catch {
-      toast.error("Erro ao carregar estabelecimentos");
+      toast.error("Erro ao carregar colaboradores");
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleAtivo = async (id: string, ativoAtual: boolean, nome: string) => {
-    try {
-      setTogglingId(id);
+  const resetForm = () => {
+    setEmail("");
+    setSenha("");
+    setNome("");
+    setSelectedRole("colaborador");
+  };
 
-      const { error } = await supabase.from("estabelecimentos").update({ ativo: !ativoAtual }).eq("id", id);
+  const handleAdicionarColaborador = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const validatedData = colaboradorSchema.parse({ email, senha, nome });
+      setSaving(true);
+
+      const redirectUrl = `${window.location.origin}/area-colaborador`;
+
+      const { data, error } = await supabase.auth.signUp({
+        email: validatedData.email,
+        password: validatedData.senha,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            nome: validatedData.nome,
+          },
+        },
+      });
 
       if (error) throw error;
 
-      toast.success(ativoAtual ? "Estabelecimento desativado" : "Estabelecimento ativado", {
-        description: nome,
-      });
+      if (data.user) {
+        const { error: roleError } = await supabase.from("user_roles").insert({
+          user_id: data.user.id,
+          role: selectedRole,
+        });
 
-      // Atualiza localmente sem recarregar tudo
-      setEstabelecimentos((prev) => prev.map((e) => (e.id === id ? { ...e, ativo: !ativoAtual } : e)));
-    } catch {
-      toast.error("Erro ao atualizar status");
+        if (roleError) throw roleError;
+
+        toast.success("Colaborador adicionado com sucesso!", {
+          description: `${validatedData.nome} foi adicionado como ${selectedRole === "admin" ? "Administrador" : "Colaborador"}`,
+        });
+        setDialogOpen(false);
+        resetForm();
+        carregarColaboradores();
+      }
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        error.errors.forEach((err) => {
+          toast.error(err.message);
+        });
+      } else if (error instanceof Error) {
+        toast.error(error.message || "Erro ao adicionar colaborador");
+      } else {
+        toast.error("Erro ao adicionar colaborador");
+      }
     } finally {
-      setTogglingId(null);
+      setSaving(false);
     }
   };
 
-  // Filtros combinados
-  const estabelecimentosFiltrados = estabelecimentos.filter((e) => {
-    // Filtro de busca
-    if (searchTerm) {
-      const termo = searchTerm.toLowerCase();
-      const matchNome = e.nome_fantasia?.toLowerCase().includes(termo);
-      const matchCidade = e.cidade?.toLowerCase().includes(termo);
-      const matchCnpj = e.cnpj?.includes(termo);
-      if (!matchNome && !matchCidade && !matchCnpj) return false;
+  const handleRemoverColaborador = async (userId: string, role: RoleType, nome: string) => {
+    try {
+      setRemovingId(userId);
+
+      const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
+
+      if (error) throw error;
+
+      toast.success("Colaborador removido", {
+        description: `${nome} foi removido da equipe`,
+      });
+      carregarColaboradores();
+    } catch {
+      toast.error("Erro ao remover colaborador");
+    } finally {
+      setRemovingId(null);
     }
+  };
 
-    // Filtro de status
-    if (filtroStatus === "ativos" && !e.ativo) return false;
-    if (filtroStatus === "inativos" && e.ativo) return false;
+  const handleEditRole = (user: Colaborador) => {
+    setEditingUser(user);
+    setSelectedRole(user.role);
+    setEditDialogOpen(true);
+  };
 
-    // Filtro de cidade
-    if (filtroCidade !== "todas" && e.cidade !== filtroCidade) return false;
+  const handleUpdateRole = async () => {
+    if (!editingUser) return;
 
-    return true;
+    try {
+      setSaving(true);
+
+      const { error } = await supabase
+        .from("user_roles")
+        .update({ role: selectedRole })
+        .eq("user_id", editingUser.user_id)
+        .eq("role", editingUser.role);
+
+      if (error) throw error;
+
+      toast.success("Permissões atualizadas!", {
+        description: `${editingUser.profiles?.nome} agora é ${selectedRole === "admin" ? "Administrador" : "Colaborador"}`,
+      });
+      setEditDialogOpen(false);
+      setEditingUser(null);
+      carregarColaboradores();
+    } catch {
+      toast.error("Erro ao atualizar permissões");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Filtro de busca
+  const colaboradoresFiltrados = colaboradores.filter((c) => {
+    if (!searchTerm) return true;
+    const termo = searchTerm.toLowerCase();
+    return c.profiles?.nome?.toLowerCase().includes(termo) || c.profiles?.email?.toLowerCase().includes(termo);
   });
-
-  // Contadores
-  const totalAtivos = estabelecimentos.filter((e) => e.ativo).length;
-  const totalInativos = estabelecimentos.filter((e) => !e.ativo).length;
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <CardTitle>Gerenciar Estabelecimentos</CardTitle>
+            <CardTitle>Gerenciar Colaboradores</CardTitle>
             <CardDescription>
-              {estabelecimentos.length} estabelecimento(s) • {totalAtivos} ativo(s) • {totalInativos} inativo(s)
+              {colaboradores.length} colaborador{colaboradores.length !== 1 ? "es" : ""} na equipe
             </CardDescription>
           </div>
 
-          {/* Filtros */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Busca */}
-            <div className="relative flex-1">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <Input
-                placeholder="Buscar por nome, cidade ou CNPJ..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 min-h-[44px]"
-                aria-label="Buscar estabelecimentos"
-              />
-            </div>
-
-            {/* Filtro Status */}
-            <Select
-              value={filtroStatus}
-              onValueChange={(value: "todos" | "ativos" | "inativos") => setFiltroStatus(value)}
-            >
-              <SelectTrigger className="w-full sm:w-[150px] min-h-[44px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="ativos">Ativos</SelectItem>
-                <SelectItem value="inativos">Inativos</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Filtro Cidade */}
-            {cidadesUnicas.length > 0 && (
-              <Select value={filtroCidade} onValueChange={setFiltroCidade}>
-                <SelectTrigger className="w-full sm:w-[180px] min-h-[44px]">
-                  <SelectValue placeholder="Cidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas as cidades</SelectItem>
-                  {cidadesUnicas.map((cidade) => (
-                    <SelectItem key={cidade} value={cidade}>
-                      {cidade}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+          {/* Dialog Adicionar */}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="min-h-[44px]">
+                <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+                Adicionar
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Novo Colaborador</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAdicionarColaborador} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome">Nome Completo</Label>
+                  <Input
+                    id="nome"
+                    type="text"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    required
+                    maxLength={100}
+                    placeholder="Nome do colaborador"
+                    className="min-h-[44px]"
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    maxLength={255}
+                    placeholder="colaborador@email.com"
+                    className="min-h-[44px]"
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="senha">Senha (mínimo 6 caracteres)</Label>
+                  <Input
+                    id="senha"
+                    type="password"
+                    value={senha}
+                    onChange={(e) => setSenha(e.target.value)}
+                    required
+                    minLength={6}
+                    maxLength={100}
+                    placeholder="••••••••"
+                    className="min-h-[44px]"
+                    disabled={saving}
+                    autoComplete="new-password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Tipo de Permissão</Label>
+                  <Select
+                    value={selectedRole}
+                    onValueChange={(value: RoleType) => setSelectedRole(value)}
+                    disabled={saving}
+                  >
+                    <SelectTrigger className="min-h-[44px]">
+                      <SelectValue placeholder="Selecione a permissão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="colaborador">Colaborador</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Colaborador:</strong> Gerencia estabelecimentos e aniversariantes.
+                    <br />
+                    <strong>Administrador:</strong> Acesso total ao sistema.
+                  </p>
+                </div>
+                <Button type="submit" className="w-full min-h-[44px]" disabled={saving}>
+                  {saving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                      Adicionando...
+                    </>
+                  ) : (
+                    "Adicionar Colaborador"
+                  )}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
+
+        {/* Busca - aparece se tiver mais de 5 colaboradores */}
+        {colaboradores.length > 5 && (
+          <div className="relative mt-4">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <Input
+              placeholder="Buscar por nome ou email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 min-h-[44px]"
+              aria-label="Buscar colaboradores"
+            />
+          </div>
+        )}
+
+        {/* Dialog Editar */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Permissões</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="font-medium">{editingUser?.profiles?.nome || "Sem nome"}</p>
+                <p className="text-sm text-muted-foreground">{editingUser?.profiles?.email}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">Tipo de Permissão</Label>
+                <Select
+                  value={selectedRole}
+                  onValueChange={(value: RoleType) => setSelectedRole(value)}
+                  disabled={saving}
+                >
+                  <SelectTrigger className="min-h-[44px]">
+                    <SelectValue placeholder="Selecione a permissão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="colaborador">Colaborador</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleUpdateRole} className="w-full min-h-[44px]" disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                    Salvando...
+                  </>
+                ) : (
+                  "Salvar Alterações"
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardHeader>
 
       <CardContent>
-        {/* Loading inicial */}
+        {/* Loading inicial - Skeleton */}
         {loading && <TableSkeleton />}
 
-        {/* Lista vazia */}
-        {!loading && estabelecimentos.length === 0 && <EmptyState />}
+        {/* Lista vazia - Empty State */}
+        {!loading && colaboradores.length === 0 && <EmptyState onAdd={() => setDialogOpen(true)} />}
 
-        {/* Tabela */}
-        {!loading && estabelecimentos.length > 0 && (
+        {/* Tabela de colaboradores */}
+        {!loading && colaboradores.length > 0 && (
           <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Estabelecimento</TableHead>
-                  <TableHead>Localização</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Cadastro</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Permissão</TableHead>
+                  <TableHead>Desde</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {estabelecimentosFiltrados.map((estab) => {
-                  const isToggling = togglingId === estab.id;
+                {colaboradoresFiltrados.map((colab) => {
+                  const isRemoving = removingId === colab.user_id;
+                  const nome = colab.profiles?.nome || "Sem nome";
 
                   return (
-                    <TableRow key={estab.id} className={isToggling ? "opacity-50" : ""}>
+                    <TableRow key={colab.id} className={isRemoving ? "opacity-50" : ""}>
+                      <TableCell className="font-medium">{nome}</TableCell>
+                      <TableCell className="text-muted-foreground">{colab.profiles?.email || "N/A"}</TableCell>
                       <TableCell>
-                        <div>
-                          <p className="font-medium">{estab.nome_fantasia}</p>
-                          {estab.telefone && (
-                            <p className="text-sm text-muted-foreground flex items-center gap-1">
-                              <Phone className="h-3 w-3" aria-hidden="true" />
-                              {estab.telefone}
-                            </p>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {estab.cidade && estab.estado ? (
-                          <span className="flex items-center gap-1 text-muted-foreground">
-                            <MapPin className="h-3 w-3" aria-hidden="true" />
-                            {estab.cidade}, {estab.estado}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {estab.categoria && estab.categoria.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {estab.categoria.slice(0, 2).map((cat) => (
-                              <Badge key={cat} variant="outline" className="text-xs">
-                                {cat}
-                              </Badge>
-                            ))}
-                            {estab.categoria.length > 2 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{estab.categoria.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={estab.ativo ? "default" : "secondary"}>
-                          {estab.ativo ? "Ativo" : "Inativo"}
+                        <Badge variant={colab.role === "admin" ? "default" : "secondary"}>
+                          {colab.role === "admin" ? "Admin" : "Colaborador"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {new Date(estab.created_at).toLocaleDateString("pt-BR")}
+                        {new Date(colab.created_at).toLocaleDateString("pt-BR")}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          {/* Ver página */}
-                          <Button variant="ghost" size="sm" asChild className="min-h-[44px] min-w-[44px]">
-                            <Link
-                              to={`/estabelecimento/${estab.id}`}
-                              target="_blank"
-                              aria-label={`Ver página de ${estab.nome_fantasia}`}
-                            >
-                              <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                            </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditRole(colab)}
+                            disabled={isRemoving}
+                            className="min-h-[44px] min-w-[44px]"
+                            aria-label={`Editar permissões de ${nome}`}
+                          >
+                            <Edit2 className="h-4 w-4" aria-hidden="true" />
                           </Button>
 
-                          {/* Toggle ativo/inativo */}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                disabled={isToggling}
-                                className="min-h-[44px] min-w-[44px]"
-                                aria-label={
-                                  estab.ativo ? `Desativar ${estab.nome_fantasia}` : `Ativar ${estab.nome_fantasia}`
-                                }
+                                disabled={isRemoving}
+                                className="min-h-[44px] min-w-[44px] text-destructive hover:text-destructive"
+                                aria-label={`Remover ${nome}`}
                               >
-                                {isToggling ? (
+                                {isRemoving ? (
                                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                                ) : estab.ativo ? (
-                                  <ToggleRight className="h-4 w-4 text-green-500" aria-hidden="true" />
                                 ) : (
-                                  <ToggleLeft className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                                  <Trash2 className="h-4 w-4" aria-hidden="true" />
                                 )}
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  {estab.ativo ? "Desativar" : "Ativar"} {estab.nome_fantasia}?
-                                </AlertDialogTitle>
+                                <AlertDialogTitle>Remover {nome}?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  {estab.ativo
-                                    ? "O estabelecimento não aparecerá mais nas buscas dos aniversariantes."
-                                    : "O estabelecimento voltará a aparecer nas buscas dos aniversariantes."}
+                                  Esta ação irá remover a permissão de{" "}
+                                  <strong>{colab.role === "admin" ? "Administrador" : "Colaborador"}</strong> deste
+                                  usuário.
+                                  <br />
+                                  <br />A conta continuará existindo, apenas o acesso ao painel será removido.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel className="min-h-[44px]">Cancelar</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => toggleAtivo(estab.id, estab.ativo, estab.nome_fantasia)}
-                                  className="min-h-[44px]"
+                                  onClick={() => handleRemoverColaborador(colab.user_id, colab.role, nome)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 min-h-[44px]"
                                 >
-                                  {estab.ativo ? "Desativar" : "Ativar"}
+                                  Remover
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -344,24 +503,17 @@ export const GerenciarEstabelecimentos = () => {
                   );
                 })}
 
-                {/* Sem resultados na busca */}
-                {estabelecimentosFiltrados.length === 0 && (
+                {/* Busca sem resultados */}
+                {colaboradoresFiltrados.length === 0 && searchTerm && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                      Nenhum estabelecimento encontrado com os filtros aplicados
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      Nenhum colaborador encontrado para "{searchTerm}"
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </div>
-        )}
-
-        {/* Contador de resultados */}
-        {!loading && estabelecimentosFiltrados.length > 0 && (
-          <p className="text-sm text-muted-foreground mt-4 text-center">
-            Mostrando {estabelecimentosFiltrados.length} de {estabelecimentos.length} estabelecimento(s)
-          </p>
         )}
       </CardContent>
     </Card>

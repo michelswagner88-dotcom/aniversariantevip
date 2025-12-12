@@ -27,18 +27,13 @@ import { z } from "zod";
 // Tipos
 type RoleType = "admin" | "colaborador";
 
-interface Profile {
-  id: string;
-  email: string;
-  nome: string | null;
-}
-
 interface Colaborador {
   id: string;
   user_id: string;
   role: RoleType;
   created_at: string;
-  profiles: Profile | null;
+  email: string | null;
+  nome: string | null;
 }
 
 const colaboradorSchema = z.object({
@@ -104,23 +99,46 @@ export const GerenciarColaboradores = () => {
 
   const carregarColaboradores = async () => {
     try {
-      const { data: roles, error } = await supabase
+      // 1. Buscar roles de admin e colaborador
+      const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
-        .select(
-          `
-          *,
-          profiles:user_id (
-            id,
-            email,
-            nome
-          )
-        `,
-        )
+        .select("id, user_id, role, created_at")
         .in("role", ["admin", "colaborador"])
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setColaboradores((roles as Colaborador[]) || []);
+      if (rolesError) throw rolesError;
+      if (!roles || roles.length === 0) {
+        setColaboradores([]);
+        return;
+      }
+
+      // 2. Buscar profiles dos usuários
+      const userIds = roles.map((r) => r.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, email, nome")
+        .in("id", userIds);
+
+      if (profilesError) throw profilesError;
+
+      // 3. Combinar dados
+      const profilesMap = new Map(profiles?.map((p) => [p.id, p]) || []);
+
+      const colaboradoresData: Colaborador[] = roles
+        .filter((r): r is typeof r & { role: RoleType } => r.role === "admin" || r.role === "colaborador")
+        .map((r) => {
+          const profile = profilesMap.get(r.user_id);
+          return {
+            id: r.id,
+            user_id: r.user_id,
+            role: r.role,
+            created_at: r.created_at,
+            email: profile?.email || null,
+            nome: profile?.nome || null,
+          };
+        });
+
+      setColaboradores(colaboradoresData);
     } catch {
       toast.error("Erro ao carregar colaboradores");
     } finally {
@@ -227,7 +245,7 @@ export const GerenciarColaboradores = () => {
       if (error) throw error;
 
       toast.success("Permissões atualizadas!", {
-        description: `${editingUser.profiles?.nome} agora é ${selectedRole === "admin" ? "Administrador" : "Colaborador"}`,
+        description: `${editingUser.nome || "Usuário"} agora é ${selectedRole === "admin" ? "Administrador" : "Colaborador"}`,
       });
       setEditDialogOpen(false);
       setEditingUser(null);
@@ -243,7 +261,7 @@ export const GerenciarColaboradores = () => {
   const colaboradoresFiltrados = colaboradores.filter((c) => {
     if (!searchTerm) return true;
     const termo = searchTerm.toLowerCase();
-    return c.profiles?.nome?.toLowerCase().includes(termo) || c.profiles?.email?.toLowerCase().includes(termo);
+    return c.nome?.toLowerCase().includes(termo) || c.email?.toLowerCase().includes(termo);
   });
 
   return (
@@ -375,8 +393,8 @@ export const GerenciarColaboradores = () => {
             </DialogHeader>
             <div className="space-y-4">
               <div className="p-4 bg-muted rounded-lg">
-                <p className="font-medium">{editingUser?.profiles?.nome || "Sem nome"}</p>
-                <p className="text-sm text-muted-foreground">{editingUser?.profiles?.email}</p>
+                <p className="font-medium">{editingUser?.nome || "Sem nome"}</p>
+                <p className="text-sm text-muted-foreground">{editingUser?.email}</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-role">Tipo de Permissão</Label>
@@ -432,12 +450,12 @@ export const GerenciarColaboradores = () => {
               <TableBody>
                 {colaboradoresFiltrados.map((colab) => {
                   const isRemoving = removingId === colab.user_id;
-                  const nome = colab.profiles?.nome || "Sem nome";
+                  const nomeExibicao = colab.nome || "Sem nome";
 
                   return (
                     <TableRow key={colab.id} className={isRemoving ? "opacity-50" : ""}>
-                      <TableCell className="font-medium">{nome}</TableCell>
-                      <TableCell className="text-muted-foreground">{colab.profiles?.email || "N/A"}</TableCell>
+                      <TableCell className="font-medium">{nomeExibicao}</TableCell>
+                      <TableCell className="text-muted-foreground">{colab.email || "N/A"}</TableCell>
                       <TableCell>
                         <Badge variant={colab.role === "admin" ? "default" : "secondary"}>
                           {colab.role === "admin" ? "Admin" : "Colaborador"}
@@ -454,7 +472,7 @@ export const GerenciarColaboradores = () => {
                             onClick={() => handleEditRole(colab)}
                             disabled={isRemoving}
                             className="min-h-[44px] min-w-[44px]"
-                            aria-label={`Editar permissões de ${nome}`}
+                            aria-label={`Editar permissões de ${nomeExibicao}`}
                           >
                             <Edit2 className="h-4 w-4" aria-hidden="true" />
                           </Button>
@@ -466,7 +484,7 @@ export const GerenciarColaboradores = () => {
                                 size="sm"
                                 disabled={isRemoving}
                                 className="min-h-[44px] min-w-[44px] text-destructive hover:text-destructive"
-                                aria-label={`Remover ${nome}`}
+                                aria-label={`Remover ${nomeExibicao}`}
                               >
                                 {isRemoving ? (
                                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -477,7 +495,7 @@ export const GerenciarColaboradores = () => {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Remover {nome}?</AlertDialogTitle>
+                                <AlertDialogTitle>Remover {nomeExibicao}?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                   Esta ação irá remover a permissão de{" "}
                                   <strong>{colab.role === "admin" ? "Administrador" : "Colaborador"}</strong> deste
@@ -489,7 +507,7 @@ export const GerenciarColaboradores = () => {
                               <AlertDialogFooter>
                                 <AlertDialogCancel className="min-h-[44px]">Cancelar</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => handleRemoverColaborador(colab.user_id, colab.role, nome)}
+                                  onClick={() => handleRemoverColaborador(colab.user_id, colab.role, nomeExibicao)}
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90 min-h-[44px]"
                                 >
                                   Remover

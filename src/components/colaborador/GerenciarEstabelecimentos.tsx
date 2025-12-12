@@ -1,706 +1,521 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Edit, Loader2, Search, Building2, Trash2, Camera, ChevronLeft, ChevronRight, Filter } from "lucide-react";
-import { toast } from "sonner";
-import { CadastrarEstabelecimento } from "./CadastrarEstabelecimento";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { EditEstablishmentModal } from "@/components/admin/EditEstablishmentModal";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { UserPlus, Trash2, Loader2, Edit2, Users, Search } from "lucide-react";
+import { z } from "zod";
 
-type Estabelecimento = {
+// Tipos
+type RoleType = "admin" | "colaborador";
+
+interface Profile {
   id: string;
-  nome_fantasia: string | null;
-  razao_social: string;
-  cnpj: string;
   email: string;
-  telefone: string | null;
-  endereco: string | null;
-  cidade: string | null;
-  estado: string | null;
-  categoria: string[] | null;
-  logo_url: string | null;
-  descricao_beneficio: string | null;
-  cep: string | null;
-  numero: string | null;
-  complemento: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  whatsapp: string | null;
-  instagram: string | null;
-  site: string | null;
-  periodo_validade_beneficio: string | null;
-  plan_status: string | null;
-  ativo: boolean;
-  created_at: string;
-  horario_funcionamento: string | null;
-  regras_utilizacao: string | null;
-};
+  nome: string | null;
+}
 
-export function GerenciarEstabelecimentos({ onUpdate }: { onUpdate?: () => void }) {
-  const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);
-  const [loading, setLoading] = useState(true);
+interface Colaborador {
+  id: string;
+  user_id: string;
+  role: RoleType;
+  created_at: string;
+  profiles: Profile | null;
+}
+
+const colaboradorSchema = z.object({
+  email: z.string().email("Email inválido").max(255, "Email muito longo"),
+  senha: z.string().min(6, "Senha deve ter no mínimo 6 caracteres").max(100, "Senha muito longa"),
+  nome: z.string().trim().min(3, "Nome deve ter no mínimo 3 caracteres").max(100, "Nome muito longo"),
+});
+
+// Skeleton da tabela para loading inicial
+const TableSkeleton = () => (
+  <div className="space-y-3">
+    {[...Array(3)].map((_, i) => (
+      <div key={i} className="flex items-center gap-4 p-4">
+        <Skeleton className="h-4 w-[150px]" />
+        <Skeleton className="h-4 w-[200px]" />
+        <Skeleton className="h-6 w-[100px] rounded-full" />
+        <Skeleton className="h-4 w-[100px]" />
+        <div className="ml-auto flex gap-2">
+          <Skeleton className="h-10 w-10 rounded-md" />
+          <Skeleton className="h-10 w-10 rounded-md" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// Empty state bonito
+const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
+  <div className="flex flex-col items-center justify-center py-12 text-center">
+    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+      <Users className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
+    </div>
+    <h3 className="text-lg font-semibold mb-1">Nenhum colaborador</h3>
+    <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+      Adicione colaboradores para ajudar a gerenciar o sistema. Você pode definir diferentes níveis de permissão.
+    </p>
+    <Button onClick={onAdd} className="min-h-[44px]">
+      <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+      Adicionar Primeiro Colaborador
+    </Button>
+  </div>
+);
+
+export const GerenciarColaboradores = () => {
+  const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
+  const [loading, setLoading] = useState(true); // Começa true para loading inicial
+  const [saving, setSaving] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null); // Loading por item
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [planoFilter, setPlanoFilter] = useState<string>("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [editando, setEditando] = useState<Estabelecimento | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [excluindo, setExcluindo] = useState(false);
-  const [bulkFetchingPhotos, setBulkFetchingPhotos] = useState(false);
-  const [photoProgress, setPhotoProgress] = useState({ current: 0, total: 0 });
-  
-  const ITEMS_PER_PAGE = 50;
+
+  // Form states
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [nome, setNome] = useState("");
+  const [selectedRole, setSelectedRole] = useState<RoleType>("colaborador");
+  const [editingUser, setEditingUser] = useState<Colaborador | null>(null);
 
   useEffect(() => {
-    carregarEstabelecimentos();
+    carregarColaboradores();
   }, []);
 
-  const carregarEstabelecimentos = async () => {
+  const carregarColaboradores = async () => {
     try {
-      setLoading(true);
-      
-      // Buscar TODOS os estabelecimentos (com ou sem conta de acesso)
-      const { data: estabData, error: estabError } = await supabase
-        .from('estabelecimentos')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data: roles, error } = await supabase
+        .from("user_roles")
+        .select(
+          `
+          *,
+          profiles:user_id (
+            id,
+            email,
+            nome
+          )
+        `,
+        )
+        .in("role", ["admin", "colaborador"])
+        .order("created_at", { ascending: false });
 
-      if (estabError) throw estabError;
-
-      // Buscar profiles para estabelecimentos que têm conta
-      const estabComConta = estabData?.filter(e => e.tem_conta_acesso) || [];
-      const userIds = estabComConta.map(e => e.id);
-
-      let profiles: any[] = [];
-      if (userIds.length > 0) {
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*')
-          .in('id', userIds);
-
-        if (profilesError) throw profilesError;
-        profiles = profilesData || [];
-      }
-
-      // Combinar dados
-      const combined = estabData?.map(estab => {
-        const profile = profiles.find(p => p.id === estab.id);
-        return {
-          id: estab.id,
-          nome_fantasia: estab.nome_fantasia,
-          razao_social: estab.razao_social || 'Sem razão social',
-          cnpj: estab.cnpj || '',
-          email: profile?.email || 'Sem email (cadastro sem conta)',
-          telefone: estab.telefone,
-          endereco: estab.endereco,
-          cidade: estab.cidade,
-          estado: estab.estado,
-          categoria: estab.categoria,
-          logo_url: estab.logo_url,
-          descricao_beneficio: estab.descricao_beneficio,
-          cep: estab.cep,
-          numero: estab.numero,
-          complemento: estab.complemento,
-          latitude: estab.latitude,
-          longitude: estab.longitude,
-          whatsapp: estab.whatsapp,
-          instagram: estab.instagram,
-          site: estab.site,
-          periodo_validade_beneficio: estab.periodo_validade_beneficio,
-          plan_status: estab.plan_status,
-          ativo: estab.ativo,
-          created_at: estab.created_at || '',
-          horario_funcionamento: estab.horario_funcionamento || null,
-          regras_utilizacao: estab.regras_utilizacao || null
-        };
-      }) || [];
-
-      setEstabelecimentos(combined);
-      onUpdate?.();
-    } catch (error: any) {
-      console.error("Erro ao carregar estabelecimentos:", error);
-      toast.error("Erro ao carregar estabelecimentos");
+      if (error) throw error;
+      setColaboradores((roles as Colaborador[]) || []);
+    } catch {
+      toast.error("Erro ao carregar colaboradores");
     } finally {
       setLoading(false);
     }
   };
 
-
-  const handleExcluir = async (id: string) => {
-    try {
-      setExcluindo(true);
-
-      // Deletar cupons do estabelecimento
-      const { error: cuponsError } = await supabase
-        .from('cupons')
-        .delete()
-        .eq('estabelecimento_id', id);
-
-      if (cuponsError) throw cuponsError;
-
-      // Deletar favoritos
-      const { error: favoritosError } = await supabase
-        .from('favoritos')
-        .delete()
-        .eq('estabelecimento_id', id);
-
-      if (favoritosError) throw favoritosError;
-
-      // Deletar role se existir
-      await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', id);
-
-      // Deletar estabelecimento
-      const { error: estabError } = await supabase
-        .from('estabelecimentos')
-        .delete()
-        .eq('id', id);
-
-      if (estabError) throw estabError;
-
-      // Deletar profile se existir
-      await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', id);
-
-      // Tentar deletar usuário do auth (pode falhar se não tiver service role)
-      await supabase.auth.admin.deleteUser(id).catch(() => {});
-
-      toast.success("Estabelecimento excluído com sucesso!");
-      await carregarEstabelecimentos();
-    } catch (error: any) {
-      console.error("Erro ao excluir:", error);
-      toast.error("Erro ao excluir estabelecimento");
-    } finally {
-      setExcluindo(false);
-    }
+  const resetForm = () => {
+    setEmail("");
+    setSenha("");
+    setNome("");
+    setSelectedRole("colaborador");
   };
 
-  const handleBulkFetchPhotos = async () => {
+  const handleAdicionarColaborador = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     try {
-      // Buscar estabelecimentos sem foto
-      const { data: establishments, error } = await supabase
-        .from('estabelecimentos')
-        .select('*')
-        .or('logo_url.is.null,logo_url.eq.');
+      const validatedData = colaboradorSchema.parse({ email, senha, nome });
+      setSaving(true);
+
+      const redirectUrl = `${window.location.origin}/area-colaborador`;
+
+      const { data, error } = await supabase.auth.signUp({
+        email: validatedData.email,
+        password: validatedData.senha,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            nome: validatedData.nome,
+          },
+        },
+      });
 
       if (error) throw error;
-      if (!establishments || establishments.length === 0) {
-        toast.info("Todos os estabelecimentos já possuem fotos!");
-        return;
+
+      if (data.user) {
+        const { error: roleError } = await supabase.from("user_roles").insert({
+          user_id: data.user.id,
+          role: selectedRole,
+        });
+
+        if (roleError) throw roleError;
+
+        toast.success("Colaborador adicionado com sucesso!", {
+          description: `${validatedData.nome} foi adicionado como ${selectedRole === "admin" ? "Administrador" : "Colaborador"}`,
+        });
+        setDialogOpen(false);
+        resetForm();
+        carregarColaboradores();
       }
-
-      const confirmar = window.confirm(
-        `Buscar fotos para ${establishments.length} estabelecimentos?\n\nIsso pode levar alguns minutos.`
-      );
-      
-      if (!confirmar) return;
-
-      setBulkFetchingPhotos(true);
-      setPhotoProgress({ current: 0, total: establishments.length });
-      let updated = 0;
-      let notFound = 0;
-
-      for (let i = 0; i < establishments.length; i++) {
-        const est = establishments[i];
-        setPhotoProgress({ current: i + 1, total: establishments.length });
-
-        try {
-          console.log(`🔍 Buscando foto para: ${est.nome_fantasia || est.razao_social}`);
-          
-          // Usar Edge Function para buscar foto do Google Places
-          const { data, error: fetchError } = await supabase.functions.invoke('fetch-place-photo', {
-            body: {
-              nome: est.nome_fantasia || est.razao_social,
-              endereco: est.endereco || '',
-              cidade: est.cidade || '',
-              estado: est.estado || '',
-            }
-          });
-
-          if (fetchError) {
-            console.error(`❌ Erro na Edge Function para ${est.nome_fantasia}:`, fetchError);
-            notFound++;
-            continue;
-          }
-
-          if (data?.success && data.photo_url) {
-            const { error: updateError } = await supabase
-              .from('estabelecimentos')
-              .update({ 
-                logo_url: data.photo_url,
-                google_place_id: data.place_id,
-              })
-              .eq('id', est.id);
-            
-            if (updateError) {
-              console.error(`❌ Erro ao atualizar ${est.nome_fantasia}:`, updateError);
-              notFound++;
-            } else {
-              console.log(`✅ Foto encontrada para: ${est.nome_fantasia || est.razao_social}`);
-              updated++;
-            }
-          } else {
-            console.log(`❌ Foto não encontrada para: ${est.nome_fantasia || est.razao_social}`);
-            notFound++;
-          }
-          
-          // Rate limiting - 500ms entre requisições
-          await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (err) {
-          console.error(`❌ Erro ao buscar foto para ${est.nome_fantasia}:`, err);
-          notFound++;
-        }
-      }
-
-      toast.success(`Concluído!\n✅ ${updated} fotos encontradas\n❌ ${notFound} não encontradas`);
-      await carregarEstabelecimentos();
-    } catch (error: any) {
-      console.error("Erro ao buscar fotos em massa:", error);
-      toast.error("Erro ao buscar fotos");
-    } finally {
-      setBulkFetchingPhotos(false);
-      setPhotoProgress({ current: 0, total: 0 });
-    }
-  };
-
-  const handleBuscarFotoIndividual = async (est: Estabelecimento) => {
-    try {
-      toast.info(`Buscando foto para ${est.nome_fantasia || est.razao_social}...`);
-      
-      const { data, error } = await supabase.functions.invoke('fetch-place-photo', {
-        body: {
-          nome: est.nome_fantasia || est.razao_social,
-          endereco: est.endereco || '',
-          cidade: est.cidade || '',
-          estado: est.estado || '',
-        },
-      });
-
-      if (error || !data?.success) {
-        toast.error('Foto não encontrada no Google');
-        console.error('Erro:', error, data);
-        return;
-      }
-
-      await supabase
-        .from('estabelecimentos')
-        .update({ 
-          logo_url: data.photo_url,
-          google_place_id: data.place_id,
-        })
-        .eq('id', est.id);
-
-      toast.success('Foto atualizada!');
-      await carregarEstabelecimentos();
-
-    } catch (err) {
-      console.error('Erro:', err);
-      toast.error('Erro ao buscar foto');
-    }
-  };
-
-  const handleTestarEdgeFunction = async () => {
-    try {
-      console.log('🧪 Testando Edge Function fetch-place-photo...');
-      
-      const { data, error } = await supabase.functions.invoke('fetch-place-photo', {
-        body: {
-          nome: 'Restaurante Teste',
-          endereco: 'Rua Teste',
-          cidade: 'Florianópolis',
-          estado: 'SC',
-        },
-      });
-
-      console.log('📋 Resposta:', data);
-      console.log('❌ Erro:', error);
-      
-      if (error) {
-        toast.error(`Erro: ${error.message}`);
-      } else if (data?.success) {
-        toast.success(`Funcionou! URL: ${data.photo_url?.substring(0, 50)}...`);
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        error.errors.forEach((err) => {
+          toast.error(err.message);
+        });
+      } else if (error instanceof Error) {
+        toast.error(error.message || "Erro ao adicionar colaborador");
       } else {
-        toast.warning(`Resposta: ${JSON.stringify(data).substring(0, 100)}`);
+        toast.error("Erro ao adicionar colaborador");
       }
-    } catch (err) {
-      console.error('Erro:', err);
-      toast.error('Erro ao testar Edge Function');
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Contar estabelecimentos sem foto
-  const estabelecimentosSemFoto = estabelecimentos.filter(
-    (e) => !e.logo_url || e.logo_url === '' || e.logo_url.includes('placeholder')
-  );
+  const handleRemoverColaborador = async (userId: string, role: RoleType, nome: string) => {
+    try {
+      setRemovingId(userId);
 
-  // Aplicar filtros combinados
-  const estabelecimentosFiltrados = estabelecimentos.filter(e => {
-    const matchesSearch = 
-      (e.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
-      e.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      e.cnpj.includes(searchTerm);
-    
-    const matchesStatus = 
-      statusFilter === "all" || 
-      (statusFilter === "active" && e.ativo) ||
-      (statusFilter === "inactive" && !e.ativo);
-    
-    const matchesPlano = 
-      planoFilter === "all" ||
-      (planoFilter === "discovery" && (!e.plan_status || e.plan_status === "pending")) ||
-      e.plan_status === planoFilter;
-    
-    return matchesSearch && matchesStatus && matchesPlano;
+      const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
+
+      if (error) throw error;
+
+      toast.success("Colaborador removido", {
+        description: `${nome} foi removido da equipe`,
+      });
+      carregarColaboradores();
+    } catch {
+      toast.error("Erro ao remover colaborador");
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
+  const handleEditRole = (user: Colaborador) => {
+    setEditingUser(user);
+    setSelectedRole(user.role);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateRole = async () => {
+    if (!editingUser) return;
+
+    try {
+      setSaving(true);
+
+      const { error } = await supabase
+        .from("user_roles")
+        .update({ role: selectedRole })
+        .eq("user_id", editingUser.user_id)
+        .eq("role", editingUser.role);
+
+      if (error) throw error;
+
+      toast.success("Permissões atualizadas!", {
+        description: `${editingUser.profiles?.nome} agora é ${selectedRole === "admin" ? "Administrador" : "Colaborador"}`,
+      });
+      setEditDialogOpen(false);
+      setEditingUser(null);
+      carregarColaboradores();
+    } catch {
+      toast.error("Erro ao atualizar permissões");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Filtro de busca
+  const colaboradoresFiltrados = colaboradores.filter((c) => {
+    if (!searchTerm) return true;
+    const termo = searchTerm.toLowerCase();
+    return c.profiles?.nome?.toLowerCase().includes(termo) || c.profiles?.email?.toLowerCase().includes(termo);
   });
 
-  // Calcular paginação
-  const totalPages = Math.ceil(estabelecimentosFiltrados.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const estabelecimentosPaginados = estabelecimentosFiltrados.slice(startIndex, endIndex);
-
-  // Reset para primeira página quando filtros mudam
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, statusFilter, planoFilter]);
-
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <>
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <CardTitle>Gerenciar Estabelecimentos</CardTitle>
-              <CardDescription>
-                Total de {estabelecimentos.length} estabelecimento(s) cadastrado(s)
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleTestarEdgeFunction}
-                variant="outline"
-                size="sm"
-                className="text-xs"
-              >
-                🧪 Testar Edge Function
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <CardTitle>Gerenciar Colaboradores</CardTitle>
+            <CardDescription>
+              {colaboradores.length} colaborador{colaboradores.length !== 1 ? "es" : ""} na equipe
+            </CardDescription>
+          </div>
+
+          {/* Dialog Adicionar */}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="min-h-[44px]">
+                <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+                Adicionar
               </Button>
-              <Button
-                onClick={handleBulkFetchPhotos}
-                disabled={bulkFetchingPhotos || estabelecimentosSemFoto.length === 0}
-                variant="outline"
-              >
-                {bulkFetchingPhotos ? (
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Novo Colaborador</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAdicionarColaborador} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome">Nome Completo</Label>
+                  <Input
+                    id="nome"
+                    type="text"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    required
+                    maxLength={100}
+                    placeholder="Nome do colaborador"
+                    className="min-h-[44px]"
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    maxLength={255}
+                    placeholder="colaborador@email.com"
+                    className="min-h-[44px]"
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="senha">Senha (mínimo 6 caracteres)</Label>
+                  <Input
+                    id="senha"
+                    type="password"
+                    value={senha}
+                    onChange={(e) => setSenha(e.target.value)}
+                    required
+                    minLength={6}
+                    maxLength={100}
+                    placeholder="••••••••"
+                    className="min-h-[44px]"
+                    disabled={saving}
+                    autoComplete="new-password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Tipo de Permissão</Label>
+                  <Select
+                    value={selectedRole}
+                    onValueChange={(value: RoleType) => setSelectedRole(value)}
+                    disabled={saving}
+                  >
+                    <SelectTrigger className="min-h-[44px]">
+                      <SelectValue placeholder="Selecione a permissão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="colaborador">Colaborador</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Colaborador:</strong> Gerencia estabelecimentos e aniversariantes.
+                    <br />
+                    <strong>Administrador:</strong> Acesso total ao sistema.
+                  </p>
+                </div>
+                <Button type="submit" className="w-full min-h-[44px]" disabled={saving}>
+                  {saving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                      Adicionando...
+                    </>
+                  ) : (
+                    "Adicionar Colaborador"
+                  )}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Busca - aparece se tiver mais de 5 colaboradores */}
+        {colaboradores.length > 5 && (
+          <div className="relative mt-4">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <Input
+              placeholder="Buscar por nome ou email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 min-h-[44px]"
+              aria-label="Buscar colaboradores"
+            />
+          </div>
+        )}
+
+        {/* Dialog Editar */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Permissões</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="font-medium">{editingUser?.profiles?.nome || "Sem nome"}</p>
+                <p className="text-sm text-muted-foreground">{editingUser?.profiles?.email}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">Tipo de Permissão</Label>
+                <Select
+                  value={selectedRole}
+                  onValueChange={(value: RoleType) => setSelectedRole(value)}
+                  disabled={saving}
+                >
+                  <SelectTrigger className="min-h-[44px]">
+                    <SelectValue placeholder="Selecione a permissão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="colaborador">Colaborador</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleUpdateRole} className="w-full min-h-[44px]" disabled={saving}>
+                {saving ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Buscando ({photoProgress.current}/{photoProgress.total})
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                    Salvando...
                   </>
                 ) : (
-                  <>
-                    <Camera className="mr-2 h-4 w-4" />
-                    Buscar Fotos do Google ({estabelecimentosSemFoto.length})
-                  </>
+                  "Salvar Alterações"
                 )}
               </Button>
             </div>
-          </div>
-
-          {bulkFetchingPhotos && photoProgress.total > 0 && (
-            <div className="mb-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Processando fotos...</span>
-                <span>{photoProgress.current} / {photoProgress.total}</span>
-              </div>
-              <Progress value={(photoProgress.current / photoProgress.total) * 100} />
-            </div>
-          )}
-          
-          <div className="mt-4 space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome, razão social ou CNPJ..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="bg-background">
-                    <div className="flex items-center gap-2">
-                      <Filter className="h-4 w-4" />
-                      <SelectValue placeholder="Filtrar por Status" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    <SelectItem value="all">🔍 Todos os Status</SelectItem>
-                    <SelectItem value="active">✓ Ativos</SelectItem>
-                    <SelectItem value="inactive">⊗ Inativos</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex-1">
-                <Select value={planoFilter} onValueChange={setPlanoFilter}>
-                  <SelectTrigger className="bg-background">
-                    <div className="flex items-center gap-2">
-                      <Filter className="h-4 w-4" />
-                      <SelectValue placeholder="Filtrar por Plano" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    <SelectItem value="all">🔍 Todos os Planos</SelectItem>
-                    <SelectItem value="active">⭐ Gold</SelectItem>
-                    <SelectItem value="trialing">🎁 Trial</SelectItem>
-                    <SelectItem value="discovery">🔵 Discovery</SelectItem>
-                    <SelectItem value="canceled">❌ Cancelado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-        </div>
-        <CadastrarEstabelecimento onSuccess={carregarEstabelecimentos} />
+          </DialogContent>
+        </Dialog>
       </CardHeader>
-      <CardContent>
-        <div className="mb-4 text-sm text-muted-foreground">
-          Exibindo {estabelecimentosPaginados.length} de {estabelecimentosFiltrados.length} estabelecimento(s)
-          {estabelecimentosFiltrados.length !== estabelecimentos.length && " (filtrados)"}
-        </div>
 
-        {estabelecimentosFiltrados.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Nenhum estabelecimento encontrado</p>
-            <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={() => {
-                setSearchTerm("");
-                setStatusFilter("all");
-                setPlanoFilter("all");
-              }}
-            >
-              Limpar Filtros
-            </Button>
-          </div>
-        ) : (
-          <div className="rounded-md border">
+      <CardContent>
+        {/* Loading inicial - Skeleton */}
+        {loading && <TableSkeleton />}
+
+        {/* Lista vazia - Empty State */}
+        {!loading && colaboradores.length === 0 && <EmptyState onAdd={() => setDialogOpen(true)} />}
+
+        {/* Tabela de colaboradores */}
+        {!loading && colaboradores.length > 0 && (
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Foto</TableHead>
-                  <TableHead>Nome & Categoria</TableHead>
-                  <TableHead>Cidade/Estado</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Plano</TableHead>
-                  <TableHead>CNPJ</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Permissão</TableHead>
+                  <TableHead>Desde</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {estabelecimentosPaginados.map((estab) => (
-                  <TableRow key={estab.id}>
-                    <TableCell>
-                      <div className="flex items-center justify-center">
-                        {estab.logo_url ? (
-                          <img 
-                            src={estab.logo_url} 
-                            alt={estab.nome_fantasia || ''}
-                            className="h-12 w-12 rounded-lg object-cover border"
-                          />
-                        ) : (
-                          <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
-                            <Building2 className="h-6 w-6 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      <div className="flex flex-col gap-1.5">
-                        <span className="font-semibold">{estab.nome_fantasia || estab.razao_social}</span>
-                        {estab.categoria && estab.categoria.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {estab.categoria.map((cat, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs">
-                                {cat}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <Badge variant="destructive" className="w-fit text-xs">
-                            ⚠️ Sem Categoria
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {estab.cidade && estab.estado ? `${estab.cidade} - ${estab.estado}` : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {estab.ativo ? (
-                        <Badge className="bg-green-500 hover:bg-green-600">
-                          ✓ Ativo
+                {colaboradoresFiltrados.map((colab) => {
+                  const isRemoving = removingId === colab.user_id;
+                  const nome = colab.profiles?.nome || "Sem nome";
+
+                  return (
+                    <TableRow key={colab.id} className={isRemoving ? "opacity-50" : ""}>
+                      <TableCell className="font-medium">{nome}</TableCell>
+                      <TableCell className="text-muted-foreground">{colab.profiles?.email || "N/A"}</TableCell>
+                      <TableCell>
+                        <Badge variant={colab.role === "admin" ? "default" : "secondary"}>
+                          {colab.role === "admin" ? "Admin" : "Colaborador"}
                         </Badge>
-                      ) : (
-                        <Badge variant="secondary">
-                          ⊗ Inativo
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {estab.plan_status === 'active' && (
-                        <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
-                          ⭐ Gold
-                        </Badge>
-                      )}
-                      {estab.plan_status === 'pending' && (
-                        <Badge variant="outline">
-                          🔵 Pending
-                        </Badge>
-                      )}
-                      {estab.plan_status === 'trialing' && (
-                        <Badge className="bg-blue-500 hover:bg-blue-600">
-                          🎁 Trial
-                        </Badge>
-                      )}
-                      {estab.plan_status === 'canceled' && (
-                        <Badge variant="destructive">
-                          ❌ Cancelado
-                        </Badge>
-                      )}
-                      {!estab.plan_status && (
-                        <Badge variant="secondary">
-                          Discovery
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{estab.cnpj}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditando(estab);
-                            setModalOpen(true);
-                          }}
-                          title="Editar estabelecimento"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        
-                        {(!estab.logo_url || estab.logo_url === '' || estab.logo_url.includes('placeholder')) && (
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(colab.created_at).toLocaleDateString("pt-BR")}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleBuscarFotoIndividual(estab)}
-                            title="Buscar foto do Google"
-                            className="text-blue-500 hover:text-blue-600"
+                            onClick={() => handleEditRole(colab)}
+                            disabled={isRemoving}
+                            className="min-h-[44px] min-w-[44px]"
+                            aria-label={`Editar permissões de ${nome}`}
                           >
-                            <Camera className="h-4 w-4" />
+                            <Edit2 className="h-4 w-4" aria-hidden="true" />
                           </Button>
-                        )}
-                        
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja excluir <strong>{estab.nome_fantasia || estab.razao_social}</strong>? 
-                                Esta ação é irreversível e removerá todos os dados, incluindo cupons e favoritos associados.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleExcluir(estab.id)}
-                                disabled={excluindo}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={isRemoving}
+                                className="min-h-[44px] min-w-[44px] text-destructive hover:text-destructive"
+                                aria-label={`Remover ${nome}`}
                               >
-                                {excluindo ? "Excluindo..." : "Excluir"}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+                                {isRemoving ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remover {nome}?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta ação irá remover a permissão de{" "}
+                                  <strong>{colab.role === "admin" ? "Administrador" : "Colaborador"}</strong> deste
+                                  usuário.
+                                  <br />
+                                  <br />A conta continuará existindo, apenas o acesso ao painel será removido.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="min-h-[44px]">Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleRemoverColaborador(colab.user_id, colab.role, nome)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 min-h-[44px]"
+                                >
+                                  Remover
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+
+                {/* Busca sem resultados */}
+                {colaboradoresFiltrados.length === 0 && searchTerm && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      Nenhum colaborador encontrado para "{searchTerm}"
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </div>
         )}
-
-        {/* Paginação */}
-        {estabelecimentosFiltrados.length > ITEMS_PER_PAGE && (
-          <div className="flex items-center justify-between mt-6 pt-4 border-t">
-            <div className="text-sm text-muted-foreground">
-              Página {currentPage} de {totalPages}
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Anterior
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Próxima
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
-
-    <EditEstablishmentModal
-      establishment={editando}
-      open={modalOpen}
-      onOpenChange={setModalOpen}
-      onSuccess={carregarEstabelecimentos}
-    />
-    </>
   );
-}
+};

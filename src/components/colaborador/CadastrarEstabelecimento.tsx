@@ -3,13 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Building2, Loader2, Plus, Trash2 } from "lucide-react";
 import { z } from "zod";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cnpjSchema } from "@/lib/validation";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 import { normalizarCidade } from "@/lib/utils";
@@ -40,9 +41,9 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
   const [logoPreview, setLogoPreview] = useState<string>("");
   const [galeriaFotos, setGaleriaFotos] = useState<string[]>([]);
   const [horariosFuncionamento, setHorariosFuncionamento] = useState<HorarioFuncionamento[]>([
-    { id: '1', dias: [], abertura: '', fechamento: '' }
+    { id: "1", dias: [], abertura: "", fechamento: "" },
   ]);
-  
+
   const [formData, setFormData] = useState({
     email: "",
     senha: "",
@@ -62,58 +63,52 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
   });
 
   const diasSemana = [
-    { value: 'segunda', label: 'Segunda' },
-    { value: 'terca', label: 'Terça' },
-    { value: 'quarta', label: 'Quarta' },
-    { value: 'quinta', label: 'Quinta' },
-    { value: 'sexta', label: 'Sexta' },
-    { value: 'sabado', label: 'Sábado' },
-    { value: 'domingo', label: 'Domingo' },
+    { value: "segunda", label: "Segunda" },
+    { value: "terca", label: "Terça" },
+    { value: "quarta", label: "Quarta" },
+    { value: "quinta", label: "Quinta" },
+    { value: "sexta", label: "Sexta" },
+    { value: "sabado", label: "Sábado" },
+    { value: "domingo", label: "Domingo" },
   ];
 
   const adicionarHorario = () => {
     setHorariosFuncionamento([
       ...horariosFuncionamento,
-      { id: Date.now().toString(), dias: [], abertura: '', fechamento: '' }
+      { id: Date.now().toString(), dias: [], abertura: "", fechamento: "" },
     ]);
   };
 
   const removerHorario = (id: string) => {
-    setHorariosFuncionamento(horariosFuncionamento.filter(h => h.id !== id));
+    setHorariosFuncionamento(horariosFuncionamento.filter((h) => h.id !== id));
   };
 
-  const atualizarHorario = (id: string, campo: keyof HorarioFuncionamento, valor: any) => {
-    setHorariosFuncionamento(horariosFuncionamento.map(h => 
-      h.id === id ? { ...h, [campo]: valor } : h
-    ));
+  const atualizarHorario = (id: string, campo: keyof HorarioFuncionamento, valor: string | string[]) => {
+    setHorariosFuncionamento(horariosFuncionamento.map((h) => (h.id === id ? { ...h, [campo]: valor } : h)));
   };
 
   const toggleDia = (horarioId: string, dia: string) => {
-    const horario = horariosFuncionamento.find(h => h.id === horarioId);
+    const horario = horariosFuncionamento.find((h) => h.id === horarioId);
     if (!horario) return;
 
-    const novosDias = horario.dias.includes(dia)
-      ? horario.dias.filter(d => d !== dia)
-      : [...horario.dias, dia];
+    const novosDias = horario.dias.includes(dia) ? horario.dias.filter((d) => d !== dia) : [...horario.dias, dia];
 
-    atualizarHorario(horarioId, 'dias', novosDias);
+    atualizarHorario(horarioId, "dias", novosDias);
   };
 
   const formatarHorarios = () => {
     return horariosFuncionamento
-      .filter(h => h.dias.length > 0 && h.abertura && h.fechamento)
-      .map(h => {
-        const diasFormatados = h.dias
-          .map(d => diasSemana.find(ds => ds.value === d)?.label)
-          .join(', ');
+      .filter((h) => h.dias.length > 0 && h.abertura && h.fechamento)
+      .map((h) => {
+        const diasFormatados = h.dias.map((d) => diasSemana.find((ds) => ds.value === d)?.label).join(", ");
         return `${diasFormatados}: ${h.abertura} às ${h.fechamento}`;
       })
-      .join(' | ');
+      .join(" | ");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const validatedData = estabelecimentoSchema.parse(formData);
       setLoading(true);
@@ -139,8 +134,8 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
           emailRedirectTo: `${window.location.origin}/area-estabelecimento`,
           data: {
             nome: validatedData.nomeFantasia,
-          }
-        }
+          },
+        },
       });
 
       if (authError) throw authError;
@@ -149,38 +144,34 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
       const userId = authData.user.id;
 
       // Criar registro do estabelecimento
-      const { error: estabError } = await supabase
-        .from('estabelecimentos')
-        .insert({
-          id: userId,
-          razao_social: validatedData.razaoSocial,
-          nome_fantasia: validatedData.nomeFantasia,
-          cnpj: validatedData.cnpj,
-          telefone: validatedData.telefone,
-          endereco: validatedData.endereco,
-          cidade: normalizarCidade(formData.cidade),
-          estado: formData.estado,
-          categoria: formData.categorias.length > 0 ? formData.categorias : null,
-          especialidades: formData.especialidades.length > 0 ? formData.especialidades : null,
-          descricao_beneficio: validatedData.descricaoBeneficio,
-          logo_url: logoPreview || null,
-          galeria_fotos: galeriaFotos,
-          tem_conta_acesso: true,
-          link_cardapio: formData.linkCardapio || null,
-          regras_utilizacao: formData.regrasUtilizacao || null,
-          periodo_validade_beneficio: formData.periodoValidade,
-          horario_funcionamento: formatarHorarios() || null,
-        });
+      const { error: estabError } = await supabase.from("estabelecimentos").insert({
+        id: userId,
+        razao_social: validatedData.razaoSocial,
+        nome_fantasia: validatedData.nomeFantasia,
+        cnpj: validatedData.cnpj,
+        telefone: validatedData.telefone,
+        endereco: validatedData.endereco,
+        cidade: normalizarCidade(formData.cidade),
+        estado: formData.estado,
+        categoria: formData.categorias.length > 0 ? formData.categorias : null,
+        especialidades: formData.especialidades.length > 0 ? formData.especialidades : null,
+        descricao_beneficio: validatedData.descricaoBeneficio,
+        logo_url: logoPreview || null,
+        galeria_fotos: galeriaFotos,
+        tem_conta_acesso: true,
+        link_cardapio: formData.linkCardapio || null,
+        regras_utilizacao: formData.regrasUtilizacao || null,
+        periodo_validade_beneficio: formData.periodoValidade,
+        horario_funcionamento: formatarHorarios() || null,
+      });
 
       if (estabError) throw estabError;
 
       // Adicionar role de estabelecimento
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: userId,
-          role: 'estabelecimento'
-        });
+      const { error: roleError } = await supabase.from("user_roles").insert({
+        user_id: userId,
+        role: "estabelecimento",
+      });
 
       if (roleError) throw roleError;
 
@@ -205,42 +196,50 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
       });
       setLogoPreview("");
       setGaleriaFotos([]);
-      setHorariosFuncionamento([{ id: '1', dias: [], abertura: '', fechamento: '' }]);
-      
+      setHorariosFuncionamento([{ id: "1", dias: [], abertura: "", fechamento: "" }]);
+
       if (onSuccess) onSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         error.errors.forEach((err) => {
           toast.error(err.message);
         });
-      } else {
+      } else if (error instanceof Error) {
         toast.error(error.message || "Erro ao cadastrar estabelecimento");
+      } else {
+        toast.error("Erro ao cadastrar estabelecimento");
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const toggleCategoria = (value: string, checked: boolean) => {
+    if (checked) {
+      setFormData({ ...formData, categorias: [...formData.categorias, value] });
+    } else {
+      setFormData({ ...formData, categorias: formData.categorias.filter((c) => c !== value) });
+    }
+  };
+
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Building2 className="mr-2 h-4 w-4" />
+        <Button className="min-h-[44px]">
+          <Building2 className="mr-2 h-4 w-4" aria-hidden="true" />
           Cadastrar Estabelecimento
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Cadastrar Novo Estabelecimento</DialogTitle>
-          <CardDescription>
-            Cadastro manual sem cobrança de assinatura
-          </CardDescription>
+          <CardDescription>Cadastro manual sem cobrança de assinatura</CardDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-4">
             <h3 className="font-semibold">Dados de Acesso</h3>
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -250,6 +249,8 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
                 maxLength={255}
+                className="min-h-[44px]"
+                disabled={loading}
               />
             </div>
 
@@ -263,13 +264,16 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                 required
                 minLength={6}
                 maxLength={100}
+                className="min-h-[44px]"
+                disabled={loading}
+                autoComplete="new-password"
               />
             </div>
           </div>
 
           <div className="space-y-4">
             <h3 className="font-semibold">Dados do Estabelecimento</h3>
-            
+
             <div className="space-y-2">
               <Label htmlFor="cnpj">CNPJ</Label>
               <Input
@@ -287,6 +291,8 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                 required
                 placeholder="00.000.000/0000-00"
                 maxLength={18}
+                className="min-h-[44px]"
+                disabled={loading}
               />
             </div>
 
@@ -298,6 +304,8 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                 onChange={(e) => setFormData({ ...formData, nomeFantasia: e.target.value })}
                 required
                 maxLength={100}
+                className="min-h-[44px]"
+                disabled={loading}
               />
             </div>
 
@@ -309,6 +317,8 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                 onChange={(e) => setFormData({ ...formData, razaoSocial: e.target.value })}
                 required
                 maxLength={200}
+                className="min-h-[44px]"
+                disabled={loading}
               />
             </div>
 
@@ -321,6 +331,8 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                 required
                 placeholder="(00) 00000-0000"
                 maxLength={20}
+                className="min-h-[44px]"
+                disabled={loading}
               />
             </div>
 
@@ -328,21 +340,15 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
               <Label>Categorias (selecione uma ou mais)</Label>
               <div className="grid grid-cols-2 gap-3 p-4 border rounded-md">
                 {CATEGORIAS_ESTABELECIMENTO.map((cat) => (
-                  <div key={cat.value} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={cat.value}
+                  <div key={cat.value} className="flex items-center space-x-2 min-h-[44px]">
+                    <Checkbox
+                      id={`cat-${cat.value}`}
                       checked={formData.categorias.includes(cat.value)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setFormData({ ...formData, categorias: [...formData.categorias, cat.value] });
-                        } else {
-                          setFormData({ ...formData, categorias: formData.categorias.filter(c => c !== cat.value) });
-                        }
-                      }}
-                      className="h-4 w-4 rounded border-gray-300 cursor-pointer"
+                      onCheckedChange={(checked) => toggleCategoria(cat.value, checked === true)}
+                      disabled={loading}
+                      className="h-5 w-5"
                     />
-                    <Label htmlFor={cat.value} className="text-sm font-normal cursor-pointer">
+                    <Label htmlFor={`cat-${cat.value}`} className="text-sm font-normal cursor-pointer">
                       {cat.icon} {cat.label}
                     </Label>
                   </div>
@@ -355,7 +361,7 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
 
             <div className="space-y-2">
               <EspecialidadesSelector
-                categoria={formData.categorias[0] || ''}
+                categoria={formData.categorias[0] || ""}
                 selected={formData.especialidades}
                 onChange={(especialidades) => setFormData({ ...formData, especialidades })}
                 maxSelection={3}
@@ -365,12 +371,13 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="estado">Estado</Label>
-                <Select 
-                  value={formData.estado} 
+                <Select
+                  value={formData.estado}
                   onValueChange={(value) => setFormData({ ...formData, estado: value, cidade: "" })}
+                  disabled={loading}
                   required
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="min-h-[44px]">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
@@ -395,6 +402,8 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                   required
                   placeholder="Digite a cidade"
                   maxLength={100}
+                  className="min-h-[44px]"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -407,26 +416,30 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                 onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
                 required
                 maxLength={500}
+                className="min-h-[44px]"
+                disabled={loading}
               />
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label>Horários de Funcionamento</Label>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   size="sm"
                   onClick={adicionarHorario}
+                  disabled={loading}
+                  className="min-h-[44px]"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
                   Adicionar Horário
                 </Button>
               </div>
-              
+
               <div className="space-y-4">
                 {horariosFuncionamento.map((horario, index) => (
-                  <Card key={horario.id} className="p-4">
+                  <div key={horario.id} className="p-4 border rounded-lg bg-muted/50">
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h4 className="font-semibold text-sm">Período {index + 1}</h4>
@@ -436,8 +449,11 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                             variant="ghost"
                             size="sm"
                             onClick={() => removerHorario(horario.id)}
+                            disabled={loading}
+                            className="min-h-[44px] min-w-[44px]"
+                            aria-label={`Remover período ${index + 1}`}
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" />
                           </Button>
                         )}
                       </div>
@@ -446,15 +462,15 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                         <Label className="text-sm">Dias da Semana</Label>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                           {diasSemana.map((dia) => (
-                            <div key={dia.value} className="flex items-center space-x-2">
-                              <input
-                                type="checkbox"
+                            <div key={dia.value} className="flex items-center space-x-2 min-h-[44px]">
+                              <Checkbox
                                 id={`${horario.id}-${dia.value}`}
                                 checked={horario.dias.includes(dia.value)}
-                                onChange={() => toggleDia(horario.id, dia.value)}
-                                className="h-4 w-4 rounded border-gray-300 cursor-pointer"
+                                onCheckedChange={() => toggleDia(horario.id, dia.value)}
+                                disabled={loading}
+                                className="h-5 w-5"
                               />
-                              <Label 
+                              <Label
                                 htmlFor={`${horario.id}-${dia.value}`}
                                 className="text-sm font-normal cursor-pointer"
                               >
@@ -474,7 +490,9 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                             id={`abertura-${horario.id}`}
                             type="time"
                             value={horario.abertura}
-                            onChange={(e) => atualizarHorario(horario.id, 'abertura', e.target.value)}
+                            onChange={(e) => atualizarHorario(horario.id, "abertura", e.target.value)}
+                            className="min-h-[44px]"
+                            disabled={loading}
                           />
                         </div>
                         <div className="space-y-2">
@@ -485,12 +503,14 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                             id={`fechamento-${horario.id}`}
                             type="time"
                             value={horario.fechamento}
-                            onChange={(e) => atualizarHorario(horario.id, 'fechamento', e.target.value)}
+                            onChange={(e) => atualizarHorario(horario.id, "fechamento", e.target.value)}
+                            className="min-h-[44px]"
+                            disabled={loading}
                           />
                         </div>
                       </div>
                     </div>
-                  </Card>
+                  </div>
                 ))}
               </div>
             </div>
@@ -512,14 +532,16 @@ export const CadastrarEstabelecimento = ({ onSuccess }: { onSuccess?: () => void
                 required
                 maxLength={1000}
                 placeholder="Ex: 10% de desconto para aniversariantes"
+                className="min-h-[100px]"
+                disabled={loading}
               />
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full min-h-[44px]" disabled={loading}>
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                 Cadastrando...
               </>
             ) : (

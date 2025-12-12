@@ -1,71 +1,143 @@
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Upload, Download, CheckCircle, XCircle, AlertCircle, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Upload, Download, CheckCircle, XCircle, AlertCircle, Loader2, FileSpreadsheet, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
+
+// ============================================
+// TIPOS
+// ============================================
+
+interface PlanilhaRow {
+  CODIGO?: string;
+  EMAIL?: string;
+  SENHA?: string;
+  NOME_ESTABELECIMENTO?: string;
+  HORARIO_FUNCIONAMENTO?: string;
+  CNPJ?: string;
+  CEP?: string;
+  ESTADO?: string;
+  CIDADE?: string;
+  BAIRRO?: string;
+  RUA?: string;
+  NUMERO?: string | number;
+  COMPLEMENTO?: string;
+  TELEFONE?: string;
+  WHATSAPP?: string;
+  INSTAGRAM?: string;
+  SITE?: string;
+  CATEGORIA?: string;
+  BENEFICIO?: string;
+  REGRAS?: string;
+}
+
+interface EstabelecimentoData {
+  codigo: string | null;
+  nome_fantasia: string;
+  razao_social: string;
+  cnpj: string | null;
+  email: string | null;
+  telefone: string | null;
+  whatsapp: string | null;
+  instagram: string | null;
+  site: string | null;
+  cep: string | null;
+  estado: string;
+  cidade: string;
+  bairro: string;
+  logradouro: string;
+  numero: string | null;
+  complemento: string | null;
+  categoria: string[] | null;
+  descricao_beneficio: string | null;
+  regras_utilizacao: string | null;
+  periodo_validade_beneficio: string;
+  horario_funcionamento: string | null;
+  ativo: boolean;
+  plan_status: string;
+}
 
 interface ValidationResult {
   valid: boolean;
   errors: string[];
-  data: any;
+  data: EstabelecimentoData | null;
   linha: number;
-  dadosOriginais?: any; // Armazena dados originais da planilha para relatório
+  dadosOriginais: PlanilhaRow;
 }
 
-// Função para buscar endereço pelo CEP via ViaCEP
-const buscarEnderecoPorCEP = async (cep: string): Promise<{
+interface EnderecoViaCEP {
   estado: string;
   cidade: string;
   bairro: string;
   rua: string;
-} | null> => {
+}
+
+// ============================================
+// HELPERS
+// ============================================
+
+const buscarEnderecoPorCEP = async (cep: string): Promise<EnderecoViaCEP | null> => {
   if (!cep) return null;
-  
-  const cepLimpo = cep.replace(/\D/g, '');
+
+  const cepLimpo = cep.replace(/\D/g, "");
   if (cepLimpo.length !== 8) return null;
-  
+
   try {
     const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
     const data = await response.json();
-    
-    if (data.erro) {
-      console.warn(`CEP não encontrado: ${cep}`);
-      return null;
-    }
-    
+
+    if (data.erro) return null;
+
     return {
-      estado: data.uf || '',
-      cidade: data.localidade || '',
-      bairro: data.bairro || '',
-      rua: data.logradouro || '',
+      estado: data.uf || "",
+      cidade: data.localidade || "",
+      bairro: data.bairro || "",
+      rua: data.logradouro || "",
     };
-  } catch (error) {
-    console.error(`Erro ao buscar CEP ${cep}:`, error);
+  } catch {
     return null;
   }
 };
 
-// Mapear período de validade
-const mapearPeriodoValidade = (regras: string): string => {
-  if (!regras) return 'mes_aniversario';
+const mapearPeriodoValidade = (regras: string | undefined): string => {
+  if (!regras) return "mes_aniversario";
   const regrasUpper = regras.toUpperCase();
-  if (regrasUpper.includes('DIA')) return 'dia_aniversario';
-  if (regrasUpper.includes('SEMANA')) return 'semana_aniversario';
-  return 'mes_aniversario';
+  if (regrasUpper.includes("DIA")) return "dia_aniversario";
+  if (regrasUpper.includes("SEMANA")) return "semana_aniversario";
+  return "mes_aniversario";
 };
 
+// ============================================
+// COMPONENTE
+// ============================================
+
 export const ImportarEstabelecimentos = () => {
-  const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
-  const [importing, setImporting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
   const [showPreview, setShowPreview] = useState(false);
-  const [processando, setProcessando] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const downloadTemplate = () => {
-    const template = [
+  // Loading states
+  const [processando, setProcessando] = useState(false);
+  const [importing, setImporting] = useState(false);
+
+  // Progress
+  const [progress, setProgress] = useState(0);
+  const [progressText, setProgressText] = useState("");
+
+  // ============================================
+  // DOWNLOAD TEMPLATE
+  // ============================================
+
+  const downloadTemplate = useCallback(() => {
+    const template: PlanilhaRow[] = [
       {
         CODIGO: "",
         EMAIL: "",
@@ -95,30 +167,88 @@ export const ImportarEstabelecimentos = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Estabelecimentos");
     XLSX.writeFile(wb, "template_estabelecimentos.xlsx");
 
-    toast({
-      title: "Template baixado! 📥",
+    toast.success("Template baixado!", {
       description: "Preencha a planilha e faça o upload.",
     });
-  };
+  }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
+  // ============================================
+  // FILE HANDLING
+  // ============================================
+
+  const handleFile = useCallback((selectedFile: File | null) => {
     if (selectedFile) {
+      const validTypes = [
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-excel",
+        "text/csv",
+      ];
+
+      if (!validTypes.includes(selectedFile.type) && !selectedFile.name.match(/\.(xlsx|xls|csv)$/i)) {
+        toast.error("Formato inválido", {
+          description: "Use arquivos Excel (.xlsx, .xls) ou CSV",
+        });
+        return;
+      }
+
       setFile(selectedFile);
       setShowPreview(false);
       setValidationResults([]);
+      setProgress(0);
     }
-  };
+  }, []);
 
-  const mapearLinhaPlanilha = async (row: any, index: number): Promise<ValidationResult> => {
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      handleFile(e.target.files?.[0] || null);
+    },
+    [handleFile],
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      handleFile(e.dataTransfer.files?.[0] || null);
+    },
+    [handleFile],
+  );
+
+  const clearFile = useCallback(() => {
+    setFile(null);
+    setValidationResults([]);
+    setShowPreview(false);
+    setProgress(0);
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+  }, []);
+
+  // ============================================
+  // VALIDAÇÃO
+  // ============================================
+
+  const mapearLinhaPlanilha = async (row: PlanilhaRow, index: number): Promise<ValidationResult> => {
+    const linha = index + 2; // +2 porque Excel começa em 1 e tem header
+
     try {
       // Validação básica
       if (!row.NOME_ESTABELECIMENTO) {
         return {
           valid: false,
-          errors: [`Nome do estabelecimento obrigatório`],
+          errors: ["Nome do estabelecimento obrigatório"],
           data: null,
-          linha: index + 2,
+          linha,
           dadosOriginais: row,
         };
       }
@@ -126,25 +256,24 @@ export const ImportarEstabelecimentos = () => {
       if (!row.CEP) {
         return {
           valid: false,
-          errors: [`CEP obrigatório`],
+          errors: ["CEP obrigatório"],
           data: null,
-          linha: index + 2,
+          linha,
           dadosOriginais: row,
         };
       }
 
       // Buscar endereço pelo CEP se campos estiverem vazios
-      let endereco = {
-        estado: row.ESTADO || '',
-        cidade: row.CIDADE || '',
-        bairro: row.BAIRRO || '',
-        rua: row.RUA || '',
+      let endereco: EnderecoViaCEP = {
+        estado: row.ESTADO || "",
+        cidade: row.CIDADE || "",
+        bairro: row.BAIRRO || "",
+        rua: row.RUA || "",
       };
 
       if (row.CEP && (!endereco.estado || !endereco.cidade)) {
-        console.log(`Buscando endereço para CEP: ${row.CEP}`);
         const enderecoAPI = await buscarEnderecoPorCEP(row.CEP);
-        
+
         if (enderecoAPI) {
           endereco = {
             estado: endereco.estado || enderecoAPI.estado,
@@ -152,41 +281,37 @@ export const ImportarEstabelecimentos = () => {
             bairro: endereco.bairro || enderecoAPI.bairro,
             rua: endereco.rua || enderecoAPI.rua,
           };
-          console.log(`Endereço encontrado:`, endereco);
         } else {
           return {
             valid: false,
-            errors: [`CEP inválido ou não encontrado`],
+            errors: ["CEP inválido ou não encontrado"],
             data: null,
-            linha: index + 2,
+            linha,
             dadosOriginais: row,
           };
         }
       }
 
       // Mapear categoria
-      let categoria: string[] = [];
-      if (row.CATEGORIA) {
-        categoria = [row.CATEGORIA];
-      }
+      const categoria: string[] = row.CATEGORIA ? [row.CATEGORIA] : [];
 
-      // Formatar Instagram (adicionar @ se necessário)
+      // Formatar Instagram
       let instagram = row.INSTAGRAM || null;
-      if (instagram && !instagram.startsWith('@')) {
+      if (instagram && !instagram.startsWith("@")) {
         instagram = `@${instagram}`;
       }
 
-      const dadosMapeados = {
+      const dadosMapeados: EstabelecimentoData = {
         codigo: row.CODIGO || null,
-        nome_fantasia: row.NOME_ESTABELECIMENTO || 'Pendente de preenchimento',
-        razao_social: row.NOME_ESTABELECIMENTO || 'Pendente de preenchimento',
-        cnpj: row.CNPJ ? row.CNPJ.replace(/\D/g, '') : null,
+        nome_fantasia: row.NOME_ESTABELECIMENTO || "Pendente",
+        razao_social: row.NOME_ESTABELECIMENTO || "Pendente",
+        cnpj: row.CNPJ ? row.CNPJ.replace(/\D/g, "") : null,
         email: row.EMAIL || null,
         telefone: row.TELEFONE || null,
         whatsapp: row.WHATSAPP || null,
         instagram,
         site: row.SITE || null,
-        cep: row.CEP ? row.CEP.replace(/\D/g, '') : null,
+        cep: row.CEP ? row.CEP.replace(/\D/g, "") : null,
         estado: endereco.estado,
         cidade: endereco.cidade,
         bairro: endereco.bairro,
@@ -199,23 +324,22 @@ export const ImportarEstabelecimentos = () => {
         periodo_validade_beneficio: mapearPeriodoValidade(row.REGRAS),
         horario_funcionamento: row.HORARIO_FUNCIONAMENTO || null,
         ativo: true,
-        plan_status: 'pending',
+        plan_status: "pending",
       };
 
       return {
         valid: true,
         errors: [],
         data: dadosMapeados,
-        linha: index + 2,
+        linha,
         dadosOriginais: row,
       };
     } catch (error) {
-      console.error('Erro ao mapear linha:', error);
       return {
         valid: false,
-        errors: [`Erro ao processar linha: ${error}`],
+        errors: [`Erro ao processar: ${error instanceof Error ? error.message : "desconhecido"}`],
         data: null,
-        linha: index + 2,
+        linha,
         dadosOriginais: row,
       };
     }
@@ -223,41 +347,42 @@ export const ImportarEstabelecimentos = () => {
 
   const processFile = async () => {
     if (!file) {
-      toast({
-        title: "Erro",
-        description: "Selecione um arquivo primeiro",
-        variant: "destructive",
-      });
+      toast.error("Selecione um arquivo primeiro");
       return;
     }
 
     setProcessando(true);
+    setProgress(0);
+    setProgressText("Lendo arquivo...");
 
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      const jsonData = XLSX.utils.sheet_to_json<PlanilhaRow>(worksheet);
 
       if (jsonData.length === 0) {
-        toast({
-          title: "Erro",
-          description: "Planilha vazia",
-          variant: "destructive",
-        });
+        toast.error("Planilha vazia");
         setProcessando(false);
         return;
       }
 
-      // Mapear e validar dados (incluindo busca de CEP)
+      setProgressText(`Validando ${jsonData.length} registros...`);
+
+      // Mapear e validar dados
       const results: ValidationResult[] = [];
       for (let i = 0; i < jsonData.length; i++) {
         const result = await mapearLinhaPlanilha(jsonData[i], i);
         results.push(result);
-        
-        // Delay pequeno para não sobrecarregar ViaCEP
+
+        // Atualizar progress
+        const currentProgress = Math.round(((i + 1) / jsonData.length) * 100);
+        setProgress(currentProgress);
+        setProgressText(`Validando ${i + 1} de ${jsonData.length}...`);
+
+        // Delay para não sobrecarregar ViaCEP
         if (i < jsonData.length - 1) {
-          await new Promise(r => setTimeout(r, 100));
+          await new Promise((r) => setTimeout(r, 100));
         }
       }
 
@@ -267,48 +392,48 @@ export const ImportarEstabelecimentos = () => {
       const validCount = results.filter((r) => r.valid).length;
       const invalidCount = results.filter((r) => !r.valid).length;
 
-      toast({
-        title: "Validação concluída",
+      toast.success("Validação concluída!", {
         description: `${validCount} válidos, ${invalidCount} com erros`,
       });
     } catch (error) {
-      console.error("Erro ao processar arquivo:", error);
-      toast({
-        title: "Erro ao processar arquivo",
+      toast.error("Erro ao processar arquivo", {
         description: "Verifique se o formato está correto",
-        variant: "destructive",
       });
     } finally {
       setProcessando(false);
+      setProgress(0);
+      setProgressText("");
     }
   };
 
-  const geocodificarEstabelecimento = async (id: string, dados: any) => {
+  // ============================================
+  // IMPORTAÇÃO
+  // ============================================
+
+  const geocodificarEstabelecimento = async (id: string, dados: EstabelecimentoData) => {
     try {
-      const { data, error } = await supabase.functions.invoke('geocode-address', {
+      const { data, error } = await supabase.functions.invoke("geocode-address", {
         body: {
           rua: dados.logradouro,
           numero: dados.numero,
           bairro: dados.bairro,
           cidade: dados.cidade,
           estado: dados.estado,
-        }
+        },
       });
-      
-      if (data?.success) {
+
+      if (!error && data?.success) {
         await supabase
-          .from('estabelecimentos')
+          .from("estabelecimentos")
           .update({
             latitude: data.latitude,
             longitude: data.longitude,
             endereco_formatado: data.endereco_formatado,
           })
-          .eq('id', id);
-        
-        console.log(`✅ Geocodificado: ${dados.nome_fantasia}`);
+          .eq("id", id);
       }
-    } catch (err) {
-      console.warn(`⚠️ Erro ao geocodificar ${dados.nome_fantasia}:`, err);
+    } catch {
+      // Silently fail geocoding - não é crítico
     }
   };
 
@@ -316,208 +441,211 @@ export const ImportarEstabelecimentos = () => {
     const validData = validationResults.filter((r) => r.valid && r.data);
 
     if (validData.length === 0) {
-      toast({
-        title: "Nenhum dado válido",
-        description: "Corrija os erros antes de importar",
-        variant: "destructive",
-      });
+      toast.error("Nenhum dado válido para importar");
       return;
     }
 
     setImporting(true);
+    setProgress(0);
+
+    let sucessos = 0;
+    let erros = 0;
 
     try {
-      let sucessos = 0;
-      let erros = 0;
-
       for (let i = 0; i < validData.length; i++) {
         const result = validData[i];
-        
+
+        setProgressText(`Importando ${i + 1} de ${validData.length}: ${result.data!.nome_fantasia}`);
+        setProgress(Math.round(((i + 1) / validData.length) * 100));
+
         try {
-          console.log(`[${i + 1}/${validData.length}] Importando: ${result.data.nome_fantasia}`);
-          
-          // Inserir estabelecimento usando UPSERT (onConflict: cnpj)
           const { data: insertedData, error } = await supabase
-            .from('estabelecimentos')
-            .upsert(result.data, { 
-              onConflict: 'cnpj',
-              ignoreDuplicates: false 
+            .from("estabelecimentos")
+            .upsert(result.data!, {
+              onConflict: "cnpj",
+              ignoreDuplicates: false,
             })
             .select()
             .single();
 
           if (error) {
-            console.error(`Erro na linha ${result.linha}:`, error);
             erros++;
           } else {
             sucessos++;
-            
-            // Geocodificar após inserir (se tiver endereço)
-            if (insertedData && result.data.cidade && result.data.estado) {
-              await geocodificarEstabelecimento(insertedData.id, result.data);
+
+            // Geocodificar após inserir
+            if (insertedData && result.data!.cidade && result.data!.estado) {
+              await geocodificarEstabelecimento(insertedData.id, result.data!);
             }
           }
-          
+
           // Rate limit
           if (i < validData.length - 1) {
-            await new Promise(r => setTimeout(r, 100));
+            await new Promise((r) => setTimeout(r, 100));
           }
-        } catch (err) {
-          console.error(`Exceção na linha ${result.linha}:`, err);
+        } catch {
           erros++;
         }
       }
 
-      toast({
-        title: "✅ Importação completa!",
-        description: `${sucessos} estabelecimentos cadastrados. ${erros} erros.`,
+      toast.success("Importação concluída!", {
+        description: `${sucessos} cadastrados, ${erros} erros`,
       });
 
-      // Limpar estados
-      setFile(null);
-      setValidationResults([]);
-      setShowPreview(false);
-    } catch (error) {
-      console.error("Erro ao importar:", error);
-      toast({
-        title: "Erro ao importar",
-        description: "Verifique os dados e tente novamente",
-        variant: "destructive",
-      });
+      // Limpar
+      clearFile();
+    } catch {
+      toast.error("Erro durante importação");
     } finally {
       setImporting(false);
+      setProgress(0);
+      setProgressText("");
     }
   };
 
-  const downloadRelatorioErros = () => {
+  // ============================================
+  // RELATÓRIO DE ERROS
+  // ============================================
+
+  const downloadRelatorioErros = useCallback(() => {
     const erros = validationResults.filter((r) => !r.valid);
-    
+
     if (erros.length === 0) {
-      toast({
-        title: "Nenhum erro encontrado",
-        description: "Todos os registros estão válidos!",
-      });
+      toast.info("Nenhum erro encontrado!");
       return;
     }
 
     const relatorioData = erros.map((erro) => ({
       Linha: erro.linha,
-      Nome_Estabelecimento: erro.dadosOriginais?.NOME_ESTABELECIMENTO || '-',
-      Erro: erro.errors.join(' | '),
-      CODIGO: erro.dadosOriginais?.CODIGO || '',
-      EMAIL: erro.dadosOriginais?.EMAIL || '',
-      SENHA: erro.dadosOriginais?.SENHA || '',
-      NOME_ESTABELECIMENTO: erro.dadosOriginais?.NOME_ESTABELECIMENTO || '',
-      HORARIO_FUNCIONAMENTO: erro.dadosOriginais?.HORARIO_FUNCIONAMENTO || '',
-      CNPJ: erro.dadosOriginais?.CNPJ || '',
-      CEP: erro.dadosOriginais?.CEP || '',
-      ESTADO: erro.dadosOriginais?.ESTADO || '',
-      CIDADE: erro.dadosOriginais?.CIDADE || '',
-      BAIRRO: erro.dadosOriginais?.BAIRRO || '',
-      RUA: erro.dadosOriginais?.RUA || '',
-      NUMERO: erro.dadosOriginais?.NUMERO || '',
-      COMPLEMENTO: erro.dadosOriginais?.COMPLEMENTO || '',
-      TELEFONE: erro.dadosOriginais?.TELEFONE || '',
-      WHATSAPP: erro.dadosOriginais?.WHATSAPP || '',
-      INSTAGRAM: erro.dadosOriginais?.INSTAGRAM || '',
-      SITE: erro.dadosOriginais?.SITE || '',
-      CATEGORIA: erro.dadosOriginais?.CATEGORIA || '',
-      BENEFICIO: erro.dadosOriginais?.BENEFICIO || '',
-      REGRAS: erro.dadosOriginais?.REGRAS || '',
+      Nome: erro.dadosOriginais?.NOME_ESTABELECIMENTO || "-",
+      Erro: erro.errors.join(" | "),
+      ...erro.dadosOriginais,
     }));
 
     const ws = XLSX.utils.json_to_sheet(relatorioData);
-    
-    // Ajustar largura das colunas
-    const colWidths = [
-      { wch: 8 },  // Linha
-      { wch: 30 }, // Nome_Estabelecimento
-      { wch: 50 }, // Erro
-      { wch: 10 }, // CODIGO
-      { wch: 25 }, // EMAIL
-      { wch: 12 }, // SENHA
-      { wch: 30 }, // NOME_ESTABELECIMENTO
-      { wch: 20 }, // HORARIO_FUNCIONAMENTO
-      { wch: 18 }, // CNPJ
-      { wch: 10 }, // CEP
-      { wch: 5 },  // ESTADO
-      { wch: 20 }, // CIDADE
-      { wch: 20 }, // BAIRRO
-      { wch: 30 }, // RUA
-      { wch: 8 },  // NUMERO
-      { wch: 15 }, // COMPLEMENTO
-      { wch: 15 }, // TELEFONE
-      { wch: 15 }, // WHATSAPP
-      { wch: 20 }, // INSTAGRAM
-      { wch: 30 }, // SITE
-      { wch: 15 }, // CATEGORIA
-      { wch: 50 }, // BENEFICIO
-      { wch: 10 }, // REGRAS
-    ];
-    ws['!cols'] = colWidths;
-
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Erros de Importação");
-    
-    const dataHora = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-    XLSX.writeFile(wb, `relatorio_erros_importacao_${dataHora}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "Erros");
 
-    toast({
-      title: "✅ Relatório gerado!",
-      description: `${erros.length} erro(s) exportado(s) para Excel.`,
+    const dataHora = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+    XLSX.writeFile(wb, `erros_importacao_${dataHora}.xlsx`);
+
+    toast.success("Relatório gerado!", {
+      description: `${erros.length} erro(s) exportado(s)`,
     });
-  };
+  }, [validationResults]);
+
+  // ============================================
+  // CONTADORES
+  // ============================================
 
   const validCount = validationResults.filter((r) => r.valid).length;
   const invalidCount = validationResults.filter((r) => !r.valid).length;
 
+  // ============================================
+  // RENDER
+  // ============================================
+
   return (
     <div className="space-y-6">
-      <Card className="p-6 bg-slate-900/80 border-white/10">
-        <h2 className="text-2xl font-bold text-white mb-4">Importar Estabelecimentos em Massa</h2>
-        
-        <div className="space-y-4">
-          <div>
-            <Button
-              onClick={downloadTemplate}
-              variant="outline"
-              className="w-full"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Baixar Planilha Modelo
+      <Card>
+        <CardHeader>
+          <CardTitle>Importar Estabelecimentos em Massa</CardTitle>
+          <CardDescription>
+            Faça upload de uma planilha Excel ou CSV para cadastrar múltiplos estabelecimentos
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          {/* Download Template */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <div>
+              <p className="font-medium">Planilha Modelo</p>
+              <p className="text-sm text-muted-foreground">Baixe o template e preencha com os dados</p>
+            </div>
+            <Button onClick={downloadTemplate} variant="outline" className="min-h-[44px]">
+              <Download className="w-4 h-4 mr-2" aria-hidden="true" />
+              Baixar Template
             </Button>
-            <p className="text-sm text-slate-400 mt-2">
-              Baixe o template, preencha com os dados dos estabelecimentos e faça upload abaixo.
-            </p>
           </div>
 
-          <div className="border-2 border-dashed border-white/10 rounded-lg p-6 text-center">
+          {/* Upload Area */}
+          <div
+            className={cn(
+              "relative border-2 border-dashed rounded-lg p-8 text-center transition-colors",
+              isDragging
+                ? "border-primary bg-primary/5"
+                : "border-muted-foreground/25 hover:border-muted-foreground/50",
+              file && "border-green-500 bg-green-500/5",
+            )}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
             <input
+              ref={inputRef}
               type="file"
               accept=".xlsx,.xls,.csv"
               onChange={handleFileChange}
-              className="hidden"
-              id="file-upload"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              aria-label="Selecionar arquivo para importação"
             />
-            <label htmlFor="file-upload" className="cursor-pointer">
-              <Upload className="w-12 h-12 mx-auto text-slate-400 mb-2" />
-              <p className="text-white font-medium">
-                {file ? file.name : "Clique para selecionar arquivo"}
-              </p>
-              <p className="text-sm text-slate-400 mt-1">Excel (.xlsx, .xls) ou CSV</p>
-            </label>
+
+            {file ? (
+              <div className="space-y-3">
+                <div className="w-16 h-16 mx-auto bg-green-500/10 rounded-full flex items-center justify-center">
+                  <FileSpreadsheet className="w-8 h-8 text-green-500" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="font-medium">{file.name}</p>
+                  <p className="text-sm text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    clearFile();
+                  }}
+                  className="min-h-[44px] text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" />
+                  Remover arquivo
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+                  <Upload className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="font-medium">
+                    {isDragging ? "Solte o arquivo aqui" : "Arraste ou clique para selecionar"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Excel (.xlsx, .xls) ou CSV</p>
+                </div>
+              </div>
+            )}
           </div>
 
+          {/* Progress Bar */}
+          {(processando || importing) && (
+            <div className="space-y-2" role="status" aria-live="polite">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{progressText}</span>
+                <span className="font-medium">{progress}%</span>
+              </div>
+              <Progress value={progress} className="h-2" />
+            </div>
+          )}
+
+          {/* Botão Validar */}
           {file && !showPreview && (
-            <Button
-              onClick={processFile}
-              disabled={processando}
-              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600"
-            >
+            <Button onClick={processFile} disabled={processando} className="w-full min-h-[44px]">
               {processando ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processando e buscando endereços...
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
+                  Processando...
                 </>
               ) : (
                 "Validar Dados"
@@ -525,77 +653,117 @@ export const ImportarEstabelecimentos = () => {
             </Button>
           )}
 
+          {/* Preview */}
           {showPreview && (
             <div className="space-y-4">
+              {/* Contadores */}
               <div className="grid grid-cols-2 gap-4">
-                <Card className="p-4 bg-green-500/10 border-green-500/20">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
+                <Card className="p-4 border-green-500/20 bg-green-500/5">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-8 h-8 text-green-500" aria-hidden="true" />
                     <div>
-                      <p className="text-sm text-slate-400">Válidos</p>
-                      <p className="text-2xl font-bold text-white">{validCount}</p>
+                      <p className="text-sm text-muted-foreground">Válidos</p>
+                      <p className="text-2xl font-bold">{validCount}</p>
                     </div>
                   </div>
                 </Card>
-                <Card className="p-4 bg-red-500/10 border-red-500/20">
-                  <div className="flex items-center gap-2">
-                    <XCircle className="w-5 h-5 text-red-500" />
+                <Card className="p-4 border-red-500/20 bg-red-500/5">
+                  <div className="flex items-center gap-3">
+                    <XCircle className="w-8 h-8 text-red-500" aria-hidden="true" />
                     <div>
-                      <p className="text-sm text-slate-400">Com Erros</p>
-                      <p className="text-2xl font-bold text-white">{invalidCount}</p>
+                      <p className="text-sm text-muted-foreground">Com Erros</p>
+                      <p className="text-2xl font-bold">{invalidCount}</p>
                     </div>
                   </div>
                 </Card>
               </div>
 
-              {invalidCount > 0 && (
-                <div className="space-y-3">
-                  <Card className="p-4 bg-amber-500/10 border-amber-500/20">
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="w-5 h-5 text-amber-500 mt-1" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-amber-500 mb-2">Erros encontrados:</p>
-                        <ul className="text-xs text-slate-300 space-y-1 max-h-40 overflow-auto">
-                          {validationResults
-                            .filter((r) => !r.valid)
-                            .map((r, i) => (
-                              <li key={i}>• Linha {r.linha}: {r.errors.join(', ')}</li>
-                            ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </Card>
-                  
-                  <Button
-                    onClick={downloadRelatorioErros}
-                    variant="outline"
-                    className="w-full border-amber-500/30 hover:bg-amber-500/10"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Baixar Relatório de Erros (Excel)
-                  </Button>
-                </div>
+              {/* Tabela de Preview */}
+              <div className="rounded-md border overflow-x-auto max-h-[300px] overflow-y-auto">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background">
+                    <TableRow>
+                      <TableHead className="w-[60px]">Linha</TableHead>
+                      <TableHead className="w-[80px]">Status</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Cidade</TableHead>
+                      <TableHead>Erro</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {validationResults.slice(0, 50).map((result, i) => (
+                      <TableRow key={i} className={result.valid ? "" : "bg-red-500/5"}>
+                        <TableCell className="font-mono text-sm">{result.linha}</TableCell>
+                        <TableCell>
+                          {result.valid ? (
+                            <Badge variant="outline" className="text-green-500 border-green-500">
+                              OK
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive">Erro</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {result.dadosOriginais?.NOME_ESTABELECIMENTO || "-"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {result.data?.cidade || result.dadosOriginais?.CIDADE || "-"}
+                        </TableCell>
+                        <TableCell className="text-sm text-red-500">{result.errors.join(", ") || "-"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {validationResults.length > 50 && (
+                <p className="text-sm text-muted-foreground text-center">
+                  Mostrando 50 de {validationResults.length} registros
+                </p>
               )}
 
-              {validCount > 0 && (
-                <Button
-                  onClick={importData}
-                  disabled={importing}
-                  className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600"
-                >
-                  {importing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Importando e geocodificando...
-                    </>
-                  ) : (
-                    `Importar ${validCount} Estabelecimento(s)`
-                  )}
-                </Button>
+              {/* Erros */}
+              {invalidCount > 0 && (
+                <Card className="p-4 border-amber-500/20 bg-amber-500/5">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5" aria-hidden="true" />
+                    <div className="flex-1">
+                      <p className="font-medium text-amber-500 mb-2">{invalidCount} registro(s) com erro</p>
+                      <Button
+                        onClick={downloadRelatorioErros}
+                        variant="outline"
+                        size="sm"
+                        className="min-h-[44px] border-amber-500/30 hover:bg-amber-500/10"
+                      >
+                        <Download className="w-4 h-4 mr-2" aria-hidden="true" />
+                        Baixar Relatório de Erros
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
               )}
+
+              {/* Botões de Ação */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button variant="outline" onClick={clearFile} disabled={importing} className="min-h-[44px] flex-1">
+                  Cancelar
+                </Button>
+                {validCount > 0 && (
+                  <Button onClick={importData} disabled={importing} className="min-h-[44px] flex-1">
+                    {importing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
+                        Importando...
+                      </>
+                    ) : (
+                      `Importar ${validCount} Estabelecimento(s)`
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
           )}
-        </div>
+        </CardContent>
       </Card>
     </div>
   );

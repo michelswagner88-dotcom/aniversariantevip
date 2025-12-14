@@ -8,6 +8,7 @@ interface Estabelecimento {
   nome_fantasia?: string;
   latitude?: number | null;
   longitude?: number | null;
+  categoria?: string | string[];
   [key: string]: any;
 }
 

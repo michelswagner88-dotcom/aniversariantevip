@@ -43,6 +43,7 @@ const CATEGORIA_ICONS: Record<string, LucideIcon> = {
 interface AirbnbCategoryPillsProps {
   categoriaAtiva: string | null;
   onCategoriaChange: (categoria: string | null) => void;
+  estabelecimentos?: any[];
 }
 
 export const AirbnbCategoryPills = memo(({ categoriaAtiva, onCategoriaChange }: AirbnbCategoryPillsProps) => {
@@ -157,7 +158,6 @@ export const AirbnbCategoryPills = memo(({ categoriaAtiva, onCategoriaChange }: 
   return (
     <div className="bg-[#240046] py-4">
       <div className="relative flex items-center gap-2 max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
-        {/* Seta Esquerda */}
         <button
           onClick={handleScrollLeft}
           aria-label="Categorias anteriores"
@@ -171,9 +171,7 @@ export const AirbnbCategoryPills = memo(({ categoriaAtiva, onCategoriaChange }: 
           <ChevronLeft className="w-5 h-5 text-white sm:text-[#240046]" aria-hidden="true" />
         </button>
 
-        {/* Container com gradientes */}
         <div className="relative flex-1 overflow-hidden">
-          {/* Fade esquerdo */}
           <div
             className={cn(
               "absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#240046] to-transparent z-10 pointer-events-none transition-opacity duration-300",
@@ -182,7 +180,6 @@ export const AirbnbCategoryPills = memo(({ categoriaAtiva, onCategoriaChange }: 
             aria-hidden="true"
           />
 
-          {/* Fade direito */}
           <div
             className={cn(
               "absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#240046] to-transparent z-10 pointer-events-none transition-opacity duration-300",
@@ -256,7 +253,6 @@ export const AirbnbCategoryPills = memo(({ categoriaAtiva, onCategoriaChange }: 
           </div>
         </div>
 
-        {/* Seta Direita */}
         <button
           onClick={handleScrollRight}
           aria-label="Próximas categorias"

@@ -182,7 +182,7 @@ export const MapFAB = memo(({ estabelecimentos, className }: MapFABProps) => {
             </div>
           </div>
 
-          <MapaEstabelecimentos estabelecimentos={estabelecimentosComCoordenadas} height="100vh" />
+          <MapaEstabelecimentos estabelecimentos={estabelecimentosComCoordenadas as any[]} height="100vh" />
 
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
             <button

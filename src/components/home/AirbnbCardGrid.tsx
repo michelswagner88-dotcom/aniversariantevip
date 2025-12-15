@@ -460,8 +460,8 @@ const AirbnbCard = memo(
             <div className="w-full h-full bg-violet-100 animate-pulse" />
           )}
 
-          {/* Badge Benefício */}
-          {temBeneficio && (
+          {/* Badge Benefício - apenas no modo carousel */}
+          {temBeneficio && !fullWidth && (
             <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-white/95 shadow-sm">
               <span className="text-[10px] sm:text-xs font-medium text-[#7C3AED]">Benefício</span>
             </div>

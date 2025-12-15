@@ -28,7 +28,7 @@ export const VoiceSearchButton: React.FC<VoiceSearchButtonProps> = ({
         "relative flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200 shrink-0",
         isListening 
           ? "bg-red-500 text-white" 
-          : "bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground",
+          : "bg-[#240046]/10 hover:bg-[#240046]/20 text-[#240046] hover:text-[#240046]",
         className
       )}
       title={isListening ? 'Parar busca por voz' : 'Buscar por voz'}

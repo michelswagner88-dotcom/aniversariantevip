@@ -1,131 +1,192 @@
-// BenefitCard.tsx - Card de Benefício Clean Premium
+// BenefitCard.tsx - Golden Ticket Style Premium 2025
+// Tendências: Gradientes vibrantes, Glow effects, Animações suaves
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Gift, Calendar, ChevronRight, X, Check } from "lucide-react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEstablishmentMetrics } from "@/hooks/useEstablishmentMetrics";
-import { getValidadeTexto } from "@/lib/bioUtils";
+import { Gift, Calendar, ChevronRight, X, Clock, CheckCircle2, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface BenefitCardProps {
   beneficio: string;
-  validadeTexto: string;
+  validadeTexto?: string;
   regras?: string;
   estabelecimentoId: string;
   userId: string | null;
-  // Controle externo do modal (opcional)
   isModalOpen?: boolean;
   onModalOpenChange?: (open: boolean) => void;
 }
 
 const BenefitCard = ({
   beneficio,
-  validadeTexto,
+  validadeTexto = "dia_aniversario",
   regras,
   estabelecimentoId,
   userId,
-  isModalOpen: externalIsOpen,
+  isModalOpen = false,
   onModalOpenChange,
 }: BenefitCardProps) => {
-  const navigate = useNavigate();
-  const [internalModalAberto, setInternalModalAberto] = useState(false);
-  const { trackEvent } = useEstablishmentMetrics();
+  const [internalModalOpen, setInternalModalOpen] = useState(false);
 
-  // Usar estado externo se fornecido, senão interno
-  const modalAberto = externalIsOpen !== undefined ? externalIsOpen : internalModalAberto;
+  const modalOpen = onModalOpenChange ? isModalOpen : internalModalOpen;
+  const setModalOpen = onModalOpenChange || setInternalModalOpen;
 
-  const setModalAberto = (open: boolean) => {
-    if (onModalOpenChange) {
-      onModalOpenChange(open);
-    } else {
-      setInternalModalAberto(open);
-    }
+  // Converter validade para texto legível
+  const getValidadeDisplay = (validade: string) => {
+    const map: Record<string, { text: string; icon: string }> = {
+      dia_aniversario: { text: "No dia do aniversário", icon: "🎂" },
+      semana_aniversario: { text: "Na semana do aniversário", icon: "📅" },
+      mes_aniversario: { text: "No mês do aniversário", icon: "🗓️" },
+      dia: { text: "No dia do aniversário", icon: "🎂" },
+      semana: { text: "Na semana do aniversário", icon: "📅" },
+      mes: { text: "No mês do aniversário", icon: "🗓️" },
+    };
+    return map[validade] || { text: validade, icon: "📅" };
   };
 
-  // Sincronizar estado externo com interno
-  useEffect(() => {
-    if (externalIsOpen !== undefined) {
-      setInternalModalAberto(externalIsOpen);
-    }
-  }, [externalIsOpen]);
+  const validadeInfo = getValidadeDisplay(validadeTexto);
 
-  const handleVerBeneficio = async () => {
-    await trackEvent(estabelecimentoId, "benefit_click");
-
+  const handleVerBeneficio = () => {
     if (!userId) {
-      sessionStorage.setItem("redirectAfterLogin", window.location.pathname);
-      navigate("/auth", {
-        state: { mensagem: "Faça login para ver seu benefício" },
-      });
+      toast.error("Faça login para ver o benefício completo");
       return;
     }
-
-    setModalAberto(true);
+    setModalOpen(true);
   };
-
-  const fecharModal = () => setModalAberto(false);
 
   return (
     <>
-      {/* ===== CARD DE BENEFÍCIO ===== */}
-      <div className="mx-4 sm:mx-6 mt-4 sm:mt-6">
+      {/* BENEFIT CARD - Golden Ticket Style */}
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
+        className="mx-4 sm:mx-6 -mt-12 sm:-mt-16 relative z-20"
+      >
         <div className="max-w-3xl mx-auto">
+          {/* Card Principal */}
           <div
             className="
-              bg-gradient-to-r from-[#240046] to-[#3C096C]
-              rounded-2xl
-              p-4 sm:p-6
-              shadow-lg
+              relative overflow-hidden
+              rounded-3xl
+              bg-gradient-to-br from-[#240046] via-[#3C096C] to-[#5A189A]
+              shadow-[0_20px_60px_rgba(124,58,237,0.4)]
+              border border-white/10
             "
           >
-            {/* Header */}
-            <div className="flex items-start gap-3 sm:gap-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                <Gift className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            {/* Background Pattern */}
+            <div
+              className="absolute inset-0 opacity-10"
+              style={{
+                backgroundImage: `radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                                  radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 40%),
+                                  radial-gradient(circle at 40% 80%, rgba(255,255,255,0.05) 0%, transparent 30%)`,
+              }}
+            />
+
+            {/* Linha decorativa estilo ticket */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-12 bg-white rounded-r-full opacity-10" />
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-12 bg-white rounded-l-full opacity-10" />
+
+            {/* Conteúdo */}
+            <div className="relative p-6 sm:p-8">
+              {/* Header com ícone */}
+              <div className="flex items-start gap-4 mb-4">
+                {/* Ícone animado */}
+                <motion.div
+                  animate={{
+                    scale: [1, 1.1, 1],
+                    rotate: [0, 5, -5, 0],
+                  }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 3,
+                    ease: "easeInOut",
+                  }}
+                  className="
+                    w-14 h-14 rounded-2xl
+                    bg-gradient-to-br from-amber-400 to-orange-500
+                    flex items-center justify-center
+                    shadow-lg shadow-amber-500/30
+                    shrink-0
+                  "
+                >
+                  <Gift className="w-7 h-7 text-white" />
+                </motion.div>
+
+                <div className="flex-1 min-w-0">
+                  {/* Label */}
+                  <div className="flex items-center gap-2 mb-1">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span className="text-sm font-medium text-amber-400 uppercase tracking-wider">
+                      Benefício de Aniversário
+                    </span>
+                  </div>
+
+                  {/* Título do benefício */}
+                  <h2 className="text-xl sm:text-2xl font-bold text-white leading-tight">{beneficio}</h2>
+                </div>
               </div>
 
-              <div className="flex-1 min-w-0">
-                <p className="text-white/70 text-xs sm:text-sm font-medium mb-1">Benefício de Aniversário</p>
-                <p className="text-white text-base sm:text-lg md:text-xl font-bold leading-snug">
-                  {beneficio || "Benefício exclusivo para aniversariantes!"}
-                </p>
+              {/* Validade */}
+              <div className="flex items-center gap-2 mb-6 text-white/80">
+                <Calendar className="w-4 h-4" />
+                <span className="text-sm">
+                  {validadeInfo.icon} Válido: {validadeInfo.text}
+                </span>
               </div>
-            </div>
 
-            {/* Validade */}
-            <div className="flex items-center gap-2 mt-4 text-white/80">
-              <Calendar className="w-4 h-4" aria-hidden="true" />
-              <span className="text-sm">Válido: {getValidadeTexto(validadeTexto)}</span>
-            </div>
-
-            {/* Botão - min 48px de altura para touch */}
-            <button
-              onClick={handleVerBeneficio}
-              aria-label="Ver como usar o benefício de aniversário"
-              className="
-                w-full mt-4 sm:mt-5
-                min-h-[48px] py-3.5 sm:py-4 px-4
-                bg-white
-                text-[#240046]
-                font-semibold
-                text-sm sm:text-base
-                rounded-xl
-                flex items-center justify-center gap-2
-                transition-all duration-200
-                active:scale-[0.98]
-                hover:bg-gray-50
+              {/* Linha pontilhada decorativa */}
+              <div
+                className="
+                border-t border-dashed border-white/20 
+                my-4
+                relative
               "
-            >
-              Ver como usar
-              <ChevronRight className="w-5 h-5" aria-hidden="true" />
-            </button>
+              >
+                <div className="absolute -left-10 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white" />
+                <div className="absolute -right-10 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white" />
+              </div>
+
+              {/* Botão Ver Como Usar */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleVerBeneficio}
+                className="
+                  w-full py-4
+                  bg-white
+                  text-[#240046] font-semibold
+                  rounded-2xl
+                  flex items-center justify-center gap-2
+                  shadow-lg shadow-black/10
+                  hover:shadow-xl hover:shadow-black/20
+                  transition-all duration-300
+                  group
+                "
+              >
+                <span>Ver como usar</span>
+                <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              </motion.button>
+            </div>
+
+            {/* Efeito de brilho no canto */}
+            <div
+              className="
+                absolute -top-20 -right-20 
+                w-40 h-40 
+                bg-gradient-to-br from-white/20 to-transparent 
+                rounded-full 
+                blur-3xl
+              "
+            />
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* ===== MODAL DE REGRAS ===== */}
+      {/* MODAL DE DETALHES */}
       <AnimatePresence>
-        {modalAberto && (
+        {modalOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -133,116 +194,151 @@ const BenefitCard = ({
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="modal-titulo"
+            aria-labelledby="benefit-modal-title"
           >
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60"
-              onClick={fecharModal}
-              aria-hidden="true"
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setModalOpen(false)}
             />
 
-            {/* Modal */}
+            {/* Modal Content */}
             <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="
-                relative 
-                w-full 
-                max-w-lg 
-                bg-white 
-                rounded-t-3xl sm:rounded-2xl
-                max-h-[85vh]
+                relative w-full max-w-lg
+                bg-white rounded-t-3xl sm:rounded-3xl
                 overflow-hidden
+                max-h-[90vh]
               "
+              style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
             >
-              {/* Header */}
-              <div className="sticky top-0 bg-white border-b border-[#EBEBEB] px-5 py-4 flex items-center justify-between">
-                <h2 id="modal-titulo" className="text-lg font-bold text-[#240046]">
-                  Como usar seu benefício
-                </h2>
+              {/* Header gradiente */}
+              <div
+                className="
+                bg-gradient-to-br from-[#240046] via-[#3C096C] to-[#5A189A]
+                p-6 pb-12
+              "
+              >
+                {/* Botão fechar */}
                 <button
-                  onClick={fecharModal}
-                  aria-label="Fechar modal"
-                  className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-[#240046]/10 flex items-center justify-center hover:bg-[#240046]/20 transition-colors"
+                  onClick={() => setModalOpen(false)}
+                  aria-label="Fechar"
+                  className="
+                    absolute top-4 right-4
+                    w-10 h-10 rounded-full
+                    bg-white/20 backdrop-blur-sm
+                    flex items-center justify-center
+                    hover:bg-white/30 active:scale-95
+                    transition-all
+                  "
                 >
-                  <X className="w-5 h-5 text-[#3C096C]" aria-hidden="true" />
+                  <X className="w-5 h-5 text-white" />
                 </button>
+
+                {/* Ícone */}
+                <motion.div
+                  animate={{
+                    scale: [1, 1.1, 1],
+                  }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 2,
+                  }}
+                  className="
+                    w-16 h-16 rounded-2xl
+                    bg-gradient-to-br from-amber-400 to-orange-500
+                    flex items-center justify-center
+                    shadow-lg shadow-black/20
+                    mb-4
+                  "
+                >
+                  <Gift className="w-8 h-8 text-white" />
+                </motion.div>
+
+                <h3 id="benefit-modal-title" className="text-2xl font-bold text-white mb-2">
+                  {beneficio}
+                </h3>
+
+                <div className="flex items-center gap-2 text-white/80">
+                  <Calendar className="w-4 h-4" />
+                  <span className="text-sm">
+                    {validadeInfo.icon} {validadeInfo.text}
+                  </span>
+                </div>
               </div>
 
               {/* Conteúdo */}
-              <div className="p-5 space-y-5 overflow-y-auto max-h-[60vh]">
-                {/* Benefício em destaque */}
-                <div className="bg-gradient-to-r from-[#240046] to-[#3C096C] rounded-xl p-4 text-center">
-                  <p className="text-white/70 text-sm mb-1">Você ganha:</p>
-                  <p className="text-white text-lg font-bold">🎁 {beneficio}</p>
-                </div>
+              <div className="p-6 -mt-6 bg-white rounded-t-3xl relative">
+                {/* Como usar */}
+                <div className="mb-6">
+                  <h4 className="text-lg font-semibold text-[#222222] mb-4 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    Como utilizar
+                  </h4>
 
-                {/* Validade */}
-                <div className="bg-[#240046]/5 rounded-xl p-4">
-                  <p className="text-sm text-[#3C096C] mb-1">Validade</p>
-                  <p className="text-[#240046] font-medium">{getValidadeTexto(validadeTexto)}</p>
+                  <ol className="space-y-4">
+                    {[
+                      "Apresente um documento com foto no estabelecimento",
+                      "Informe que é seu mês de aniversário",
+                      "Aproveite seu benefício exclusivo!",
+                    ].map((step, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <span
+                          className="
+                          w-7 h-7 rounded-full shrink-0
+                          bg-gradient-to-br from-[#240046] to-[#3C096C]
+                          text-white text-sm font-bold
+                          flex items-center justify-center
+                        "
+                        >
+                          {index + 1}
+                        </span>
+                        <span className="text-[#484848] pt-0.5">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
 
                 {/* Regras */}
                 {regras && (
-                  <div className="bg-[#240046]/5 rounded-xl p-4">
-                    <p className="text-sm text-[#3C096C] mb-2">Regras de utilização</p>
-                    <p className="text-[#240046] text-sm leading-relaxed whitespace-pre-line">{regras}</p>
+                  <div
+                    className="
+                    p-4 rounded-2xl
+                    bg-amber-50 border border-amber-200
+                  "
+                  >
+                    <h4 className="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      Regras e observações
+                    </h4>
+                    <p className="text-sm text-amber-700 leading-relaxed">{regras}</p>
                   </div>
                 )}
 
-                {/* Passos */}
-                <div className="border border-[#240046]/10 rounded-xl p-4">
-                  <p className="text-sm text-[#3C096C] mb-3 font-medium">Passo a passo</p>
-                  <ul className="space-y-3">
-                    {[
-                      "Vá até o estabelecimento",
-                      "Apresente este benefício",
-                      "Mostre documento com data de nascimento",
-                      "Aproveite! 🎉",
-                    ].map((step, i) => (
-                      <li key={i} className="flex items-center gap-3 text-[#240046] text-sm">
-                        <div className="w-6 h-6 rounded-full bg-[#240046] flex items-center justify-center flex-shrink-0">
-                          <Check className="w-3.5 h-3.5 text-white" aria-hidden="true" />
-                        </div>
-                        {step}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Dica */}
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                  <p className="text-sm text-amber-800">
-                    💡 <strong>Dica:</strong> Leve um documento com foto para confirmar sua data de nascimento.
-                  </p>
-                </div>
-              </div>
-
-              {/* Footer - apenas botão fechar */}
-              <div className="sticky bottom-0 bg-white border-t border-[#EBEBEB] p-5">
-                <button
-                  onClick={fecharModal}
+                {/* Botão fechar */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setModalOpen(false)}
                   className="
-                    w-full min-h-[48px] py-3.5
+                    w-full mt-6 py-4
                     bg-gradient-to-r from-[#240046] to-[#3C096C]
-                    text-white
-                    font-semibold
-                    rounded-xl
-                    flex items-center justify-center gap-2
-                    transition-all duration-200
-                    hover:opacity-95
-                    active:scale-[0.98]
+                    text-white font-semibold
+                    rounded-2xl
+                    shadow-lg shadow-purple-500/25
+                    hover:shadow-xl hover:shadow-purple-500/30
+                    transition-all
                   "
                 >
                   Entendi!
-                </button>
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>

@@ -1,7 +1,9 @@
-// ContactButtons.tsx - Botões de Contato Clean
+// ContactButtons.tsx - Premium Contact Actions 2025
+// Tendências: Cores vibrantes por marca, Hover effects, Ícones oficiais
 
-import { MessageCircle, Instagram, Phone, Globe, UtensilsCrossed } from "lucide-react";
-import { formatWhatsApp, formatInstagram, formatPhoneLink, formatWebsite } from "@/lib/contactUtils";
+import { motion } from "framer-motion";
+import { MessageCircle, Instagram, Phone, Globe, FileText, ExternalLink } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ContactButtonsProps {
   whatsapp?: string | null;
@@ -9,11 +11,11 @@ interface ContactButtonsProps {
   phone?: string | null;
   site?: string | null;
   cardapio?: string | null;
-  onWhatsApp?: () => void;
-  onInstagram?: () => void;
-  onPhone?: () => void;
-  onSite?: () => void;
-  onCardapio?: () => void;
+  onWhatsApp: () => void;
+  onInstagram: () => void;
+  onPhone: () => void;
+  onSite: () => void;
+  onCardapio: () => void;
 }
 
 const ContactButtons = ({
@@ -28,111 +30,147 @@ const ContactButtons = ({
   onSite,
   onCardapio,
 }: ContactButtonsProps) => {
-  const hasWhatsApp = !!formatWhatsApp(whatsapp);
-  const hasInstagram = !!formatInstagram(instagram);
-  const hasPhone = !!formatPhoneLink(phone);
-  const hasSite = !!formatWebsite(site);
-  const hasCardapio = !!cardapio;
-
   const buttons = [
     {
-      name: "WhatsApp",
+      id: "whatsapp",
+      label: "WhatsApp",
       icon: MessageCircle,
+      available: !!whatsapp,
       onClick: onWhatsApp,
-      available: hasWhatsApp,
-      bgColor: "bg-[#25D366]",
-      hoverColor: "hover:bg-[#22c55e]",
+      gradient: "from-[#25D366] to-[#128C7E]",
+      shadowColor: "shadow-green-500/30",
+      hoverShadow: "hover:shadow-green-500/50",
     },
     {
-      name: "Instagram",
+      id: "instagram",
+      label: "Instagram",
       icon: Instagram,
+      available: !!instagram,
       onClick: onInstagram,
-      available: hasInstagram,
-      bgColor: "bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400",
-      hoverColor: "hover:opacity-90",
+      gradient: "from-[#833AB4] via-[#E1306C] to-[#F77737]",
+      shadowColor: "shadow-pink-500/30",
+      hoverShadow: "hover:shadow-pink-500/50",
     },
     {
-      name: "Ligar",
+      id: "phone",
+      label: "Ligar",
       icon: Phone,
+      available: !!phone,
       onClick: onPhone,
-      available: hasPhone,
-      bgColor: "bg-[#3b82f6]",
-      hoverColor: "hover:bg-[#2563eb]",
+      gradient: "from-[#3B82F6] to-[#1D4ED8]",
+      shadowColor: "shadow-blue-500/30",
+      hoverShadow: "hover:shadow-blue-500/50",
     },
     {
-      name: "Site",
+      id: "site",
+      label: "Site",
       icon: Globe,
+      available: !!site,
       onClick: onSite,
-      available: hasSite,
-      bgColor: "bg-[#6366f1]",
-      hoverColor: "hover:bg-[#4f46e5]",
+      gradient: "from-[#374151] to-[#111827]",
+      shadowColor: "shadow-gray-500/30",
+      hoverShadow: "hover:shadow-gray-500/50",
     },
-    {
-      name: "Cardápio",
-      icon: UtensilsCrossed,
-      onClick: onCardapio,
-      available: hasCardapio,
-      bgColor: "bg-[#f97316]",
-      hoverColor: "hover:bg-[#ea580c]",
-    },
-  ].filter((btn) => btn.available);
+  ];
 
-  if (buttons.length === 0) return null;
+  // Filtrar apenas botões disponíveis
+  const availableButtons = buttons.filter((btn) => btn.available);
 
-  // Grid responsivo baseado na quantidade de botões
-  const getGridClass = () => {
-    const count = buttons.length;
-
-    // Mobile: máximo 3 por linha, desktop: até 5
-    if (count === 1) return "grid-cols-1";
-    if (count === 2) return "grid-cols-2";
-    if (count === 3) return "grid-cols-3";
-    if (count === 4) return "grid-cols-2 sm:grid-cols-4";
-    if (count === 5) return "grid-cols-3 sm:grid-cols-5";
-    return "grid-cols-3 sm:grid-cols-6";
-  };
+  if (availableButtons.length === 0 && !cardapio) return null;
 
   return (
-    <div className="mx-4 sm:mx-6 mt-4 sm:mt-6">
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.5 }}
+      className="mx-4 sm:mx-6 mt-6 sm:mt-8"
+      aria-label="Opções de contato"
+    >
       <div className="max-w-3xl mx-auto">
-        <div className={`grid gap-2 sm:gap-3 ${getGridClass()}`}>
-          {buttons.map((button) => {
-            const Icon = button.icon;
-            const count = buttons.length;
+        {/* Grid de botões principais */}
+        <div
+          className={cn(
+            "grid gap-3",
+            availableButtons.length === 1
+              ? "grid-cols-1"
+              : availableButtons.length === 2
+                ? "grid-cols-2"
+                : availableButtons.length === 3
+                  ? "grid-cols-3"
+                  : "grid-cols-2 sm:grid-cols-4",
+          )}
+        >
+          {availableButtons.map((button, index) => (
+            <motion.button
+              key={button.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * index }}
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={button.onClick}
+              aria-label={`Contato via ${button.label}`}
+              className={cn(
+                "relative overflow-hidden",
+                "flex items-center justify-center gap-2.5",
+                "py-4 px-5 rounded-2xl",
+                "bg-gradient-to-br",
+                button.gradient,
+                "text-white font-semibold",
+                "shadow-lg",
+                button.shadowColor,
+                button.hoverShadow,
+                "transition-all duration-300",
+                "group",
+              )}
+            >
+              {/* Efeito de brilho no hover */}
+              <div
+                className="
+                absolute inset-0 
+                bg-gradient-to-r from-transparent via-white/20 to-transparent
+                -translate-x-full group-hover:translate-x-full
+                transition-transform duration-700
+              "
+              />
 
-            // Texto menor quando tem muitos botões no mobile
-            const showText = count <= 4;
-
-            return (
-              <button
-                key={button.name}
-                onClick={button.onClick}
-                className={`
-                  ${button.bgColor}
-                  ${button.hoverColor}
-                  text-white
-                  font-medium
-                  min-h-[48px]
-                  py-3 sm:py-3.5 px-2 sm:px-4
-                  rounded-xl
-                  flex items-center justify-center gap-1.5 sm:gap-2
-                  transition-all duration-200
-                  active:scale-[0.98]
-                  shadow-sm
-                `}
-              >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                {showText ? (
-                  <span className="text-xs sm:text-sm truncate">{button.name}</span>
-                ) : (
-                  <span className="text-xs sm:text-sm hidden sm:inline">{button.name}</span>
-                )}
-              </button>
-            );
-          })}
+              <button.icon className="w-5 h-5 relative z-10" />
+              <span className="relative z-10">{button.label}</span>
+            </motion.button>
+          ))}
         </div>
+
+        {/* Botão Cardápio (secundário) */}
+        {cardapio && (
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onCardapio}
+            aria-label="Ver cardápio"
+            className="
+              w-full mt-3
+              flex items-center justify-center gap-2.5
+              py-4 px-5 rounded-2xl
+              bg-white
+              border-2 border-[#240046]/10
+              text-[#240046] font-semibold
+              hover:border-[#240046]/30
+              hover:bg-[#240046]/5
+              shadow-sm hover:shadow-md
+              transition-all duration-300
+              group
+            "
+          >
+            <FileText className="w-5 h-5" />
+            <span>Ver Cardápio</span>
+            <ExternalLink className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
+          </motion.button>
+        )}
       </div>
-    </div>
+    </motion.section>
   );
 };
 

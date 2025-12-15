@@ -334,11 +334,11 @@ const CarouselCard = memo(
           </button>
         </div>
 
-        {/* CONTEÚDO DO CARD - DEBUG VERSÃO 15/12 16:00 */}
+        {/* CONTEÚDO DO CARD - Com debug visual */}
         <div className="space-y-0.5">
-          {/* DEBUG: Marcador visual para confirmar código atualizado */}
+          {/* LINHA 1: Nome do estabelecimento */}
           <h3 className="font-semibold text-[15px] text-foreground truncate">
-            [V2] {nomeDisplay}
+            {nomeDisplay || `[VAZIO: ${est.nome_fantasia}]`}
           </h3>
 
           {/* LINHA 2: Bairro */}

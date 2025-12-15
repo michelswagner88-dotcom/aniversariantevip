@@ -25,7 +25,6 @@ const CARD_WIDTH_MOBILE = 160;
 const CARD_WIDTH_DESKTOP = 220;
 const CARD_GAP = 12;
 const SKELETON_COUNT = 6;
-const PRELOAD_AHEAD = 3;
 const DOUBLE_TAP_DELAY = 300;
 const FAVORITES_STORAGE_KEY = "aniversariantevip_favorites";
 
@@ -204,23 +203,6 @@ const useInView = () => {
 // UTILS
 // =============================================================================
 
-const calcularDistancia = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
-
-const formatarDistancia = (km: number): string => {
-  if (km < 1) return `${Math.round(km * 1000)} m`;
-  if (km < 10) return `${km.toFixed(1)} km`;
-  return `${Math.round(km)} km`;
-};
-
 const preloadImage = (src: string): void => {
   const img = new Image();
   img.src = src;
@@ -337,7 +319,7 @@ const CardImage = memo(({ src, fallback, alt, priority }: CardImageProps) => {
 CardImage.displayName = "CardImage";
 
 // =============================================================================
-// CARD COMPONENT - Estilo AniversarianteVIP (layout Airbnb + cores violeta)
+// CARD COMPONENT
 // =============================================================================
 
 interface AirbnbCardProps {
@@ -402,21 +384,17 @@ const AirbnbCard = memo(
 
     const temBeneficio = Boolean(est.descricao_beneficio);
     const nomeDisplay = est.nome_fantasia || est.razao_social || "Estabelecimento";
-    const bairroDisplay = est.bairro || est.cidade;
+    const bairroDisplay = est.bairro || est.cidade || "";
 
-    // DEBUG - REMOVER DEPOIS
-    useEffect(() => {
-      console.log(`[Card ${index}]`, {
-        id: est.id,
-        nome_fantasia: est.nome_fantasia,
-        razao_social: est.razao_social,
-        bairro: est.bairro,
-        cidade: est.cidade,
-        nomeDisplay,
-        bairroDisplay,
-        todasAsChaves: Object.keys(est)
-      });
-    }, []);
+    // DEBUG - Log no render
+    console.log("🔵 [AirbnbCard]", {
+      index,
+      id: est.id?.substring(0, 8),
+      nome_fantasia: est.nome_fantasia,
+      nomeDisplay,
+      bairro: est.bairro,
+      keys: Object.keys(est),
+    });
 
     // Handlers
     const handleClick = useCallback(() => {
@@ -486,7 +464,7 @@ const AirbnbCard = memo(
           "outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 rounded-2xl",
         )}
       >
-        {/* Imagem - Quadrada com bordas arredondadas */}
+        {/* Imagem */}
         <div className="relative aspect-square rounded-2xl overflow-hidden mb-2 bg-violet-50 dark:bg-violet-900/20">
           {hasBeenInView || priority ? (
             <CardImage src={fotoUrl || fallbackUrl} fallback={fallbackUrl} alt={nomeDisplay} priority={priority} />
@@ -494,14 +472,14 @@ const AirbnbCard = memo(
             <div className="w-full h-full bg-violet-100 dark:bg-violet-900/30 animate-pulse" />
           )}
 
-          {/* Badge Benefício - Top Left */}
+          {/* Badge Benefício */}
           {temBeneficio && (
             <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-white/95 dark:bg-gray-900/95 shadow-sm">
               <span className="text-[10px] sm:text-xs font-medium text-violet-700 dark:text-violet-300">Benefício</span>
             </div>
           )}
 
-          {/* Coração - Top Right */}
+          {/* Coração */}
           <button
             onClick={handleFavoriteToggle}
             aria-label={isFavorited ? "Remover dos favoritos" : "Salvar"}
@@ -526,22 +504,22 @@ const AirbnbCard = memo(
           </button>
         </div>
 
-        {/* Conteúdo - Exatamente como no print */}
+        {/* CONTEÚDO DO CARD */}
         <div className="space-y-0.5 px-0.5">
-          {/* Nome do estabelecimento - Negrito, roxo escuro */}
+          {/* LINHA 1: Nome do estabelecimento */}
           <h3 className="font-semibold text-sm sm:text-[15px] leading-tight text-violet-950 dark:text-white line-clamp-2">
-            {nomeDisplay}
+            {nomeDisplay || `[VAZIO: ${est.nome_fantasia}]`}
           </h3>
 
-          {/* Bairro - Cinza/roxo claro */}
+          {/* LINHA 2: Bairro */}
           <p className="text-xs sm:text-sm text-violet-600/70 dark:text-violet-300/70 truncate">{bairroDisplay}</p>
 
-          {/* Categoria - Cinza/roxo claro */}
+          {/* LINHA 3: Categoria */}
           {categoria && (
             <p className="text-xs sm:text-sm text-violet-600/70 dark:text-violet-300/70 truncate">{categoria}</p>
           )}
 
-          {/* Benefício no aniversário - Destaque roxo */}
+          {/* LINHA 4: Benefício */}
           {temBeneficio && (
             <p className="text-xs sm:text-sm text-violet-700 dark:text-violet-400 font-medium flex items-center gap-1 pt-0.5">
               <span>🎁</span>
@@ -606,6 +584,19 @@ export const AirbnbCardGrid = memo(
     const [showLeftArrow, setShowLeftArrow] = useState(false);
     const [showRightArrow, setShowRightArrow] = useState(true);
     const reducedMotion = useReducedMotion();
+
+    // DEBUG - Log dos dados recebidos
+    useEffect(() => {
+      if (estabelecimentos.length > 0) {
+        console.log("🟢 [AirbnbCardGrid]", {
+          total: estabelecimentos.length,
+          primeiroItem: estabelecimentos[0],
+          temNomeFantasia: "nome_fantasia" in estabelecimentos[0],
+          valorNomeFantasia: estabelecimentos[0].nome_fantasia,
+          keys: Object.keys(estabelecimentos[0]),
+        });
+      }
+    }, [estabelecimentos]);
 
     const checkScrollPosition = useCallback(() => {
       const el = scrollRef.current;
@@ -693,7 +684,6 @@ export const AirbnbCardGrid = memo(
         aria-label={`${estabelecimentos.length} estabelecimentos`}
         onKeyDown={handleKeyDown}
       >
-        {/* Setas de navegação */}
         <NavButton
           direction="left"
           onClick={() => scrollByAmount("left")}
@@ -708,7 +698,6 @@ export const AirbnbCardGrid = memo(
           reducedMotion={reducedMotion}
         />
 
-        {/* Container do scroll */}
         <div
           ref={scrollRef}
           className={cn(

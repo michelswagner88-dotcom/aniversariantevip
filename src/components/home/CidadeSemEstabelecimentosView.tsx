@@ -115,16 +115,16 @@ export const CidadeSemEstabelecimentosView = memo(
     return (
       <div
         className={cn(
-          "min-h-[80vh] flex flex-col items-center justify-center px-4 py-12",
+          "min-h-[80vh] flex flex-col items-center justify-center px-4 py-12 bg-white",
           !reducedMotion && "animate-in fade-in duration-500",
         )}
         role="main"
         aria-labelledby="empty-state-title"
       >
         {/* Location Badge */}
-        <div className="flex items-center gap-2 text-muted-foreground mb-6">
+        <div className="flex items-center gap-2 text-[#7C3AED] mb-6">
           <MapPin className="w-4 h-4" aria-hidden="true" />
-          <span>
+          <span className="font-medium">
             {cidade}, {estado}
           </span>
         </div>
@@ -133,20 +133,20 @@ export const CidadeSemEstabelecimentosView = memo(
         <div
           className={cn(
             "w-20 h-20 rounded-full",
-            "bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20",
+            "bg-violet-100",
             "flex items-center justify-center mb-6",
             !reducedMotion && "animate-in zoom-in duration-500 delay-100",
           )}
           aria-hidden="true"
         >
-          <Rocket className="w-10 h-10 text-violet-400" />
+          <Rocket className="w-10 h-10 text-[#7C3AED]" />
         </div>
 
         {/* Title */}
         <h1
           id="empty-state-title"
           className={cn(
-            "text-2xl md:text-3xl font-bold text-foreground text-center mb-3",
+            "text-2xl md:text-3xl font-bold text-[#240046] text-center mb-3",
             !reducedMotion && "animate-in slide-in-from-bottom-4 duration-500 delay-150",
           )}
         >
@@ -156,7 +156,7 @@ export const CidadeSemEstabelecimentosView = memo(
         {/* Description */}
         <p
           className={cn(
-            "text-muted-foreground text-center max-w-md mb-8",
+            "text-[#7C3AED] text-center max-w-md mb-8",
             !reducedMotion && "animate-in slide-in-from-bottom-4 duration-500 delay-200",
           )}
         >
@@ -173,10 +173,9 @@ export const CidadeSemEstabelecimentosView = memo(
           <Button
             onClick={handleMudarCidade}
             className={cn(
-              "bg-gradient-to-r from-violet-600 to-fuchsia-600",
+              "bg-[#7C3AED] hover:bg-[#6D28D9] text-white",
               "shadow-lg shadow-violet-500/25",
-              !reducedMotion &&
-                "transition-all hover:from-violet-500 hover:to-fuchsia-500 hover:scale-105 active:scale-95",
+              !reducedMotion && "transition-all hover:scale-105 active:scale-95",
             )}
           >
             <MapPin className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -187,8 +186,8 @@ export const CidadeSemEstabelecimentosView = memo(
             onClick={handleIndicarEstabelecimento}
             variant="outline"
             className={cn(
-              "border-violet-500/50 text-violet-400",
-              !reducedMotion && "transition-all hover:bg-violet-500/10 hover:scale-105 active:scale-95",
+              "border-[#7C3AED] text-[#7C3AED] hover:bg-violet-50",
+              !reducedMotion && "transition-all hover:scale-105 active:scale-95",
             )}
           >
             <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -203,7 +202,7 @@ export const CidadeSemEstabelecimentosView = memo(
             !reducedMotion && "animate-in slide-in-from-bottom-4 duration-500 delay-300",
           )}
         >
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 text-center">
+          <h2 className="text-sm font-medium text-[#7C3AED] uppercase tracking-wider mb-4 text-center">
             Explore outras cidades
           </h2>
 
@@ -219,11 +218,11 @@ export const CidadeSemEstabelecimentosView = memo(
                   }}
                   className={cn(
                     "w-full flex items-center justify-between px-4 py-3",
-                    "bg-secondary/50 border border-border rounded-xl",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                    "bg-violet-50 border border-violet-200 rounded-xl",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2",
                     !reducedMotion && [
                       "transition-all duration-200",
-                      "hover:bg-secondary hover:border-primary/30 hover:scale-[1.02]",
+                      "hover:bg-violet-100 hover:border-[#7C3AED]/30 hover:scale-[1.02]",
                       "active:scale-[0.98]",
                       "animate-in fade-in slide-in-from-bottom-2 duration-300",
                       "[animation-fill-mode:both]",
@@ -231,12 +230,12 @@ export const CidadeSemEstabelecimentosView = memo(
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    <MapPin className="w-5 h-5 text-violet-400" aria-hidden="true" />
-                    <span className="text-foreground font-medium">
+                    <MapPin className="w-5 h-5 text-[#7C3AED]" aria-hidden="true" />
+                    <span className="text-[#240046] font-medium">
                       {item.cidade}, {item.estado}
                     </span>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                  <ChevronRight className="w-4 h-4 text-[#7C3AED]" aria-hidden="true" />
                 </button>
               </li>
             ))}

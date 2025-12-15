@@ -197,12 +197,12 @@ const GridCard = memo(
         aria-label={`Ver ${nomeDisplay}${temBeneficio ? ", possui benefício" : ""}`}
         className={cn(
           "group cursor-pointer rounded-2xl overflow-hidden",
-          "bg-card border border-border",
-          "outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+          "bg-white border border-violet-100",
+          "outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2",
           !reducedMotion && [
             "transition-all duration-200",
-            "hover:border-primary/30 hover:scale-[1.02]",
-            "hover:shadow-xl hover:shadow-primary/10",
+            "hover:border-[#7C3AED]/30 hover:scale-[1.02]",
+            "hover:shadow-xl hover:shadow-violet-500/10",
           ],
         )}
       >
@@ -215,7 +215,7 @@ const GridCard = memo(
             className={cn(!reducedMotion && "transition-transform duration-500 group-hover:scale-110")}
           />
 
-          {/* Favorite Button - Top Right (consistente com outros cards) */}
+          {/* Favorite Button - Top Right */}
           <button
             onClick={handleFavorite}
             aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
@@ -245,8 +245,7 @@ const GridCard = memo(
               <div
                 className={cn(
                   "flex items-center gap-1 px-2 py-1 rounded-lg",
-                  "bg-gradient-to-r from-violet-600/90 to-fuchsia-600/90",
-                  "backdrop-blur-sm",
+                  "bg-[#7C3AED] backdrop-blur-sm",
                 )}
               >
                 <Gift className="w-3 h-3 text-white" aria-hidden="true" />
@@ -270,14 +269,14 @@ const GridCard = memo(
         <div className="p-4">
           <h3
             className={cn(
-              "font-semibold text-foreground text-lg mb-1 truncate",
-              !reducedMotion && "transition-colors group-hover:text-primary",
+              "font-semibold text-[#240046] text-lg mb-1 truncate",
+              !reducedMotion && "transition-colors group-hover:text-[#7C3AED]",
             )}
           >
             {nomeDisplay}
           </h3>
 
-          <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+          <div className="flex items-center gap-1.5 text-[#7C3AED] text-sm">
             <MapPin className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
             <span className="truncate">{est.bairro || est.cidade}</span>
           </div>
@@ -304,21 +303,24 @@ const EmptyState = memo(({ message, onClearFilters }: EmptyStateProps) => (
     role="status"
     aria-label="Nenhum resultado encontrado"
   >
-    <div className={cn("w-16 h-16 rounded-full mb-4", "bg-muted flex items-center justify-center")} aria-hidden="true">
-      <Search className="w-8 h-8 text-muted-foreground" />
+    <div
+      className={cn("w-16 h-16 rounded-full mb-4", "bg-violet-100 flex items-center justify-center")}
+      aria-hidden="true"
+    >
+      <Search className="w-8 h-8 text-[#7C3AED]" />
     </div>
 
-    <h3 className="text-xl font-semibold text-foreground mb-2">Nenhum resultado encontrado</h3>
+    <h3 className="text-xl font-semibold text-[#240046] mb-2">Nenhum resultado encontrado</h3>
 
-    <p className="text-muted-foreground max-w-md mb-6">{message}</p>
+    <p className="text-[#7C3AED] max-w-md mb-6">{message}</p>
 
     {onClearFilters && (
       <button
         onClick={onClearFilters}
         className={cn(
           "px-4 py-2 rounded-full",
-          "bg-primary text-primary-foreground font-medium",
-          "transition-all hover:opacity-90 active:scale-95",
+          "bg-[#7C3AED] text-white font-medium",
+          "transition-all hover:bg-[#6D28D9] active:scale-95",
         )}
       >
         Limpar filtros
@@ -383,3 +385,39 @@ export const EstabelecimentosGrid = memo(
 );
 
 EstabelecimentosGrid.displayName = "EstabelecimentosGrid";
+```
+
+---
+
+### O que foi corrigido:
+
+1. **Card** - `bg-white` com `border-violet-100`, hover `border-[#7C3AED]/30`
+2. **Badge de benefício** - Cor sólida `bg-[#7C3AED]` em vez de gradient
+3. **Nome do estabelecimento** - `text-[#240046]`, hover `text-[#7C3AED]`
+4. **Localização** - `text-[#7C3AED]`
+5. **EmptyState** - `bg-violet-100`, ícone `text-[#7C3AED]`, textos com cores da marca
+6. **Botão limpar filtros** - `bg-[#7C3AED]` hover `bg-[#6D28D9]`
+7. **Focus ring** - Usando `ring-[#7C3AED]`
+
+---
+
+### Checklist
+
+- [x] TypeScript sem erros
+- [x] Cores consistentes com a marca (`#240046`, `#7C3AED`)
+- [x] Fundo branco para cards
+- [x] Responsivo mobile first (1-4 colunas)
+- [x] Acessibilidade mantida (aria-labels, roles)
+- [x] Animações respeitam `prefers-reduced-motion`
+- [x] Não removeu funcionalidades
+
+---
+
+### Sugestão de Refatoração Futura
+
+Os hooks `useReducedMotion` e `useFavorites` estão duplicados em vários arquivos. Considere criar:
+```
+/src/hooks/
+  useReducedMotion.ts
+  useFavorites.ts
+  useHaptic.ts

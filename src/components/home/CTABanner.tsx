@@ -1,7 +1,11 @@
-import { memo, useCallback, useState, useEffect, useId } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { memo, useCallback, useState, useEffect, useId, useRef } from "react";
+import { Link } from "react-router-dom";
 import { Sparkles, ArrowRight, Gift, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// =============================================================================
+// TYPES
+// =============================================================================
 
 type CTAVariant = "register" | "partner" | "benefits";
 
@@ -17,6 +21,10 @@ interface CTAContent {
   link: string;
   icon: typeof Sparkles;
 }
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
 
 const CTA_CONTENT: Record<CTAVariant, CTAContent> = {
   register: {
@@ -48,12 +56,17 @@ const GRADIENT_CLASSES: Record<CTAVariant, string> = {
   benefits: "bg-gradient-to-br from-[#240046] to-[#3C096C]",
 };
 
+// =============================================================================
+// HOOKS
+// =============================================================================
+
 const useReducedMotion = (): boolean => {
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
+  );
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(query.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     query.addEventListener("change", handler);
     return () => query.removeEventListener("change", handler);
@@ -62,12 +75,13 @@ const useReducedMotion = (): boolean => {
   return reducedMotion;
 };
 
-const useInView = (options?: IntersectionObserverInit) => {
+const useInView = () => {
   const [isInView, setIsInView] = useState(false);
-  const [ref, setRef] = useState<HTMLElement | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!ref) return;
+    const element = ref.current;
+    if (!element) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -76,18 +90,31 @@ const useInView = (options?: IntersectionObserverInit) => {
           observer.disconnect();
         }
       },
-      { threshold: 0.2, ...options },
+      { threshold: 0.2 },
     );
 
-    observer.observe(ref);
+    observer.observe(element);
     return () => observer.disconnect();
-  }, [ref, options]);
+  }, []);
 
-  return { ref: setRef, isInView };
+  return { ref, isInView };
 };
 
+// =============================================================================
+// UTILS
+// =============================================================================
+
+const haptic = (pattern: number[] = [10, 30, 10]) => {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
 export const CTABanner = memo(({ variant = "register", onCTAClick }: CTABannerProps) => {
-  const navigate = useNavigate();
   const reducedMotion = useReducedMotion();
   const { ref, isInView } = useInView();
   const descriptionId = useId();
@@ -95,32 +122,10 @@ export const CTABanner = memo(({ variant = "register", onCTAClick }: CTABannerPr
   const { title, subtitle, cta, link, icon: Icon } = CTA_CONTENT[variant];
   const gradientClass = GRADIENT_CLASSES[variant];
 
-  const handleClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
-
-      if (onCTAClick) {
-        onCTAClick(variant);
-      }
-    },
-    [variant, onCTAClick],
-  );
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
-
-        if (onCTAClick) {
-          onCTAClick(variant);
-        }
-
-        navigate(link);
-      }
-    },
-    [variant, link, navigate, onCTAClick],
-  );
+  const handleClick = useCallback(() => {
+    haptic();
+    onCTAClick?.(variant);
+  }, [variant, onCTAClick]);
 
   return (
     <section className="py-4 sm:py-6" aria-labelledby={`cta-title-${variant}`}>
@@ -135,24 +140,27 @@ export const CTABanner = memo(({ variant = "register", onCTAClick }: CTABannerPr
         )}
         role="banner"
       >
+        {/* Decorative blurs - usando blur-2xl para melhor performance */}
         <div
           className={cn(
-            "absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl",
+            "absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl",
             !reducedMotion && "animate-pulse",
           )}
           aria-hidden="true"
         />
         <div
           className={cn(
-            "absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-3xl",
+            "absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-2xl",
             !reducedMotion && "animate-pulse",
           )}
           style={{ animationDelay: "1s" }}
           aria-hidden="true"
         />
 
+        {/* Content */}
         <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-center sm:text-left">
+            {/* Icon */}
             <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
               <Icon
                 className={cn("w-5 h-5 text-white/80", !reducedMotion && "animate-in zoom-in duration-500 delay-200")}
@@ -160,6 +168,7 @@ export const CTABanner = memo(({ variant = "register", onCTAClick }: CTABannerPr
               />
             </div>
 
+            {/* Title */}
             <h3
               id={`cta-title-${variant}`}
               className={cn(
@@ -170,6 +179,7 @@ export const CTABanner = memo(({ variant = "register", onCTAClick }: CTABannerPr
               {title}
             </h3>
 
+            {/* Subtitle */}
             <p
               id={descriptionId}
               className={cn(
@@ -181,10 +191,10 @@ export const CTABanner = memo(({ variant = "register", onCTAClick }: CTABannerPr
             </p>
           </div>
 
+          {/* CTA Button */}
           <Link
             to={link}
             onClick={handleClick}
-            onKeyDown={handleKeyDown}
             aria-label={cta}
             aria-describedby={descriptionId}
             className={cn(

@@ -29,9 +29,11 @@ const SCROLL_AMOUNT = 200;
 const SCROLL_THRESHOLD = 10;
 const DEBOUNCE_DELAY = 16;
 const ANIMATION_DELAY_STEP = 30;
-const SUB_ANIMATION_DELAY_STEP = 40;
 const HAPTIC_LIGHT = 5;
 const HAPTIC_MEDIUM: number[] = [10, 30, 10];
+
+// Cor do header para gradientes de fade (roxo escuro)
+const HEADER_BG_COLOR = "#1a0a2e";
 
 const CATEGORIA_ICONS: Record<string, LucideIcon> = {
   todos: Sparkles,
@@ -102,24 +104,15 @@ const useReducedMotion = (): boolean => {
   return reducedMotion;
 };
 
-const useDebounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number): T => {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
-
-  return useCallback(
-    (...args: Parameters<T>) => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => fn(...args), delay);
-    },
-    [fn, delay],
-  ) as T;
-};
-
 interface ScrollFadeState {
   showLeft: boolean;
   showRight: boolean;
 }
 
-const useScrollFade = (scrollRef: React.RefObject<HTMLDivElement>, deps: unknown[] = []): ScrollFadeState => {
+const useScrollFade = (
+  scrollRef: React.RefObject<HTMLDivElement>,
+  triggerValue?: string | number | null,
+): ScrollFadeState => {
   const [state, setState] = useState<ScrollFadeState>({
     showLeft: false,
     showRight: true,
@@ -136,11 +129,15 @@ const useScrollFade = (scrollRef: React.RefObject<HTMLDivElement>, deps: unknown
     });
   }, [scrollRef]);
 
-  const debouncedCheck = useDebounce(checkScroll, DEBOUNCE_DELAY);
-
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+
+    let rafId: number;
+    const debouncedCheck = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(checkScroll);
+    };
 
     checkScroll();
     el.addEventListener("scroll", debouncedCheck, { passive: true });
@@ -149,8 +146,9 @@ const useScrollFade = (scrollRef: React.RefObject<HTMLDivElement>, deps: unknown
     return () => {
       el.removeEventListener("scroll", debouncedCheck);
       window.removeEventListener("resize", checkScroll);
+      cancelAnimationFrame(rafId);
     };
-  }, [checkScroll, debouncedCheck, ...deps]);
+  }, [checkScroll, triggerValue]);
 
   return state;
 };
@@ -177,7 +175,77 @@ const haptic = (pattern: number | number[] = HAPTIC_LIGHT) => {
 };
 
 // =============================================================================
-// COMPONENT
+// FADE GRADIENT COMPONENT
+// =============================================================================
+
+interface FadeGradientProps {
+  side: "left" | "right";
+  visible: boolean;
+  size?: "sm" | "md";
+}
+
+const FadeGradient = memo(({ side, visible, size = "md" }: FadeGradientProps) => (
+  <div
+    className={cn(
+      "absolute top-0 bottom-0 z-[5] pointer-events-none",
+      "transition-opacity duration-300",
+      side === "left" ? "left-0" : "right-0",
+      size === "sm" ? "w-8" : "w-12",
+      visible ? "opacity-100" : "opacity-0",
+    )}
+    style={{
+      background:
+        side === "left"
+          ? `linear-gradient(to right, ${HEADER_BG_COLOR}, transparent)`
+          : `linear-gradient(to left, ${HEADER_BG_COLOR}, transparent)`,
+    }}
+    aria-hidden="true"
+  />
+));
+
+FadeGradient.displayName = "FadeGradient";
+
+// =============================================================================
+// NAV BUTTON COMPONENT
+// =============================================================================
+
+interface NavButtonProps {
+  direction: "left" | "right";
+  onClick: () => void;
+  visible: boolean;
+  reducedMotion: boolean;
+  size?: "sm" | "md";
+}
+
+const NavButton = memo(({ direction, onClick, visible, reducedMotion, size = "md" }: NavButtonProps) => {
+  const isLeft = direction === "left";
+  const Icon = isLeft ? ChevronLeft : ChevronRight;
+
+  return (
+    <button
+      onClick={onClick}
+      aria-label={isLeft ? "Anterior" : "Próximo"}
+      disabled={!visible}
+      className={cn(
+        "absolute top-1/2 -translate-y-1/2 z-10",
+        "hidden lg:flex items-center justify-center rounded-full",
+        "bg-[#240046] border border-violet-500/30 text-white",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+        "disabled:opacity-0 disabled:pointer-events-none",
+        !reducedMotion && "transition-all duration-200 hover:bg-[#3a0070] hover:scale-105",
+        isLeft ? "left-0" : "right-0",
+        size === "sm" ? "w-7 h-7" : "w-9 h-9",
+      )}
+    >
+      <Icon size={size === "sm" ? 14 : 18} aria-hidden="true" />
+    </button>
+  );
+});
+
+NavButton.displayName = "NavButton";
+
+// =============================================================================
+// MAIN COMPONENT
 // =============================================================================
 
 export const AirbnbCategoryPills = memo(
@@ -194,8 +262,8 @@ export const AirbnbCategoryPills = memo(
     const reducedMotion = useReducedMotion();
 
     // Scroll fade states
-    const mainScrollFade = useScrollFade(scrollRef, [estabelecimentos]);
-    const subScrollFade = useScrollFade(subScrollRef, [categoriaAtiva]);
+    const mainScrollFade = useScrollFade(scrollRef, estabelecimentos.length);
+    const subScrollFade = useScrollFade(subScrollRef, categoriaAtiva);
 
     // Contagem por categoria
     const contagens = useMemo(() => {
@@ -355,36 +423,14 @@ export const AirbnbCategoryPills = memo(
       <div className="space-y-2" role="navigation" aria-label="Filtros de categoria">
         {/* CATEGORIAS PRINCIPAIS */}
         <div className="relative">
-          {/* Left Arrow */}
-          <button
+          <NavButton
+            direction="left"
             onClick={() => scrollBy("left")}
-            aria-label="Categorias anteriores"
-            disabled={!mainScrollFade.showLeft}
-            className={cn(
-              "absolute left-0 top-1/2 -translate-y-1/2 z-10",
-              "hidden lg:flex",
-              "w-9 h-9 items-center justify-center rounded-full",
-              "bg-slate-800/90 border border-white/10 text-white",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-              "disabled:opacity-0 disabled:pointer-events-none",
-              !reducedMotion && "transition-all duration-200 hover:bg-slate-700 hover:scale-105",
-              !mainScrollFade.showLeft && "opacity-0 pointer-events-none",
-            )}
-          >
-            <ChevronLeft size={18} aria-hidden="true" />
-          </button>
-
-          {/* Left Fade */}
-          <div
-            className={cn(
-              "absolute left-0 top-0 bottom-0 w-12 z-[5]",
-              "bg-gradient-to-r from-background to-transparent",
-              "pointer-events-none",
-              !reducedMotion && "transition-opacity duration-300",
-              mainScrollFade.showLeft ? "opacity-100" : "opacity-0",
-            )}
-            aria-hidden="true"
+            visible={mainScrollFade.showLeft}
+            reducedMotion={reducedMotion}
           />
+
+          <FadeGradient side="left" visible={mainScrollFade.showLeft} />
 
           {/* Scroll Container */}
           <div
@@ -424,7 +470,7 @@ export const AirbnbCategoryPills = memo(
                     "flex flex-col items-center justify-center gap-1.5",
                     "px-4 py-3 min-w-[80px] min-h-[72px]",
                     "rounded-xl whitespace-nowrap flex-shrink-0 snap-start",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a0a2e]",
                     "[-webkit-tap-highlight-color:transparent]",
                     !reducedMotion && "transition-all duration-200 active:scale-[0.97]",
                     isActive ? "bg-white/15 border-b-2 border-white" : "hover:bg-white/5",
@@ -450,70 +496,28 @@ export const AirbnbCategoryPills = memo(
             <div className="w-4 flex-shrink-0" aria-hidden="true" />
           </div>
 
-          {/* Right Fade */}
-          <div
-            className={cn(
-              "absolute right-0 top-0 bottom-0 w-12 z-[5]",
-              "bg-gradient-to-l from-background to-transparent",
-              "pointer-events-none",
-              !reducedMotion && "transition-opacity duration-300",
-              mainScrollFade.showRight ? "opacity-100" : "opacity-0",
-            )}
-            aria-hidden="true"
-          />
+          <FadeGradient side="right" visible={mainScrollFade.showRight} />
 
-          {/* Right Arrow */}
-          <button
+          <NavButton
+            direction="right"
             onClick={() => scrollBy("right")}
-            aria-label="Próximas categorias"
-            disabled={!mainScrollFade.showRight}
-            className={cn(
-              "absolute right-0 top-1/2 -translate-y-1/2 z-10",
-              "hidden lg:flex",
-              "w-9 h-9 items-center justify-center rounded-full",
-              "bg-slate-800/90 border border-white/10 text-white",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-              "disabled:opacity-0 disabled:pointer-events-none",
-              !reducedMotion && "transition-all duration-200 hover:bg-slate-700 hover:scale-105",
-              !mainScrollFade.showRight && "opacity-0 pointer-events-none",
-            )}
-          >
-            <ChevronRight size={18} aria-hidden="true" />
-          </button>
+            visible={mainScrollFade.showRight}
+            reducedMotion={reducedMotion}
+          />
         </div>
 
         {/* SUBCATEGORIAS */}
         {categoriaAtiva && subcategoriasConfig.length > 0 && (
           <div className={cn("relative", !reducedMotion && "animate-in fade-in slide-in-from-top-2 duration-300")}>
-            {/* Left Arrow */}
-            <button
+            <NavButton
+              direction="left"
               onClick={() => scrollBy("left", true)}
-              aria-label="Subcategorias anteriores"
-              disabled={!subScrollFade.showLeft}
-              className={cn(
-                "absolute left-0 top-1/2 -translate-y-1/2 z-10",
-                "hidden lg:flex",
-                "w-7 h-7 items-center justify-center rounded-full",
-                "bg-slate-800/90 border border-white/10 text-white",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-                "disabled:opacity-0 disabled:pointer-events-none",
-                !reducedMotion && "transition-all duration-200 hover:bg-slate-700 hover:scale-105",
-                !subScrollFade.showLeft && "opacity-0 pointer-events-none",
-              )}
-            >
-              <ChevronLeft size={14} aria-hidden="true" />
-            </button>
-
-            {/* Left Fade */}
-            <div
-              className={cn(
-                "absolute left-0 top-0 bottom-0 w-8 z-[5]",
-                "bg-gradient-to-r from-background to-transparent",
-                "pointer-events-none",
-                subScrollFade.showLeft ? "opacity-100" : "opacity-0",
-              )}
-              aria-hidden="true"
+              visible={subScrollFade.showLeft}
+              reducedMotion={reducedMotion}
+              size="sm"
             />
+
+            <FadeGradient side="left" visible={subScrollFade.showLeft} size="sm" />
 
             {/* Scroll Container */}
             <div
@@ -545,7 +549,7 @@ export const AirbnbCategoryPills = memo(
                   "[-webkit-tap-highlight-color:transparent]",
                   !reducedMotion && "transition-all duration-200 active:scale-[0.97]",
                   subcategoriaAtiva === null
-                    ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 border-violet-500/50 text-white shadow-lg shadow-violet-500/30"
+                    ? "bg-[#7C3AED] border-[#7C3AED] text-white shadow-lg shadow-violet-500/30"
                     : "bg-white/5 border-white/20 text-white hover:bg-white/10",
                 )}
               >
@@ -563,7 +567,7 @@ export const AirbnbCategoryPills = memo(
                     aria-selected={isActive}
                     tabIndex={isActive ? 0 : -1}
                     style={{
-                      animationDelay: reducedMotion ? "0ms" : `${index * SUB_ANIMATION_DELAY_STEP}ms`,
+                      animationDelay: reducedMotion ? "0ms" : `${index * ANIMATION_DELAY_STEP}ms`,
                       scrollSnapAlign: "start",
                     }}
                     className={cn(
@@ -574,7 +578,7 @@ export const AirbnbCategoryPills = memo(
                       "[-webkit-tap-highlight-color:transparent]",
                       !reducedMotion && "transition-all duration-200 active:scale-[0.97]",
                       isActive
-                        ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 border-violet-500/50 text-white shadow-lg shadow-violet-500/30"
+                        ? "bg-[#7C3AED] border-[#7C3AED] text-white shadow-lg shadow-violet-500/30"
                         : "bg-white/5 border-white/20 text-white hover:bg-white/10",
                     )}
                   >
@@ -600,35 +604,15 @@ export const AirbnbCategoryPills = memo(
               <div className="w-4 flex-shrink-0" aria-hidden="true" />
             </div>
 
-            {/* Right Fade */}
-            <div
-              className={cn(
-                "absolute right-0 top-0 bottom-0 w-8 z-[5]",
-                "bg-gradient-to-l from-background to-transparent",
-                "pointer-events-none",
-                subScrollFade.showRight ? "opacity-100" : "opacity-0",
-              )}
-              aria-hidden="true"
-            />
+            <FadeGradient side="right" visible={subScrollFade.showRight} size="sm" />
 
-            {/* Right Arrow */}
-            <button
+            <NavButton
+              direction="right"
               onClick={() => scrollBy("right", true)}
-              aria-label="Próximas subcategorias"
-              disabled={!subScrollFade.showRight}
-              className={cn(
-                "absolute right-0 top-1/2 -translate-y-1/2 z-10",
-                "hidden lg:flex",
-                "w-7 h-7 items-center justify-center rounded-full",
-                "bg-slate-800/90 border border-white/10 text-white",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-                "disabled:opacity-0 disabled:pointer-events-none",
-                !reducedMotion && "transition-all duration-200 hover:bg-slate-700 hover:scale-105",
-                !subScrollFade.showRight && "opacity-0 pointer-events-none",
-              )}
-            >
-              <ChevronRight size={14} aria-hidden="true" />
-            </button>
+              visible={subScrollFade.showRight}
+              reducedMotion={reducedMotion}
+              size="sm"
+            />
           </div>
         )}
 

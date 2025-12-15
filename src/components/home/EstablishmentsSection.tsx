@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 // =============================================================================
 
 const SCROLL_THRESHOLD = 10;
-const DEBOUNCE_DELAY = 16;
 const STAGGER_DELAY = 0.08;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const HAPTIC_LIGHT = 5;
@@ -72,18 +71,6 @@ const useReducedMotion = (): boolean => {
   }, []);
 
   return reducedMotion;
-};
-
-const useDebounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number): T => {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
-
-  return useCallback(
-    (...args: Parameters<T>) => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => fn(...args), delay);
-    },
-    [fn, delay],
-  ) as T;
 };
 
 const useInView = (threshold = INTERSECTION_THRESHOLD) => {
@@ -154,6 +141,50 @@ const StaggerItem = memo(({ index, isInView, reducedMotion, children, className 
 StaggerItem.displayName = "StaggerItem";
 
 // =============================================================================
+// NAV BUTTON
+// =============================================================================
+
+interface NavButtonProps {
+  direction: "left" | "right";
+  onClick: () => void;
+  visible: boolean;
+  reducedMotion: boolean;
+}
+
+const NavButton = memo(({ direction, onClick, visible, reducedMotion }: NavButtonProps) => {
+  const isLeft = direction === "left";
+  const Icon = isLeft ? ChevronLeft : ChevronRight;
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={!visible}
+      aria-label={isLeft ? "Ver estabelecimentos anteriores" : "Ver próximos estabelecimentos"}
+      className={cn(
+        "absolute top-1/2 -translate-y-1/2 z-20",
+        isLeft ? "left-0 -translate-x-1/2" : "right-0 translate-x-1/2",
+        "w-12 h-12 rounded-full",
+        "bg-white/90 backdrop-blur-md",
+        "border border-violet-200 shadow-lg",
+        "flex items-center justify-center",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED]",
+        "disabled:opacity-0 disabled:pointer-events-none",
+        !reducedMotion && [
+          "transition-all duration-300",
+          "hover:bg-white hover:scale-110 hover:border-[#7C3AED]/30",
+          "active:scale-95",
+        ],
+        visible ? "opacity-0 group-hover/carousel:opacity-100" : "opacity-0 pointer-events-none",
+      )}
+    >
+      <Icon className="w-6 h-6 text-[#240046]" aria-hidden="true" />
+    </button>
+  );
+});
+
+NavButton.displayName = "NavButton";
+
+// =============================================================================
 // MAIN COMPONENT
 // =============================================================================
 
@@ -191,12 +222,25 @@ export const EstablishmentsSection = memo(
       setCanScrollRight(scrollLeft < scrollWidth - clientWidth - SCROLL_THRESHOLD);
     }, []);
 
-    const debouncedCheckScroll = useDebounce(checkScroll, DEBOUNCE_DELAY);
-
     useEffect(() => {
+      const el = scrollRef.current;
+      if (!el) return;
+
+      let rafId: number;
+      const debouncedCheck = () => {
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(checkScroll);
+      };
+
       checkScroll();
+      el.addEventListener("scroll", debouncedCheck, { passive: true });
       window.addEventListener("resize", checkScroll);
-      return () => window.removeEventListener("resize", checkScroll);
+
+      return () => {
+        el.removeEventListener("scroll", debouncedCheck);
+        window.removeEventListener("resize", checkScroll);
+        cancelAnimationFrame(rafId);
+      };
     }, [checkScroll, establishments]);
 
     // Scroll handler
@@ -261,7 +305,7 @@ export const EstablishmentsSection = memo(
       <section
         ref={sectionRef as React.RefObject<HTMLElement>}
         className={cn(
-          "py-8",
+          "py-8 bg-white",
           !reducedMotion && "transition-all duration-700 ease-out",
           isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8",
           reducedMotion && "opacity-100 translate-y-0",
@@ -273,10 +317,10 @@ export const EstablishmentsSection = memo(
           {/* Header */}
           <div className="flex items-end justify-between mb-6">
             <div className="max-w-lg">
-              <h2 id={titleId} className="text-2xl sm:text-3xl font-bold text-foreground">
+              <h2 id={titleId} className="text-2xl sm:text-3xl font-bold text-[#240046]">
                 {title}
               </h2>
-              {subtitle && <p className="text-muted-foreground mt-1 text-sm sm:text-base">{subtitle}</p>}
+              {subtitle && <p className="text-[#7C3AED] mt-1 text-sm sm:text-base">{subtitle}</p>}
             </div>
 
             {viewAllLink && (
@@ -284,9 +328,9 @@ export const EstablishmentsSection = memo(
                 to={viewAllLink}
                 className={cn(
                   "hidden sm:flex items-center gap-1.5",
-                  "text-primary font-medium",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded",
-                  !reducedMotion && "transition-all duration-300 hover:text-primary/80 group",
+                  "text-[#7C3AED] font-medium",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2 rounded",
+                  !reducedMotion && "transition-all duration-300 hover:text-[#6D28D9] group",
                 )}
               >
                 <span>Ver todos</span>
@@ -304,39 +348,22 @@ export const EstablishmentsSection = memo(
           {/* Carousel */}
           <div className="relative group/carousel">
             {/* Left Arrow */}
-            <button
+            <NavButton
+              direction="left"
               onClick={() => scroll("left")}
-              disabled={!canScrollLeft}
-              aria-label="Ver estabelecimentos anteriores"
-              className={cn(
-                "absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-20",
-                "w-12 h-12 rounded-full",
-                "bg-background/90 backdrop-blur-md",
-                "border border-border shadow-lg",
-                "flex items-center justify-center",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                "disabled:opacity-0 disabled:pointer-events-none",
-                !reducedMotion && [
-                  "transition-all duration-300",
-                  "hover:bg-background hover:scale-110 hover:border-primary/30",
-                  "active:scale-95",
-                ],
-                canScrollLeft ? "opacity-0 group-hover/carousel:opacity-100" : "opacity-0 pointer-events-none",
-              )}
-            >
-              <ChevronLeft className="w-6 h-6 text-foreground" aria-hidden="true" />
-            </button>
+              visible={canScrollLeft}
+              reducedMotion={reducedMotion}
+            />
 
             {/* Scroll Container */}
             <div
               ref={scrollRef}
-              onScroll={debouncedCheckScroll}
               onKeyDown={handleKeyDown}
               tabIndex={0}
               className={cn(
                 "flex gap-4 overflow-x-auto scrollbar-hide pb-4 -mb-4",
                 "snap-x snap-mandatory touch-pan-x",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2 rounded-lg",
                 reducedMotion ? "scroll-auto" : "scroll-smooth",
               )}
               style={{
@@ -375,15 +402,15 @@ export const EstablishmentsSection = memo(
                     aria-label={`Ver todos os ${title}`}
                     className={cn(
                       "block aspect-[4/3]",
-                      "bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10",
-                      "border border-primary/20 rounded-2xl",
+                      "bg-violet-50",
+                      "border border-[#7C3AED]/20 rounded-2xl",
                       "flex flex-col items-center justify-center gap-4",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2",
                       !reducedMotion && [
                         "transition-all duration-300",
-                        "hover:from-primary/20 hover:via-accent/10 hover:to-primary/20",
-                        "hover:border-primary/40 hover:scale-[1.02]",
-                        "hover:shadow-xl hover:shadow-primary/10",
+                        "hover:bg-violet-100",
+                        "hover:border-[#7C3AED]/40 hover:scale-[1.02]",
+                        "hover:shadow-xl hover:shadow-violet-500/10",
                         "group",
                       ],
                     )}
@@ -391,16 +418,16 @@ export const EstablishmentsSection = memo(
                     <div
                       className={cn(
                         "w-16 h-16 rounded-2xl",
-                        "bg-gradient-to-br from-primary/20 to-accent/20",
+                        "bg-violet-100",
                         "flex items-center justify-center",
                         !reducedMotion && "transition-all duration-300 group-hover:scale-110 group-hover:rotate-3",
                       )}
                     >
-                      <ArrowRight className="w-8 h-8 text-primary" aria-hidden="true" />
+                      <ArrowRight className="w-8 h-8 text-[#7C3AED]" aria-hidden="true" />
                     </div>
                     <div className="text-center">
-                      <p className="text-primary font-semibold">Ver todos</p>
-                      <p className="text-muted-foreground text-sm">Explorar categoria</p>
+                      <p className="text-[#7C3AED] font-semibold">Ver todos</p>
+                      <p className="text-[#240046]/60 text-sm">Explorar categoria</p>
                     </div>
                   </Link>
                 </StaggerItem>
@@ -408,34 +435,18 @@ export const EstablishmentsSection = memo(
             </div>
 
             {/* Right Arrow */}
-            <button
+            <NavButton
+              direction="right"
               onClick={() => scroll("right")}
-              disabled={!canScrollRight}
-              aria-label="Ver próximos estabelecimentos"
-              className={cn(
-                "absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-20",
-                "w-12 h-12 rounded-full",
-                "bg-background/90 backdrop-blur-md",
-                "border border-border shadow-lg",
-                "flex items-center justify-center",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                "disabled:opacity-0 disabled:pointer-events-none",
-                !reducedMotion && [
-                  "transition-all duration-300",
-                  "hover:bg-background hover:scale-110 hover:border-primary/30",
-                  "active:scale-95",
-                ],
-                canScrollRight ? "opacity-0 group-hover/carousel:opacity-100" : "opacity-0 pointer-events-none",
-              )}
-            >
-              <ChevronRight className="w-6 h-6 text-foreground" aria-hidden="true" />
-            </button>
+              visible={canScrollRight}
+              reducedMotion={reducedMotion}
+            />
 
             {/* Left Fade */}
             <div
               className={cn(
                 "absolute left-0 top-0 bottom-4 w-8 z-10 pointer-events-none",
-                "bg-gradient-to-r from-background to-transparent",
+                "bg-gradient-to-r from-white to-transparent",
                 !reducedMotion && "transition-opacity duration-300",
                 canScrollLeft ? "opacity-100" : "opacity-0",
               )}
@@ -446,7 +457,7 @@ export const EstablishmentsSection = memo(
             <div
               className={cn(
                 "absolute right-0 top-0 bottom-4 w-8 z-10 pointer-events-none",
-                "bg-gradient-to-l from-background to-transparent",
+                "bg-gradient-to-l from-white to-transparent",
                 !reducedMotion && "transition-opacity duration-300",
                 canScrollRight ? "opacity-100" : "opacity-0",
               )}
@@ -461,9 +472,9 @@ export const EstablishmentsSection = memo(
               className={cn(
                 "sm:hidden flex items-center justify-center gap-2",
                 "mt-4 py-3",
-                "text-primary font-medium",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded",
-                !reducedMotion && "transition-colors hover:text-primary/80",
+                "text-[#7C3AED] font-medium",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] rounded",
+                !reducedMotion && "transition-colors hover:text-[#6D28D9]",
               )}
             >
               <span>Ver todos</span>

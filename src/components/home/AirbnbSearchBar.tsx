@@ -17,6 +17,10 @@ const MAX_RECENT_SEARCHES = 5;
 const DEBOUNCE_DELAY = 300;
 const VOICE_LANGUAGE = "pt-BR";
 
+// Cores da marca
+const BRAND_PRIMARY = "#7C3AED";
+const BRAND_DARK = "#240046";
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -50,17 +54,6 @@ const useReducedMotion = (): boolean => {
   }, []);
 
   return reducedMotion;
-};
-
-const useDebounce = <T,>(value: T, delay: number): T => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-
-  return debouncedValue;
 };
 
 const useRecentSearches = () => {
@@ -134,6 +127,7 @@ export const AirbnbSearchBar = memo(
     const inputRef = useRef<HTMLInputElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
     const reducedMotion = useReducedMotion();
     const haptic = useHaptic();
@@ -141,24 +135,40 @@ export const AirbnbSearchBar = memo(
     const listboxId = useId();
 
     const { searches, addSearch } = useRecentSearches();
-    const debouncedBusca = useDebounce(buscaInterna, DEBOUNCE_DELAY);
 
-    // Sync debounced value with parent
+    // Debounced search - simplified without race conditions
     useEffect(() => {
-      // Dispara mesmo se vazio (para limpar busca)
-      if (debouncedBusca !== busca) {
-        // Só dispara busca real se >= 2 chars ou se estiver limpando
-        if (debouncedBusca.length >= 2 || debouncedBusca === "") {
-          onBuscaChange(debouncedBusca);
+      // Clear existing timeout
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+
+      // Only debounce if internal value differs from prop
+      if (buscaInterna === busca) return;
+
+      // Dispatch immediately if clearing, otherwise debounce
+      if (buscaInterna === "") {
+        onBuscaChange("");
+        return;
+      }
+
+      // Only search with 2+ characters
+      if (buscaInterna.length < 2) return;
+
+      debounceRef.current = setTimeout(() => {
+        onBuscaChange(buscaInterna);
+      }, DEBOUNCE_DELAY);
+
+      return () => {
+        if (debounceRef.current) {
+          clearTimeout(debounceRef.current);
         }
-      }
-    }, [debouncedBusca, busca, onBuscaChange]);
+      };
+    }, [buscaInterna, busca, onBuscaChange]);
 
-    // Sync external busca prop
+    // Sync external busca prop (only when it changes from parent)
     useEffect(() => {
-      if (busca !== buscaInterna && busca !== debouncedBusca) {
-        setBuscaInterna(busca);
-      }
+      setBuscaInterna(busca);
     }, [busca]);
 
     // Click outside to close dropdown
@@ -298,12 +308,6 @@ export const AirbnbSearchBar = memo(
 
     const handleBlur = useCallback(() => {
       setIsFocused(false);
-      // Delay to allow click on dropdown items
-      setTimeout(() => {
-        if (!dropdownRef.current?.contains(document.activeElement)) {
-          // Keep dropdown logic in mousedown handler
-        }
-      }, 100);
     }, []);
 
     const handleRecentClick = useCallback(
@@ -333,14 +337,12 @@ export const AirbnbSearchBar = memo(
           role="search"
           className={cn(
             "flex items-center rounded-full",
-            "bg-secondary/80 backdrop-blur-sm",
-            "border border-border/50",
+            "bg-white/10 backdrop-blur-sm",
+            "border border-white/20",
             "shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.05)]",
             !reducedMotion && "transition-all duration-200",
-            !reducedMotion &&
-              "hover:border-border hover:shadow-[0_2px_4px_rgba(0,0,0,0.15),0_8px_24px_rgba(0,0,0,0.1)]",
-            isFocused &&
-              "border-primary ring-[3px] ring-primary/15 shadow-[0_0_0_3px_rgba(139,92,246,0.15),0_4px_16px_rgba(139,92,246,0.1)]",
+            !reducedMotion && "hover:border-white/30 hover:bg-white/15",
+            isFocused && "border-white/40 ring-2 ring-white/20",
           )}
         >
           {/* Location Selector */}
@@ -353,29 +355,25 @@ export const AirbnbSearchBar = memo(
                 aria-haspopup="dialog"
                 className={cn(
                   "flex items-center gap-2.5 px-5 py-3.5",
-                  "border-r border-border/50 rounded-l-full",
+                  "border-r border-white/20 rounded-l-full",
                   "min-w-[160px] sm:min-w-[180px]",
-                  !reducedMotion && "transition-colors hover:bg-accent/50",
+                  !reducedMotion && "transition-colors hover:bg-white/10",
                 )}
               >
                 <MapPin
-                  className={cn(
-                    "w-5 h-5 shrink-0",
-                    !reducedMotion && "transition-colors",
-                    isFocused ? "text-primary" : "text-muted-foreground",
-                  )}
+                  className={cn("w-5 h-5 shrink-0", isFocused ? "text-white" : "text-white/70")}
                   aria-hidden="true"
                 />
                 <div className="text-left min-w-0">
-                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Onde</p>
-                  <p className="text-sm font-medium text-foreground truncate">{cidadeDisplay}</p>
+                  <p className="text-[11px] font-medium text-white/60 uppercase tracking-wide">Onde</p>
+                  <p className="text-sm font-medium text-white truncate">{cidadeDisplay}</p>
                 </div>
               </button>
             </DialogTrigger>
 
-            <DialogContent className="bg-card border-border">
+            <DialogContent className="bg-white border-violet-200">
               <DialogHeader>
-                <DialogTitle className="text-foreground">Escolha uma cidade</DialogTitle>
+                <DialogTitle className="text-[#240046]">Escolha uma cidade</DialogTitle>
               </DialogHeader>
               <div className="py-4">
                 <CityCombobox onSelect={handleCidadeSelect} placeholder="Digite o nome da cidade..." />
@@ -386,11 +384,7 @@ export const AirbnbSearchBar = memo(
           {/* Search Form */}
           <form onSubmit={handleBuscaSubmit} className="flex-1 flex items-center gap-2 min-w-0">
             <Search
-              className={cn(
-                "w-5 h-5 ml-4 shrink-0",
-                !reducedMotion && "transition-colors",
-                isFocused ? "text-primary" : "text-muted-foreground",
-              )}
+              className={cn("w-5 h-5 ml-4 shrink-0", isFocused ? "text-white" : "text-white/70")}
               aria-hidden="true"
             />
 
@@ -419,8 +413,8 @@ export const AirbnbSearchBar = memo(
               className={cn(
                 "flex-1 min-w-0",
                 "bg-transparent py-3.5",
-                "text-[15px] text-foreground",
-                "placeholder:text-muted-foreground/70",
+                "text-[15px] text-white",
+                "placeholder:text-white/50",
                 "focus:outline-none",
               )}
             />
@@ -434,8 +428,8 @@ export const AirbnbSearchBar = memo(
                 className={cn(
                   "flex items-center justify-center",
                   "w-7 h-7 rounded-full shrink-0",
-                  "bg-muted text-muted-foreground",
-                  !reducedMotion && "transition-all hover:bg-muted/80 hover:text-foreground",
+                  "bg-white/20 text-white",
+                  !reducedMotion && "transition-all hover:bg-white/30",
                 )}
               >
                 <X size={14} aria-hidden="true" />
@@ -446,7 +440,7 @@ export const AirbnbSearchBar = memo(
             <VoiceSearchButton isListening={isListening} isSupported={isSupported} onClick={handleVoiceClick} />
 
             {/* Divider */}
-            <div className="w-px h-6 bg-border/50 shrink-0" aria-hidden="true" />
+            <div className="w-px h-6 bg-white/20 shrink-0" aria-hidden="true" />
 
             {/* Submit Button */}
             <button
@@ -456,11 +450,10 @@ export const AirbnbSearchBar = memo(
               className={cn(
                 "flex items-center justify-center",
                 "w-10 h-10 sm:w-11 sm:h-11 mr-1.5 rounded-full",
-                "bg-gradient-to-r from-violet-600 to-fuchsia-600",
+                "bg-[#7C3AED]",
                 "shadow-lg shadow-violet-500/25",
                 "disabled:opacity-70 disabled:cursor-not-allowed",
-                !reducedMotion &&
-                  "transition-all hover:from-violet-500 hover:to-fuchsia-500 hover:scale-105 active:scale-95",
+                !reducedMotion && "transition-all hover:bg-[#6D28D9] hover:scale-105 active:scale-95",
               )}
             >
               {isLoading ? (
@@ -488,15 +481,13 @@ export const AirbnbSearchBar = memo(
             aria-label="Buscas recentes"
             className={cn(
               "absolute left-0 right-0 mt-2 z-50",
-              "bg-card border border-border rounded-xl shadow-lg",
+              "bg-white border border-violet-100 rounded-xl shadow-lg",
               "overflow-hidden",
               !reducedMotion && "animate-in fade-in slide-in-from-top-2 duration-200",
             )}
           >
             <div className="p-2">
-              <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Buscas recentes
-              </p>
+              <p className="px-3 py-2 text-xs font-medium text-[#7C3AED] uppercase tracking-wide">Buscas recentes</p>
 
               {searches.map((term, index) => (
                 <button
@@ -507,11 +498,11 @@ export const AirbnbSearchBar = memo(
                   className={cn(
                     "w-full flex items-center gap-3",
                     "px-3 py-2.5 rounded-lg text-left",
-                    !reducedMotion && "transition-colors hover:bg-accent",
+                    !reducedMotion && "transition-colors hover:bg-violet-50",
                   )}
                 >
-                  <Clock className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />
-                  <span className="text-sm text-foreground truncate">{term}</span>
+                  <Clock className="w-4 h-4 text-[#7C3AED] shrink-0" aria-hidden="true" />
+                  <span className="text-sm text-[#240046] truncate">{term}</span>
                 </button>
               ))}
             </div>

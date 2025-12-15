@@ -235,7 +235,7 @@ const AirbnbCardSkeleton = memo(() => {
     <>
       <style>{shimmerKeyframes}</style>
       <div className="flex-shrink-0 w-[160px] sm:w-[220px] snap-start" role="status" aria-label="Carregando">
-        <div className="relative aspect-square rounded-2xl bg-violet-100 dark:bg-violet-900/30 overflow-hidden mb-2">
+        <div className="relative aspect-square rounded-2xl bg-violet-100 overflow-hidden mb-2">
           {!reducedMotion && (
             <div
               className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
@@ -244,9 +244,9 @@ const AirbnbCardSkeleton = memo(() => {
           )}
         </div>
         <div className="space-y-1.5">
-          <div className="h-4 bg-violet-100 dark:bg-violet-900/30 rounded w-[85%]" />
-          <div className="h-3 bg-violet-100 dark:bg-violet-900/30 rounded w-[60%]" />
-          <div className="h-3 bg-violet-100 dark:bg-violet-900/30 rounded w-[50%]" />
+          <div className="h-4 bg-violet-100 rounded w-[85%]" />
+          <div className="h-3 bg-violet-100 rounded w-[60%]" />
+          <div className="h-3 bg-violet-100 rounded w-[50%]" />
         </div>
         <span className="sr-only">Carregando...</span>
       </div>
@@ -285,9 +285,7 @@ const CardImage = memo(({ src, fallback, alt, priority }: CardImageProps) => {
   return (
     <div className="relative w-full h-full">
       {status === "loading" && (
-        <div
-          className={cn("absolute inset-0 bg-violet-100 dark:bg-violet-900/30", !reducedMotion && "animate-pulse")}
-        />
+        <div className={cn("absolute inset-0 bg-violet-100", !reducedMotion && "animate-pulse")} />
       )}
 
       <img
@@ -308,7 +306,7 @@ const CardImage = memo(({ src, fallback, alt, priority }: CardImageProps) => {
       />
 
       {status === "error" && (
-        <div className="absolute inset-0 flex items-center justify-center bg-violet-50 dark:bg-violet-900/20">
+        <div className="absolute inset-0 flex items-center justify-center bg-violet-50">
           <AlertCircle className="w-6 h-6 text-violet-300" aria-hidden="true" />
         </div>
       )}
@@ -325,7 +323,6 @@ CardImage.displayName = "CardImage";
 interface AirbnbCardProps {
   estabelecimento: Estabelecimento;
   priority?: boolean;
-  userLocation?: { lat: number; lng: number } | null;
   index: number;
   onImpression?: (id: string) => void;
   onFavoriteChange?: (id: string, isFavorited: boolean) => void;
@@ -333,15 +330,7 @@ interface AirbnbCardProps {
 }
 
 const AirbnbCard = memo(
-  ({
-    estabelecimento,
-    priority = false,
-    userLocation,
-    index,
-    onImpression,
-    onFavoriteChange,
-    onClick,
-  }: AirbnbCardProps) => {
+  ({ estabelecimento, priority = false, index, onImpression, onFavoriteChange, onClick }: AirbnbCardProps) => {
     const navigate = useNavigate();
     const { isFavorite, toggleFavorite } = useFavorites();
     const [isAnimating, setIsAnimating] = useState(false);
@@ -385,16 +374,6 @@ const AirbnbCard = memo(
     const temBeneficio = Boolean(est.descricao_beneficio);
     const nomeDisplay = est.nome_fantasia || est.razao_social || "Estabelecimento";
     const bairroDisplay = est.bairro || est.cidade || "";
-
-    // DEBUG - Log no render
-    console.log("🔵 [AirbnbCard]", {
-      index,
-      id: est.id?.substring(0, 8),
-      nome_fantasia: est.nome_fantasia,
-      nomeDisplay,
-      bairro: est.bairro,
-      keys: Object.keys(est),
-    });
 
     // Handlers
     const handleClick = useCallback(() => {
@@ -465,17 +444,17 @@ const AirbnbCard = memo(
         )}
       >
         {/* Imagem */}
-        <div className="relative aspect-square rounded-2xl overflow-hidden mb-2 bg-violet-50 dark:bg-violet-900/20">
+        <div className="relative aspect-square rounded-2xl overflow-hidden mb-2 bg-violet-50">
           {hasBeenInView || priority ? (
             <CardImage src={fotoUrl || fallbackUrl} fallback={fallbackUrl} alt={nomeDisplay} priority={priority} />
           ) : (
-            <div className="w-full h-full bg-violet-100 dark:bg-violet-900/30 animate-pulse" />
+            <div className="w-full h-full bg-violet-100 animate-pulse" />
           )}
 
           {/* Badge Benefício */}
           {temBeneficio && (
-            <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-white/95 dark:bg-gray-900/95 shadow-sm">
-              <span className="text-[10px] sm:text-xs font-medium text-violet-700 dark:text-violet-300">Benefício</span>
+            <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-white/95 shadow-sm">
+              <span className="text-[10px] sm:text-xs font-medium text-[#7C3AED]">Benefício</span>
             </div>
           )}
 
@@ -496,7 +475,7 @@ const AirbnbCard = memo(
                 "w-5 h-5 sm:w-6 sm:h-6",
                 "drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]",
                 "transition-all duration-200",
-                isFavorited ? "text-violet-500 fill-violet-500" : "text-white fill-white/40 stroke-2",
+                isFavorited ? "text-red-500 fill-red-500" : "text-white fill-white/40 stroke-2",
                 isAnimating && "scale-125",
               )}
               aria-hidden="true"
@@ -504,26 +483,24 @@ const AirbnbCard = memo(
           </button>
         </div>
 
-        {/* CONTEÚDO DO CARD */}
+        {/* CONTEÚDO DO CARD - Cores roxas consistentes */}
         <div className="space-y-0.5 px-0.5">
-          {/* LINHA 1: Nome do estabelecimento */}
-          <h3 className="font-semibold text-sm sm:text-[15px] leading-tight text-violet-950 dark:text-white line-clamp-2">
-            {nomeDisplay || `[VAZIO: ${est.nome_fantasia}]`}
+          {/* Nome - Roxo escuro */}
+          <h3 className="font-semibold text-sm sm:text-[15px] leading-tight text-[#240046] line-clamp-2">
+            {nomeDisplay}
           </h3>
 
-          {/* LINHA 2: Bairro */}
-          <p className="text-xs sm:text-sm text-violet-600/70 dark:text-violet-300/70 truncate">{bairroDisplay}</p>
+          {/* Bairro - Roxo claro */}
+          <p className="text-xs sm:text-sm text-[#7C3AED] truncate">{bairroDisplay}</p>
 
-          {/* LINHA 3: Categoria */}
-          {categoria && (
-            <p className="text-xs sm:text-sm text-violet-600/70 dark:text-violet-300/70 truncate">{categoria}</p>
-          )}
+          {/* Categoria - Roxo claro */}
+          {categoria && <p className="text-xs sm:text-sm text-[#7C3AED] truncate">{categoria}</p>}
 
-          {/* LINHA 4: Benefício */}
+          {/* Benefício */}
           {temBeneficio && (
-            <p className="text-xs sm:text-sm text-violet-700 dark:text-violet-400 font-medium flex items-center gap-1 pt-0.5">
+            <p className="text-xs sm:text-sm text-[#7C3AED] font-medium flex items-center gap-1 pt-0.5">
               <span>🎁</span>
-              <span>Benefício no aniversário</span>
+              <span className="text-[#240046]">Benefício</span> no aniversário
             </p>
           )}
         </div>
@@ -559,15 +536,15 @@ const NavButton = memo(({ direction, onClick, visible, reducedMotion }: NavButto
         "absolute top-[90px] sm:top-[110px] -translate-y-1/2 z-20",
         isLeft ? "-left-2 sm:-left-3" : "-right-2 sm:-right-3",
         "w-8 h-8 sm:w-9 sm:h-9 rounded-full",
-        "bg-white dark:bg-gray-800",
-        "shadow-lg border border-gray-200 dark:border-gray-700",
+        "bg-white",
+        "shadow-lg border border-violet-200",
         "flex items-center justify-center",
         "opacity-0 group-hover/carousel:opacity-100",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:opacity-100",
         !reducedMotion && "transition-all duration-200 hover:scale-110 hover:shadow-xl",
       )}
     >
-      <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700 dark:text-gray-200" aria-hidden="true" />
+      <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#240046]" aria-hidden="true" />
     </button>
   );
 });
@@ -579,24 +556,11 @@ NavButton.displayName = "NavButton";
 // =============================================================================
 
 export const AirbnbCardGrid = memo(
-  ({ estabelecimentos, isLoading, userLocation, onCardClick, onFavoriteChange, onImpression }: AirbnbCardGridProps) => {
+  ({ estabelecimentos, isLoading, onCardClick, onFavoriteChange, onImpression }: AirbnbCardGridProps) => {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
     const [showRightArrow, setShowRightArrow] = useState(true);
     const reducedMotion = useReducedMotion();
-
-    // DEBUG - Log dos dados recebidos
-    useEffect(() => {
-      if (estabelecimentos.length > 0) {
-        console.log("🟢 [AirbnbCardGrid]", {
-          total: estabelecimentos.length,
-          primeiroItem: estabelecimentos[0],
-          temNomeFantasia: "nome_fantasia" in estabelecimentos[0],
-          valorNomeFantasia: estabelecimentos[0].nome_fantasia,
-          keys: Object.keys(estabelecimentos[0]),
-        });
-      }
-    }, [estabelecimentos]);
 
     const checkScrollPosition = useCallback(() => {
       const el = scrollRef.current;
@@ -624,17 +588,17 @@ export const AirbnbCardGrid = memo(
       };
     }, [checkScrollPosition, debouncedCheckScroll, estabelecimentos]);
 
+    // CORRIGIDO: Scroll de 1 card por vez
     const scrollByAmount = useCallback(
       (direction: "left" | "right") => {
         const el = scrollRef.current;
         if (!el) return;
 
+        // 1 card por vez: largura do card + gap
         const cardTotalWidth = getCardWidth() + CARD_GAP;
-        const visibleCards = Math.floor(el.clientWidth / cardTotalWidth);
-        const scrollAmount = cardTotalWidth * Math.max(1, visibleCards - 1);
 
         el.scrollBy({
-          left: direction === "left" ? -scrollAmount : scrollAmount,
+          left: direction === "left" ? -cardTotalWidth : cardTotalWidth,
           behavior: reducedMotion ? "auto" : "smooth",
         });
       },
@@ -713,7 +677,6 @@ export const AirbnbCardGrid = memo(
               key={est.id}
               estabelecimento={est}
               priority={index < 4}
-              userLocation={userLocation}
               index={index}
               onImpression={handleImpression}
               onFavoriteChange={onFavoriteChange}

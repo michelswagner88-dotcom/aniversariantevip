@@ -9,10 +9,12 @@ import { CATEGORIAS } from "@/constants/categories";
 
 const SCROLL_AMOUNT = 200;
 const SCROLL_THRESHOLD = 10;
-const DEBOUNCE_DELAY = 16;
 const ANIMATION_DELAY_STEP = 30;
 const HAPTIC_LIGHT = 5;
 const HAPTIC_MEDIUM: number[] = [10, 30, 10];
+
+// Cor do header para gradientes de fade (roxo escuro)
+const HEADER_BG_COLOR = "#1a0a2e";
 
 // =============================================================================
 // TYPES
@@ -55,18 +57,6 @@ const useReducedMotion = (): boolean => {
   return reducedMotion;
 };
 
-const useDebounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number): T => {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
-
-  return useCallback(
-    (...args: Parameters<T>) => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => fn(...args), delay);
-    },
-    [fn, delay],
-  ) as T;
-};
-
 // =============================================================================
 // UTILS
 // =============================================================================
@@ -89,7 +79,70 @@ const haptic = (pattern: number | number[] = HAPTIC_LIGHT) => {
 };
 
 // =============================================================================
-// COMPONENT
+// SUB-COMPONENTS
+// =============================================================================
+
+interface FadeGradientProps {
+  side: "left" | "right";
+  visible: boolean;
+}
+
+const FadeGradient = memo(({ side, visible }: FadeGradientProps) => (
+  <div
+    className={cn(
+      "absolute top-0 bottom-0 w-8 z-[5] pointer-events-none",
+      "transition-opacity duration-300",
+      side === "left" ? "left-0" : "right-0",
+      visible ? "opacity-100" : "opacity-0",
+    )}
+    style={{
+      background:
+        side === "left"
+          ? `linear-gradient(to right, ${HEADER_BG_COLOR}, transparent)`
+          : `linear-gradient(to left, ${HEADER_BG_COLOR}, transparent)`,
+    }}
+    aria-hidden="true"
+  />
+));
+
+FadeGradient.displayName = "FadeGradient";
+
+interface NavButtonProps {
+  direction: "left" | "right";
+  onClick: () => void;
+  visible: boolean;
+  reducedMotion: boolean;
+}
+
+const NavButton = memo(({ direction, onClick, visible, reducedMotion }: NavButtonProps) => {
+  const isLeft = direction === "left";
+  const Icon = isLeft ? ChevronLeft : ChevronRight;
+
+  return (
+    <button
+      onClick={onClick}
+      aria-label={isLeft ? "Anterior" : "Próximo"}
+      disabled={!visible}
+      className={cn(
+        "absolute top-1/2 -translate-y-1/2 z-10",
+        "hidden lg:flex",
+        "w-9 h-9 items-center justify-center rounded-full",
+        "bg-[#240046] border border-violet-500/30 text-white",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+        "disabled:opacity-0 disabled:pointer-events-none",
+        !reducedMotion && "transition-all duration-200 hover:bg-[#3a0070] hover:scale-105",
+        isLeft ? "left-0" : "right-0",
+      )}
+    >
+      <Icon size={18} aria-hidden="true" />
+    </button>
+  );
+});
+
+NavButton.displayName = "NavButton";
+
+// =============================================================================
+// MAIN COMPONENT
 // =============================================================================
 
 export const CategoriasPills = memo(
@@ -121,8 +174,8 @@ export const CategoriasPills = memo(
       const configs: CategoriaConfig[] = [
         { id: null, nome: "Todos", icon: "🚀" },
         ...CATEGORIAS.map((cat) => ({
-          id: cat.id, // Usar ID, não plural
-          nome: cat.plural, // Exibir plural
+          id: cat.id,
+          nome: cat.plural,
           icon: cat.icon,
         })),
       ];
@@ -143,21 +196,26 @@ export const CategoriasPills = memo(
       setShowRightFade(scrollLeft < scrollWidth - clientWidth - SCROLL_THRESHOLD);
     }, []);
 
-    const debouncedCheckScroll = useDebounce(checkScroll, DEBOUNCE_DELAY);
-
     useEffect(() => {
       const el = scrollRef.current;
       if (!el) return;
 
+      let rafId: number;
+      const debouncedCheck = () => {
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(checkScroll);
+      };
+
       checkScroll();
-      el.addEventListener("scroll", debouncedCheckScroll, { passive: true });
+      el.addEventListener("scroll", debouncedCheck, { passive: true });
       window.addEventListener("resize", checkScroll);
 
       return () => {
-        el.removeEventListener("scroll", debouncedCheckScroll);
+        el.removeEventListener("scroll", debouncedCheck);
         window.removeEventListener("resize", checkScroll);
+        cancelAnimationFrame(rafId);
       };
-    }, [checkScroll, debouncedCheckScroll]);
+    }, [checkScroll]);
 
     // Auto-scroll to active category
     useEffect(() => {
@@ -245,36 +303,14 @@ export const CategoriasPills = memo(
 
     return (
       <div className="relative" role="navigation" aria-label="Filtros de categoria">
-        {/* Left Arrow */}
-        <button
+        <NavButton
+          direction="left"
           onClick={() => scrollBy("left")}
-          aria-label="Categorias anteriores"
-          disabled={!showLeftFade}
-          className={cn(
-            "absolute left-0 top-1/2 -translate-y-1/2 z-10",
-            "hidden lg:flex",
-            "w-9 h-9 items-center justify-center rounded-full",
-            "bg-slate-800/90 border border-white/10 text-white",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-            "disabled:opacity-0 disabled:pointer-events-none",
-            !reducedMotion && "transition-all duration-200 hover:bg-slate-700 hover:scale-105",
-            !showLeftFade && "opacity-0 pointer-events-none",
-          )}
-        >
-          <ChevronLeft size={18} aria-hidden="true" />
-        </button>
-
-        {/* Left Fade */}
-        <div
-          className={cn(
-            "absolute left-0 top-0 bottom-0 w-8 z-[5]",
-            "bg-gradient-to-r from-background to-transparent",
-            "pointer-events-none",
-            !reducedMotion && "transition-opacity duration-300",
-            showLeftFade ? "opacity-100" : "opacity-0",
-          )}
-          aria-hidden="true"
+          visible={showLeftFade}
+          reducedMotion={reducedMotion}
         />
+
+        <FadeGradient side="left" visible={showLeftFade} />
 
         {/* Scroll Container */}
         <div
@@ -313,12 +349,12 @@ export const CategoriasPills = memo(
                   "flex items-center gap-2 px-4 py-2.5 min-h-[44px]",
                   "rounded-full whitespace-nowrap flex-shrink-0 snap-start",
                   "border text-sm font-medium",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a0a2e]",
                   "[-webkit-tap-highlight-color:transparent]",
                   !reducedMotion && "transition-all duration-200 active:scale-[0.97]",
                   isActive
-                    ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 border-violet-500/50 text-white shadow-lg shadow-violet-500/30 scale-[1.02]"
-                    : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20 hover:text-white",
+                    ? "bg-[#7C3AED] border-[#7C3AED] text-white shadow-lg shadow-violet-500/30 scale-[1.02]"
+                    : "bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 hover:text-white",
                   isLoading && isActive && "animate-pulse",
                 )}
               >
@@ -344,36 +380,14 @@ export const CategoriasPills = memo(
           <div className="w-4 flex-shrink-0" aria-hidden="true" />
         </div>
 
-        {/* Right Fade */}
-        <div
-          className={cn(
-            "absolute right-0 top-0 bottom-0 w-8 z-[5]",
-            "bg-gradient-to-l from-background to-transparent",
-            "pointer-events-none",
-            !reducedMotion && "transition-opacity duration-300",
-            showRightFade ? "opacity-100" : "opacity-0",
-          )}
-          aria-hidden="true"
-        />
+        <FadeGradient side="right" visible={showRightFade} />
 
-        {/* Right Arrow */}
-        <button
+        <NavButton
+          direction="right"
           onClick={() => scrollBy("right")}
-          aria-label="Próximas categorias"
-          disabled={!showRightFade}
-          className={cn(
-            "absolute right-0 top-1/2 -translate-y-1/2 z-10",
-            "hidden lg:flex",
-            "w-9 h-9 items-center justify-center rounded-full",
-            "bg-slate-800/90 border border-white/10 text-white",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-            "disabled:opacity-0 disabled:pointer-events-none",
-            !reducedMotion && "transition-all duration-200 hover:bg-slate-700 hover:scale-105",
-            !showRightFade && "opacity-0 pointer-events-none",
-          )}
-        >
-          <ChevronRight size={18} aria-hidden="true" />
-        </button>
+          visible={showRightFade}
+          reducedMotion={reducedMotion}
+        />
 
         {/* Live region for screen readers */}
         <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">

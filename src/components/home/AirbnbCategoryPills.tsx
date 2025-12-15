@@ -149,7 +149,7 @@ export const AirbnbCategoryPills = memo(
         { id: null, nome: "Todos", icon: CATEGORIA_ICONS.todos },
         ...CATEGORIAS.map((cat) => ({
           id: cat.id,
-          nome: cat.plural,
+          nome: cat.label,
           icon: CATEGORIA_ICONS[cat.id] || Star,
         })),
       ];

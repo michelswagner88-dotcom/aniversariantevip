@@ -2,7 +2,7 @@ import { memo, useCallback, useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Gift, Heart, Search } from "lucide-react";
 import { SafeImage } from "@/components/SafeImage";
-import { EstabelecimentoCardSkeleton } from "@/components/skeletons/EstabelecimentoCardSkeleton";
+import { CardSkeleton } from "@/components/skeletons";
 import { getEstabelecimentoUrl } from "@/lib/slugUtils";
 import { getCategoriaIcon } from "@/lib/constants";
 import { getPlaceholderPorCategoria } from "@/lib/photoUtils";
@@ -305,7 +305,7 @@ export const EstabelecimentosGrid = memo(
           aria-label="Carregando estabelecimentos"
         >
           {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-            <EstabelecimentoCardSkeleton key={`skeleton-${i}`} />
+            <CardSkeleton key={`skeleton-${i}`} variant="detailed" />
           ))}
         </div>
       );

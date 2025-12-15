@@ -18,7 +18,7 @@ import { sanitizarInput } from "@/lib/sanitize";
 import { CATEGORIAS_ESTABELECIMENTO } from '@/lib/constants';
 import { getEstabelecimentoUrl } from '@/lib/slugUtils';
 import { TiltCard } from '@/components/ui/tilt-card';
-import { EstabelecimentoCardSkeleton } from '@/components/skeletons/EstabelecimentoCardSkeleton';
+import { CardSkeleton } from '@/components/skeletons';
 import { SubcategoryFilter } from '@/components/SubcategoryFilter';
 import { useSEO } from '@/hooks/useSEO';
 import { SEO_CONTENT, getCidadeSEO, getCategoriaSEO } from '@/constants/seo';
@@ -498,7 +498,7 @@ const Explorar = () => {
         {loadingEstabelecimentos && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in duration-300">
             {Array.from({ length: 8 }).map((_, i) => (
-              <EstabelecimentoCardSkeleton key={i} />
+              <CardSkeleton key={i} variant="detailed" />
             ))}
           </div>
         )}

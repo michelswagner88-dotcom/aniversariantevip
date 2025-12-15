@@ -1,9 +1,8 @@
 // Exportar todos os skeletons de um lugar central
 
-// Cards
+// Card skeletons (unificado)
+export { CardSkeleton, CardGridSkeleton } from "./CardSkeleton";
 export { AirbnbCardSkeleton, AirbnbCardGridSkeleton } from "./AirbnbCardSkeleton";
-export { EstabelecimentoCardSkeleton, EstabelecimentoCardGridSkeleton } from "./EstabelecimentoCardSkeleton";
-export { SkeletonCard } from "./SkeletonCard";
 
 // Grids & Lists
 export { SkeletonGrid } from "./SkeletonGrid";
@@ -13,7 +12,6 @@ export { GaleriaGridSkeleton } from "./GaleriaGridSkeleton";
 export { SkeletonEstablishmentPage } from "./SkeletonEstablishmentPage";
 export {
   PageSkeleton,
-  CardSkeleton,
   CarouselSkeleton,
   ListSkeleton,
   InlineSkeleton,

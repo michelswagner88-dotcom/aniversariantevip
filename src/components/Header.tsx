@@ -148,6 +148,9 @@ export const Header = memo(() => {
   const isMobile = useIsMobile();
   const isScrolled = useScrollState(SCROLL_THRESHOLD);
 
+  // DEBUG - remover depois
+  console.log("[Header v3.0] isScrolled:", isScrolled, "| isMobile:", isMobile);
+
   // Lock body scroll when menu is open
   useEffect(() => {
     if (mobileMenuOpen) {

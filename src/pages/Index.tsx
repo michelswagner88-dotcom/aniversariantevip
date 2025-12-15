@@ -519,6 +519,7 @@ const Index = () => {
                   estabelecimentos={estabelecimentosFiltrados}
                   isLoading={isLoadingEstabelecimentos}
                   userLocation={userLocation}
+                  variant="grid"
                 />
               </AirbnbMapLayout>
             )}

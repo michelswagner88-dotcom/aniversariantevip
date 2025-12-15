@@ -187,11 +187,11 @@ const CardSkeleton = memo(() => {
 
   return (
     <div className="w-full" role="status" aria-label="Carregando">
-      <div className={cn("aspect-square rounded-xl bg-muted mb-3", !reducedMotion && "animate-pulse")} />
+      <div className={cn("aspect-square rounded-xl bg-violet-100 mb-3", !reducedMotion && "animate-pulse")} />
       <div className="space-y-2">
-        <div className={cn("h-4 bg-muted rounded w-3/4", !reducedMotion && "animate-pulse")} />
-        <div className={cn("h-4 bg-muted rounded w-1/2", !reducedMotion && "animate-pulse")} />
-        <div className={cn("h-4 bg-muted rounded w-2/3", !reducedMotion && "animate-pulse")} />
+        <div className={cn("h-4 bg-violet-100 rounded w-3/4", !reducedMotion && "animate-pulse")} />
+        <div className={cn("h-4 bg-violet-100 rounded w-1/2", !reducedMotion && "animate-pulse")} />
+        <div className={cn("h-4 bg-violet-100 rounded w-2/3", !reducedMotion && "animate-pulse")} />
       </div>
       <span className="sr-only">Carregando...</span>
     </div>
@@ -269,10 +269,8 @@ const CarouselCard = memo(
     const fallbackUrl = useMemo(() => getPlaceholderPorCategoria(est.categoria), [est.categoria]);
     const imageSrc = imageError ? fallbackUrl : fotoUrl || fallbackUrl;
 
-    // CORRIGIDO: Garantir que nomeDisplay nunca seja undefined/vazio
     const nomeDisplay = est.nome_fantasia || est.razao_social || "Estabelecimento";
     const bairroDisplay = est.bairro || est.cidade || "";
-
 
     return (
       <article
@@ -286,7 +284,7 @@ const CarouselCard = memo(
           "outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl",
         )}
       >
-        <div className="relative aspect-square rounded-xl overflow-hidden mb-3 bg-muted">
+        <div className="relative aspect-square rounded-xl overflow-hidden mb-3 bg-violet-50">
           <img
             src={imageSrc}
             alt={nomeDisplay}
@@ -324,23 +322,21 @@ const CarouselCard = memo(
           </button>
         </div>
 
-        {/* CONTEÚDO DO CARD - Com debug visual */}
+        {/* CONTEÚDO DO CARD - Cores roxas */}
         <div className="space-y-0.5">
-          {/* LINHA 1: Nome do estabelecimento */}
-          <h3 className="font-semibold text-[15px] text-foreground truncate">
-            {nomeDisplay}
-          </h3>
+          {/* Nome do estabelecimento - Roxo escuro */}
+          <h3 className="font-semibold text-[15px] text-[#240046] truncate">{nomeDisplay}</h3>
 
-          {/* LINHA 2: Bairro */}
-          <p className="text-[15px] text-muted-foreground truncate">{bairroDisplay}</p>
+          {/* Bairro - Roxo claro */}
+          <p className="text-[15px] text-[#7C3AED] truncate">{bairroDisplay}</p>
 
-          {/* LINHA 3: Categoria */}
-          <p className="text-[15px] text-muted-foreground">{categoria}</p>
+          {/* Categoria - Roxo claro */}
+          <p className="text-[15px] text-[#7C3AED]">{categoria}</p>
 
-          {/* LINHA 4: Benefício */}
+          {/* Benefício */}
           {temBeneficio && (
-            <p className="text-[15px] text-muted-foreground mt-1">
-              <span aria-hidden="true">🎁</span> <span className="font-semibold text-foreground">Benefício</span> no
+            <p className="text-[15px] text-[#7C3AED] mt-1">
+              <span aria-hidden="true">🎁</span> <span className="font-semibold text-[#240046]">Benefício</span> no
               aniversário
             </p>
           )}
@@ -363,19 +359,6 @@ export const CategoryCarousel = memo(
     const reducedMotion = useReducedMotion();
     const { toggleFavorite, isFavorite } = useFavorites();
     const cardsPerPage = useCardsPerPage();
-
-    // DEBUG - Log dos dados recebidos
-    useEffect(() => {
-      if (estabelecimentos.length > 0) {
-        console.log(`🟡 [CategoryCarousel "${title}"]`, {
-          total: estabelecimentos.length,
-          primeiroItem: estabelecimentos[0],
-          temNomeFantasia: "nome_fantasia" in estabelecimentos[0],
-          valorNomeFantasia: estabelecimentos[0].nome_fantasia,
-          chavesDoItem: Object.keys(estabelecimentos[0]),
-        });
-      }
-    }, [estabelecimentos, title]);
 
     // Notify interaction
     const notifyInteraction = useCallback(() => {
@@ -452,12 +435,12 @@ export const CategoryCarousel = memo(
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-[22px] font-semibold text-foreground">{title}</h2>
-            {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
+            <h2 className="text-[22px] font-semibold text-[#240046]">{title}</h2>
+            {subtitle && <p className="text-sm text-[#7C3AED] mt-0.5">{subtitle}</p>}
           </div>
 
           {totalPages > 1 && (
-            <div className="text-sm text-muted-foreground tabular-nums" aria-live="polite">
+            <div className="text-sm text-[#7C3AED] tabular-nums" aria-live="polite">
               {currentPage + 1} / {totalPages}
             </div>
           )}
@@ -472,16 +455,16 @@ export const CategoryCarousel = memo(
             aria-label="Página anterior"
             className={cn(
               "absolute -left-4 top-1/3 -translate-y-1/2 z-10",
-              "w-10 h-10 bg-background rounded-full",
-              "shadow-lg border border-border",
+              "w-10 h-10 bg-white rounded-full",
+              "shadow-lg border border-violet-200",
               "flex items-center justify-center",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
               "disabled:opacity-40 disabled:cursor-not-allowed",
               !reducedMotion && "transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95",
               !canScrollLeft && "hover:scale-100",
             )}
           >
-            <ChevronLeft className="w-5 h-5 text-foreground" aria-hidden="true" />
+            <ChevronLeft className="w-5 h-5 text-[#240046]" aria-hidden="true" />
           </button>
 
           {/* Grid */}
@@ -511,16 +494,16 @@ export const CategoryCarousel = memo(
             aria-label="Próxima página"
             className={cn(
               "absolute -right-4 top-1/3 -translate-y-1/2 z-10",
-              "w-10 h-10 bg-background rounded-full",
-              "shadow-lg border border-border",
+              "w-10 h-10 bg-white rounded-full",
+              "shadow-lg border border-violet-200",
               "flex items-center justify-center",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
               "disabled:opacity-40 disabled:cursor-not-allowed",
               !reducedMotion && "transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95",
               !canScrollRight && "hover:scale-100",
             )}
           >
-            <ChevronRight className="w-5 h-5 text-foreground" aria-hidden="true" />
+            <ChevronRight className="w-5 h-5 text-[#240046]" aria-hidden="true" />
           </button>
         </div>
 
@@ -540,9 +523,9 @@ export const CategoryCarousel = memo(
                 aria-label={`Página ${i + 1}`}
                 className={cn(
                   "h-2 rounded-full",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
                   !reducedMotion && "transition-all duration-300",
-                  currentPage === i ? "bg-foreground w-4" : "bg-muted w-2 hover:bg-muted-foreground",
+                  currentPage === i ? "bg-[#240046] w-4" : "bg-violet-200 w-2 hover:bg-violet-300",
                 )}
               />
             ))}

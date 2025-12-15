@@ -1,8 +1,35 @@
-import { memo, useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { memo, useRef, useState, useEffect, useCallback, useMemo, useId } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import EstablishmentCard from "../EstablishmentCard";
 import { cn } from "@/lib/utils";
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const SCROLL_THRESHOLD = 10;
+const DEBOUNCE_DELAY = 16;
+const STAGGER_DELAY = 0.08;
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const HAPTIC_LIGHT = 5;
+const INTERSECTION_THRESHOLD = 0.1;
+
+const CARD_WIDTHS = {
+  featured: "w-[300px] sm:w-[350px]",
+  compact: "w-[220px] sm:w-[260px]",
+  default: "w-[260px] sm:w-[300px]",
+} as const;
+
+const SCROLL_AMOUNTS = {
+  featured: 366,
+  compact: 276,
+  default: 316,
+} as const;
+
+// =============================================================================
+// TYPES
+// =============================================================================
 
 interface Establishment {
   id: string;
@@ -28,12 +55,17 @@ interface EstablishmentsSectionProps {
   onSectionView?: (title: string) => void;
 }
 
+// =============================================================================
+// HOOKS
+// =============================================================================
+
 const useReducedMotion = (): boolean => {
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
+  );
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(query.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     query.addEventListener("change", handler);
     return () => query.removeEventListener("change", handler);
@@ -42,24 +74,25 @@ const useReducedMotion = (): boolean => {
   return reducedMotion;
 };
 
-const useDebounce = <T extends (...args: any[]) => void>(fn: T, delay: number): T => {
-  const timeoutRef = useRef<number>();
+const useDebounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number): T => {
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   return useCallback(
     (...args: Parameters<T>) => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = window.setTimeout(() => fn(...args), delay);
+      timeoutRef.current = setTimeout(() => fn(...args), delay);
     },
     [fn, delay],
   ) as T;
 };
 
-const useInView = (options?: IntersectionObserverInit) => {
+const useInView = (threshold = INTERSECTION_THRESHOLD) => {
   const [isInView, setIsInView] = useState(false);
-  const [ref, setRef] = useState<HTMLElement | null>(null);
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (!ref) return;
+    const element = ref.current;
+    if (!element) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -68,29 +101,61 @@ const useInView = (options?: IntersectionObserverInit) => {
           observer.disconnect();
         }
       },
-      { threshold: 0.1, ...options },
+      { threshold },
     );
 
-    observer.observe(ref);
+    observer.observe(element);
     return () => observer.disconnect();
-  }, [ref, options]);
+  }, [threshold]);
 
-  return { ref: setRef, isInView };
+  return { ref, isInView };
 };
 
-const CARD_WIDTHS = {
-  featured: "w-[300px] sm:w-[350px]",
-  compact: "w-[220px] sm:w-[260px]",
-  default: "w-[260px] sm:w-[300px]",
-} as const;
+// =============================================================================
+// UTILS
+// =============================================================================
 
-const SCROLL_AMOUNTS = {
-  featured: 366,
-  compact: 276,
-  default: 316,
-} as const;
+const haptic = (pattern: number = HAPTIC_LIGHT) => {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};
 
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const isNewEstablishment = (createdAt?: string): boolean => {
+  if (!createdAt) return false;
+  return Date.now() - new Date(createdAt).getTime() < SEVEN_DAYS_MS;
+};
+
+// =============================================================================
+// STAGGER ANIMATION WRAPPER
+// =============================================================================
+
+interface StaggerItemProps {
+  index: number;
+  isInView: boolean;
+  reducedMotion: boolean;
+  children: React.ReactNode;
+  className?: string;
+}
+
+const StaggerItem = memo(({ index, isInView, reducedMotion, children, className }: StaggerItemProps) => (
+  <div
+    className={className}
+    style={{
+      opacity: reducedMotion || isInView ? 1 : 0,
+      transform: reducedMotion || isInView ? "translateY(0)" : "translateY(20px)",
+      transition: reducedMotion ? "none" : `all 0.5s ease-out ${index * STAGGER_DELAY}s`,
+    }}
+  >
+    {children}
+  </div>
+));
+
+StaggerItem.displayName = "StaggerItem";
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
 
 export const EstablishmentsSection = memo(
   ({
@@ -107,23 +172,26 @@ export const EstablishmentsSection = memo(
     const [canScrollRight, setCanScrollRight] = useState(true);
     const reducedMotion = useReducedMotion();
     const { ref: sectionRef, isInView } = useInView();
+    const titleId = useId();
 
+    // Track section view
     useEffect(() => {
       if (isInView && onSectionView) {
         onSectionView(title);
       }
     }, [isInView, title, onSectionView]);
 
+    // Check scroll position
     const checkScroll = useCallback(() => {
       const el = scrollRef.current;
       if (!el) return;
 
       const { scrollLeft, scrollWidth, clientWidth } = el;
-      setCanScrollLeft(scrollLeft > 10);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+      setCanScrollLeft(scrollLeft > SCROLL_THRESHOLD);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - SCROLL_THRESHOLD);
     }, []);
 
-    const debouncedCheckScroll = useDebounce(checkScroll, 16);
+    const debouncedCheckScroll = useDebounce(checkScroll, DEBOUNCE_DELAY);
 
     useEffect(() => {
       checkScroll();
@@ -131,12 +199,13 @@ export const EstablishmentsSection = memo(
       return () => window.removeEventListener("resize", checkScroll);
     }, [checkScroll, establishments]);
 
+    // Scroll handler
     const scroll = useCallback(
       (direction: "left" | "right") => {
         const el = scrollRef.current;
         if (!el) return;
 
-        if (navigator.vibrate) navigator.vibrate(5);
+        haptic();
 
         const scrollAmount = SCROLL_AMOUNTS[variant];
         el.scrollBy({
@@ -147,6 +216,7 @@ export const EstablishmentsSection = memo(
       [variant, reducedMotion],
     );
 
+    // Keyboard navigation
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent) => {
         if (e.key === "ArrowLeft" && canScrollLeft) {
@@ -160,34 +230,28 @@ export const EstablishmentsSection = memo(
       [scroll, canScrollLeft, canScrollRight],
     );
 
-    const handleScrollLeft = useCallback(() => scroll("left"), [scroll]);
-    const handleScrollRight = useCallback(() => scroll("right"), [scroll]);
+    // Mapped establishments
+    const mappedEstablishments = useMemo(() => {
+      return establishments.map((est, index) => ({
+        original: est,
+        mapped: {
+          id: est.id,
+          slug: est.slug || est.id,
+          name: est.nome_fantasia || "Estabelecimento",
+          photo_url: est.galeria_fotos?.[0] || est.logo_url || "",
+          category: est.categoria?.[0] || "",
+          subcategory: est.especialidades?.[0],
+          bairro: est.bairro || "",
+          cidade: est.cidade,
+          benefit_description: est.descricao_beneficio,
+          is_new: isNewEstablishment(est.created_at),
+          is_popular: index < 3 && variant === "featured",
+        },
+        index,
+      }));
+    }, [establishments, variant]);
 
     const cardWidth = CARD_WIDTHS[variant];
-
-    const mappedEstablishments = useMemo(() => {
-      return establishments.map((est, index) => {
-        const isNew = est.created_at ? Date.now() - new Date(est.created_at).getTime() < SEVEN_DAYS_MS : false;
-
-        return {
-          original: est,
-          mapped: {
-            id: est.id,
-            slug: est.slug || est.id,
-            name: est.nome_fantasia || "Estabelecimento",
-            photo_url: est.galeria_fotos?.[0] || est.logo_url || "",
-            category: est.categoria?.[0] || "",
-            subcategory: est.especialidades?.[0],
-            bairro: est.bairro || "",
-            cidade: est.cidade,
-            benefit_description: est.descricao_beneficio,
-            is_new: isNew,
-            is_popular: index < 3 && variant === "featured",
-          },
-          index,
-        };
-      });
-    }, [establishments, variant]);
 
     if (!establishments || establishments.length === 0) {
       return null;
@@ -195,25 +259,21 @@ export const EstablishmentsSection = memo(
 
     return (
       <section
-        ref={sectionRef}
+        ref={sectionRef as React.RefObject<HTMLElement>}
         className={cn(
           "py-8",
           !reducedMotion && "transition-all duration-700 ease-out",
           isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8",
           reducedMotion && "opacity-100 translate-y-0",
         )}
-        aria-labelledby={`section-title-${title.replace(/\s+/g, "-").toLowerCase()}`}
-        onKeyDown={handleKeyDown}
-        tabIndex={0}
+        aria-labelledby={titleId}
         role="region"
       >
         <div className="container mx-auto px-4">
+          {/* Header */}
           <div className="flex items-end justify-between mb-6">
             <div className="max-w-lg">
-              <h2
-                id={`section-title-${title.replace(/\s+/g, "-").toLowerCase()}`}
-                className="text-2xl sm:text-3xl font-bold text-foreground"
-              >
+              <h2 id={titleId} className="text-2xl sm:text-3xl font-bold text-foreground">
                 {title}
               </h2>
               {subtitle && <p className="text-muted-foreground mt-1 text-sm sm:text-base">{subtitle}</p>}
@@ -241,9 +301,11 @@ export const EstablishmentsSection = memo(
             )}
           </div>
 
+          {/* Carousel */}
           <div className="relative group/carousel">
+            {/* Left Arrow */}
             <button
-              onClick={handleScrollLeft}
+              onClick={() => scroll("left")}
               disabled={!canScrollLeft}
               aria-label="Ver estabelecimentos anteriores"
               className={cn(
@@ -254,83 +316,100 @@ export const EstablishmentsSection = memo(
                 "flex items-center justify-center",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                 "disabled:opacity-0 disabled:pointer-events-none",
-                !reducedMotion &&
-                  "transition-all duration-300 hover:bg-background hover:scale-110 hover:border-primary/30 active:scale-95",
+                !reducedMotion && [
+                  "transition-all duration-300",
+                  "hover:bg-background hover:scale-110 hover:border-primary/30",
+                  "active:scale-95",
+                ],
                 canScrollLeft ? "opacity-0 group-hover/carousel:opacity-100" : "opacity-0 pointer-events-none",
               )}
             >
               <ChevronLeft className="w-6 h-6 text-foreground" aria-hidden="true" />
             </button>
 
+            {/* Scroll Container */}
             <div
               ref={scrollRef}
               onScroll={debouncedCheckScroll}
+              onKeyDown={handleKeyDown}
+              tabIndex={0}
               className={cn(
                 "flex gap-4 overflow-x-auto scrollbar-hide pb-4 -mb-4",
                 "snap-x snap-mandatory touch-pan-x",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg",
                 reducedMotion ? "scroll-auto" : "scroll-smooth",
               )}
-              style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}
+              style={{
+                WebkitOverflowScrolling: "touch",
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+              }}
               role="list"
               aria-label={`Lista de ${title}`}
             >
               {mappedEstablishments.map(({ original, mapped, index }) => (
-                <div
+                <StaggerItem
                   key={original.id || index}
-                  role="listitem"
+                  index={index}
+                  isInView={isInView}
+                  reducedMotion={reducedMotion}
                   className={cn("flex-shrink-0 snap-start", cardWidth)}
-                  style={{
-                    opacity: reducedMotion || isInView ? 1 : 0,
-                    transform: reducedMotion || isInView ? "translateY(0)" : "translateY(20px)",
-                    transition: reducedMotion ? "none" : `all 0.5s ease-out ${index * 0.08}s`,
-                  }}
                 >
-                  <EstablishmentCard establishment={mapped} index={index} />
-                </div>
+                  <div role="listitem">
+                    <EstablishmentCard establishment={mapped} index={index} />
+                  </div>
+                </StaggerItem>
               ))}
 
+              {/* View More Card */}
               {showViewMoreCard && viewAllLink && (
-                <Link
-                  to={viewAllLink}
-                  role="listitem"
-                  aria-label={`Ver todos os ${title}`}
-                  className={cn(
-                    "flex-shrink-0 snap-start",
-                    cardWidth,
-                    "aspect-[4/3]",
-                    "bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10",
-                    "border border-primary/20 rounded-2xl",
-                    "flex flex-col items-center justify-center gap-4",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                    !reducedMotion &&
-                      "transition-all duration-300 hover:from-primary/20 hover:via-accent/10 hover:to-primary/20 hover:border-primary/40 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/10 group",
-                  )}
-                  style={{
-                    opacity: reducedMotion || isInView ? 1 : 0,
-                    transform: reducedMotion || isInView ? "translateY(0)" : "translateY(20px)",
-                    transition: reducedMotion ? "none" : `all 0.5s ease-out ${establishments.length * 0.08}s`,
-                  }}
+                <StaggerItem
+                  index={establishments.length}
+                  isInView={isInView}
+                  reducedMotion={reducedMotion}
+                  className={cn("flex-shrink-0 snap-start", cardWidth)}
                 >
-                  <div
+                  <Link
+                    to={viewAllLink}
+                    role="listitem"
+                    aria-label={`Ver todos os ${title}`}
                     className={cn(
-                      "w-16 h-16 rounded-2xl",
-                      "bg-gradient-to-br from-primary/20 to-accent/20",
-                      "flex items-center justify-center",
-                      !reducedMotion && "transition-all duration-300 group-hover:scale-110 group-hover:rotate-3",
+                      "block aspect-[4/3]",
+                      "bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10",
+                      "border border-primary/20 rounded-2xl",
+                      "flex flex-col items-center justify-center gap-4",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                      !reducedMotion && [
+                        "transition-all duration-300",
+                        "hover:from-primary/20 hover:via-accent/10 hover:to-primary/20",
+                        "hover:border-primary/40 hover:scale-[1.02]",
+                        "hover:shadow-xl hover:shadow-primary/10",
+                        "group",
+                      ],
                     )}
                   >
-                    <ArrowRight className="w-8 h-8 text-primary" aria-hidden="true" />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-primary font-semibold">Ver todos</p>
-                    <p className="text-muted-foreground text-sm">Explorar categoria</p>
-                  </div>
-                </Link>
+                    <div
+                      className={cn(
+                        "w-16 h-16 rounded-2xl",
+                        "bg-gradient-to-br from-primary/20 to-accent/20",
+                        "flex items-center justify-center",
+                        !reducedMotion && "transition-all duration-300 group-hover:scale-110 group-hover:rotate-3",
+                      )}
+                    >
+                      <ArrowRight className="w-8 h-8 text-primary" aria-hidden="true" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-primary font-semibold">Ver todos</p>
+                      <p className="text-muted-foreground text-sm">Explorar categoria</p>
+                    </div>
+                  </Link>
+                </StaggerItem>
               )}
             </div>
 
+            {/* Right Arrow */}
             <button
-              onClick={handleScrollRight}
+              onClick={() => scroll("right")}
               disabled={!canScrollRight}
               aria-label="Ver próximos estabelecimentos"
               className={cn(
@@ -341,14 +420,18 @@ export const EstablishmentsSection = memo(
                 "flex items-center justify-center",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                 "disabled:opacity-0 disabled:pointer-events-none",
-                !reducedMotion &&
-                  "transition-all duration-300 hover:bg-background hover:scale-110 hover:border-primary/30 active:scale-95",
+                !reducedMotion && [
+                  "transition-all duration-300",
+                  "hover:bg-background hover:scale-110 hover:border-primary/30",
+                  "active:scale-95",
+                ],
                 canScrollRight ? "opacity-0 group-hover/carousel:opacity-100" : "opacity-0 pointer-events-none",
               )}
             >
               <ChevronRight className="w-6 h-6 text-foreground" aria-hidden="true" />
             </button>
 
+            {/* Left Fade */}
             <div
               className={cn(
                 "absolute left-0 top-0 bottom-4 w-8 z-10 pointer-events-none",
@@ -358,6 +441,8 @@ export const EstablishmentsSection = memo(
               )}
               aria-hidden="true"
             />
+
+            {/* Right Fade */}
             <div
               className={cn(
                 "absolute right-0 top-0 bottom-4 w-8 z-10 pointer-events-none",
@@ -369,6 +454,7 @@ export const EstablishmentsSection = memo(
             />
           </div>
 
+          {/* Mobile View All Link */}
           {viewAllLink && (
             <Link
               to={viewAllLink}
@@ -386,6 +472,7 @@ export const EstablishmentsSection = memo(
           )}
         </div>
 
+        {/* Live region */}
         <div role="status" aria-live="polite" className="sr-only">
           {canScrollLeft && canScrollRight
             ? "Use as setas para navegar"
@@ -399,5 +486,3 @@ export const EstablishmentsSection = memo(
 );
 
 EstablishmentsSection.displayName = "EstablishmentsSection";
-
-export default EstablishmentsSection;

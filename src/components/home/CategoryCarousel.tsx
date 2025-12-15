@@ -57,7 +57,7 @@ interface CategoryCarouselProps {
   estabelecimentos: Estabelecimento[];
   sectionId?: string;
   isLoading?: boolean;
-  onPageChange?: (sectionId: string, page: number) => void;
+  onUserInteraction?: (sectionId: string) => void;
 }
 
 interface CarouselCardProps {
@@ -343,12 +343,19 @@ CarouselCard.displayName = "CarouselCard";
 // =============================================================================
 
 export const CategoryCarousel = memo(
-  ({ title, subtitle, estabelecimentos, sectionId, isLoading = false, onPageChange }: CategoryCarouselProps) => {
+  ({ title, subtitle, estabelecimentos, sectionId, isLoading = false, onUserInteraction }: CategoryCarouselProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [currentPage, setCurrentPage] = useState(0);
     const reducedMotion = useReducedMotion();
     const { toggleFavorite, isFavorite } = useFavorites();
     const cardsPerPage = useCardsPerPage();
+
+    // Notify interaction
+    const notifyInteraction = useCallback(() => {
+      if (sectionId && onUserInteraction) {
+        onUserInteraction(sectionId);
+      }
+    }, [sectionId, onUserInteraction]);
 
     // Reset page when cards per page changes
     useEffect(() => {
@@ -383,30 +390,22 @@ export const CategoryCarousel = memo(
     const scroll = useCallback(
       (direction: "left" | "right") => {
         haptic(HAPTIC_LIGHT);
+        notifyInteraction();
 
         setCurrentPage((prev) => {
-          const newPage = direction === "right" ? prev + 1 : prev - 1;
-
-          if (sectionId && onPageChange) {
-            onPageChange(sectionId, newPage);
-          }
-
-          return newPage;
+          return direction === "right" ? prev + 1 : prev - 1;
         });
       },
-      [sectionId, onPageChange],
+      [notifyInteraction],
     );
 
     const goToPage = useCallback(
       (page: number) => {
         haptic(HAPTIC_LIGHT);
+        notifyInteraction();
         setCurrentPage(page);
-
-        if (sectionId && onPageChange) {
-          onPageChange(sectionId, page);
-        }
       },
-      [sectionId, onPageChange],
+      [notifyInteraction],
     );
 
     const gridClasses = useMemo(

@@ -1,11 +1,26 @@
 import { memo, useCallback, useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Gift, Heart } from "lucide-react";
+import { MapPin, Gift, Heart, Search } from "lucide-react";
 import { SafeImage } from "@/components/SafeImage";
 import { EstabelecimentoCardSkeleton } from "@/components/skeletons/EstabelecimentoCardSkeleton";
 import { getEstabelecimentoUrl } from "@/lib/slugUtils";
 import { getCategoriaIcon } from "@/lib/constants";
+import { getPlaceholderPorCategoria } from "@/lib/photoUtils";
 import { cn } from "@/lib/utils";
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const FAVORITES_KEY = "aniversariantevip_favorites";
+const SKELETON_COUNT = 8;
+const HEART_ANIMATION_DURATION = 400;
+const HAPTIC_LIGHT = 10;
+const HAPTIC_MEDIUM: number[] = [10, 50, 10];
+
+// =============================================================================
+// TYPES
+// =============================================================================
 
 interface Estabelecimento {
   id: string;
@@ -26,16 +41,27 @@ interface EstabelecimentosGridProps {
   estabelecimentos: Estabelecimento[];
   isLoading: boolean;
   emptyMessage?: string;
+  onClearFilters?: () => void;
 }
 
-const FAVORITES_KEY = "aniversariantevip_favorites";
+interface GridCardProps {
+  estabelecimento: Estabelecimento;
+  isFavorite: boolean;
+  onToggleFavorite: (id: string) => void;
+  reducedMotion: boolean;
+}
+
+// =============================================================================
+// HOOKS
+// =============================================================================
 
 const useReducedMotion = (): boolean => {
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
+  );
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(query.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     query.addEventListener("change", handler);
     return () => query.removeEventListener("change", handler);
@@ -64,7 +90,9 @@ const useFavorites = () => {
       }
       try {
         localStorage.setItem(FAVORITES_KEY, JSON.stringify([...next]));
-      } catch {}
+      } catch {
+        // Storage full or disabled
+      }
       return next;
     });
   }, []);
@@ -73,6 +101,10 @@ const useFavorites = () => {
 
   return { toggleFavorite, isFavorite };
 };
+
+// =============================================================================
+// UTILS
+// =============================================================================
 
 const getCategoryBadgeInfo = (est: Estabelecimento) => {
   const categoria = Array.isArray(est.categoria) ? est.categoria[0] : est.categoria;
@@ -85,12 +117,15 @@ const getCategoryBadgeInfo = (est: Estabelecimento) => {
   };
 };
 
-interface GridCardProps {
-  estabelecimento: Estabelecimento;
-  isFavorite: boolean;
-  onToggleFavorite: (id: string) => void;
-  reducedMotion: boolean;
-}
+const haptic = (pattern: number | number[] = HAPTIC_LIGHT) => {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};
+
+// =============================================================================
+// GRID CARD
+// =============================================================================
 
 const GridCard = memo(
   ({ estabelecimento, isFavorite: isFavorited, onToggleFavorite, reducedMotion }: GridCardProps) => {
@@ -112,10 +147,16 @@ const GridCard = memo(
     const badgeInfo = useMemo(() => getCategoryBadgeInfo(est), [est]);
     const nomeDisplay = est.nome_fantasia || est.razao_social || "Estabelecimento";
     const temBeneficio = Boolean(est.descricao_beneficio);
-    const imageSrc = est.logo_url || est.galeria_fotos?.[0];
+
+    // Image with fallback
+    const imageSrc = useMemo(() => {
+      if (est.logo_url) return est.logo_url;
+      if (est.galeria_fotos?.[0]) return est.galeria_fotos[0];
+      return getPlaceholderPorCategoria(est.categoria);
+    }, [est.logo_url, est.galeria_fotos, est.categoria]);
 
     const handleClick = useCallback(() => {
-      if (navigator.vibrate) navigator.vibrate(10);
+      haptic(HAPTIC_LIGHT);
       navigate(url);
     }, [navigate, url]);
 
@@ -123,7 +164,7 @@ const GridCard = memo(
       (e: React.KeyboardEvent) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          if (navigator.vibrate) navigator.vibrate(10);
+          haptic(HAPTIC_LIGHT);
           navigate(url);
         }
       },
@@ -135,13 +176,11 @@ const GridCard = memo(
         e.stopPropagation();
         e.preventDefault();
 
-        if (navigator.vibrate) {
-          navigator.vibrate(isFavorited ? [10] : [10, 50, 10]);
-        }
+        haptic(isFavorited ? HAPTIC_LIGHT : HAPTIC_MEDIUM);
 
         if (!reducedMotion) {
           setIsAnimating(true);
-          setTimeout(() => setIsAnimating(false), 400);
+          setTimeout(() => setIsAnimating(false), HEART_ANIMATION_DURATION);
         }
 
         onToggleFavorite(est.id);
@@ -157,13 +196,17 @@ const GridCard = memo(
         role="link"
         aria-label={`Ver ${nomeDisplay}${temBeneficio ? ", possui benefício" : ""}`}
         className={cn(
-          "group cursor-pointer bg-white/5 rounded-2xl overflow-hidden",
-          "border border-white/5",
-          "outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-          !reducedMotion &&
-            "transition-all hover:border-violet-500/30 hover:scale-[1.02] hover:shadow-xl hover:shadow-violet-500/10",
+          "group cursor-pointer rounded-2xl overflow-hidden",
+          "bg-card border border-border",
+          "outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+          !reducedMotion && [
+            "transition-all duration-200",
+            "hover:border-primary/30 hover:scale-[1.02]",
+            "hover:shadow-xl hover:shadow-primary/10",
+          ],
         )}
       >
+        {/* Image Container */}
         <div className="relative overflow-hidden">
           <SafeImage
             src={imageSrc}
@@ -172,12 +215,13 @@ const GridCard = memo(
             className={cn(!reducedMotion && "transition-transform duration-500 group-hover:scale-110")}
           />
 
+          {/* Favorite Button - Top Right (consistente com outros cards) */}
           <button
             onClick={handleFavorite}
             aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
             aria-pressed={isFavorited}
             className={cn(
-              "absolute top-3 left-3 z-10 p-2 rounded-full",
+              "absolute top-3 right-3 z-10 p-2 rounded-full",
               "bg-black/50 backdrop-blur-sm",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
               !reducedMotion && "transition-transform hover:scale-110 active:scale-95",
@@ -188,43 +232,52 @@ const GridCard = memo(
                 "w-4 h-4",
                 !reducedMotion && "transition-all duration-200",
                 isFavorited ? "text-red-500 fill-red-500" : "text-white fill-white/20",
-                isAnimating && !reducedMotion && "animate-[heartBounce_0.4s_ease-out]",
+                isAnimating && !reducedMotion && "animate-bounce",
               )}
               strokeWidth={2}
               aria-hidden="true"
             />
           </button>
 
+          {/* Benefit Badge - Top Left */}
+          {temBeneficio && (
+            <div className="absolute top-3 left-3">
+              <div
+                className={cn(
+                  "flex items-center gap-1 px-2 py-1 rounded-lg",
+                  "bg-gradient-to-r from-violet-600/90 to-fuchsia-600/90",
+                  "backdrop-blur-sm",
+                )}
+              >
+                <Gift className="w-3 h-3 text-white" aria-hidden="true" />
+                <span className="text-[10px] font-semibold text-white">Benefício</span>
+              </div>
+            </div>
+          )}
+
+          {/* Category Badge - Bottom Left */}
           <div className="absolute bottom-3 left-3">
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-black/70 backdrop-blur-sm rounded-lg">
+            <div className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg", "bg-black/70 backdrop-blur-sm")}>
               <span className="text-sm" aria-hidden="true">
                 {badgeInfo.icon}
               </span>
               <span className="text-xs font-semibold text-white truncate max-w-[120px]">{badgeInfo.label}</span>
             </div>
           </div>
-
-          {temBeneficio && (
-            <div className="absolute top-3 right-3">
-              <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-violet-600/90 to-fuchsia-600/90 backdrop-blur-sm rounded-lg">
-                <Gift className="w-3 h-3 text-white" aria-hidden="true" />
-                <span className="text-[10px] font-semibold text-white">Benefício</span>
-              </div>
-            </div>
-          )}
         </div>
 
+        {/* Content */}
         <div className="p-4">
           <h3
             className={cn(
-              "font-semibold text-white text-lg mb-1 line-clamp-1",
-              !reducedMotion && "transition-colors group-hover:text-violet-400",
+              "font-semibold text-foreground text-lg mb-1 truncate",
+              !reducedMotion && "transition-colors group-hover:text-primary",
             )}
           >
             {nomeDisplay}
           </h3>
 
-          <div className="flex items-center gap-1.5 text-slate-400 text-sm">
+          <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
             <MapPin className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
             <span className="truncate">{est.bairro || est.cidade}</span>
           </div>
@@ -236,27 +289,56 @@ const GridCard = memo(
 
 GridCard.displayName = "GridCard";
 
-const EmptyState = memo(({ message }: { message: string }) => (
+// =============================================================================
+// EMPTY STATE
+// =============================================================================
+
+interface EmptyStateProps {
+  message: string;
+  onClearFilters?: () => void;
+}
+
+const EmptyState = memo(({ message, onClearFilters }: EmptyStateProps) => (
   <div
     className="flex flex-col items-center justify-center py-16 text-center"
     role="status"
     aria-label="Nenhum resultado encontrado"
   >
-    <div className="text-6xl mb-4" aria-hidden="true">
-      🔍
+    <div className={cn("w-16 h-16 rounded-full mb-4", "bg-muted flex items-center justify-center")} aria-hidden="true">
+      <Search className="w-8 h-8 text-muted-foreground" />
     </div>
-    <h3 className="text-xl font-semibold text-white mb-2">Nenhum resultado encontrado</h3>
-    <p className="text-slate-400 max-w-md">{message}</p>
+
+    <h3 className="text-xl font-semibold text-foreground mb-2">Nenhum resultado encontrado</h3>
+
+    <p className="text-muted-foreground max-w-md mb-6">{message}</p>
+
+    {onClearFilters && (
+      <button
+        onClick={onClearFilters}
+        className={cn(
+          "px-4 py-2 rounded-full",
+          "bg-primary text-primary-foreground font-medium",
+          "transition-all hover:opacity-90 active:scale-95",
+        )}
+      >
+        Limpar filtros
+      </button>
+    )}
   </div>
 ));
 
 EmptyState.displayName = "EmptyState";
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
 
 export const EstabelecimentosGrid = memo(
   ({
     estabelecimentos,
     isLoading,
     emptyMessage = "Tente ajustar os filtros ou buscar por outro termo.",
+    onClearFilters,
   }: EstabelecimentosGridProps) => {
     const reducedMotion = useReducedMotion();
     const { toggleFavorite, isFavorite } = useFavorites();
@@ -268,7 +350,7 @@ export const EstabelecimentosGrid = memo(
           aria-busy="true"
           aria-label="Carregando estabelecimentos"
         >
-          {Array.from({ length: 8 }).map((_, i) => (
+          {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
             <EstabelecimentoCardSkeleton key={`skeleton-${i}`} />
           ))}
         </div>
@@ -276,7 +358,7 @@ export const EstabelecimentosGrid = memo(
     }
 
     if (estabelecimentos.length === 0) {
-      return <EmptyState message={emptyMessage} />;
+      return <EmptyState message={emptyMessage} onClearFilters={onClearFilters} />;
     }
 
     return (

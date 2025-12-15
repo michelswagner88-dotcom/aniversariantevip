@@ -1,3 +1,4 @@
+// FORCE REBUILD: 2024-12-15-001
 // src/components/Header.tsx
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -24,6 +25,7 @@ const SCROLL_THRESHOLD = 100;
 // =============================================================================
 
 const useScrollState = (threshold: number = SCROLL_THRESHOLD) => {
+  console.log("[useScrollState v4.0] inicializando com threshold:", threshold);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -149,7 +151,7 @@ export const Header = memo(() => {
   const isScrolled = useScrollState(SCROLL_THRESHOLD);
 
   // DEBUG - remover depois
-  console.log("[Header v3.0] isScrolled:", isScrolled, "| isMobile:", isMobile);
+  console.log("[Header v4.0 REBUILD]", { isScrolled, isMobile, timestamp: Date.now() });
 
   // Lock body scroll when menu is open
   useEffect(() => {

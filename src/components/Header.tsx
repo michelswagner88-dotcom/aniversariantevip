@@ -1,4 +1,4 @@
-// FORCE REBUILD: 2024-12-15-001
+// FORCE REBUILD: 2024-12-15-002 - IntersectionObserver
 // src/components/Header.tsx
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -11,6 +11,7 @@ import { PersonalGreeting } from "@/components/PersonalGreeting";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { useBirthdayTheme } from "@/hooks/useBirthdayTheme";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useIntersectionScroll } from "@/hooks/useIntersectionScroll";
 import { cn } from "@/lib/utils";
 
 // =============================================================================
@@ -18,88 +19,6 @@ import { cn } from "@/lib/utils";
 // =============================================================================
 
 const BIRTHDAY_BANNER_HEIGHT = 48;
-const SCROLL_THRESHOLD = 100;
-
-// =============================================================================
-// HOOKS
-// =============================================================================
-
-const useScrollState = (threshold: number = SCROLL_THRESHOLD) => {
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    type ScrollTarget = { listenerTarget: Window | HTMLElement; getScrollTop: () => number };
-
-    const resolveScrollTarget = (): ScrollTarget => {
-      const root = document.getElementById("root");
-      const candidates = [document.scrollingElement, document.documentElement, document.body, root].filter(
-        Boolean,
-      ) as HTMLElement[];
-
-      const isOverflowScrollable = (el: HTMLElement) => {
-        const overflowY = window.getComputedStyle(el).overflowY;
-        return overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay";
-      };
-
-      let best: HTMLElement | null = null;
-      let bestDelta = 0;
-
-      for (const el of candidates) {
-        const delta = el.scrollHeight - el.clientHeight;
-        if (delta > bestDelta && (isOverflowScrollable(el) || el === document.scrollingElement)) {
-          best = el;
-          bestDelta = delta;
-        }
-      }
-
-      // Se nao encontramos um container "real" com overflow, usamos o scroll da pagina
-      const isWindowScroller = !best || best === document.documentElement || best === document.body || best === document.scrollingElement;
-
-      if (isWindowScroller) {
-        return {
-          listenerTarget: window,
-          getScrollTop: () => document.scrollingElement?.scrollTop ?? document.documentElement.scrollTop ?? window.scrollY ?? 0,
-        };
-      }
-
-      return {
-        listenerTarget: best,
-        getScrollTop: () => best.scrollTop,
-      };
-    };
-
-    let current = resolveScrollTarget();
-
-    const update = () => {
-      const top = current.getScrollTop();
-      setIsScrolled(top > threshold);
-    };
-
-    const onScroll = () => update();
-
-    const onResize = () => {
-      // Recalcula o container em caso de mudanca de layout (ex: wrapper com overflow)
-      const next = resolveScrollTarget();
-      if (next.listenerTarget !== current.listenerTarget) {
-        current.listenerTarget.removeEventListener("scroll", onScroll as any);
-        current = next;
-        current.listenerTarget.addEventListener("scroll", onScroll as any, { passive: true } as any);
-      }
-      update();
-    };
-
-    current.listenerTarget.addEventListener("scroll", onScroll as any, { passive: true } as any);
-    window.addEventListener("resize", onResize);
-    update();
-
-    return () => {
-      current.listenerTarget.removeEventListener("scroll", onScroll as any);
-      window.removeEventListener("resize", onResize);
-    };
-  }, [threshold]);
-
-  return isScrolled;
-};
 
 const useUserSession = () => {
   const [userData, setUserData] = useState<{
@@ -209,10 +128,10 @@ export const Header = memo(() => {
   const { name: userName, role: userRole, birthDate: dataNascimento, logout } = useUserSession();
   const { isBirthday } = useBirthdayTheme(dataNascimento);
   const isMobile = useIsMobile();
-  const isScrolled = useScrollState(SCROLL_THRESHOLD);
+  const { isScrolled, sentinelRef } = useIntersectionScroll();
 
   // DEBUG - remover depois
-  console.log("[Header v4.0 REBUILD]", { isScrolled, isMobile, timestamp: Date.now() });
+  console.log("[Header v5.0 IntersectionObserver]", { isScrolled, isMobile, timestamp: Date.now() });
 
   // Lock body scroll when menu is open
   useEffect(() => {
@@ -266,6 +185,13 @@ export const Header = memo(() => {
 
   return (
     <>
+      {/* Sentinela invisível para detecção de scroll via IntersectionObserver */}
+      <div 
+        ref={sentinelRef} 
+        className="absolute top-0 left-0 h-px w-full pointer-events-none" 
+        aria-hidden="true" 
+      />
+      
       {isBirthday && userName && <BirthdayBanner firstName={firstName} />}
 
       <header

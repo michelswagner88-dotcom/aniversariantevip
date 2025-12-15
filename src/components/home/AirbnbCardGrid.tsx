@@ -61,6 +61,7 @@ interface AirbnbCardGridProps {
   onCardClick?: (id: string) => void;
   onFavoriteChange?: (id: string, isFavorited: boolean) => void;
   onImpression?: (ids: string[]) => void;
+  variant?: "carousel" | "grid";
 }
 
 interface FavoritesContextType {
@@ -228,14 +229,20 @@ const shimmerKeyframes = `
 // SKELETON
 // =============================================================================
 
-const AirbnbCardSkeleton = memo(() => {
+const AirbnbCardSkeleton = memo(({ fullWidth = false }: { fullWidth?: boolean }) => {
   const reducedMotion = useReducedMotion();
 
   return (
     <>
       <style>{shimmerKeyframes}</style>
-      <div className="flex-shrink-0 w-[160px] sm:w-[220px] snap-start" role="status" aria-label="Carregando">
-        <div className="relative aspect-square rounded-2xl bg-violet-100 overflow-hidden mb-2">
+      <div 
+        className={cn(
+          fullWidth ? "w-full" : "flex-shrink-0 w-[160px] sm:w-[220px] snap-start"
+        )} 
+        role="status" 
+        aria-label="Carregando"
+      >
+        <div className="relative aspect-[4/3] rounded-2xl bg-violet-100 overflow-hidden mb-2">
           {!reducedMotion && (
             <div
               className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
@@ -243,7 +250,7 @@ const AirbnbCardSkeleton = memo(() => {
             />
           )}
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 min-h-[90px]">
           <div className="h-4 bg-violet-100 rounded w-[85%]" />
           <div className="h-3 bg-violet-100 rounded w-[60%]" />
           <div className="h-3 bg-violet-100 rounded w-[50%]" />
@@ -327,10 +334,11 @@ interface AirbnbCardProps {
   onImpression?: (id: string) => void;
   onFavoriteChange?: (id: string, isFavorited: boolean) => void;
   onClick?: (id: string) => void;
+  fullWidth?: boolean;
 }
 
 const AirbnbCard = memo(
-  ({ estabelecimento, priority = false, index, onImpression, onFavoriteChange, onClick }: AirbnbCardProps) => {
+  ({ estabelecimento, priority = false, index, onImpression, onFavoriteChange, onClick, fullWidth = false }: AirbnbCardProps) => {
     const navigate = useNavigate();
     const { isFavorite, toggleFavorite } = useFavorites();
     const [isAnimating, setIsAnimating] = useState(false);
@@ -439,12 +447,13 @@ const AirbnbCard = memo(
         aria-label={`Ver ${nomeDisplay}`}
         data-index={index}
         className={cn(
-          "flex-shrink-0 w-[160px] sm:w-[220px] group cursor-pointer snap-start",
+          "group cursor-pointer",
+          fullWidth ? "w-full" : "flex-shrink-0 w-[160px] sm:w-[220px] snap-start",
           "outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 rounded-2xl",
         )}
       >
         {/* Imagem */}
-        <div className="relative aspect-square rounded-2xl overflow-hidden mb-2 bg-violet-50">
+        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-2 bg-violet-50">
           {hasBeenInView || priority ? (
             <CardImage src={fotoUrl || fallbackUrl} fallback={fallbackUrl} alt={nomeDisplay} priority={priority} />
           ) : (
@@ -484,7 +493,7 @@ const AirbnbCard = memo(
         </div>
 
         {/* CONTEÚDO DO CARD - Cores roxas consistentes */}
-        <div className="space-y-0.5 px-0.5">
+        <div className="flex flex-col min-h-[90px] space-y-0.5 px-0.5">
           {/* Nome - Roxo escuro */}
           <h3 className="font-semibold text-sm sm:text-[15px] leading-tight text-[#240046] line-clamp-2">
             {nomeDisplay}
@@ -498,7 +507,7 @@ const AirbnbCard = memo(
 
           {/* Benefício */}
           {temBeneficio && (
-            <p className="text-xs sm:text-sm text-[#7C3AED] font-medium flex items-center gap-1 pt-0.5">
+            <p className="text-xs sm:text-sm text-[#7C3AED] font-medium flex items-center gap-1 pt-0.5 mt-auto">
               <span>🎁</span>
               <span className="text-[#240046]">Benefício</span> no aniversário
             </p>
@@ -556,11 +565,12 @@ NavButton.displayName = "NavButton";
 // =============================================================================
 
 export const AirbnbCardGrid = memo(
-  ({ estabelecimentos, isLoading, onCardClick, onFavoriteChange, onImpression }: AirbnbCardGridProps) => {
+  ({ estabelecimentos, isLoading, onCardClick, onFavoriteChange, onImpression, variant = "carousel" }: AirbnbCardGridProps) => {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
     const [showRightArrow, setShowRightArrow] = useState(true);
     const reducedMotion = useReducedMotion();
+    const isGrid = variant === "grid";
 
     const checkScrollPosition = useCallback(() => {
       const el = scrollRef.current;
@@ -575,6 +585,8 @@ export const AirbnbCardGrid = memo(
     const debouncedCheckScroll = useDebounce(checkScrollPosition, 50);
 
     useEffect(() => {
+      if (isGrid) return; // Skip scroll listeners for grid mode
+      
       const el = scrollRef.current;
       if (!el) return;
 
@@ -586,7 +598,7 @@ export const AirbnbCardGrid = memo(
         el.removeEventListener("scroll", debouncedCheckScroll);
         window.removeEventListener("resize", checkScrollPosition);
       };
-    }, [checkScrollPosition, debouncedCheckScroll, estabelecimentos]);
+    }, [checkScrollPosition, debouncedCheckScroll, estabelecimentos, isGrid]);
 
     // CORRIGIDO: Scroll de 1 card por vez
     const scrollByAmount = useCallback(
@@ -625,7 +637,18 @@ export const AirbnbCardGrid = memo(
       [onImpression],
     );
 
-    // Loading
+    // Loading - Grid mode
+    if (isLoading && isGrid) {
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6" aria-busy="true">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <AirbnbCardSkeleton key={`skeleton-${i}`} fullWidth />
+          ))}
+        </div>
+      );
+    }
+
+    // Loading - Carousel mode
     if (isLoading) {
       return (
         <div className="flex gap-3 overflow-x-auto px-4 sm:px-6" style={SCROLL_HIDE_STYLES} aria-busy="true">
@@ -641,6 +664,31 @@ export const AirbnbCardGrid = memo(
       return <EmptyState type="geral" />;
     }
 
+    // GRID MODE
+    if (isGrid) {
+      return (
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6"
+          role="region"
+          aria-label={`${estabelecimentos.length} estabelecimentos`}
+        >
+          {estabelecimentos.map((est, index) => (
+            <AirbnbCard
+              key={est.id}
+              estabelecimento={est}
+              priority={index < 6}
+              index={index}
+              onImpression={handleImpression}
+              onFavoriteChange={onFavoriteChange}
+              onClick={onCardClick}
+              fullWidth
+            />
+          ))}
+        </div>
+      );
+    }
+
+    // CAROUSEL MODE (default)
     return (
       <div
         className="relative group/carousel px-4 sm:px-6"

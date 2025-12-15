@@ -34,7 +34,6 @@ interface AirbnbCategoryPillsProps {
   isLoading?: boolean;
 }
 
-// Mapeamento de categoria para ícone Lucide
 const CATEGORIA_ICONS: Record<string, LucideIcon> = {
   todos: Sparkles,
   academia: Dumbbell,
@@ -312,30 +311,15 @@ export const AirbnbCategoryPills = memo(
                   !reducedMotion &&
                     "transition-all duration-200 active:scale-[0.97] animate-fade-in opacity-0 [animation-fill-mode:forwards]",
                   reducedMotion && "opacity-100",
-                  isActive
-                    ? "bg-white/15 text-white border-b-2 border-white"
-                    : "text-slate-400 hover:text-white hover:bg-white/5",
+                  isActive ? "bg-white/15 border-b-2 border-white" : "hover:bg-white/5",
                   isLoading && isActive && "animate-pulse",
                 )}
               >
-                <IconComponent
-                  size={24}
-                  strokeWidth={isActive ? 2 : 1.5}
-                  className={cn(
-                    !reducedMotion && "transition-all duration-200",
-                    isActive ? "text-white" : "text-slate-400 group-hover:text-white",
-                  )}
-                  aria-hidden="true"
-                />
-                <span className={cn("text-xs font-medium", !reducedMotion && "transition-colors duration-200")}>
-                  {cat.nome}
-                </span>
+                <IconComponent size={24} strokeWidth={isActive ? 2 : 1.5} className="text-white" aria-hidden="true" />
+                <span className="text-xs font-medium text-white">{cat.nome}</span>
                 {count > 0 && (
                   <span
-                    className={cn(
-                      "text-[10px] font-semibold tabular-nums",
-                      isActive ? "text-white/80" : "text-slate-500",
-                    )}
+                    className={cn("text-[10px] font-semibold tabular-nums", isActive ? "text-white" : "text-white/70")}
                     aria-label={`${count} estabelecimentos`}
                   >
                     {count}

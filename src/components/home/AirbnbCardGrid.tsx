@@ -404,6 +404,20 @@ const AirbnbCard = memo(
     const nomeDisplay = est.nome_fantasia || est.razao_social || "Estabelecimento";
     const bairroDisplay = est.bairro || est.cidade;
 
+    // DEBUG - REMOVER DEPOIS
+    useEffect(() => {
+      console.log(`[Card ${index}]`, {
+        id: est.id,
+        nome_fantasia: est.nome_fantasia,
+        razao_social: est.razao_social,
+        bairro: est.bairro,
+        cidade: est.cidade,
+        nomeDisplay,
+        bairroDisplay,
+        todasAsChaves: Object.keys(est)
+      });
+    }, []);
+
     // Handlers
     const handleClick = useCallback(() => {
       onClick?.(est.id);

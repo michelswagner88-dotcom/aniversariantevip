@@ -149,6 +149,11 @@ const Index = () => {
 
   // Dados para exibição - SEMPRE ter algo para mostrar
   const dadosParaExibir = useMemo(() => {
+    // DEBUG - REMOVER DEPOIS
+    if (estabelecimentosFiltrados?.length > 0) {
+      console.log('[Index] Primeiro estabelecimento filtrado:', estabelecimentosFiltrados[0]);
+    }
+    
     if (estabelecimentosFiltrados && estabelecimentosFiltrados.length > 0) {
       return estabelecimentosFiltrados;
     }

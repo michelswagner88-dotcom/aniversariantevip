@@ -1,5 +1,23 @@
 import { useMemo, useRef, useState, useEffect, useCallback, memo } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Dumbbell,
+  Beer,
+  Scissors,
+  Coffee,
+  PartyPopper,
+  Cake,
+  Gamepad2,
+  Hotel,
+  ShoppingBag,
+  UtensilsCrossed,
+  Star,
+  IceCream2,
+  Plus,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CATEGORIAS } from "@/constants/categories";
 
@@ -15,6 +33,25 @@ interface AirbnbCategoryPillsProps {
   estabelecimentos: Estabelecimento[];
   isLoading?: boolean;
 }
+
+// Mapeamento de categoria para ícone Lucide
+const CATEGORIA_ICONS: Record<string, LucideIcon> = {
+  todos: Sparkles,
+  academia: Dumbbell,
+  bar: Beer,
+  barbearia: Scissors,
+  cafeteria: Coffee,
+  "casa-noturna": PartyPopper,
+  confeitaria: Cake,
+  entretenimento: Gamepad2,
+  hospedagem: Hotel,
+  loja: ShoppingBag,
+  restaurante: UtensilsCrossed,
+  salao: Scissors,
+  servicos: Star,
+  sorveteria: IceCream2,
+  outros: Plus,
+};
 
 const useReducedMotion = (): boolean => {
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -42,12 +79,10 @@ const useDebounce = <T extends (...args: any[]) => void>(fn: T, delay: number): 
   ) as T;
 };
 
-// Normaliza categoria para ID (minúsculo, sem espaços)
 const normalizeCategoriaToId = (cat: string): string => {
   if (!cat) return "";
   const lower = cat.toLowerCase().trim();
 
-  // Procura correspondência exata primeiro
   const found = CATEGORIAS.find(
     (c) => c.id === lower || c.label.toLowerCase() === lower || c.plural.toLowerCase() === lower,
   );
@@ -62,7 +97,6 @@ export const AirbnbCategoryPills = memo(
     const [showRightFade, setShowRightFade] = useState(true);
     const reducedMotion = useReducedMotion();
 
-    // Contar estabelecimentos por categoria (normalizado para ID)
     const contagens = useMemo(() => {
       const counts: Record<string, number> = { todos: estabelecimentos.length };
 
@@ -79,18 +113,16 @@ export const AirbnbCategoryPills = memo(
       return counts;
     }, [estabelecimentos]);
 
-    // Configurar categorias usando ID para lógica, PLURAL para exibição
     const categoriasConfig = useMemo(() => {
       const configs = [
-        { id: null, nome: "Todos", icon: "🚀" },
+        { id: null, nome: "Todos", icon: CATEGORIA_ICONS.todos },
         ...CATEGORIAS.map((cat) => ({
-          id: cat.id, // ← ID para lógica de filtro
-          nome: cat.plural, // ← Plural para exibição
-          icon: cat.icon,
+          id: cat.id,
+          nome: cat.plural,
+          icon: CATEGORIA_ICONS[cat.id] || Star,
         })),
       ];
 
-      // Filtrar apenas categorias que têm estabelecimentos
       return configs.filter((cat) => {
         if (cat.id === null) return true;
         return (contagens[cat.id] || 0) > 0;
@@ -234,7 +266,7 @@ export const AirbnbCategoryPills = memo(
 
         <div
           className={cn(
-            "absolute left-0 top-0 bottom-0 w-8 z-[5]",
+            "absolute left-0 top-0 bottom-0 w-12 z-[5]",
             "bg-gradient-to-r from-background to-transparent",
             "pointer-events-none",
             !reducedMotion && "transition-opacity duration-300",
@@ -250,7 +282,7 @@ export const AirbnbCategoryPills = memo(
           onKeyDown={handleKeyDown}
           tabIndex={0}
           className={cn(
-            "flex gap-2 overflow-x-auto py-2 px-4 scrollbar-hide snap-x snap-mandatory touch-pan-x",
+            "flex gap-1 overflow-x-auto py-3 px-4 scrollbar-hide snap-x snap-mandatory touch-pan-x",
             reducedMotion ? "scroll-auto" : "scroll-smooth",
           )}
           style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -258,6 +290,7 @@ export const AirbnbCategoryPills = memo(
           {categoriasConfig.map((cat, index) => {
             const isActive = categoriaAtiva === cat.id;
             const count = cat.id === null ? contagens.todos : contagens[cat.id] || 0;
+            const IconComponent = cat.icon;
 
             return (
               <button
@@ -272,28 +305,36 @@ export const AirbnbCategoryPills = memo(
                   scrollSnapAlign: "start",
                 }}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-full whitespace-nowrap",
-                  "border text-sm font-medium flex-shrink-0 snap-start",
+                  "flex flex-col items-center justify-center gap-1.5 px-4 py-3 min-w-[80px] min-h-[72px]",
+                  "rounded-xl whitespace-nowrap flex-shrink-0 snap-start",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   "[-webkit-tap-highlight-color:transparent]",
                   !reducedMotion &&
                     "transition-all duration-200 active:scale-[0.97] animate-fade-in opacity-0 [animation-fill-mode:forwards]",
                   reducedMotion && "opacity-100",
                   isActive
-                    ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 border-violet-500/50 text-white shadow-lg shadow-violet-500/30 scale-[1.02]"
-                    : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20 hover:text-white",
+                    ? "bg-white/15 text-white border-b-2 border-white"
+                    : "text-slate-400 hover:text-white hover:bg-white/5",
                   isLoading && isActive && "animate-pulse",
                 )}
               >
-                <span className="text-base" aria-hidden="true">
-                  {cat.icon}
+                <IconComponent
+                  size={24}
+                  strokeWidth={isActive ? 2 : 1.5}
+                  className={cn(
+                    !reducedMotion && "transition-all duration-200",
+                    isActive ? "text-white" : "text-slate-400 group-hover:text-white",
+                  )}
+                  aria-hidden="true"
+                />
+                <span className={cn("text-xs font-medium", !reducedMotion && "transition-colors duration-200")}>
+                  {cat.nome}
                 </span>
-                <span>{cat.nome}</span>
                 {count > 0 && (
                   <span
                     className={cn(
-                      "text-xs font-semibold px-2 py-0.5 rounded-full min-w-[24px] text-center tabular-nums",
-                      isActive ? "bg-white/25" : "bg-white/10",
+                      "text-[10px] font-semibold tabular-nums",
+                      isActive ? "text-white/80" : "text-slate-500",
                     )}
                     aria-label={`${count} estabelecimentos`}
                   >
@@ -308,7 +349,7 @@ export const AirbnbCategoryPills = memo(
 
         <div
           className={cn(
-            "absolute right-0 top-0 bottom-0 w-8 z-[5]",
+            "absolute right-0 top-0 bottom-0 w-12 z-[5]",
             "bg-gradient-to-l from-background to-transparent",
             "pointer-events-none",
             !reducedMotion && "transition-opacity duration-300",

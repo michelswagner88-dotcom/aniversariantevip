@@ -164,6 +164,12 @@ export default {
           "50%": { backgroundPosition: "100% 50%" },
           "100%": { backgroundPosition: "0% 50%" }
         },
+        "heart-bounce": {
+          "0%, 100%": { transform: "scale(1)" },
+          "25%": { transform: "scale(1.3)" },
+          "50%": { transform: "scale(0.95)" },
+          "75%": { transform: "scale(1.1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -175,6 +181,7 @@ export default {
         "slide-in-right": "slide-in-right 0.24s cubic-bezier(0.4, 0, 0.2, 1)",
         "gift-open": "gift-open 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97)",
         "shimmer": "shimmer 2s infinite",
+        "heart-bounce": "heart-bounce 0.6s ease-out",
       },
     },
   },

@@ -25,63 +25,76 @@ const SCROLL_THRESHOLD = 100;
 // =============================================================================
 
 const useScrollState = (threshold: number = SCROLL_THRESHOLD) => {
-  console.log("[useScrollState v4.0] inicializando com threshold:", threshold);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const logEnv = (tag: string) => {
+    type ScrollTarget = { listenerTarget: Window | HTMLElement; getScrollTop: () => number };
+
+    const resolveScrollTarget = (): ScrollTarget => {
       const root = document.getElementById("root");
-      const bodyStyle = window.getComputedStyle(document.body);
-      const htmlStyle = window.getComputedStyle(document.documentElement);
-      const rootStyle = root ? window.getComputedStyle(root) : null;
+      const candidates = [document.scrollingElement, document.documentElement, document.body, root].filter(
+        Boolean,
+      ) as HTMLElement[];
 
-      console.log("[useScrollState v4.0] env", {
-        tag,
-        threshold,
-        windowScrollY: window.scrollY,
-        docElScrollTop: document.documentElement.scrollTop,
-        bodyScrollTop: document.body.scrollTop,
-        scrollingElementScrollTop: document.scrollingElement?.scrollTop,
-        innerHeight: window.innerHeight,
-        docElScrollHeight: document.documentElement.scrollHeight,
-        bodyScrollHeight: document.body.scrollHeight,
-        bodyOverflowY: bodyStyle.overflowY,
-        htmlOverflowY: htmlStyle.overflowY,
-        rootOverflowY: rootStyle?.overflowY,
-        rootClientHeight: root?.clientHeight,
-        rootScrollHeight: root?.scrollHeight,
-      });
-    };
+      const isOverflowScrollable = (el: HTMLElement) => {
+        const overflowY = window.getComputedStyle(el).overflowY;
+        return overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay";
+      };
 
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const shouldBeScrolled = scrollY > threshold;
+      let best: HTMLElement | null = null;
+      let bestDelta = 0;
 
-      console.log("[useScrollState v4.0] handleScroll", {
-        scrollY,
-        threshold,
-        shouldBeScrolled,
-        docElScrollTop: document.documentElement.scrollTop,
-        scrollingElementScrollTop: document.scrollingElement?.scrollTop,
-      });
-
-      setIsScrolled((prev) => {
-        if (prev !== shouldBeScrolled) {
-          console.log("[useScrollState v4.0] stateChange", { from: prev, to: shouldBeScrolled });
+      for (const el of candidates) {
+        const delta = el.scrollHeight - el.clientHeight;
+        if (delta > bestDelta && (isOverflowScrollable(el) || el === document.scrollingElement)) {
+          best = el;
+          bestDelta = delta;
         }
-        return shouldBeScrolled;
-      });
+      }
+
+      // Se nao encontramos um container "real" com overflow, usamos o scroll da pagina
+      const isWindowScroller = !best || best === document.documentElement || best === document.body || best === document.scrollingElement;
+
+      if (isWindowScroller) {
+        return {
+          listenerTarget: window,
+          getScrollTop: () => document.scrollingElement?.scrollTop ?? document.documentElement.scrollTop ?? window.scrollY ?? 0,
+        };
+      }
+
+      return {
+        listenerTarget: best,
+        getScrollTop: () => best.scrollTop,
+      };
     };
 
-    console.log("[useScrollState v4.0] adicionando listener scroll (window)");
-    logEnv("mount:before-handleScroll");
-    handleScroll();
-    logEnv("mount:after-handleScroll");
+    let current = resolveScrollTarget();
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    const update = () => {
+      const top = current.getScrollTop();
+      setIsScrolled(top > threshold);
+    };
+
+    const onScroll = () => update();
+
+    const onResize = () => {
+      // Recalcula o container em caso de mudanca de layout (ex: wrapper com overflow)
+      const next = resolveScrollTarget();
+      if (next.listenerTarget !== current.listenerTarget) {
+        current.listenerTarget.removeEventListener("scroll", onScroll as any);
+        current = next;
+        current.listenerTarget.addEventListener("scroll", onScroll as any, { passive: true } as any);
+      }
+      update();
+    };
+
+    current.listenerTarget.addEventListener("scroll", onScroll as any, { passive: true } as any);
+    window.addEventListener("resize", onResize);
+    update();
+
     return () => {
-      console.log("[useScrollState v4.0] removendo listener scroll (window)");
-      window.removeEventListener("scroll", handleScroll);
+      current.listenerTarget.removeEventListener("scroll", onScroll as any);
+      window.removeEventListener("resize", onResize);
     };
   }, [threshold]);
 

@@ -1,19 +1,27 @@
 // Exportar todos os skeletons de um lugar central
-export { EstabelecimentoCardSkeleton } from './EstabelecimentoCardSkeleton';
-export { GaleriaGridSkeleton } from './GaleriaGridSkeleton';
-export { PostCardSkeleton } from './PostCardSkeleton';
-export { SkeletonCard } from './SkeletonCard';
-export { SkeletonGrid } from './SkeletonGrid';
-export { SkeletonPills } from './SkeletonPills';
-export { SkeletonSection } from './SkeletonSection';
-export { SkeletonEstablishmentPage } from './SkeletonEstablishmentPage';
-export { AirbnbCardSkeleton, AirbnbCardGridSkeleton } from './AirbnbCardSkeleton';
-export { 
-  PageSkeleton, 
-  CardSkeleton, 
-  CarouselSkeleton, 
-  ListSkeleton, 
+
+// Cards
+export { AirbnbCardSkeleton, AirbnbCardGridSkeleton } from "./AirbnbCardSkeleton";
+export { EstabelecimentoCardSkeleton, EstabelecimentoCardGridSkeleton } from "./EstabelecimentoCardSkeleton";
+export { SkeletonCard } from "./SkeletonCard";
+
+// Grids & Lists
+export { SkeletonGrid } from "./SkeletonGrid";
+export { GaleriaGridSkeleton } from "./GaleriaGridSkeleton";
+
+// Page-level
+export { SkeletonEstablishmentPage } from "./SkeletonEstablishmentPage";
+export {
+  PageSkeleton,
+  CardSkeleton,
+  CarouselSkeleton,
+  ListSkeleton,
   InlineSkeleton,
   ProfileSkeleton,
-  FormSkeleton 
-} from './PageSkeleton';
+  FormSkeleton,
+} from "./PageSkeleton";
+
+// Components
+export { SkeletonPills } from "./SkeletonPills";
+export { SkeletonSection } from "./SkeletonSection";
+export { PostCardSkeleton } from "./PostCardSkeleton";

@@ -1,8 +1,13 @@
-import { Skeleton } from '@/components/ui/skeleton';
+import { memo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export const PostCardSkeleton = () => {
+export const PostCardSkeleton = memo(function PostCardSkeleton() {
   return (
-    <div className="bg-card border border-border rounded-2xl overflow-hidden animate-in fade-in duration-300">
+    <div
+      className="bg-card border border-border rounded-2xl overflow-hidden animate-in fade-in duration-300 motion-reduce:animate-none"
+      role="article"
+      aria-hidden="true"
+    >
       <div className="p-4">
         {/* Header: Avatar + Nome */}
         <div className="flex items-center gap-3 mb-4">
@@ -13,9 +18,9 @@ export const PostCardSkeleton = () => {
           </div>
         </div>
 
-        {/* Imagem do post com shimmer */}
+        {/* Imagem do post */}
         <div className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden mb-4">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-muted-foreground/5 to-transparent animate-shimmer" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-muted-foreground/5 to-transparent animate-pulse motion-reduce:animate-none" />
         </div>
 
         {/* Ações: curtir, comentar, compartilhar */}
@@ -33,4 +38,19 @@ export const PostCardSkeleton = () => {
       </div>
     </div>
   );
-};
+});
+
+interface PostCardGridSkeletonProps {
+  count?: number;
+}
+
+export const PostCardGridSkeleton = memo(function PostCardGridSkeleton({ count = 3 }: PostCardGridSkeletonProps) {
+  return (
+    <div className="space-y-6" role="status" aria-label="Carregando posts" aria-busy="true">
+      <span className="sr-only">Carregando posts...</span>
+      {Array.from({ length: count }).map((_, i) => (
+        <PostCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+});

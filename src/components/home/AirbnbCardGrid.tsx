@@ -11,7 +11,7 @@ import {
   type CSSProperties,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, MapPin, Gift, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
+import { Heart, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { getEstabelecimentoUrl } from "@/lib/slugUtils";
 import { getFotoEstabelecimento, getPlaceholderPorCategoria } from "@/lib/photoUtils";
 import { cn } from "@/lib/utils";
@@ -21,15 +21,14 @@ import { EmptyState } from "@/components/EmptyState";
 // CONSTANTS
 // =============================================================================
 
-const CARD_WIDTH_MOBILE = 280;
-const CARD_WIDTH_DESKTOP = 300;
-const CARD_GAP = 16;
+const CARD_WIDTH_MOBILE = 160;
+const CARD_WIDTH_DESKTOP = 220;
+const CARD_GAP = 12;
 const SKELETON_COUNT = 6;
 const PRELOAD_AHEAD = 3;
 const DOUBLE_TAP_DELAY = 300;
 const FAVORITES_STORAGE_KEY = "aniversariantevip_favorites";
 
-// Estilos para esconder scrollbar (cross-browser)
 const SCROLL_HIDE_STYLES: CSSProperties = {
   WebkitOverflowScrolling: "touch",
   scrollbarWidth: "none",
@@ -90,7 +89,7 @@ const saveFavoritesToStorage = (favorites: Set<string>) => {
   try {
     localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([...favorites]));
   } catch {
-    // Storage full or disabled - silently fail
+    // Silent fail
   }
 };
 
@@ -117,19 +116,14 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
   return <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>;
 };
 
-/**
- * Hook para usar favoritos - funciona com ou sem Provider
- */
 const useFavorites = (): FavoritesContextType => {
   const context = useContext(FavoritesContext);
   const [localFavorites, setLocalFavorites] = useState<Set<string>>(() =>
     context ? new Set() : loadFavoritesFromStorage(),
   );
 
-  // Se tem context, usa ele
   if (context) return context;
 
-  // Fallback standalone (memoizado para evitar re-renders)
   return {
     favorites: localFavorites,
     toggleFavorite: (id: string) => {
@@ -157,7 +151,6 @@ const useReducedMotion = (): boolean => {
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-
     query.addEventListener("change", handler);
     return () => query.removeEventListener("change", handler);
   }, []);
@@ -196,7 +189,7 @@ const useInView = () => {
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
         setHasBeenInView(true);
-        observer.disconnect(); // Uma vez visível, não precisa mais observar
+        observer.disconnect();
       }
     }, INTERSECTION_OPTIONS);
 
@@ -239,7 +232,7 @@ const getCardWidth = (): number => {
 };
 
 // =============================================================================
-// SKELETON
+// SHIMMER
 // =============================================================================
 
 const shimmerKeyframes = `
@@ -249,39 +242,31 @@ const shimmerKeyframes = `
 }
 `;
 
+// =============================================================================
+// SKELETON
+// =============================================================================
+
 const AirbnbCardSkeleton = memo(() => {
   const reducedMotion = useReducedMotion();
 
   return (
     <>
       <style>{shimmerKeyframes}</style>
-      <div
-        className="flex-shrink-0 w-[280px] sm:w-[300px] snap-start"
-        role="status"
-        aria-label="Carregando estabelecimento"
-      >
-        <div className="relative aspect-[4/3] rounded-xl bg-gray-200 dark:bg-gray-700 overflow-hidden mb-3">
+      <div className="flex-shrink-0 w-[160px] sm:w-[220px] snap-start" role="status" aria-label="Carregando">
+        <div className="relative aspect-square rounded-2xl bg-violet-100 dark:bg-violet-900/30 overflow-hidden mb-2">
           {!reducedMotion && (
             <div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent"
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
               style={{ animation: "shimmer 1.5s infinite" }}
             />
           )}
-          <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600" />
-          <div className="absolute bottom-3 left-3 w-20 h-6 rounded-full bg-gray-300 dark:bg-gray-600" />
         </div>
-
-        <div className="space-y-2 pr-4">
-          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-md w-[85%]" />
-          <div className="flex items-center gap-1">
-            <div className="w-3.5 h-3.5 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-[60%]" />
-          </div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-[40%]" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-[70%]" />
+        <div className="space-y-1.5">
+          <div className="h-4 bg-violet-100 dark:bg-violet-900/30 rounded w-[85%]" />
+          <div className="h-3 bg-violet-100 dark:bg-violet-900/30 rounded w-[60%]" />
+          <div className="h-3 bg-violet-100 dark:bg-violet-900/30 rounded w-[50%]" />
         </div>
-
-        <span className="sr-only">Carregando estabelecimento...</span>
+        <span className="sr-only">Carregando...</span>
       </div>
     </>
   );
@@ -318,7 +303,9 @@ const CardImage = memo(({ src, fallback, alt, priority }: CardImageProps) => {
   return (
     <div className="relative w-full h-full">
       {status === "loading" && (
-        <div className={cn("absolute inset-0 bg-gray-200 dark:bg-gray-700", !reducedMotion && "animate-pulse")} />
+        <div
+          className={cn("absolute inset-0 bg-violet-100 dark:bg-violet-900/30", !reducedMotion && "animate-pulse")}
+        />
       )}
 
       <img
@@ -326,9 +313,9 @@ const CardImage = memo(({ src, fallback, alt, priority }: CardImageProps) => {
         alt={alt}
         className={cn(
           "w-full h-full object-cover",
-          !reducedMotion && "transition-all duration-500",
-          status === "loading" && "opacity-0 scale-105",
-          status === "loaded" && "opacity-100 scale-100",
+          !reducedMotion && "transition-opacity duration-300",
+          status === "loading" && "opacity-0",
+          status === "loaded" && "opacity-100",
           status === "error" && "opacity-50",
         )}
         loading={priority ? "eager" : "lazy"}
@@ -339,8 +326,8 @@ const CardImage = memo(({ src, fallback, alt, priority }: CardImageProps) => {
       />
 
       {status === "error" && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-          <AlertCircle className="w-8 h-8 text-gray-400" aria-hidden="true" />
+        <div className="absolute inset-0 flex items-center justify-center bg-violet-50 dark:bg-violet-900/20">
+          <AlertCircle className="w-6 h-6 text-violet-300" aria-hidden="true" />
         </div>
       )}
     </div>
@@ -350,7 +337,7 @@ const CardImage = memo(({ src, fallback, alt, priority }: CardImageProps) => {
 CardImage.displayName = "CardImage";
 
 // =============================================================================
-// CARD COMPONENT
+// CARD COMPONENT - Estilo AniversarianteVIP (layout Airbnb + cores violeta)
 // =============================================================================
 
 interface AirbnbCardProps {
@@ -383,7 +370,7 @@ const AirbnbCard = memo(
     const est = estabelecimento;
     const isFavorited = isFavorite(est.id);
 
-    // Track impression (só uma vez)
+    // Track impression
     const impressionTrackedRef = useRef(false);
     useEffect(() => {
       if (hasBeenInView && onImpression && !impressionTrackedRef.current) {
@@ -406,12 +393,6 @@ const AirbnbCard = memo(
 
     const categoria = useMemo(() => (Array.isArray(est.categoria) ? est.categoria[0] : est.categoria), [est.categoria]);
 
-    const distancia = useMemo(() => {
-      if (!userLocation || !est.latitude || !est.longitude) return null;
-      const dist = calcularDistancia(userLocation.lat, userLocation.lng, est.latitude, est.longitude);
-      return formatarDistancia(dist);
-    }, [userLocation, est.latitude, est.longitude]);
-
     const fotoUrl = useMemo(
       () => getFotoEstabelecimento(est.logo_url, null, est.galeria_fotos, est.categoria),
       [est.logo_url, est.galeria_fotos, est.categoria],
@@ -421,6 +402,7 @@ const AirbnbCard = memo(
 
     const temBeneficio = Boolean(est.descricao_beneficio);
     const nomeDisplay = est.nome_fantasia || est.razao_social || "Estabelecimento";
+    const bairroDisplay = est.bairro || est.cidade;
 
     // Handlers
     const handleClick = useCallback(() => {
@@ -447,15 +429,13 @@ const AirbnbCard = memo(
         e?.preventDefault();
         e?.stopPropagation();
 
-        // Haptic feedback
         if (navigator.vibrate) {
           navigator.vibrate(isFavorited ? [10] : [10, 50, 10]);
         }
 
-        // Animação
         if (!reducedMotion) {
           setIsAnimating(true);
-          setTimeout(() => setIsAnimating(false), 600);
+          setTimeout(() => setIsAnimating(false), 300);
         }
 
         toggleFavorite(est.id);
@@ -464,11 +444,9 @@ const AirbnbCard = memo(
       [est.id, isFavorited, toggleFavorite, reducedMotion, onFavoriteChange],
     );
 
-    // Double tap to favorite
     const handleTouchEnd = useCallback(
       (e: React.TouchEvent) => {
         const now = Date.now();
-
         if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
           e.preventDefault();
           handleFavoriteToggle();
@@ -487,116 +465,73 @@ const AirbnbCard = memo(
         onTouchEnd={handleTouchEnd}
         tabIndex={0}
         role="link"
-        aria-label={`Ver ${nomeDisplay}${temBeneficio ? ", possui benefício para aniversariantes" : ""}`}
+        aria-label={`Ver ${nomeDisplay}`}
         data-index={index}
         className={cn(
-          "flex-shrink-0 w-[280px] sm:w-[300px] group cursor-pointer snap-start",
-          "outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 rounded-xl",
-          "transform-gpu",
-          !reducedMotion && "transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]",
+          "flex-shrink-0 w-[160px] sm:w-[220px] group cursor-pointer snap-start",
+          "outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 rounded-2xl",
         )}
       >
-        <div
-          className={cn(
-            "relative aspect-[4/3] rounded-xl overflow-hidden mb-3 bg-gray-100 dark:bg-gray-800",
-            !reducedMotion && "transition-shadow duration-300",
-            "group-hover:shadow-xl group-focus-visible:shadow-xl",
-          )}
-        >
+        {/* Imagem - Quadrada com bordas arredondadas */}
+        <div className="relative aspect-square rounded-2xl overflow-hidden mb-2 bg-violet-50 dark:bg-violet-900/20">
           {hasBeenInView || priority ? (
-            <div
-              className={cn(
-                "w-full h-full",
-                !reducedMotion && "transition-transform duration-500 ease-out",
-                "group-hover:scale-105 group-focus-visible:scale-105",
-              )}
-            >
-              <CardImage src={fotoUrl || fallbackUrl} fallback={fallbackUrl} alt={nomeDisplay} priority={priority} />
-            </div>
+            <CardImage src={fotoUrl || fallbackUrl} fallback={fallbackUrl} alt={nomeDisplay} priority={priority} />
           ) : (
-            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            <div className="w-full h-full bg-violet-100 dark:bg-violet-900/30 animate-pulse" />
           )}
 
-          {/* Overlay gradient */}
-          <div
-            className={cn(
-              "absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10",
-              "opacity-0 group-hover:opacity-100",
-              !reducedMotion && "transition-opacity duration-300",
-              "pointer-events-none",
-            )}
-            aria-hidden="true"
-          />
+          {/* Badge Benefício - Top Left */}
+          {temBeneficio && (
+            <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-white/95 dark:bg-gray-900/95 shadow-sm">
+              <span className="text-[10px] sm:text-xs font-medium text-violet-700 dark:text-violet-300">Benefício</span>
+            </div>
+          )}
 
-          {/* Favorite button */}
+          {/* Coração - Top Right */}
           <button
             onClick={handleFavoriteToggle}
-            aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+            aria-label={isFavorited ? "Remover dos favoritos" : "Salvar"}
             aria-pressed={isFavorited}
             className={cn(
-              "absolute top-3 right-3 z-10 p-2 rounded-full",
-              "bg-black/20 backdrop-blur-sm",
-              "hover:bg-black/40 hover:scale-110",
-              "active:scale-95",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-              !reducedMotion && "transition-all duration-200",
+              "absolute top-2 right-2 p-1",
+              "transition-transform duration-200",
+              "hover:scale-110 active:scale-95",
+              "focus-visible:outline-none",
             )}
           >
             <Heart
               className={cn(
-                "w-5 h-5 drop-shadow-lg",
-                !reducedMotion && "transition-all duration-200",
-                isFavorited ? "text-red-500 fill-red-500" : "text-white fill-white/20",
-                isAnimating && !reducedMotion && "scale-125",
+                "w-5 h-5 sm:w-6 sm:h-6",
+                "drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]",
+                "transition-all duration-200",
+                isFavorited ? "text-violet-500 fill-violet-500" : "text-white fill-white/40 stroke-2",
+                isAnimating && "scale-125",
               )}
-              strokeWidth={2}
               aria-hidden="true"
             />
           </button>
-
-          {/* Benefit badge */}
-          {temBeneficio && (
-            <div
-              className={cn(
-                "absolute bottom-3 left-3 px-2.5 py-1.5",
-                "bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm",
-                "rounded-full shadow-lg",
-                "text-xs font-semibold text-purple-700 dark:text-purple-300",
-                "flex items-center gap-1.5",
-                !reducedMotion && "transition-transform duration-200 group-hover:scale-105",
-              )}
-            >
-              <Gift className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Benefício</span>
-            </div>
-          )}
         </div>
 
-        {/* Content */}
-        <div className="space-y-1 pr-4">
-          <h3 className="font-semibold text-[15px] text-gray-900 dark:text-gray-100 truncate leading-tight">
+        {/* Conteúdo - Exatamente como no print */}
+        <div className="space-y-0.5 px-0.5">
+          {/* Nome do estabelecimento - Negrito, roxo escuro */}
+          <h3 className="font-semibold text-sm sm:text-[15px] leading-tight text-violet-950 dark:text-white line-clamp-2">
             {nomeDisplay}
           </h3>
 
-          <p className="text-sm text-gray-600 dark:text-gray-400 truncate flex items-center gap-1">
-            <MapPin className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
-            <span className="truncate">{est.bairro || est.cidade}</span>
-            {distancia && (
-              <>
-                <span aria-hidden="true" className="text-gray-400">
-                  •
-                </span>
-                <span className="flex-shrink-0 text-gray-500">{distancia}</span>
-              </>
-            )}
-          </p>
+          {/* Bairro - Cinza/roxo claro */}
+          <p className="text-xs sm:text-sm text-violet-600/70 dark:text-violet-300/70 truncate">{bairroDisplay}</p>
 
-          <p className="text-sm text-gray-500 dark:text-gray-500 truncate">{categoria || "Estabelecimento"}</p>
+          {/* Categoria - Cinza/roxo claro */}
+          {categoria && (
+            <p className="text-xs sm:text-sm text-violet-600/70 dark:text-violet-300/70 truncate">{categoria}</p>
+          )}
 
+          {/* Benefício no aniversário - Destaque roxo */}
           {temBeneficio && (
-            <p className="text-sm text-purple-700 dark:text-purple-400 font-medium flex items-center gap-1">
-              <span aria-hidden="true">🎁</span>
-              <span>Benefício disponível</span>
+            <p className="text-xs sm:text-sm text-violet-700 dark:text-violet-400 font-medium flex items-center gap-1 pt-0.5">
+              <span>🎁</span>
+              <span>Benefício no aniversário</span>
             </p>
           )}
         </div>
@@ -608,116 +543,44 @@ const AirbnbCard = memo(
 AirbnbCard.displayName = "AirbnbCard";
 
 // =============================================================================
-// POSITION INDICATOR
-// =============================================================================
-
-interface PositionIndicatorProps {
-  total: number;
-  current: number;
-  visible?: number;
-}
-
-const PositionIndicator = memo(({ total, current, visible = 5 }: PositionIndicatorProps) => {
-  if (total <= visible) {
-    return (
-      <div className="flex items-center justify-center gap-1.5 py-3" role="tablist" aria-label="Posição no carrossel">
-        {Array.from({ length: total }).map((_, i) => (
-          <div
-            key={i}
-            role="tab"
-            aria-selected={i === current}
-            className={cn(
-              "h-1.5 rounded-full transition-all duration-300",
-              i === current ? "w-4 bg-purple-600 dark:bg-purple-400" : "w-1.5 bg-gray-300 dark:bg-gray-600",
-            )}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  const progress = total > 1 ? (current / (total - 1)) * 100 : 0;
-
-  return (
-    <div className="flex items-center justify-center py-3 px-4">
-      <div className="w-24 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-purple-600 dark:bg-purple-400 rounded-full transition-all duration-300"
-          style={{ width: `${Math.max(10, progress)}%` }}
-        />
-      </div>
-    </div>
-  );
-});
-
-PositionIndicator.displayName = "PositionIndicator";
-
-// =============================================================================
 // NAVIGATION BUTTON
 // =============================================================================
 
 interface NavButtonProps {
   direction: "left" | "right";
   onClick: () => void;
-  disabled: boolean;
+  visible: boolean;
   reducedMotion: boolean;
 }
 
-const NavButton = memo(({ direction, onClick, disabled, reducedMotion }: NavButtonProps) => {
+const NavButton = memo(({ direction, onClick, visible, reducedMotion }: NavButtonProps) => {
   const isLeft = direction === "left";
   const Icon = isLeft ? ChevronLeft : ChevronRight;
+
+  if (!visible) return null;
 
   return (
     <button
       onClick={onClick}
-      aria-label={isLeft ? "Ver estabelecimentos anteriores" : "Ver próximos estabelecimentos"}
-      disabled={disabled}
+      aria-label={isLeft ? "Anterior" : "Próximo"}
       className={cn(
-        "absolute top-1/2 -translate-y-1/2 z-20",
-        isLeft ? "left-2 sm:left-4 lg:left-8" : "right-2 sm:right-4 lg:right-8",
-        "w-11 h-11 sm:w-12 sm:h-12 rounded-full",
+        "absolute top-[90px] sm:top-[110px] -translate-y-1/2 z-20",
+        isLeft ? "-left-2 sm:-left-3" : "-right-2 sm:-right-3",
+        "w-8 h-8 sm:w-9 sm:h-9 rounded-full",
         "bg-white dark:bg-gray-800",
         "shadow-lg border border-gray-200 dark:border-gray-700",
         "flex items-center justify-center",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500",
-        "disabled:opacity-0 disabled:pointer-events-none",
-        "opacity-0 group-hover/carousel:opacity-100 sm:opacity-100",
-        !reducedMotion && "transition-all duration-200 hover:scale-105 active:scale-95",
-        disabled && "!opacity-0 pointer-events-none",
+        "opacity-0 group-hover/carousel:opacity-100",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
+        !reducedMotion && "transition-all duration-200 hover:scale-110 hover:shadow-xl",
       )}
     >
-      <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-200" aria-hidden="true" />
+      <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700 dark:text-gray-200" aria-hidden="true" />
     </button>
   );
 });
 
 NavButton.displayName = "NavButton";
-
-// =============================================================================
-// FADE OVERLAY
-// =============================================================================
-
-interface FadeOverlayProps {
-  direction: "left" | "right";
-  visible: boolean;
-  reducedMotion: boolean;
-}
-
-const FadeOverlay = memo(({ direction, visible, reducedMotion }: FadeOverlayProps) => (
-  <div
-    className={cn(
-      "absolute top-0 bottom-0 w-8 sm:w-16 lg:w-24 z-10 pointer-events-none",
-      direction === "left"
-        ? "left-0 bg-gradient-to-r from-white dark:from-gray-900 to-transparent"
-        : "right-0 bg-gradient-to-l from-white dark:from-gray-900 to-transparent",
-      !reducedMotion && "transition-opacity duration-300",
-      visible ? "opacity-100" : "opacity-0",
-    )}
-    aria-hidden="true"
-  />
-));
-
-FadeOverlay.displayName = "FadeOverlay";
 
 // =============================================================================
 // MAIN GRID COMPONENT
@@ -728,31 +591,16 @@ export const AirbnbCardGrid = memo(
     const scrollRef = useRef<HTMLDivElement>(null);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
     const [showRightArrow, setShowRightArrow] = useState(true);
-    const [currentIndex, setCurrentIndex] = useState(0);
     const reducedMotion = useReducedMotion();
-
-    // Preload next images
-    useEffect(() => {
-      if (!estabelecimentos.length) return;
-
-      const nextItems = estabelecimentos.slice(currentIndex + 4, currentIndex + 4 + PRELOAD_AHEAD);
-
-      nextItems.forEach((est) => {
-        const url = getFotoEstabelecimento(est.logo_url, null, est.galeria_fotos, est.categoria);
-        if (url) preloadImage(url);
-      });
-    }, [currentIndex, estabelecimentos]);
 
     const checkScrollPosition = useCallback(() => {
       const el = scrollRef.current;
       if (!el) return;
 
       const { scrollLeft, scrollWidth, clientWidth } = el;
-      const cardTotalWidth = getCardWidth() + CARD_GAP;
 
       setShowLeftArrow(scrollLeft > 20);
       setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 20);
-      setCurrentIndex(Math.round(scrollLeft / cardTotalWidth));
     }, []);
 
     const debouncedCheckScroll = useDebounce(checkScrollPosition, 50);
@@ -808,15 +656,10 @@ export const AirbnbCardGrid = memo(
       [onImpression],
     );
 
-    // Loading state
+    // Loading
     if (isLoading) {
       return (
-        <div
-          className="flex gap-4 overflow-x-auto px-4 sm:px-6 lg:px-12 xl:px-20"
-          style={SCROLL_HIDE_STYLES}
-          aria-busy="true"
-          aria-label="Carregando estabelecimentos"
-        >
+        <div className="flex gap-3 overflow-x-auto px-4 sm:px-6" style={SCROLL_HIDE_STYLES} aria-busy="true">
           {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
             <AirbnbCardSkeleton key={`skeleton-${i}`} />
           ))}
@@ -824,50 +667,43 @@ export const AirbnbCardGrid = memo(
       );
     }
 
-    // Empty state
+    // Empty
     if (!estabelecimentos.length) {
       return <EmptyState type="geral" />;
     }
 
-    const totalCards = estabelecimentos.length;
-
     return (
       <div
-        className="relative group/carousel"
+        className="relative group/carousel px-4 sm:px-6"
         role="region"
-        aria-label={`Carrossel com ${totalCards} estabelecimentos`}
+        aria-label={`${estabelecimentos.length} estabelecimentos`}
         onKeyDown={handleKeyDown}
       >
+        {/* Setas de navegação */}
         <NavButton
           direction="left"
           onClick={() => scrollByAmount("left")}
-          disabled={!showLeftArrow}
+          visible={showLeftArrow}
           reducedMotion={reducedMotion}
         />
 
         <NavButton
           direction="right"
           onClick={() => scrollByAmount("right")}
-          disabled={!showRightArrow}
+          visible={showRightArrow}
           reducedMotion={reducedMotion}
         />
 
-        <FadeOverlay direction="left" visible={showLeftArrow} reducedMotion={reducedMotion} />
-
-        <FadeOverlay direction="right" visible={showRightArrow} reducedMotion={reducedMotion} />
-
-        {/* Scroll Container */}
+        {/* Container do scroll */}
         <div
           ref={scrollRef}
           className={cn(
-            "flex gap-4 overflow-x-auto px-4 sm:px-6 lg:px-12 xl:px-20 py-2",
+            "flex gap-3 overflow-x-auto py-1 -mx-4 px-4 sm:-mx-6 sm:px-6",
             "snap-x snap-mandatory",
-            "touch-pan-x",
             reducedMotion ? "scroll-auto" : "scroll-smooth",
           )}
           style={SCROLL_HIDE_STYLES}
           role="list"
-          aria-label="Lista de estabelecimentos"
         >
           {estabelecimentos.map((est, index) => (
             <AirbnbCard
@@ -881,13 +717,6 @@ export const AirbnbCardGrid = memo(
               onClick={onCardClick}
             />
           ))}
-        </div>
-
-        {totalCards > 4 && <PositionIndicator total={totalCards} current={currentIndex} />}
-
-        {/* Live region for screen readers */}
-        <div aria-live="polite" aria-atomic="true" className="sr-only">
-          Mostrando item {currentIndex + 1} de {totalCards}
         </div>
       </div>
     );

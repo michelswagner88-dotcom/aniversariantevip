@@ -1,22 +1,25 @@
 import { memo } from "react";
-import { CardSkeleton } from "./CardSkeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface SkeletonGridProps {
+interface SkeletonPillsProps {
   count?: number;
-  staggerDelay?: number;
 }
 
-export const SkeletonGrid = memo(function SkeletonGrid({ count = 8, staggerDelay = 50 }: SkeletonGridProps) {
+export const SkeletonPills = memo(function SkeletonPills({ count = 8 }: SkeletonPillsProps) {
   return (
     <div
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6"
+      className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
       role="status"
-      aria-label="Carregando conteúdo"
+      aria-label="Carregando categorias"
       aria-busy="true"
     >
-      <span className="sr-only">Carregando...</span>
+      <span className="sr-only">Carregando categorias...</span>
       {Array.from({ length: count }).map((_, index) => (
-        <CardSkeleton key={index} style={{ animationDelay: `${index * staggerDelay}ms` }} />
+        <Skeleton
+          key={index}
+          className="h-9 w-24 rounded-full flex-shrink-0"
+          style={{ animationDelay: `${index * 50}ms` }}
+        />
       ))}
     </div>
   );

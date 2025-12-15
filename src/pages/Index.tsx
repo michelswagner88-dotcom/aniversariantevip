@@ -18,7 +18,7 @@ import { Footer } from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
 import HeroSection from "@/components/home/HeroSection";
 import { AirbnbSearchBar } from "@/components/home/AirbnbSearchBar";
-import { AirbnbCategoryPills } from "@/components/home/AirbnbCategoryPills";
+import { CategoriasPills } from "@/components/home/CategoriasPills";
 import { AirbnbCardGrid } from "@/components/home/AirbnbCardGrid";
 import { CategoryCarousel } from "@/components/home/CategoryCarousel";
 import { AirbnbMapLayout } from "@/components/map/AirbnbMapLayout";
@@ -337,8 +337,8 @@ const Index = () => {
         <div className="bg-[#240046] sticky top-16 z-30">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
             <div className="flex items-center gap-3">
-              <div className="flex-1 overflow-hidden">
-                <AirbnbCategoryPills
+              <div className="flex-1 min-w-0">
+                <CategoriasPills
                   categoriaAtiva={categoriaParam}
                   onCategoriaChange={(cat) => {
                     handleCategoriaChange(cat);

@@ -1,3 +1,4 @@
+// FORCE REBUILD: 2024-12-15-003 - IntersectionObserver com auto-detect scroll container
 // src/components/Header.tsx
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -23,20 +24,104 @@ const SCROLL_THRESHOLD = 100;
 // HOOKS
 // =============================================================================
 
-const useScrollState = (threshold: number = SCROLL_THRESHOLD) => {
+// Hook que detecta scroll usando IntersectionObserver
+// Funciona independente de onde o scroll acontece (window ou container interno)
+const useScrollDetection = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) {
+      console.log("[useScrollDetection] Sentinel não encontrado");
+      return;
+    }
+
+    // Função para encontrar o container que realmente scrolla
+    const findScrollContainer = (): Element | null => {
+      let element: HTMLElement | null = sentinel.parentElement;
+      while (element) {
+        const style = getComputedStyle(element);
+        const overflowY = style.overflowY;
+        const isScrollable = overflowY === "auto" || overflowY === "scroll";
+        const hasScroll = element.scrollHeight > element.clientHeight;
+
+        if (isScrollable && hasScroll) {
+          console.log("[useScrollDetection] Scroll container:", element.tagName);
+          return element;
+        }
+        element = element.parentElement;
+      }
+      return null; // Usa viewport
+    };
+
+    const scrollContainer = findScrollContainer();
+    console.log("[useScrollDetection] Root:", scrollContainer ? scrollContainer.tagName : "viewport");
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const scrolled = !entry.isIntersecting;
+        console.log("[useScrollDetection] isScrolled:", scrolled);
+        setIsScrolled(scrolled);
+      },
+      {
+        root: scrollContainer,
+        threshold: 0,
+        rootMargin: "-80px 0px 0px 0px", // Dispara 80px antes de sair
+      },
+    );
+
+    observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, []);
+
+  return { isScrolled, sentinelRef };
+};
+
+// Hook alternativo usando scroll event (fallback)
+const useScrollFallback = (threshold: number = SCROLL_THRESHOLD) => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > threshold);
+    // Encontra o elemento que realmente scrolla
+    const findScrollElement = (): HTMLElement | Window => {
+      const elements = document.querySelectorAll("*");
+      for (const el of elements) {
+        const style = getComputedStyle(el as HTMLElement);
+        if (
+          (style.overflowY === "auto" || style.overflowY === "scroll") &&
+          (el as HTMLElement).scrollHeight > (el as HTMLElement).clientHeight
+        ) {
+          console.log("[useScrollFallback] Scroll element:", (el as HTMLElement).tagName);
+          return el as HTMLElement;
+        }
+      }
+      return window;
     };
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    const scrollElement = findScrollElement();
+
+    const handleScroll = () => {
+      const scrollY = scrollElement === window ? window.scrollY : (scrollElement as HTMLElement).scrollTop;
+
+      const shouldBeScrolled = scrollY > threshold;
+      console.log("[useScrollFallback] scrollY:", scrollY, "isScrolled:", shouldBeScrolled);
+      setIsScrolled(shouldBeScrolled);
+    };
+
+    handleScroll(); // Check initial state
+    scrollElement.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => scrollElement.removeEventListener("scroll", handleScroll);
   }, [threshold]);
 
   return isScrolled;
 };
+
+// =============================================================================
+// USER SESSION HOOK
+// =============================================================================
 
 const useUserSession = () => {
   const [userData, setUserData] = useState<{
@@ -146,7 +231,17 @@ export const Header = memo(() => {
   const { name: userName, role: userRole, birthDate: dataNascimento, logout } = useUserSession();
   const { isBirthday } = useBirthdayTheme(dataNascimento);
   const isMobile = useIsMobile();
-  const isScrolled = useScrollState(SCROLL_THRESHOLD);
+
+  // Usa IntersectionObserver como principal
+  const { isScrolled: isScrolledIO, sentinelRef } = useScrollDetection();
+  // Fallback com scroll event
+  const isScrolledFallback = useScrollFallback(SCROLL_THRESHOLD);
+
+  // Usa o que funcionar primeiro
+  const isScrolled = isScrolledIO || isScrolledFallback;
+
+  // DEBUG
+  console.log("[Header v6.0]", { isScrolledIO, isScrolledFallback, isScrolled, isMobile });
 
   // Lock body scroll when menu is open
   useEffect(() => {
@@ -200,6 +295,14 @@ export const Header = memo(() => {
 
   return (
     <>
+      {/* Sentinela para IntersectionObserver - fica no flow normal do documento */}
+      <div
+        ref={sentinelRef}
+        className="h-1 w-full pointer-events-none"
+        style={{ position: "relative", zIndex: -1 }}
+        aria-hidden="true"
+      />
+
       {isBirthday && userName && <BirthdayBanner firstName={firstName} />}
 
       <header

@@ -1,4 +1,5 @@
 import { Wallet, Download, Share2, Gift, FileText, Calendar, AlertTriangle } from "lucide-react";
+import { getValidadeTexto } from "@/lib/bioUtils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -123,7 +124,7 @@ export const CupomAniversario = ({
           {periodoValidade && (
             <div className="flex items-center justify-center gap-2 text-white/80 text-sm bg-white/5 rounded-lg py-2.5 px-4 border border-white/10">
               <Calendar className="w-4 h-4 text-violet-400" />
-              <span>Válido: {periodoValidade}</span>
+              <span>Válido: {getValidadeTexto(periodoValidade)}</span>
             </div>
           )}
 

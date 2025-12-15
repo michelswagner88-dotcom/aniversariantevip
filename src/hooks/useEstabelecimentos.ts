@@ -61,6 +61,12 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
         throw error;
       }
 
+      // DEBUG - REMOVER DEPOIS
+      if (data && data.length > 0) {
+        console.log('[useEstabelecimentos] Primeiro item do Supabase:', data[0]);
+        console.log('[useEstabelecimentos] Campos retornados:', Object.keys(data[0]));
+      }
+
       return (data || []) as Estabelecimento[];
     },
     staleTime: 5 * 60 * 1000,

@@ -221,15 +221,6 @@ const Index = () => {
     setSearchParams(new URLSearchParams());
   };
 
-  // Handler para scroll ate o search do hero
-  const handleSearchClick = () => {
-    const searchInput = document.querySelector("[data-search-input]") as HTMLInputElement;
-    if (searchInput) {
-      searchInput.focus();
-      searchInput.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  };
-
   // SEO dinamico
   useSEO({
     title: cidadeFinal
@@ -299,8 +290,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header com callback para search */}
-      <Header onSearchClick={handleSearchClick} searchPlaceholder="Buscar estabelecimentos..." />
+      {/* Header */}
+      <Header />
 
       <main className="flex-1">
         {/* Hero Section - Apenas na home sem filtros */}

@@ -17,10 +17,6 @@ const MAX_RECENT_SEARCHES = 5;
 const DEBOUNCE_DELAY = 300;
 const VOICE_LANGUAGE = "pt-BR";
 
-// Cores da marca
-const BRAND_PRIMARY = "#7C3AED";
-const BRAND_DARK = "#240046";
-
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -136,23 +132,19 @@ export const AirbnbSearchBar = memo(
 
     const { searches, addSearch } = useRecentSearches();
 
-    // Debounced search - simplified without race conditions
+    // Debounced search
     useEffect(() => {
-      // Clear existing timeout
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
 
-      // Only debounce if internal value differs from prop
       if (buscaInterna === busca) return;
 
-      // Dispatch immediately if clearing, otherwise debounce
       if (buscaInterna === "") {
         onBuscaChange("");
         return;
       }
 
-      // Only search with 2+ characters
       if (buscaInterna.length < 2) return;
 
       debounceRef.current = setTimeout(() => {
@@ -166,7 +158,7 @@ export const AirbnbSearchBar = memo(
       };
     }, [buscaInterna, busca, onBuscaChange]);
 
-    // Sync external busca prop (only when it changes from parent)
+    // Sync external busca prop
     useEffect(() => {
       setBuscaInterna(busca);
     }, [busca]);
@@ -289,7 +281,6 @@ export const AirbnbSearchBar = memo(
         const value = e.target.value;
         setBuscaInterna(value);
 
-        // Show recent searches when input is empty
         if (!value && searches.length > 0) {
           setShowRecent(true);
         } else {
@@ -332,17 +323,17 @@ export const AirbnbSearchBar = memo(
 
     return (
       <div className="relative w-full max-w-3xl mx-auto" ref={containerRef}>
-        {/* Search Bar */}
+        {/* Search Bar - TEMA BRANCO */}
         <div
           role="search"
           className={cn(
             "flex items-center rounded-full",
-            "bg-white/10 backdrop-blur-sm",
-            "border border-white/20",
-            "shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.05)]",
+            "bg-white",
+            "border border-[#240046]/10",
+            "shadow-2xl shadow-black/20",
             !reducedMotion && "transition-all duration-200",
-            !reducedMotion && "hover:border-white/30 hover:bg-white/15",
-            isFocused && "border-white/40 ring-2 ring-white/20",
+            !reducedMotion && "hover:border-[#240046]/20",
+            isFocused && "border-[#240046]/30 ring-2 ring-[#240046]/10",
           )}
         >
           {/* Location Selector */}
@@ -355,18 +346,18 @@ export const AirbnbSearchBar = memo(
                 aria-haspopup="dialog"
                 className={cn(
                   "flex items-center gap-2.5 px-5 py-3.5",
-                  "border-r border-white/20 rounded-l-full",
+                  "border-r border-[#240046]/10 rounded-l-full",
                   "min-w-[160px] sm:min-w-[180px]",
-                  !reducedMotion && "transition-colors hover:bg-white/10",
+                  !reducedMotion && "transition-colors hover:bg-[#240046]/5",
                 )}
               >
                 <MapPin
-                  className={cn("w-5 h-5 shrink-0", isFocused ? "text-white" : "text-white/70")}
+                  className={cn("w-5 h-5 shrink-0", isFocused ? "text-[#7C3AED]" : "text-[#240046]/70")}
                   aria-hidden="true"
                 />
                 <div className="text-left min-w-0">
-                  <p className="text-[11px] font-medium text-white/60 uppercase tracking-wide">Onde</p>
-                  <p className="text-sm font-medium text-white truncate">{cidadeDisplay}</p>
+                  <p className="text-[11px] font-medium text-[#240046]/60 uppercase tracking-wide">Onde</p>
+                  <p className="text-sm font-medium text-[#240046] truncate">{cidadeDisplay}</p>
                 </div>
               </button>
             </DialogTrigger>
@@ -384,7 +375,7 @@ export const AirbnbSearchBar = memo(
           {/* Search Form */}
           <form onSubmit={handleBuscaSubmit} className="flex-1 flex items-center gap-2 min-w-0">
             <Search
-              className={cn("w-5 h-5 ml-4 shrink-0", isFocused ? "text-white" : "text-white/70")}
+              className={cn("w-5 h-5 ml-4 shrink-0", isFocused ? "text-[#7C3AED]" : "text-[#240046]/70")}
               aria-hidden="true"
             />
 
@@ -413,8 +404,8 @@ export const AirbnbSearchBar = memo(
               className={cn(
                 "flex-1 min-w-0",
                 "bg-transparent py-3.5",
-                "text-[15px] text-white",
-                "placeholder:text-white/50",
+                "text-[15px] text-[#240046]",
+                "placeholder:text-[#240046]/50",
                 "focus:outline-none",
               )}
             />
@@ -428,8 +419,8 @@ export const AirbnbSearchBar = memo(
                 className={cn(
                   "flex items-center justify-center",
                   "w-7 h-7 rounded-full shrink-0",
-                  "bg-white/20 text-white",
-                  !reducedMotion && "transition-all hover:bg-white/30",
+                  "bg-[#240046]/10 text-[#240046]",
+                  !reducedMotion && "transition-all hover:bg-[#240046]/20",
                 )}
               >
                 <X size={14} aria-hidden="true" />
@@ -440,7 +431,7 @@ export const AirbnbSearchBar = memo(
             <VoiceSearchButton isListening={isListening} isSupported={isSupported} onClick={handleVoiceClick} />
 
             {/* Divider */}
-            <div className="w-px h-6 bg-white/20 shrink-0" aria-hidden="true" />
+            <div className="w-px h-6 bg-[#240046]/20 shrink-0" aria-hidden="true" />
 
             {/* Submit Button */}
             <button

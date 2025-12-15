@@ -273,16 +273,6 @@ const CarouselCard = memo(
     const nomeDisplay = est.nome_fantasia || est.razao_social || "Estabelecimento";
     const bairroDisplay = est.bairro || est.cidade || "";
 
-    // DEBUG - Log no render para ver valores exatos
-    console.log("🔴 RENDER:", {
-      id: est.id?.substring(0, 8),
-      nome_fantasia: est.nome_fantasia,
-      razao_social: est.razao_social,
-      nomeDisplay,
-      bairro: est.bairro,
-      bairroDisplay,
-      keys: Object.keys(est),
-    });
 
     return (
       <article
@@ -337,8 +327,8 @@ const CarouselCard = memo(
         {/* CONTEÚDO DO CARD - Com debug visual */}
         <div className="space-y-0.5">
           {/* LINHA 1: Nome do estabelecimento */}
-          <h3 className="font-semibold text-[15px] text-red-500 truncate">
-            🔥 {nomeDisplay}
+          <h3 className="font-semibold text-[15px] text-foreground truncate">
+            {nomeDisplay}
           </h3>
 
           {/* LINHA 2: Bairro */}

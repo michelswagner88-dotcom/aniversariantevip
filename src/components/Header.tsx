@@ -29,12 +29,60 @@ const useScrollState = (threshold: number = SCROLL_THRESHOLD) => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > threshold);
+    const logEnv = (tag: string) => {
+      const root = document.getElementById("root");
+      const bodyStyle = window.getComputedStyle(document.body);
+      const htmlStyle = window.getComputedStyle(document.documentElement);
+      const rootStyle = root ? window.getComputedStyle(root) : null;
+
+      console.log("[useScrollState v4.0] env", {
+        tag,
+        threshold,
+        windowScrollY: window.scrollY,
+        docElScrollTop: document.documentElement.scrollTop,
+        bodyScrollTop: document.body.scrollTop,
+        scrollingElementScrollTop: document.scrollingElement?.scrollTop,
+        innerHeight: window.innerHeight,
+        docElScrollHeight: document.documentElement.scrollHeight,
+        bodyScrollHeight: document.body.scrollHeight,
+        bodyOverflowY: bodyStyle.overflowY,
+        htmlOverflowY: htmlStyle.overflowY,
+        rootOverflowY: rootStyle?.overflowY,
+        rootClientHeight: root?.clientHeight,
+        rootScrollHeight: root?.scrollHeight,
+      });
     };
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const shouldBeScrolled = scrollY > threshold;
+
+      console.log("[useScrollState v4.0] handleScroll", {
+        scrollY,
+        threshold,
+        shouldBeScrolled,
+        docElScrollTop: document.documentElement.scrollTop,
+        scrollingElementScrollTop: document.scrollingElement?.scrollTop,
+      });
+
+      setIsScrolled((prev) => {
+        if (prev !== shouldBeScrolled) {
+          console.log("[useScrollState v4.0] stateChange", { from: prev, to: shouldBeScrolled });
+        }
+        return shouldBeScrolled;
+      });
+    };
+
+    console.log("[useScrollState v4.0] adicionando listener scroll (window)");
+    logEnv("mount:before-handleScroll");
     handleScroll();
+    logEnv("mount:after-handleScroll");
+
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      console.log("[useScrollState v4.0] removendo listener scroll (window)");
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, [threshold]);
 
   return isScrolled;

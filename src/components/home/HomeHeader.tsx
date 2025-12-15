@@ -1,14 +1,14 @@
+// src/components/Header.tsx
 import { memo, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, LogOut, Gift } from "lucide-react";
+import { Menu, X, User, LogOut, Gift, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PersonalGreeting } from "@/components/PersonalGreeting";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { useBirthdayTheme } from "@/hooks/useBirthdayTheme";
-import { useScrollHeader } from "@/hooks/useScrollHeader";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -17,8 +17,7 @@ import { cn } from "@/lib/utils";
 // =============================================================================
 
 const BIRTHDAY_BANNER_HEIGHT = 48;
-const SCROLL_THRESHOLD = 80;
-const SCROLL_SENSITIVITY = 8;
+const SCROLL_THRESHOLD = 100;
 const HAPTIC_LIGHT = 10;
 
 // =============================================================================
@@ -29,6 +28,11 @@ interface UserData {
   name: string | null;
   role: string | null;
   birthDate: string | null;
+}
+
+interface HeaderProps {
+  onSearchClick?: () => void;
+  searchPlaceholder?: string;
 }
 
 // =============================================================================
@@ -48,6 +52,24 @@ const useReducedMotion = (): boolean => {
   }, []);
 
   return reducedMotion;
+};
+
+const useScrollState = (threshold: number = SCROLL_THRESHOLD) => {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > threshold);
+    };
+
+    // Check initial state
+    handleScroll();
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [threshold]);
+
+  return isScrolled;
 };
 
 const useUserSession = () => {
@@ -71,7 +93,6 @@ const useUserSession = () => {
         return;
       }
 
-      // Use allSettled to handle partial failures gracefully
       const [profileResult, rolesResult] = await Promise.allSettled([
         supabase.from("profiles").select("nome").eq("id", session.user.id).single(),
         supabase.from("user_roles").select("role").eq("user_id", session.user.id),
@@ -80,7 +101,7 @@ const useUserSession = () => {
       const profileData = profileResult.status === "fulfilled" ? profileResult.value.data : null;
       const rolesData = rolesResult.status === "fulfilled" ? rolesResult.value.data : null;
 
-      const name = profileData?.nome || session.user.email?.split("@")[0] || "Usuário";
+      const name = profileData?.nome || session.user.email?.split("@")[0] || "Usuario";
       const role = rolesData?.[0]?.role || null;
 
       let birthDate: string | null = null;
@@ -97,7 +118,7 @@ const useUserSession = () => {
 
       setUserData({ name, role, birthDate });
     } catch (error) {
-      console.error("[Header] Erro ao verificar usuário:", error);
+      console.error("[Header] Erro ao verificar usuario:", error);
       setUserData({ name: null, role: null, birthDate: null });
     } finally {
       setIsLoading(false);
@@ -173,18 +194,52 @@ const haptic = (pattern: number = HAPTIC_LIGHT) => {
 };
 
 // =============================================================================
-// COMPONENT
+// SEARCH PILL COMPONENT
 // =============================================================================
 
-export const Header = memo(() => {
+interface SearchPillProps {
+  onClick?: () => void;
+  placeholder?: string;
+  className?: string;
+}
+
+const SearchPill = memo(({ onClick, placeholder = "Buscar estabelecimentos...", className }: SearchPillProps) => {
+  return (
+    <button
+      onClick={onClick}
+      aria-label="Abrir busca"
+      className={cn(
+        "flex items-center gap-2",
+        "px-4 py-2.5 rounded-full",
+        "bg-gray-100 hover:bg-gray-200",
+        "text-gray-500 text-sm",
+        "transition-colors duration-200",
+        "active:scale-[0.98]",
+        "min-h-[44px]",
+        className,
+      )}
+    >
+      <Search className="w-4 h-4 text-gray-400" />
+      <span className="truncate">{placeholder}</span>
+    </button>
+  );
+});
+
+SearchPill.displayName = "SearchPill";
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
+
+export const Header = memo(({ onSearchClick, searchPlaceholder }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const reducedMotion = useReducedMotion();
   const { name: userName, role: userRole, birthDate: dataNascimento, logout } = useUserSession();
   const { isBirthday } = useBirthdayTheme(dataNascimento);
-  const { isVisible } = useScrollHeader({ threshold: SCROLL_THRESHOLD, sensitivity: SCROLL_SENSITIVITY });
   const isMobile = useIsMobile();
+  const isScrolled = useScrollState(SCROLL_THRESHOLD);
 
   // Focus trap for mobile menu
   useFocusTrap(mobileMenuOpen, mobileMenuRef);
@@ -240,6 +295,20 @@ export const Header = memo(() => {
     [navigate],
   );
 
+  const handleSearchClick = useCallback(() => {
+    haptic();
+    if (onSearchClick) {
+      onSearchClick();
+    } else {
+      // Scroll to search or focus search input
+      const searchInput = document.querySelector("[data-search-input]") as HTMLInputElement;
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  }, [onSearchClick]);
+
   // Derived values
   const areaLink = useMemo(() => {
     if (userRole === "aniversariante") return "/area-aniversariante";
@@ -252,9 +321,6 @@ export const Header = memo(() => {
   const firstName = userName?.split(" ")[0] || "";
   const headerTop = isBirthday && userName ? BIRTHDAY_BANNER_HEIGHT : 0;
 
-  // Header visibility (hide on scroll for mobile only)
-  const headerHidden = isMobile && !isVisible;
-
   return (
     <>
       {/* Birthday Banner */}
@@ -263,118 +329,128 @@ export const Header = memo(() => {
       {/* Header */}
       <header
         className={cn(
-          "fixed left-0 right-0 z-50 bg-[#240046] py-3",
-          !reducedMotion && "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
-          headerHidden ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100",
+          "fixed left-0 right-0 z-50",
+          // Transicao suave
+          !reducedMotion && "transition-all duration-300 ease-out",
+          // Estado A (Hero) vs Estado B (Scrolled)
+          isScrolled
+            ? "bg-white/95 backdrop-blur-xl border-b border-gray-200/50 shadow-sm py-2"
+            : "bg-transparent py-3",
         )}
-        style={{ top: headerTop }}
+        style={{
+          top: headerTop,
+          paddingTop: `calc(0.5rem + env(safe-area-inset-top, 0px))`,
+        }}
         role="banner"
       >
         <nav
           className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20"
           role="navigation"
-          aria-label="Navegação principal"
+          aria-label="Navegacao principal"
         >
-          <div className="flex items-center justify-between h-14">
+          <div className="flex items-center justify-between h-12 lg:h-14">
             {/* Logo */}
             <Link
               to="/"
               className={cn(
-                "flex items-center gap-2 group",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#240046] rounded-lg",
+                "flex items-center gap-2 group shrink-0",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 rounded-lg",
+                isScrolled
+                  ? "focus-visible:ring-[#240046] focus-visible:ring-offset-white"
+                  : "focus-visible:ring-white focus-visible:ring-offset-[#240046]",
               )}
-              aria-label="Aniversariante VIP - Página inicial"
+              aria-label="Aniversariante VIP - Pagina inicial"
             >
               <div
                 className={cn(
-                  "w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center bg-white/10 flex-shrink-0",
-                  !reducedMotion &&
-                    "transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:bg-white/20",
+                  "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0",
+                  !reducedMotion && "transition-all duration-300 group-hover:scale-110 group-hover:rotate-6",
+                  isScrolled ? "bg-[#240046]/10 group-hover:bg-[#240046]/20" : "bg-white/10 group-hover:bg-white/20",
                 )}
               >
-                <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-white" aria-hidden="true" />
+                <Gift
+                  className={cn("w-4 h-4 sm:w-5 sm:h-5", isScrolled ? "text-[#240046]" : "text-white")}
+                  aria-hidden="true"
+                />
               </div>
               <div
                 className={cn(
-                  "flex items-center gap-0.5 sm:gap-1 font-display font-extrabold text-sm sm:text-base lg:text-lg tracking-tight",
+                  "hidden sm:flex items-center gap-0.5 font-display font-extrabold text-sm lg:text-base tracking-tight",
                   !reducedMotion && "transition-transform duration-300 group-hover:scale-105",
                 )}
               >
-                <span className="bg-gradient-to-r from-[#9D4EDD] to-[#C77DFF] bg-clip-text text-transparent">
-                  ANIVERSARIANTE
-                </span>
-                <span className="bg-gradient-to-r from-[#C77DFF] to-[#22D3EE] bg-clip-text text-transparent">VIP</span>
+                {isScrolled ? (
+                  <>
+                    <span className="text-[#240046]">ANIVERSARIANTE</span>
+                    <span className="text-[#7C3AED]">VIP</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="bg-gradient-to-r from-[#9D4EDD] to-[#C77DFF] bg-clip-text text-transparent">
+                      ANIVERSARIANTE
+                    </span>
+                    <span className="bg-gradient-to-r from-[#C77DFF] to-[#22D3EE] bg-clip-text text-transparent">
+                      VIP
+                    </span>
+                  </>
+                )}
               </div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center justify-center flex-1 gap-1 min-w-0 mx-4">
-              <NavLink
-                to="/como-funciona"
-                className={cn(
-                  "relative text-sm font-medium text-white px-4 py-2 rounded-lg group",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-                  !reducedMotion && "transition-colors duration-200 hover:text-white",
-                )}
-                activeClassName="text-white"
-              >
-                Como Funciona
-                <span
-                  className={cn(
-                    "absolute -bottom-0.5 left-4 right-4 h-0.5 bg-white scale-x-0 origin-left",
-                    !reducedMotion && "transition-transform duration-300 group-hover:scale-x-100",
-                  )}
-                  aria-hidden="true"
-                />
-              </NavLink>
-              <NavLink
-                to="/seja-parceiro"
-                className={cn(
-                  "relative text-sm font-medium text-white px-4 py-2 rounded-lg group",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-                  !reducedMotion && "transition-colors duration-200 hover:text-white",
-                )}
-                activeClassName="text-white"
-              >
-                Seja Parceiro
-                <span
-                  className={cn(
-                    "absolute -bottom-0.5 left-4 right-4 h-0.5 bg-white scale-x-0 origin-left",
-                    !reducedMotion && "transition-transform duration-300 group-hover:scale-x-100",
-                  )}
-                  aria-hidden="true"
-                />
-              </NavLink>
-            </div>
+            {/* Search Pill - Desktop (aparece so quando scrolled) */}
+            {isScrolled && (
+              <div className="hidden lg:flex flex-1 justify-center mx-8">
+                <SearchPill onClick={handleSearchClick} placeholder={searchPlaceholder} className="w-full max-w-md" />
+              </div>
+            )}
+
+            {/* Search Pill - Mobile (aparece so quando scrolled) */}
+            {isScrolled && isMobile && (
+              <div className="flex-1 mx-3">
+                <SearchPill onClick={handleSearchClick} placeholder="Buscar..." className="w-full" />
+              </div>
+            )}
 
             {/* Desktop User Area */}
-            <div className="hidden lg:flex items-center gap-4 flex-shrink-0">
+            <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
               {userName ? (
                 <>
-                  <div className="hidden xl:block">
-                    <PersonalGreeting userName={userName} />
-                  </div>
+                  {!isScrolled && (
+                    <div className="hidden xl:block">
+                      <PersonalGreeting userName={userName} />
+                    </div>
+                  )}
                   <Button
                     variant="ghost"
                     onClick={() => handleNavigate(areaLink)}
                     className={cn(
-                      "flex items-center gap-2 px-3 h-10",
-                      !reducedMotion && "transition-all duration-200 hover:bg-white/10",
+                      "flex items-center gap-2 px-3 h-10 rounded-full",
+                      !reducedMotion && "transition-all duration-200",
+                      isScrolled ? "hover:bg-gray-100 text-gray-700" : "hover:bg-white/10 text-white",
                     )}
                   >
-                    <div className="w-8 h-8 rounded-full bg-white/20 p-0.5">
-                      <div className="w-full h-full rounded-full bg-[#240046] flex items-center justify-center">
+                    <div className={cn("w-8 h-8 rounded-full p-0.5", isScrolled ? "bg-[#240046]/20" : "bg-white/20")}>
+                      <div
+                        className={cn(
+                          "w-full h-full rounded-full flex items-center justify-center",
+                          isScrolled ? "bg-[#240046]" : "bg-[#240046]",
+                        )}
+                      >
                         <span className="text-xs font-bold text-white">{userInitials}</span>
                       </div>
                     </div>
-                    <span className="text-white text-sm hidden sm:block">{firstName}</span>
+                    {!isScrolled && <span className="text-sm hidden xl:block">{firstName}</span>}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleLogout}
                     aria-label="Sair da conta"
-                    className={cn("text-white h-9", !reducedMotion && "transition-all duration-200 hover:bg-white/10")}
+                    className={cn(
+                      "h-9 rounded-full",
+                      !reducedMotion && "transition-all duration-200",
+                      isScrolled ? "text-gray-600 hover:bg-gray-100" : "text-white hover:bg-white/10",
+                    )}
                   >
                     <LogOut className="w-4 h-4" aria-hidden="true" />
                   </Button>
@@ -384,9 +460,12 @@ export const Header = memo(() => {
                   <Link
                     to="/login"
                     className={cn(
-                      "text-white px-4 py-2 text-sm font-medium rounded-lg",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-                      !reducedMotion && "transition-colors duration-200 hover:text-white/80",
+                      "px-4 py-2 text-sm font-medium rounded-full",
+                      "focus-visible:outline-none focus-visible:ring-2",
+                      !reducedMotion && "transition-colors duration-200",
+                      isScrolled
+                        ? "text-gray-700 hover:text-[#240046] hover:bg-gray-100 focus-visible:ring-[#240046]"
+                        : "text-white hover:text-white/80 focus-visible:ring-white",
                     )}
                   >
                     Entrar
@@ -394,9 +473,12 @@ export const Header = memo(() => {
                   <Link
                     to="/cadastro"
                     className={cn(
-                      "relative bg-white text-[#240046] font-semibold px-6 py-2.5 rounded-full text-sm",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#240046]",
-                      !reducedMotion && "transition-all duration-300 hover:bg-white/90 hover:scale-105 active:scale-95",
+                      "font-semibold px-5 py-2.5 rounded-full text-sm",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+                      !reducedMotion && "transition-all duration-300 hover:scale-105 active:scale-95",
+                      isScrolled
+                        ? "bg-[#240046] text-white hover:bg-[#3C096C] focus-visible:ring-[#240046] focus-visible:ring-offset-white"
+                        : "bg-white text-[#240046] hover:bg-white/90 focus-visible:ring-white focus-visible:ring-offset-[#240046]",
                     )}
                   >
                     Cadastro Gratuito
@@ -412,9 +494,12 @@ export const Header = memo(() => {
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu"
               className={cn(
-                "lg:hidden p-2.5 -mr-2 text-white rounded-xl min-w-[44px] min-h-[44px]",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-                !reducedMotion && "transition-all duration-200 hover:bg-white/10 active:scale-95",
+                "lg:hidden p-2.5 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0",
+                "focus-visible:outline-none focus-visible:ring-2",
+                !reducedMotion && "transition-all duration-200 active:scale-95",
+                isScrolled
+                  ? "text-gray-700 hover:bg-gray-100 focus-visible:ring-[#240046]"
+                  : "text-white hover:bg-white/10 focus-visible:ring-white",
               )}
             >
               {mobileMenuOpen ? (
@@ -432,10 +517,11 @@ export const Header = memo(() => {
               id="mobile-menu"
               role="dialog"
               aria-modal="true"
-              aria-label="Menu de navegação"
+              aria-label="Menu de navegacao"
               className={cn(
-                "lg:hidden mt-4 p-4 bg-[#1a0033] rounded-2xl border border-white/10 shadow-2xl shadow-black/40",
+                "lg:hidden mt-4 p-4 rounded-2xl border shadow-2xl",
                 !reducedMotion && "animate-in fade-in slide-in-from-top-2 duration-200",
+                isScrolled ? "bg-white border-gray-200" : "bg-[#1a0033] border-white/10 shadow-black/40",
               )}
             >
               <div className="flex flex-col gap-1">
@@ -443,10 +529,13 @@ export const Header = memo(() => {
                   to="/como-funciona"
                   onClick={handleCloseMenu}
                   className={cn(
-                    "text-sm font-medium text-white/80 py-3 px-4 rounded-xl min-h-[44px] flex items-center",
-                    !reducedMotion && "transition-all duration-200 hover:text-white hover:bg-white/5",
+                    "text-sm font-medium py-3 px-4 rounded-xl min-h-[44px] flex items-center",
+                    !reducedMotion && "transition-all duration-200",
+                    isScrolled
+                      ? "text-gray-600 hover:text-[#240046] hover:bg-gray-100"
+                      : "text-white/80 hover:text-white hover:bg-white/5",
                   )}
-                  activeClassName="text-white bg-white/5"
+                  activeClassName={isScrolled ? "text-[#240046] bg-gray-100" : "text-white bg-white/5"}
                 >
                   Como Funciona
                 </NavLink>
@@ -454,15 +543,18 @@ export const Header = memo(() => {
                   to="/seja-parceiro"
                   onClick={handleCloseMenu}
                   className={cn(
-                    "text-sm font-medium text-white/80 py-3 px-4 rounded-xl min-h-[44px] flex items-center",
-                    !reducedMotion && "transition-all duration-200 hover:text-white hover:bg-white/5",
+                    "text-sm font-medium py-3 px-4 rounded-xl min-h-[44px] flex items-center",
+                    !reducedMotion && "transition-all duration-200",
+                    isScrolled
+                      ? "text-gray-600 hover:text-[#240046] hover:bg-gray-100"
+                      : "text-white/80 hover:text-white hover:bg-white/5",
                   )}
-                  activeClassName="text-white bg-white/5"
+                  activeClassName={isScrolled ? "text-[#240046] bg-gray-100" : "text-white bg-white/5"}
                 >
                   Seja Parceiro
                 </NavLink>
 
-                <div className="h-px bg-white/10 my-3" aria-hidden="true" />
+                <div className={cn("h-px my-3", isScrolled ? "bg-gray-200" : "bg-white/10")} aria-hidden="true" />
 
                 {userName ? (
                   <>
@@ -470,19 +562,21 @@ export const Header = memo(() => {
                       variant="ghost"
                       onClick={() => handleNavigate(areaLink)}
                       className={cn(
-                        "justify-start text-white py-3 h-auto min-h-[44px]",
-                        !reducedMotion && "hover:bg-white/10",
+                        "justify-start py-3 h-auto min-h-[44px] rounded-xl",
+                        isScrolled ? "text-gray-700 hover:bg-gray-100" : "text-white hover:bg-white/10",
                       )}
                     >
                       <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                      Minha Área ({firstName})
+                      Minha Area ({firstName})
                     </Button>
                     <Button
                       variant="ghost"
                       onClick={handleLogout}
                       className={cn(
-                        "justify-start text-white/70 py-3 h-auto min-h-[44px]",
-                        !reducedMotion && "hover:text-white hover:bg-white/10",
+                        "justify-start py-3 h-auto min-h-[44px] rounded-xl",
+                        isScrolled
+                          ? "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                          : "text-white/70 hover:text-white hover:bg-white/10",
                       )}
                     >
                       <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -495,8 +589,11 @@ export const Header = memo(() => {
                       to="/login"
                       onClick={handleCloseMenu}
                       className={cn(
-                        "text-white/80 py-3 px-4 rounded-xl text-sm font-medium min-h-[44px] flex items-center",
-                        !reducedMotion && "transition-all duration-200 hover:text-white hover:bg-white/5",
+                        "py-3 px-4 rounded-xl text-sm font-medium min-h-[44px] flex items-center",
+                        !reducedMotion && "transition-all duration-200",
+                        isScrolled
+                          ? "text-gray-600 hover:text-[#240046] hover:bg-gray-100"
+                          : "text-white/80 hover:text-white hover:bg-white/5",
                       )}
                     >
                       Entrar
@@ -505,8 +602,9 @@ export const Header = memo(() => {
                       to="/cadastro"
                       onClick={handleCloseMenu}
                       className={cn(
-                        "mt-2 bg-white text-[#240046] font-semibold py-3 px-6 rounded-full text-center text-sm min-h-[44px] flex items-center justify-center",
+                        "mt-2 font-semibold py-3 px-6 rounded-full text-center text-sm min-h-[44px] flex items-center justify-center",
                         !reducedMotion && "transition-all duration-300 active:scale-95",
+                        isScrolled ? "bg-[#240046] text-white" : "bg-white text-[#240046]",
                       )}
                     >
                       Cadastro Gratuito

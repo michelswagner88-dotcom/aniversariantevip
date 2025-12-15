@@ -1,10 +1,10 @@
+// src/pages/Index.tsx
 import { useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSEO } from "@/hooks/useSEO";
 import { useCidadeInteligente } from "@/hooks/useCidadeInteligente";
 import { useEstabelecimentos } from "@/hooks/useEstabelecimentos";
 import { useUserLocation } from "@/hooks/useUserLocation";
-// REMOVIDO: useScrollReveal - causava cards invisíveis (opacity: 0)
 import { useRotatingSections } from "@/hooks/useRotatingSections";
 import { ALL_HOME_SECTIONS } from "@/types/homeCategories";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
@@ -36,41 +36,35 @@ const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // REMOVIDO: useScrollReveal() - causava cards invisíveis
-
-  // Estados de filtros avançados
+  // Estados de filtros avancados
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
   const [filterDistance, setFilterDistance] = useState<number | null>(null);
   const [filterValidity, setFilterValidity] = useState<string | null>(null);
 
-  // REMOVIDO: setForceUpdate - React Query já gerencia re-renders
-
-  // Geolocalização para filtro de distância
+  // Geolocalizacao para filtro de distancia
   const { location: userLocation, requestLocation, loading: locationLoading } = useUserLocation();
 
-  // Parâmetros da URL - memoizados para evitar re-renders
+  // Parametros da URL - memoizados para evitar re-renders
   const cidadeParam = useMemo(() => searchParams.get("cidade"), [searchParams]);
   const estadoParam = useMemo(() => searchParams.get("estado"), [searchParams]);
   const categoriaParam = useMemo(() => searchParams.get("categoria"), [searchParams]);
   const buscaParam = useMemo(() => searchParams.get("q"), [searchParams]);
 
-  // Sistema de geolocalização inteligente (em background, não bloqueia)
+  // Sistema de geolocalizacao inteligente
   const { cidade: cidadeDetectada, estado: estadoDetectado, setCidadeManual, limparCidade } = useCidadeInteligente();
 
   // Cidade final (prioridade: URL > Detectada)
   const cidadeFinal = cidadeParam || cidadeDetectada;
   const estadoFinal = estadoParam || estadoDetectado;
 
-  // CARREGAR TODOS OS ESTABELECIMENTOS IMEDIATAMENTE
+  // CARREGAR TODOS OS ESTABELECIMENTOS
   const { data: estabelecimentos, isLoading: isLoadingEstabelecimentos } = useEstabelecimentos({
     showAll: true,
     enabled: true,
   });
 
-  // REMOVIDO: useEffect com setForceUpdate - desnecessário, React Query já faz isso
-
-  // Filtrar por cidade, categoria, subcategoria, distância e busca (client-side)
+  // Filtrar por cidade, categoria, subcategoria, distancia e busca
   const { estabelecimentosFiltrados, usandoFallback } = useMemo(() => {
     if (!estabelecimentos || estabelecimentos.length === 0) {
       return { estabelecimentosFiltrados: [], usandoFallback: false };
@@ -79,7 +73,7 @@ const Index = () => {
     let filtrados = [...estabelecimentos];
     let usouFallback = false;
 
-    // Filtrar por cidade (se detectada/selecionada)
+    // Filtrar por cidade
     if (cidadeFinal && estadoFinal) {
       const filtradosPorCidade = filtrados.filter(
         (est) =>
@@ -87,7 +81,6 @@ const Index = () => {
           est.estado?.toLowerCase() === estadoFinal.toLowerCase(),
       );
 
-      // Se não tem na cidade, mostrar de todas as cidades (fallback)
       if (filtradosPorCidade.length > 0) {
         filtrados = filtradosPorCidade;
       } else {
@@ -111,7 +104,7 @@ const Index = () => {
       });
     }
 
-    // Filtrar por distância (se tiver localização do usuário)
+    // Filtrar por distancia
     if (filterDistance && userLocation) {
       filtrados = filtrados.filter((est) => {
         if (!est.latitude || !est.longitude) return false;
@@ -147,13 +140,8 @@ const Index = () => {
     userLocation,
   ]);
 
-  // Dados para exibição - SEMPRE ter algo para mostrar
+  // Dados para exibicao
   const dadosParaExibir = useMemo(() => {
-    // DEBUG - REMOVER DEPOIS
-    if (estabelecimentosFiltrados?.length > 0) {
-      console.log('[Index] Primeiro estabelecimento filtrado:', estabelecimentosFiltrados[0]);
-    }
-    
     if (estabelecimentosFiltrados && estabelecimentosFiltrados.length > 0) {
       return estabelecimentosFiltrados;
     }
@@ -162,8 +150,6 @@ const Index = () => {
     }
     return [];
   }, [estabelecimentosFiltrados, estabelecimentos]);
-
-  // REMOVIDO: useEffect com console.log - poluía console
 
   // Transformar estabelecimentos para o formato do mapa
   const estabelecimentosParaMapa = useMemo(() => {
@@ -235,20 +221,29 @@ const Index = () => {
     setSearchParams(new URLSearchParams());
   };
 
-  // SEO dinâmico
+  // Handler para scroll ate o search do hero
+  const handleSearchClick = () => {
+    const searchInput = document.querySelector("[data-search-input]") as HTMLInputElement;
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
+  // SEO dinamico
   useSEO({
     title: cidadeFinal
-      ? `Benefícios para Aniversariantes em ${cidadeFinal}, ${estadoFinal}`
-      : "O Maior Guia de Benefícios para Aniversariantes",
+      ? `Beneficios para Aniversariantes em ${cidadeFinal}, ${estadoFinal}`
+      : "O Maior Guia de Beneficios para Aniversariantes",
     description: cidadeFinal
-      ? `Encontre ${estabelecimentosFiltrados.length} estabelecimentos com benefícios exclusivos para aniversariantes em ${cidadeFinal}. Restaurantes, bares, academias e muito mais!`
-      : "Descubra benefícios exclusivos para aniversariantes em restaurantes, bares, academias e mais de 50 categorias. Cadastre-se grátis!",
+      ? `Encontre ${estabelecimentosFiltrados.length} estabelecimentos com beneficios exclusivos para aniversariantes em ${cidadeFinal}. Restaurantes, bares, academias e muito mais!`
+      : "Descubra beneficios exclusivos para aniversariantes em restaurantes, bares, academias e mais de 50 categorias. Cadastre-se gratis!",
   });
 
-  // Título e subtítulo da seção baseado no contexto
+  // Titulo e subtitulo da secao baseado no contexto
   const destaquesConfig = getSectionTitle("destaques", cidadeFinal || undefined);
 
-  // Sistema de rotação dinâmica de seções
+  // Sistema de rotacao dinamica de secoes
   const {
     sections: rotatingSections,
     animationKey,
@@ -261,7 +256,7 @@ const Index = () => {
     lockDuration: 10000,
   });
 
-  // Agrupar estabelecimentos por categoria para as seções rotativas
+  // Agrupar estabelecimentos por categoria para as secoes rotativas
   const secoesDinamicas = useMemo(() => {
     if (!dadosParaExibir || dadosParaExibir.length === 0) return [];
     if (categoriaParam || buscaParam) return [];
@@ -290,12 +285,12 @@ const Index = () => {
       .filter((section) => section.hasContent);
   }, [dadosParaExibir, rotatingSections, categoriaParam, buscaParam]);
 
-  // Lógica de exibição simplificada
+  // Logica de exibicao simplificada
   const mostrarCarrosseis = !categoriaParam && !buscaParam && secoesDinamicas.length > 0;
   const mostrarGridSimples = !isLoadingEstabelecimentos && !mostrarCarrosseis && !categoriaParam && !buscaParam;
   const isFiltered = !!(categoriaParam || buscaParam);
 
-  // Função para navegar para explorar com busca
+  // Funcao para navegar para explorar com busca
   const handleHeroBuscar = () => {
     navigate(
       `/explorar${buscaParam ? `?q=${buscaParam}` : ""}${cidadeFinal ? `${buscaParam ? "&" : "?"}cidade=${cidadeFinal}&estado=${estadoFinal}` : ""}`,
@@ -304,7 +299,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      {/* Header com callback para search */}
+      <Header onSearchClick={handleSearchClick} searchPlaceholder="Buscar estabelecimentos..." />
 
       <main className="flex-1">
         {/* Hero Section - Apenas na home sem filtros */}
@@ -318,9 +314,9 @@ const Index = () => {
           />
         )}
 
-        {/* Search Bar alternativa quando filtrado */}
+        {/* Search Bar quando filtrado - com padding ajustado */}
         {isFiltered && (
-          <div className="bg-[#240046] pt-24 pb-6">
+          <div className="bg-[#240046] pt-20 pb-6">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
               <AirbnbSearchBar
                 cidade={cidadeFinal || ""}
@@ -335,8 +331,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* Pills de categorias */}
-        <div className="bg-[#240046] sticky top-16 z-30">
+        {/* Pills de categorias - sticky ajustado para header dinamico */}
+        <div className="bg-[#240046] sticky top-14 lg:top-16 z-30">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
@@ -350,7 +346,7 @@ const Index = () => {
                 />
               </div>
 
-              {/* Botão de Filtros */}
+              {/* Botao de Filtros */}
               <Button
                 variant="outline"
                 size="sm"
@@ -399,14 +395,14 @@ const Index = () => {
               </div>
             )}
 
-            {/* MODO CARROSSÉIS */}
+            {/* MODO CARROSSEIS */}
             {!isLoadingEstabelecimentos && mostrarCarrosseis && (
               <div className="space-y-8 md:space-y-12">
                 {usandoFallback && cidadeFinal && (
                   <div className="bg-[#240046]/10 border border-[#240046]/20 rounded-xl px-6 py-4">
                     <p className="text-sm text-[#222222] text-center">
-                      <span className="font-medium">Ainda não temos estabelecimentos em {cidadeFinal}.</span> Mostrando
-                      lugares de outras cidades disponíveis.
+                      <span className="font-medium">Ainda nao temos estabelecimentos em {cidadeFinal}.</span> Mostrando
+                      lugares de outras cidades disponiveis.
                     </p>
                   </div>
                 )}
@@ -441,14 +437,14 @@ const Index = () => {
               </div>
             )}
 
-            {/* MODO GRID SIMPLES - FALLBACK GARANTIDO */}
+            {/* MODO GRID SIMPLES */}
             {!isLoadingEstabelecimentos && mostrarGridSimples && dadosParaExibir.length > 0 && (
               <div className="space-y-8">
                 {usandoFallback && cidadeFinal && (
                   <div className="bg-[#240046]/10 border border-[#240046]/20 rounded-xl px-6 py-4">
                     <p className="text-sm text-[#222222] text-center">
-                      <span className="font-medium">Ainda não temos estabelecimentos em {cidadeFinal}.</span> Mostrando
-                      lugares de outras cidades disponíveis.
+                      <span className="font-medium">Ainda nao temos estabelecimentos em {cidadeFinal}.</span> Mostrando
+                      lugares de outras cidades disponiveis.
                     </p>
                   </div>
                 )}
@@ -508,9 +504,9 @@ const Index = () => {
                       <div className="bg-[#240046]/10 border border-[#240046]/20 rounded-lg px-4 py-2">
                         <p className="text-sm text-[#240046]">
                           <span className="font-medium">
-                            Ainda não temos {categoriaParam?.toLowerCase() || "lugares"} em {cidadeFinal}.
+                            Ainda nao temos {categoriaParam?.toLowerCase() || "lugares"} em {cidadeFinal}.
                           </span>{" "}
-                          Mostrando de outras cidades disponíveis.
+                          Mostrando de outras cidades disponiveis.
                         </p>
                       </div>
                     )}
@@ -607,9 +603,9 @@ const Index = () => {
                 </div>
               )}
 
-              {/* Distância */}
+              {/* Distancia */}
               <div>
-                <h3 className="text-sm font-medium text-foreground mb-3">Distância</h3>
+                <h3 className="text-sm font-medium text-foreground mb-3">Distancia</h3>
                 {!userLocation ? (
                   <Button
                     variant="outline"
@@ -619,7 +615,7 @@ const Index = () => {
                     className="gap-2"
                   >
                     <MapPin className="h-4 w-4" />
-                    {locationLoading ? "Obtendo localização..." : "Usar minha localização"}
+                    {locationLoading ? "Obtendo localizacao..." : "Usar minha localizacao"}
                   </Button>
                 ) : (
                   <div className="flex flex-wrap gap-2">
@@ -634,7 +630,7 @@ const Index = () => {
                         }`}
                         onClick={() => setFilterDistance(filterDistance === km ? null : km)}
                       >
-                        Até {km} km
+                        Ate {km} km
                       </Badge>
                     ))}
                   </div>
@@ -643,12 +639,12 @@ const Index = () => {
 
               {/* Validade */}
               <div>
-                <h3 className="text-sm font-medium text-foreground mb-3">Validade do Benefício</h3>
+                <h3 className="text-sm font-medium text-foreground mb-3">Validade do Beneficio</h3>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { value: "dia", label: "🎂 No dia" },
-                    { value: "semana", label: "📅 Na semana" },
-                    { value: "mes", label: "🗓️ No mês" },
+                    { value: "dia", label: "No dia" },
+                    { value: "semana", label: "Na semana" },
+                    { value: "mes", label: "No mes" },
                   ].map((opt) => (
                     <Badge
                       key={opt.value}

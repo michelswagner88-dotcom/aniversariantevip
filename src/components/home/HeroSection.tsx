@@ -1,3 +1,4 @@
+// src/components/home/HeroSection.tsx
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { Search, MapPin, Mic, MicOff, Gift, X, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -63,7 +64,7 @@ const PLACEHOLDERS = [
   "Digite o nome de um restaurante...",
   "Busque por um bar ou pub...",
   "Encontre sua academia...",
-  "Procure um salão de beleza...",
+  "Procure um salao de beleza...",
   "Busque uma loja...",
   "Digite o nome do estabelecimento...",
 ];
@@ -450,7 +451,8 @@ const HeroSection = memo(function HeroSection({
 
   return (
     <section
-      className="relative min-h-[420px] sm:min-h-[450px] md:min-h-[500px] flex items-center justify-center overflow-hidden pt-24 sm:pt-28 pb-8 sm:pb-12 px-3 sm:px-4 bg-[#240046]"
+      id="hero-section"
+      className="relative min-h-[420px] sm:min-h-[450px] md:min-h-[500px] flex items-center justify-center overflow-hidden pt-20 sm:pt-24 pb-8 sm:pb-12 px-3 sm:px-4 bg-[#240046]"
       aria-labelledby="hero-title"
     >
       <div className="relative z-10 container mx-auto px-2 sm:px-4 text-center">
@@ -480,10 +482,10 @@ const HeroSection = memo(function HeroSection({
             !reducedMotion && "animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100",
           )}
         >
-          Seu aniversário merece
+          Seu aniversario merece
           <br />
           <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
-            benefícios exclusivos
+            beneficios exclusivos
           </span>
         </h1>
 
@@ -526,7 +528,7 @@ const HeroSection = memo(function HeroSection({
                   <button
                     type="button"
                     onClick={handleCloseCidadeEdit}
-                    aria-label="Fechar seleção de cidade"
+                    aria-label="Fechar selecao de cidade"
                     className={cn(
                       "w-8 h-8 flex items-center justify-center rounded-full",
                       !reducedMotion && "transition-colors hover:bg-[#240046]/10",
@@ -618,6 +620,8 @@ const HeroSection = memo(function HeroSection({
                 onFocus={handleBuscaFocus}
                 placeholder={PLACEHOLDERS[currentPlaceholder]}
                 autoComplete="off"
+                data-search-input
+                id="hero-search-input"
                 className="flex-1 bg-transparent text-[#240046] placeholder-[#240046]/60 outline-none text-sm sm:text-base min-w-0"
               />
 
@@ -626,7 +630,7 @@ const HeroSection = memo(function HeroSection({
                 <button
                   type="button"
                   onClick={handleMicClick}
-                  aria-label={isListening ? "Parar gravação de voz" : "Iniciar busca por voz"}
+                  aria-label={isListening ? "Parar gravacao de voz" : "Iniciar busca por voz"}
                   aria-pressed={isListening}
                   className={cn(
                     "w-10 h-10 flex items-center justify-center rounded-full",
@@ -681,7 +685,7 @@ const HeroSection = memo(function HeroSection({
                         >
                           <p className="text-[#240046] font-semibold text-sm">{est.nome_fantasia}</p>
                           <p className="text-[#240046]/60 text-xs">
-                            {Array.isArray(est.categoria) ? est.categoria[0] : est.categoria} • {est.cidade},{" "}
+                            {Array.isArray(est.categoria) ? est.categoria[0] : est.categoria} - {est.cidade},{" "}
                             {est.estado}
                             {est.foraDaCidade && <span className="ml-2 text-amber-600">(outra cidade)</span>}
                           </p>

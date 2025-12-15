@@ -20,7 +20,7 @@ import { useAppUpdate } from "@/hooks/useAppUpdate";
 import ScrollToTop from "@/components/ScrollToTop";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
 import VersionBadge from "@/components/debug/VersionBadge";
-import PasswordProtection from "@/components/auth/PasswordProtection";
+// import PasswordProtection from "@/components/auth/PasswordProtection"; // Temporariamente desabilitado
 
 // Lazy load das páginas principais
 const Index = lazy(() => import("./pages/Index"));
@@ -76,7 +76,6 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <PasswordProtection>
     <ThemeProvider defaultTheme="dark" storageKey="vip-theme">
     <TooltipProvider>
       <Toaster />
@@ -467,7 +466,6 @@ const App = () => (
       </Sentry.ErrorBoundary>
     </TooltipProvider>
   </ThemeProvider>
-  </PasswordProtection>
 );
 
 export default App;

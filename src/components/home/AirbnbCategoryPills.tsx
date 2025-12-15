@@ -42,6 +42,19 @@ const useDebounce = <T extends (...args: any[]) => void>(fn: T, delay: number): 
   ) as T;
 };
 
+// Normaliza categoria para ID (minúsculo, sem espaços)
+const normalizeCategoriaToId = (cat: string): string => {
+  if (!cat) return "";
+  const lower = cat.toLowerCase().trim();
+
+  // Procura correspondência exata primeiro
+  const found = CATEGORIAS.find(
+    (c) => c.id === lower || c.label.toLowerCase() === lower || c.plural.toLowerCase() === lower,
+  );
+
+  return found?.id || lower;
+};
+
 export const AirbnbCategoryPills = memo(
   ({ categoriaAtiva, onCategoriaChange, estabelecimentos, isLoading = false }: AirbnbCategoryPillsProps) => {
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -49,6 +62,7 @@ export const AirbnbCategoryPills = memo(
     const [showRightFade, setShowRightFade] = useState(true);
     const reducedMotion = useReducedMotion();
 
+    // Contar estabelecimentos por categoria (normalizado para ID)
     const contagens = useMemo(() => {
       const counts: Record<string, number> = { todos: estabelecimentos.length };
 
@@ -56,7 +70,8 @@ export const AirbnbCategoryPills = memo(
         const cats = Array.isArray(est.categoria) ? est.categoria : [est.categoria];
         cats.forEach((cat: string) => {
           if (cat) {
-            counts[cat] = (counts[cat] || 0) + 1;
+            const normalizedId = normalizeCategoriaToId(cat);
+            counts[normalizedId] = (counts[normalizedId] || 0) + 1;
           }
         });
       });
@@ -64,19 +79,21 @@ export const AirbnbCategoryPills = memo(
       return counts;
     }, [estabelecimentos]);
 
+    // Configurar categorias usando ID para lógica, PLURAL para exibição
     const categoriasConfig = useMemo(() => {
       const configs = [
         { id: null, nome: "Todos", icon: "🚀" },
         ...CATEGORIAS.map((cat) => ({
-          id: cat.plural,
-          nome: cat.plural,
+          id: cat.id, // ← ID para lógica de filtro
+          nome: cat.plural, // ← Plural para exibição
           icon: cat.icon,
         })),
       ];
 
+      // Filtrar apenas categorias que têm estabelecimentos
       return configs.filter((cat) => {
         if (cat.id === null) return true;
-        return contagens[cat.id] > 0;
+        return (contagens[cat.id] || 0) > 0;
       });
     }, [contagens]);
 

@@ -13,12 +13,28 @@ const HAPTIC_LIGHT = 10;
 // TYPES
 // =============================================================================
 
-interface Estabelecimento {
+// Tipo que MapaEstabelecimentos espera
+interface EstabelecimentoMapa {
+  id: string;
+  nome_fantasia: string;
+  categoria: string[] | null;
+  latitude: number;
+  longitude: number;
+  endereco_formatado?: string;
+  logo_url?: string;
+  cidade?: string;
+  estado?: string;
+  bairro?: string;
+  distancia?: number;
+}
+
+// Tipo que pode vir da prop (mais flexível)
+interface EstabelecimentoInput {
   id: string;
   nome_fantasia?: string;
   latitude?: number | null;
   longitude?: number | null;
-  categoria?: string | string[];
+  categoria?: string | string[] | null;
   descricao_beneficio?: string;
   cidade?: string;
   estado?: string;
@@ -29,7 +45,7 @@ interface Estabelecimento {
 }
 
 interface MapFABProps {
-  estabelecimentos: Estabelecimento[];
+  estabelecimentos: EstabelecimentoInput[];
   className?: string;
 }
 
@@ -57,14 +73,12 @@ const useFocusTrap = (isActive: boolean, containerRef: React.RefObject<HTMLEleme
 
   useEffect(() => {
     if (!isActive) {
-      // Restore focus when closing
       if (previousActiveElement.current) {
         previousActiveElement.current.focus();
       }
       return;
     }
 
-    // Save current focus
     previousActiveElement.current = document.activeElement as HTMLElement;
 
     const container = containerRef.current;
@@ -121,17 +135,39 @@ export const MapFAB = memo(({ estabelecimentos, className }: MapFABProps) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
 
-  // Focus trap
   useFocusTrap(isMapOpen, modalRef);
 
-  // Filter establishments with valid coordinates
-  const estabelecimentosComCoordenadas = useMemo(() => {
-    return estabelecimentos.filter(
-      (est) => est.latitude != null && est.longitude != null && est.latitude !== 0 && est.longitude !== 0,
-    );
+  // Filter and convert establishments with valid coordinates
+  const estabelecimentosComCoordenadas = useMemo((): EstabelecimentoMapa[] => {
+    return estabelecimentos
+      .filter(
+        (
+          est,
+        ): est is EstabelecimentoInput & {
+          nome_fantasia: string;
+          latitude: number;
+          longitude: number;
+        } =>
+          typeof est.nome_fantasia === "string" &&
+          est.nome_fantasia.length > 0 &&
+          typeof est.latitude === "number" &&
+          typeof est.longitude === "number" &&
+          est.latitude !== 0 &&
+          est.longitude !== 0,
+      )
+      .map((est) => ({
+        id: est.id,
+        nome_fantasia: est.nome_fantasia,
+        latitude: est.latitude,
+        longitude: est.longitude,
+        categoria: Array.isArray(est.categoria) ? est.categoria : est.categoria ? [est.categoria] : null,
+        logo_url: est.logo_url,
+        cidade: est.cidade,
+        estado: est.estado,
+        bairro: est.bairro,
+      }));
   }, [estabelecimentos]);
 
-  // Close on Escape
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isMapOpen) {
@@ -143,7 +179,6 @@ export const MapFAB = memo(({ estabelecimentos, className }: MapFABProps) => {
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isMapOpen]);
 
-  // Lock body scroll when open
   useEffect(() => {
     if (isMapOpen) {
       document.body.style.overflow = "hidden";
@@ -156,7 +191,6 @@ export const MapFAB = memo(({ estabelecimentos, className }: MapFABProps) => {
     };
   }, [isMapOpen]);
 
-  // Handlers
   const handleOpenMap = useCallback(() => {
     haptic();
     setIsMapOpen(true);
@@ -169,12 +203,10 @@ export const MapFAB = memo(({ estabelecimentos, className }: MapFABProps) => {
 
   const count = estabelecimentosComCoordenadas.length;
 
-  // Don't render if no establishments with coordinates
   if (count === 0) return null;
 
   return (
     <>
-      {/* FAB Button (mobile only) */}
       <button
         onClick={handleOpenMap}
         aria-label={`Mostrar mapa com ${count} ${count === 1 ? "estabelecimento" : "estabelecimentos"}`}
@@ -194,7 +226,6 @@ export const MapFAB = memo(({ estabelecimentos, className }: MapFABProps) => {
         <span>Mostrar mapa</span>
       </button>
 
-      {/* Fullscreen Map Modal */}
       {isMapOpen && (
         <div
           ref={modalRef}
@@ -203,7 +234,6 @@ export const MapFAB = memo(({ estabelecimentos, className }: MapFABProps) => {
           aria-labelledby="map-modal-title"
           className={cn("fixed inset-0 z-50 bg-white", !reducedMotion && "animate-in fade-in duration-200")}
         >
-          {/* Header */}
           <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-white via-white/90 to-transparent">
             <div className="flex items-center justify-between">
               <div>
@@ -229,10 +259,8 @@ export const MapFAB = memo(({ estabelecimentos, className }: MapFABProps) => {
             </div>
           </div>
 
-          {/* Map */}
           <MapaEstabelecimentos estabelecimentos={estabelecimentosComCoordenadas} height="100vh" />
 
-          {/* Bottom Button */}
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
             <button
               onClick={handleCloseMap}

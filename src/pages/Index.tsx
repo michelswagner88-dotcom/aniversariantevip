@@ -299,8 +299,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header com callback para search */}
-      <Header onSearchClick={handleSearchClick} searchPlaceholder="Buscar estabelecimentos..." />
+      <Header />
 
       <main className="flex-1">
         {/* Hero Section - Apenas na home sem filtros */}

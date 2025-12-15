@@ -337,8 +337,8 @@ const CarouselCard = memo(
         {/* CONTEÚDO DO CARD - Com debug visual */}
         <div className="space-y-0.5">
           {/* LINHA 1: Nome do estabelecimento */}
-          <h3 className="font-semibold text-[15px] text-foreground truncate">
-            {nomeDisplay || `[VAZIO: ${est.nome_fantasia}]`}
+          <h3 className="font-semibold text-[15px] text-red-500 truncate">
+            🔥 {nomeDisplay}
           </h3>
 
           {/* LINHA 2: Bairro */}

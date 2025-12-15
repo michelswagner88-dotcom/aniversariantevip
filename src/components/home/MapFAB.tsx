@@ -3,13 +3,29 @@ import { Map, X } from "lucide-react";
 import { MapaEstabelecimentos } from "@/components/MapaEstabelecimentos";
 import { cn } from "@/lib/utils";
 
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const HAPTIC_LIGHT = 10;
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
 interface Estabelecimento {
   id: string;
   nome_fantasia?: string;
   latitude?: number | null;
   longitude?: number | null;
   categoria?: string | string[];
-  [key: string]: any;
+  descricao_beneficio?: string;
+  cidade?: string;
+  estado?: string;
+  bairro?: string;
+  slug?: string;
+  logo_url?: string;
+  galeria_fotos?: string[];
 }
 
 interface MapFABProps {
@@ -17,12 +33,17 @@ interface MapFABProps {
   className?: string;
 }
 
+// =============================================================================
+// HOOKS
+// =============================================================================
+
 const useReducedMotion = (): boolean => {
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
+  );
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(query.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     query.addEventListener("change", handler);
     return () => query.removeEventListener("change", handler);
@@ -31,17 +52,19 @@ const useReducedMotion = (): boolean => {
   return reducedMotion;
 };
 
-const useFocusTrap = (isActive: boolean, containerRef: React.RefObject<HTMLElement>) => {
+const useFocusTrap = (isActive: boolean, containerRef: React.RefObject<HTMLElement | null>) => {
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!isActive) {
+      // Restore focus when closing
       if (previousActiveElement.current) {
         previousActiveElement.current.focus();
       }
       return;
     }
 
+    // Save current focus
     previousActiveElement.current = document.activeElement as HTMLElement;
 
     const container = containerRef.current;
@@ -50,6 +73,8 @@ const useFocusTrap = (isActive: boolean, containerRef: React.RefObject<HTMLEleme
     const focusableElements = container.querySelectorAll<HTMLElement>(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     );
+
+    if (focusableElements.length === 0) return;
 
     const firstElement = focusableElements[0];
     const lastElement = focusableElements[focusableElements.length - 1];
@@ -77,17 +102,36 @@ const useFocusTrap = (isActive: boolean, containerRef: React.RefObject<HTMLEleme
   }, [isActive, containerRef]);
 };
 
+// =============================================================================
+// UTILS
+// =============================================================================
+
+const haptic = (pattern: number = HAPTIC_LIGHT) => {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
 export const MapFAB = memo(({ estabelecimentos, className }: MapFABProps) => {
   const [isMapOpen, setIsMapOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
 
+  // Focus trap
   useFocusTrap(isMapOpen, modalRef);
 
+  // Filter establishments with valid coordinates
   const estabelecimentosComCoordenadas = useMemo(() => {
-    return estabelecimentos.filter((est) => est.latitude && est.longitude && est.latitude !== 0);
+    return estabelecimentos.filter(
+      (est) => est.latitude != null && est.longitude != null && est.latitude !== 0 && est.longitude !== 0,
+    );
   }, [estabelecimentos]);
 
+  // Close on Escape
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isMapOpen) {
@@ -99,6 +143,7 @@ export const MapFAB = memo(({ estabelecimentos, className }: MapFABProps) => {
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isMapOpen]);
 
+  // Lock body scroll when open
   useEffect(() => {
     if (isMapOpen) {
       document.body.style.overflow = "hidden";
@@ -111,32 +156,35 @@ export const MapFAB = memo(({ estabelecimentos, className }: MapFABProps) => {
     };
   }, [isMapOpen]);
 
+  // Handlers
   const handleOpenMap = useCallback(() => {
-    if (navigator.vibrate) navigator.vibrate(10);
+    haptic();
     setIsMapOpen(true);
   }, []);
 
   const handleCloseMap = useCallback(() => {
-    if (navigator.vibrate) navigator.vibrate(10);
+    haptic();
     setIsMapOpen(false);
   }, []);
 
   const count = estabelecimentosComCoordenadas.length;
 
+  // Don't render if no establishments with coordinates
   if (count === 0) return null;
 
   return (
     <>
+      {/* FAB Button (mobile only) */}
       <button
         onClick={handleOpenMap}
-        aria-label={`Mostrar mapa com ${count} estabelecimentos`}
+        aria-label={`Mostrar mapa com ${count} ${count === 1 ? "estabelecimento" : "estabelecimentos"}`}
         aria-haspopup="dialog"
         className={cn(
-          "fixed bottom-24 left-1/2 -translate-x-1/2 z-40",
+          "fixed bottom-20 left-1/2 -translate-x-1/2 z-40",
           "flex items-center gap-2 px-5 py-3 min-h-[44px]",
-          "bg-slate-900 dark:bg-white text-white dark:text-slate-900",
+          "bg-[#240046] text-white",
           "rounded-full shadow-lg font-medium text-sm",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2",
           "md:hidden",
           !reducedMotion && "transition-all hover:shadow-xl hover:scale-105 active:scale-95",
           className,
@@ -146,24 +194,23 @@ export const MapFAB = memo(({ estabelecimentos, className }: MapFABProps) => {
         <span>Mostrar mapa</span>
       </button>
 
+      {/* Fullscreen Map Modal */}
       {isMapOpen && (
         <div
           ref={modalRef}
           role="dialog"
           aria-modal="true"
-          aria-label="Mapa de estabelecimentos"
-          className={cn(
-            "fixed inset-0 z-50 bg-white dark:bg-slate-950",
-            !reducedMotion && "animate-in fade-in duration-200",
-          )}
+          aria-labelledby="map-modal-title"
+          className={cn("fixed inset-0 z-50 bg-white", !reducedMotion && "animate-in fade-in duration-200")}
         >
-          <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-white dark:from-slate-950 to-transparent">
+          {/* Header */}
+          <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-white via-white/90 to-transparent">
             <div className="flex items-center justify-between">
               <div>
-                <h2 id="map-modal-title" className="text-lg font-semibold text-slate-900 dark:text-white">
+                <h2 id="map-modal-title" className="text-lg font-semibold text-[#240046]">
                   Mapa
                 </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-slate-500">
                   {count} {count === 1 ? "lugar" : "lugares"}
                 </p>
               </div>
@@ -172,27 +219,29 @@ export const MapFAB = memo(({ estabelecimentos, className }: MapFABProps) => {
                 aria-label="Fechar mapa"
                 className={cn(
                   "flex items-center justify-center w-10 h-10 min-w-[44px] min-h-[44px]",
-                  "bg-white dark:bg-slate-800 rounded-full shadow-md",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
+                  "bg-white rounded-full shadow-md border border-slate-100",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#240046]",
                   !reducedMotion && "transition-shadow hover:shadow-lg",
                 )}
               >
-                <X className="w-5 h-5 text-slate-900 dark:text-white" aria-hidden="true" />
+                <X className="w-5 h-5 text-[#240046]" aria-hidden="true" />
               </button>
             </div>
           </div>
 
-          <MapaEstabelecimentos estabelecimentos={estabelecimentosComCoordenadas as any[]} height="100vh" />
+          {/* Map */}
+          <MapaEstabelecimentos estabelecimentos={estabelecimentosComCoordenadas} height="100vh" />
 
+          {/* Bottom Button */}
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
             <button
               onClick={handleCloseMap}
               aria-label="Fechar mapa e mostrar lista"
               className={cn(
                 "flex items-center gap-2 px-6 py-3 min-h-[44px]",
-                "bg-slate-900 dark:bg-white text-white dark:text-slate-900",
+                "bg-[#240046] text-white",
                 "rounded-full shadow-lg font-medium",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2",
                 !reducedMotion && "transition-transform hover:scale-105",
               )}
             >

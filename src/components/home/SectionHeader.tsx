@@ -1,8 +1,17 @@
-import { memo, useCallback, useState, useEffect } from "react";
+import { memo, useCallback, useState, useEffect, useId } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getSectionTitle as getTitle, getCategoryTitle, getCategorySubtitle } from "@/utils/sectionTitles";
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const HAPTIC_LIGHT = 10;
+
+// =============================================================================
+// TYPES
+// =============================================================================
 
 interface SectionHeaderProps {
   title: string;
@@ -13,12 +22,17 @@ interface SectionHeaderProps {
   id?: string;
 }
 
+// =============================================================================
+// HOOKS
+// =============================================================================
+
 const useReducedMotion = (): boolean => {
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
+  );
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(query.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     query.addEventListener("change", handler);
     return () => query.removeEventListener("change", handler);
@@ -27,19 +41,35 @@ const useReducedMotion = (): boolean => {
   return reducedMotion;
 };
 
+// =============================================================================
+// UTILS
+// =============================================================================
+
+const haptic = (pattern: number = HAPTIC_LIGHT) => {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
 export const SectionHeader = memo(
   ({ title, subtitle, count, linkHref, linkText = "Ver todos", id }: SectionHeaderProps) => {
     const reducedMotion = useReducedMotion();
+    const generatedId = useId();
+    const headingId = id || `section-heading-${generatedId}`;
 
     const handleLinkClick = useCallback(() => {
-      if (navigator.vibrate) navigator.vibrate(10);
+      haptic();
     }, []);
 
-    const headingId = id || `section-heading-${title.toLowerCase().replace(/\s+/g, "-")}`;
     const countText = count !== undefined && count > 0 ? `${count} ${count === 1 ? "lugar" : "lugares"}` : null;
 
     return (
       <div className="flex justify-between items-center mb-6 sm:mb-8">
+        {/* Title & Subtitle */}
         <div className="flex flex-col gap-1">
           <h2 id={headingId} className="text-lg sm:text-xl md:text-2xl font-semibold text-foreground leading-tight">
             {title}
@@ -48,6 +78,7 @@ export const SectionHeader = memo(
           {!subtitle && countText && <span className="text-sm text-muted-foreground tabular-nums">{countText}</span>}
         </div>
 
+        {/* Link */}
         {linkHref && (
           <Link
             to={linkHref}
@@ -84,14 +115,3 @@ export const SectionHeader = memo(
 );
 
 SectionHeader.displayName = "SectionHeader";
-
-// Re-exports para compatibilidade
-export const getSectionTitle = (categoria: string, cidade?: string | null): string => {
-  return getCategoryTitle(categoria, cidade || undefined);
-};
-
-export const getDestaquesTitle = (cidade?: string | null): string => {
-  return getTitle("destaques", cidade || undefined).titulo;
-};
-
-export default SectionHeader;

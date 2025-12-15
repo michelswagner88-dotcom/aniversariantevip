@@ -4,15 +4,17 @@ import { Button } from "@/components/ui/button";
 import { CityCombobox } from "@/components/CityCombobox";
 import { cn } from "@/lib/utils";
 
-interface SemCidadeViewProps {
-  onCidadeSelect: (cidade: string, estado: string) => void;
-  cidadesPopulares?: CidadePopular[];
-}
+// =============================================================================
+// CONSTANTS
+// =============================================================================
 
-interface CidadePopular {
-  cidade: string;
-  estado: string;
-}
+const HAPTIC_LIGHT = 10;
+const HAPTIC_MEDIUM: number[] = [10, 50, 10];
+const GEOLOCATION_TIMEOUT = 10000;
+const GEOLOCATION_MAX_AGE = 300000;
+const ANIMATION_BASE_DELAY = 400;
+const ANIMATION_STEP_DELAY = 50;
+const NOMINATIM_USER_AGENT = "AniversarianteVIP/1.0";
 
 const DEFAULT_CIDADES_POPULARES: CidadePopular[] = [
   { cidade: "Brasília", estado: "DF" },
@@ -53,12 +55,31 @@ const ESTADOS_BR: Record<string, string> = {
   Tocantins: "TO",
 };
 
+// =============================================================================
+// TYPES
+// =============================================================================
+
+interface SemCidadeViewProps {
+  onCidadeSelect: (cidade: string, estado: string) => void;
+  cidadesPopulares?: CidadePopular[];
+}
+
+interface CidadePopular {
+  cidade: string;
+  estado: string;
+}
+
+// =============================================================================
+// HOOKS
+// =============================================================================
+
 const useReducedMotion = (): boolean => {
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
+  );
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(query.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     query.addEventListener("change", handler);
     return () => query.removeEventListener("change", handler);
@@ -67,10 +88,24 @@ const useReducedMotion = (): boolean => {
   return reducedMotion;
 };
 
+// =============================================================================
+// UTILS
+// =============================================================================
+
+const haptic = (pattern: number | number[] = HAPTIC_LIGHT) => {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};
+
 const normalizeEstado = (estado: string): string => {
   if (estado.length === 2) return estado.toUpperCase();
   return ESTADOS_BR[estado] || estado;
 };
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
 
 export const SemCidadeView = memo(
   ({ onCidadeSelect, cidadesPopulares = DEFAULT_CIDADES_POPULARES }: SemCidadeViewProps) => {
@@ -79,7 +114,7 @@ export const SemCidadeView = memo(
     const reducedMotion = useReducedMotion();
 
     const handleUsarLocalizacao = useCallback(async () => {
-      if (navigator.vibrate) navigator.vibrate(10);
+      haptic();
       setIsDetecting(true);
       setError(null);
 
@@ -91,15 +126,15 @@ export const SemCidadeView = memo(
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: false,
-            timeout: 10000,
-            maximumAge: 300000,
+            timeout: GEOLOCATION_TIMEOUT,
+            maximumAge: GEOLOCATION_MAX_AGE,
           });
         });
 
         const response = await fetch(
           `https://nominatim.openstreetmap.org/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&format=json&addressdetails=1`,
           {
-            headers: { "User-Agent": "AniversarianteVIP/1.0" },
+            headers: { "User-Agent": NOMINATIM_USER_AGENT },
           },
         );
 
@@ -113,7 +148,7 @@ export const SemCidadeView = memo(
 
         if (cidade && estado) {
           const estadoNormalizado = normalizeEstado(estado);
-          if (navigator.vibrate) navigator.vibrate([10, 50, 10]);
+          haptic(HAPTIC_MEDIUM);
           onCidadeSelect(cidade, estadoNormalizado);
         } else {
           throw new Error("Não foi possível identificar sua cidade");
@@ -148,7 +183,7 @@ export const SemCidadeView = memo(
     const handleCidadeSelect = useCallback(
       (cidade: string | null, estado: string | null) => {
         if (cidade && estado) {
-          if (navigator.vibrate) navigator.vibrate(10);
+          haptic();
           onCidadeSelect(cidade, estado);
         }
       },
@@ -157,20 +192,10 @@ export const SemCidadeView = memo(
 
     const handleCidadePopularClick = useCallback(
       (item: CidadePopular) => {
-        if (navigator.vibrate) navigator.vibrate(10);
+        haptic();
         onCidadeSelect(item.cidade, item.estado);
       },
       [onCidadeSelect],
-    );
-
-    const handleCidadePopularKeyDown = useCallback(
-      (e: React.KeyboardEvent, item: CidadePopular) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          handleCidadePopularClick(item);
-        }
-      },
-      [handleCidadePopularClick],
     );
 
     return (
@@ -182,6 +207,7 @@ export const SemCidadeView = memo(
         role="main"
         aria-labelledby="sem-cidade-title"
       >
+        {/* Icon */}
         <div className={cn("relative mb-8", !reducedMotion && "animate-in zoom-in duration-500 delay-100")}>
           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 flex items-center justify-center">
             <span className="text-5xl" aria-hidden="true">
@@ -193,6 +219,7 @@ export const SemCidadeView = memo(
           </div>
         </div>
 
+        {/* Title */}
         <h1
           id="sem-cidade-title"
           className={cn(
@@ -203,6 +230,7 @@ export const SemCidadeView = memo(
           Onde você quer comemorar?
         </h1>
 
+        {/* Subtitle */}
         <p
           className={cn(
             "text-slate-400 text-center max-w-md mb-8",
@@ -212,15 +240,17 @@ export const SemCidadeView = memo(
           Descubra estabelecimentos com benefícios exclusivos para aniversariantes na sua cidade
         </p>
 
+        {/* City Combobox */}
         <div
           className={cn(
             "w-full max-w-md mb-6",
-            !reducedMotion && "animate-in slide-in-from-bottom-4 duration-500 delay-250",
+            !reducedMotion && "animate-in slide-in-from-bottom-4 duration-500 delay-[250ms]",
           )}
         >
           <CityCombobox onSelect={handleCidadeSelect} placeholder="Digite o nome da sua cidade..." className="w-full" />
         </div>
 
+        {/* Geolocation Button */}
         <div
           className={cn(
             "flex flex-col items-center gap-3 mb-12",
@@ -250,11 +280,13 @@ export const SemCidadeView = memo(
             )}
           </Button>
 
+          {/* Error Message */}
           {error && (
             <div
               role="alert"
               className={cn(
-                "flex items-start gap-2 p-3 max-w-md text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg",
+                "flex items-start gap-2 p-3 max-w-md text-sm",
+                "text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg",
                 !reducedMotion && "animate-in fade-in slide-in-from-top-2 duration-200",
               )}
             >
@@ -264,42 +296,46 @@ export const SemCidadeView = memo(
           )}
         </div>
 
+        {/* Popular Cities */}
         <div
           className={cn(
             "w-full max-w-2xl",
-            !reducedMotion && "animate-in slide-in-from-bottom-4 duration-500 delay-350",
+            !reducedMotion && "animate-in slide-in-from-bottom-4 duration-500 delay-[350ms]",
           )}
         >
           <h2 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-4 text-center">
             Cidades populares
           </h2>
 
-          <div className="flex flex-wrap justify-center gap-3" role="list" aria-label="Cidades populares">
+          <ul className="flex flex-wrap justify-center gap-3" aria-label="Cidades populares">
             {cidadesPopulares.map((item, index) => (
-              <button
-                key={`${item.cidade}-${item.estado}`}
-                onClick={() => handleCidadePopularClick(item)}
-                onKeyDown={(e) => handleCidadePopularKeyDown(e, item)}
-                role="listitem"
-                aria-label={`Selecionar ${item.cidade}, ${item.estado}`}
-                style={{
-                  animationDelay: reducedMotion ? "0ms" : `${400 + index * 50}ms`,
-                }}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2.5 min-h-[44px]",
-                  "bg-white/5 border border-white/10 rounded-xl",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-                  !reducedMotion &&
-                    "transition-all hover:bg-white/10 hover:border-violet-500/30 hover:scale-105 active:scale-95",
-                  !reducedMotion && "animate-in fade-in slide-in-from-bottom-2 duration-300 fill-mode-both",
-                )}
-              >
-                <MapPin className="w-4 h-4 text-violet-400" aria-hidden="true" />
-                <span className="text-white font-medium">{item.cidade}</span>
-                <span className="text-xs text-slate-500">{item.estado}</span>
-              </button>
+              <li key={`${item.cidade}-${item.estado}`}>
+                <button
+                  onClick={() => handleCidadePopularClick(item)}
+                  aria-label={`Selecionar ${item.cidade}, ${item.estado}`}
+                  style={{
+                    animationDelay: reducedMotion ? "0ms" : `${ANIMATION_BASE_DELAY + index * ANIMATION_STEP_DELAY}ms`,
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2.5 min-h-[44px]",
+                    "bg-white/5 border border-white/10 rounded-xl",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                    !reducedMotion && [
+                      "transition-all",
+                      "hover:bg-white/10 hover:border-violet-500/30 hover:scale-105",
+                      "active:scale-95",
+                      "animate-in fade-in slide-in-from-bottom-2 duration-300",
+                      "[animation-fill-mode:both]",
+                    ],
+                  )}
+                >
+                  <MapPin className="w-4 h-4 text-violet-400" aria-hidden="true" />
+                  <span className="text-white font-medium">{item.cidade}</span>
+                  <span className="text-xs text-slate-500">{item.estado}</span>
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </div>
     );

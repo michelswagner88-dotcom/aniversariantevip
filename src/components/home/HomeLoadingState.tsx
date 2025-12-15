@@ -1,16 +1,25 @@
 import { memo, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
+// =============================================================================
+// TYPES
+// =============================================================================
+
 interface HomeLoadingStateProps {
   message?: string;
 }
 
+// =============================================================================
+// HOOKS
+// =============================================================================
+
 const useReducedMotion = (): boolean => {
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
+  );
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(query.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     query.addEventListener("change", handler);
     return () => query.removeEventListener("change", handler);
@@ -18,6 +27,10 @@ const useReducedMotion = (): boolean => {
 
   return reducedMotion;
 };
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
 
 export const HomeLoadingState = memo(({ message = "Detectando sua localização..." }: HomeLoadingStateProps) => {
   const reducedMotion = useReducedMotion();
@@ -29,10 +42,12 @@ export const HomeLoadingState = memo(({ message = "Detectando sua localização.
       aria-live="polite"
       aria-busy="true"
     >
+      {/* Spinner */}
       <div className="relative mb-8">
         <div
           className={cn(
-            "w-20 h-20 rounded-full border-4 border-violet-500/20 border-t-violet-500",
+            "w-20 h-20 rounded-full",
+            "border-4 border-[#240046]/20 border-t-[#240046]",
             !reducedMotion && "animate-spin",
           )}
           aria-hidden="true"
@@ -44,9 +59,8 @@ export const HomeLoadingState = memo(({ message = "Detectando sua localização.
         </div>
       </div>
 
+      {/* Message */}
       <p className={cn("text-slate-400 text-center", !reducedMotion && "animate-pulse")}>{message}</p>
-
-      <span className="sr-only">{message}</span>
     </div>
   );
 });

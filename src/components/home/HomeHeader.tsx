@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useCallback, useMemo } from "react";
+import { memo, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
@@ -12,18 +12,36 @@ import { useScrollHeader } from "@/hooks/useScrollHeader";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const BIRTHDAY_BANNER_HEIGHT = 48;
+const SCROLL_THRESHOLD = 80;
+const SCROLL_SENSITIVITY = 8;
+const HAPTIC_LIGHT = 10;
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
 interface UserData {
   name: string | null;
   role: string | null;
   birthDate: string | null;
 }
 
+// =============================================================================
+// HOOKS
+// =============================================================================
+
 const useReducedMotion = (): boolean => {
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
+  );
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(query.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     query.addEventListener("change", handler);
     return () => query.removeEventListener("change", handler);
@@ -53,13 +71,17 @@ const useUserSession = () => {
         return;
       }
 
-      const [profileResult, rolesResult] = await Promise.all([
+      // Use allSettled to handle partial failures gracefully
+      const [profileResult, rolesResult] = await Promise.allSettled([
         supabase.from("profiles").select("nome").eq("id", session.user.id).single(),
         supabase.from("user_roles").select("role").eq("user_id", session.user.id),
       ]);
 
-      const name = profileResult.data?.nome || session.user.email?.split("@")[0] || "Usuário";
-      const role = rolesResult.data?.[0]?.role || null;
+      const profileData = profileResult.status === "fulfilled" ? profileResult.value.data : null;
+      const rolesData = rolesResult.status === "fulfilled" ? rolesResult.value.data : null;
+
+      const name = profileData?.nome || session.user.email?.split("@")[0] || "Usuário";
+      const role = rolesData?.[0]?.role || null;
 
       let birthDate: string | null = null;
 
@@ -103,7 +125,7 @@ const useUserSession = () => {
   return { ...userData, isLoading, logout };
 };
 
-const useFocusTrap = (isActive: boolean, containerRef: React.RefObject<HTMLElement>) => {
+const useFocusTrap = (isActive: boolean, containerRef: React.RefObject<HTMLElement | null>) => {
   useEffect(() => {
     if (!isActive || !containerRef.current) return;
 
@@ -111,6 +133,8 @@ const useFocusTrap = (isActive: boolean, containerRef: React.RefObject<HTMLEleme
     const focusableElements = container.querySelectorAll<HTMLElement>(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     );
+
+    if (focusableElements.length === 0) return;
 
     const firstElement = focusableElements[0];
     const lastElement = focusableElements[focusableElements.length - 1];
@@ -138,16 +162,34 @@ const useFocusTrap = (isActive: boolean, containerRef: React.RefObject<HTMLEleme
   }, [isActive, containerRef]);
 };
 
+// =============================================================================
+// UTILS
+// =============================================================================
+
+const haptic = (pattern: number = HAPTIC_LIGHT) => {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
 export const Header = memo(() => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const mobileMenuRef = useState<HTMLDivElement | null>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const reducedMotion = useReducedMotion();
   const { name: userName, role: userRole, birthDate: dataNascimento, logout } = useUserSession();
   const { isBirthday } = useBirthdayTheme(dataNascimento);
-  const { isVisible } = useScrollHeader({ threshold: 80, sensitivity: 8 });
+  const { isVisible } = useScrollHeader({ threshold: SCROLL_THRESHOLD, sensitivity: SCROLL_SENSITIVITY });
   const isMobile = useIsMobile();
 
+  // Focus trap for mobile menu
+  useFocusTrap(mobileMenuOpen, mobileMenuRef);
+
+  // Close menu on Escape
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && mobileMenuOpen) {
@@ -159,6 +201,7 @@ export const Header = memo(() => {
     return () => document.removeEventListener("keydown", handleEscape);
   }, [mobileMenuOpen]);
 
+  // Lock body scroll when menu is open
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = "hidden";
@@ -171,15 +214,16 @@ export const Header = memo(() => {
     };
   }, [mobileMenuOpen]);
 
+  // Handlers
   const handleLogout = useCallback(async () => {
-    if (navigator.vibrate) navigator.vibrate(10);
+    haptic();
     await logout();
     navigate("/");
     setMobileMenuOpen(false);
   }, [logout, navigate]);
 
   const handleToggleMenu = useCallback(() => {
-    if (navigator.vibrate) navigator.vibrate(10);
+    haptic();
     setMobileMenuOpen((prev) => !prev);
   }, []);
 
@@ -189,13 +233,14 @@ export const Header = memo(() => {
 
   const handleNavigate = useCallback(
     (path: string) => {
-      if (navigator.vibrate) navigator.vibrate(10);
+      haptic();
       navigate(path);
       setMobileMenuOpen(false);
     },
     [navigate],
   );
 
+  // Derived values
   const areaLink = useMemo(() => {
     if (userRole === "aniversariante") return "/area-aniversariante";
     if (userRole === "estabelecimento") return "/area-estabelecimento";
@@ -203,27 +248,24 @@ export const Header = memo(() => {
     return "/";
   }, [userRole]);
 
-  const userInitials = useMemo(() => {
-    return userName?.slice(0, 2).toUpperCase() || "??";
-  }, [userName]);
+  const userInitials = userName?.slice(0, 2).toUpperCase() || "??";
+  const firstName = userName?.split(" ")[0] || "";
+  const headerTop = isBirthday && userName ? BIRTHDAY_BANNER_HEIGHT : 0;
 
-  const firstName = useMemo(() => {
-    return userName?.split(" ")[0] || "";
-  }, [userName]);
-
-  const headerTop = useMemo(() => {
-    return isBirthday && userName ? 48 : 0;
-  }, [isBirthday, userName]);
+  // Header visibility (hide on scroll for mobile only)
+  const headerHidden = isMobile && !isVisible;
 
   return (
     <>
+      {/* Birthday Banner */}
       {isBirthday && userName && <BirthdayBanner firstName={firstName} />}
 
+      {/* Header */}
       <header
         className={cn(
           "fixed left-0 right-0 z-50 bg-[#240046] py-3",
           !reducedMotion && "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
-          isMobile && !isVisible ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100",
+          headerHidden ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100",
         )}
         style={{ top: headerTop }}
         role="banner"
@@ -234,6 +276,7 @@ export const Header = memo(() => {
           aria-label="Navegação principal"
         >
           <div className="flex items-center justify-between h-14">
+            {/* Logo */}
             <Link
               to="/"
               className={cn(
@@ -264,6 +307,7 @@ export const Header = memo(() => {
               </div>
             </Link>
 
+            {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center justify-center flex-1 gap-1 min-w-0 mx-4">
               <NavLink
                 to="/como-funciona"
@@ -303,6 +347,7 @@ export const Header = memo(() => {
               </NavLink>
             </div>
 
+            {/* Desktop User Area */}
             <div className="hidden lg:flex items-center gap-4 flex-shrink-0">
               {userName ? (
                 <>
@@ -360,6 +405,7 @@ export const Header = memo(() => {
               )}
             </div>
 
+            {/* Mobile Menu Button */}
             <button
               onClick={handleToggleMenu}
               aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
@@ -379,8 +425,10 @@ export const Header = memo(() => {
             </button>
           </div>
 
+          {/* Mobile Menu */}
           {mobileMenuOpen && (
             <div
+              ref={mobileMenuRef}
               id="mobile-menu"
               role="dialog"
               aria-modal="true"

@@ -6,6 +6,55 @@ import { useCidadesAutocomplete } from "@/hooks/useCidadesAutocomplete";
 import { cn } from "@/lib/utils";
 
 // =============================================================================
+// WEB SPEECH API TYPES
+// =============================================================================
+
+interface SpeechRecognitionResult {
+  readonly isFinal: boolean;
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionAlternative {
+  readonly transcript: string;
+  readonly confidence: number;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  readonly results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionInstance extends EventTarget {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+interface SpeechRecognitionConstructor {
+  new (): SpeechRecognitionInstance;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  }
+}
+
+// =============================================================================
 // CONSTANTS
 // =============================================================================
 
@@ -78,7 +127,7 @@ const useDebounce = <T,>(value: T, delay: number): T => {
   return debouncedValue;
 };
 
-const useClickOutside = (ref: React.RefObject<HTMLElement>, callback: () => void) => {
+const useClickOutside = (ref: React.RefObject<HTMLElement | null>, callback: () => void) => {
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -95,7 +144,7 @@ const useSpeechRecognition = () => {
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const [transcript, setTranscript] = useState("");
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   useEffect(() => {
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -107,7 +156,7 @@ const useSpeechRecognition = () => {
       recognition.continuous = false;
       recognition.interimResults = false;
 
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         const result = event.results[0][0].transcript;
         setTranscript(result);
         setIsListening(false);
@@ -184,7 +233,6 @@ const useEstabelecimentosSearch = (cidade?: string, estado?: string) => {
         if (data && data.length > 0) {
           setResults(data);
         } else if (cidade && estado) {
-          // Busca em todo Brasil se não encontrou na cidade
           const { data: dataBrasil } = await supabase
             .from("estabelecimentos")
             .select("id, nome_fantasia, categoria, cidade, estado, slug")
@@ -392,7 +440,7 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
         "relative min-h-[420px] sm:min-h-[450px] md:min-h-[500px]",
         "flex items-center justify-center overflow-hidden",
         "pt-24 sm:pt-28 pb-8 sm:pb-12 px-3 sm:px-4",
-        "bg-gradient-to-br from-violet-950 to-purple-900",
+        "bg-gradient-to-br from-[#240046] to-[#3C096C]",
       )}
       aria-labelledby={heroTitleId}
     >
@@ -403,13 +451,13 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
           aria-label="Fazer cadastro gratuito"
           className={cn(
             "inline-flex items-center gap-2",
-            "bg-purple-900/50 border border-white/40 rounded-full",
+            "bg-[#3C096C]/50 border border-white/40 rounded-full",
             "px-4 sm:px-5 py-2.5 mb-5 sm:mb-6 min-h-[44px]",
             "shadow-lg shadow-black/20",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-violet-950",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#240046]",
             !reducedMotion && [
               "transition-all",
-              "hover:bg-violet-800 hover:border-white/60 hover:scale-105",
+              "hover:bg-[#5B21B6] hover:border-white/60 hover:scale-105",
               "active:scale-95",
               "animate-in fade-in slide-in-from-bottom-4 duration-500",
             ],
@@ -468,11 +516,11 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
                 <div
                   className={cn(
                     "flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3",
-                    "sm:border-r border-violet-950/10",
+                    "sm:border-r border-[#240046]/10",
                     "min-w-[140px] sm:min-w-[180px] min-h-[44px]",
                   )}
                 >
-                  <MapPin className="w-5 h-5 text-violet-950 flex-shrink-0" aria-hidden="true" />
+                  <MapPin className="w-5 h-5 text-[#240046] flex-shrink-0" aria-hidden="true" />
                   <label htmlFor={cidadeInputId} className="sr-only">
                     Digite o nome da cidade
                   </label>
@@ -487,7 +535,7 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
                     }}
                     placeholder="Digite a cidade..."
                     autoComplete="off"
-                    className="flex-1 bg-transparent text-violet-950 placeholder-violet-950/60 outline-none text-sm min-w-0"
+                    className="flex-1 bg-transparent text-[#240046] placeholder-[#240046]/60 outline-none text-sm min-w-0"
                   />
                   <button
                     type="button"
@@ -495,10 +543,10 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
                     aria-label="Fechar seleção de cidade"
                     className={cn(
                       "w-8 h-8 flex items-center justify-center rounded-full",
-                      !reducedMotion && "transition-colors hover:bg-violet-950/10",
+                      !reducedMotion && "transition-colors hover:bg-[#240046]/10",
                     )}
                   >
-                    <X className="w-4 h-4 text-violet-950/60" aria-hidden="true" />
+                    <X className="w-4 h-4 text-[#240046]/60" aria-hidden="true" />
                   </button>
                 </div>
               ) : (
@@ -508,16 +556,16 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
                   aria-label={`Cidade selecionada: ${cidadeDisplay}. Clique para alterar`}
                   className={cn(
                     "flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3",
-                    "sm:border-r border-violet-950/10",
+                    "sm:border-r border-[#240046]/10",
                     "rounded-xl sm:rounded-l-full",
                     "min-w-[140px] sm:min-w-[180px] min-h-[44px] text-left",
-                    !reducedMotion && "transition-colors hover:bg-violet-950/5",
+                    !reducedMotion && "transition-colors hover:bg-[#240046]/5",
                   )}
                 >
-                  <MapPin className="w-5 h-5 text-violet-950 flex-shrink-0" aria-hidden="true" />
+                  <MapPin className="w-5 h-5 text-[#240046] flex-shrink-0" aria-hidden="true" />
                   <div className="text-left">
-                    <p className="text-xs text-violet-950/70 uppercase tracking-wide font-medium">Onde</p>
-                    <p className="text-violet-950 font-semibold text-sm sm:text-base truncate max-w-[100px] sm:max-w-[140px]">
+                    <p className="text-xs text-[#240046]/70 uppercase tracking-wide font-medium">Onde</p>
+                    <p className="text-[#240046] font-semibold text-sm sm:text-base truncate max-w-[100px] sm:max-w-[140px]">
                       {cidadeDisplay}
                     </p>
                   </div>
@@ -529,13 +577,13 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
                 <div
                   className={cn(
                     "absolute top-full left-0 right-0 mt-2 z-50",
-                    "bg-white rounded-xl shadow-xl border border-violet-950/10 overflow-hidden",
+                    "bg-white rounded-xl shadow-xl border border-[#240046]/10 overflow-hidden",
                     "min-w-[200px] max-w-[calc(100vw-2rem)]",
                     !reducedMotion && "animate-in fade-in slide-in-from-top-2 duration-200",
                   )}
                 >
                   {isLoadingCidades ? (
-                    <div className="p-4 text-center text-violet-950/60">
+                    <div className="p-4 text-center text-[#240046]/60">
                       <Loader2 className={cn("w-5 h-5 mx-auto", !reducedMotion && "animate-spin")} aria-hidden="true" />
                       <span className="sr-only">Carregando cidades...</span>
                     </div>
@@ -550,14 +598,14 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
                             className={cn(
                               "w-full px-4 py-3 text-left",
                               "flex items-center justify-between gap-2",
-                              "border-b border-violet-950/5 last:border-0 min-h-[44px]",
-                              !reducedMotion && "transition-colors hover:bg-violet-950/5",
+                              "border-b border-[#240046]/5 last:border-0 min-h-[44px]",
+                              !reducedMotion && "transition-colors hover:bg-[#240046]/5",
                             )}
                           >
-                            <span className="text-violet-950 font-medium text-sm">
+                            <span className="text-[#240046] font-medium text-sm">
                               {c.cidade}, {c.estado}
                             </span>
-                            <span className="text-violet-950/50 text-xs">
+                            <span className="text-[#240046]/50 text-xs">
                               {c.total} {c.total === 1 ? "lugar" : "lugares"}
                             </span>
                           </button>
@@ -565,9 +613,9 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
                       ))}
                     </ul>
                   ) : cidadeInput.length >= 2 ? (
-                    <div className="p-4 text-center text-violet-950/60 text-sm">Nenhuma cidade encontrada</div>
+                    <div className="p-4 text-center text-[#240046]/60 text-sm">Nenhuma cidade encontrada</div>
                   ) : (
-                    <div className="p-4 text-center text-violet-950/60 text-sm">Digite para buscar cidades</div>
+                    <div className="p-4 text-center text-[#240046]/60 text-sm">Digite para buscar cidades</div>
                   )}
                 </div>
               )}
@@ -578,7 +626,7 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
               ref={searchContainerRef}
               className="flex-1 flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 relative min-h-[44px]"
             >
-              <Search className="w-5 h-5 text-violet-950 flex-shrink-0" aria-hidden="true" />
+              <Search className="w-5 h-5 text-[#240046] flex-shrink-0" aria-hidden="true" />
               <label htmlFor={buscaInputId} className="sr-only">
                 Buscar estabelecimento por nome
               </label>
@@ -595,7 +643,7 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
                 }}
                 placeholder={PLACEHOLDERS[currentPlaceholder]}
                 autoComplete="off"
-                className="flex-1 bg-transparent text-violet-950 placeholder-violet-950/60 outline-none text-sm sm:text-base min-w-0"
+                className="flex-1 bg-transparent text-[#240046] placeholder-[#240046]/60 outline-none text-sm sm:text-base min-w-0"
               />
 
               {/* Voice Search */}
@@ -610,7 +658,7 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
                     !reducedMotion && "transition-colors",
                     isListening
                       ? cn("bg-red-100 text-red-600", !reducedMotion && "animate-pulse")
-                      : "hover:bg-violet-950/10 text-violet-950",
+                      : "hover:bg-[#240046]/10 text-[#240046]",
                   )}
                 >
                   {isListening ? (
@@ -626,13 +674,13 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
                 <div
                   className={cn(
                     "absolute top-full left-0 right-0 mt-2 z-50",
-                    "bg-white rounded-xl shadow-xl border border-violet-950/10 overflow-hidden",
+                    "bg-white rounded-xl shadow-xl border border-[#240046]/10 overflow-hidden",
                     "max-w-[calc(100vw-2rem)]",
                     !reducedMotion && "animate-in fade-in slide-in-from-top-2 duration-200",
                   )}
                 >
                   {isSearching ? (
-                    <div className="p-4 text-center text-violet-950/60">
+                    <div className="p-4 text-center text-[#240046]/60">
                       <Loader2
                         className={cn("w-5 h-5 mx-auto mb-2", !reducedMotion && "animate-spin")}
                         aria-hidden="true"
@@ -653,12 +701,12 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
                             role="option"
                             className={cn(
                               "w-full px-4 py-3 text-left",
-                              "border-b border-violet-950/5 last:border-0 min-h-[44px]",
-                              !reducedMotion && "transition-colors hover:bg-violet-950/5",
+                              "border-b border-[#240046]/5 last:border-0 min-h-[44px]",
+                              !reducedMotion && "transition-colors hover:bg-[#240046]/5",
                             )}
                           >
-                            <p className="text-violet-950 font-semibold text-sm">{est.nome_fantasia}</p>
-                            <p className="text-violet-950/60 text-xs">
+                            <p className="text-[#240046] font-semibold text-sm">{est.nome_fantasia}</p>
+                            <p className="text-[#240046]/60 text-xs">
                               {Array.isArray(est.categoria) ? est.categoria[0] : est.categoria} • {est.cidade},{" "}
                               {est.estado}
                               {est.foraDaCidade && <span className="ml-2 text-amber-600">(outra cidade)</span>}
@@ -669,7 +717,7 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
                     </ul>
                   ) : (
                     <div className="p-4 text-center">
-                      <p className="text-violet-950/60 text-sm mb-2">
+                      <p className="text-[#240046]/60 text-sm mb-2">
                         Nenhum "{busca}" encontrado{cidade ? ` em ${cidade}` : ""}
                       </p>
                       {cidade && (
@@ -677,7 +725,7 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
                           type="button"
                           onClick={handleSearchBrasil}
                           className={cn(
-                            "text-violet-950 text-sm font-medium min-h-[44px] px-4",
+                            "text-[#240046] text-sm font-medium min-h-[44px] px-4",
                             !reducedMotion && "hover:underline",
                           )}
                         >
@@ -695,15 +743,15 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
               type="submit"
               aria-label="Buscar estabelecimentos"
               className={cn(
-                "bg-gradient-to-r from-violet-950 to-purple-900",
+                "bg-gradient-to-r from-[#240046] to-[#3C096C]",
                 "text-white font-semibold px-5 sm:px-8 py-3",
                 "rounded-xl sm:rounded-full",
-                "shadow-lg shadow-violet-950/30",
+                "shadow-lg shadow-[#240046]/30",
                 "flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px]",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2",
                 !reducedMotion && [
                   "transition-all duration-300",
-                  "hover:shadow-xl hover:shadow-violet-950/40 hover:scale-105",
+                  "hover:shadow-xl hover:shadow-[#240046]/40 hover:scale-105",
                   "active:scale-95",
                 ],
               )}
@@ -719,3 +767,5 @@ export const HeroSection = memo(({ cidade, estado, onCidadeSelect, onBuscaChange
 });
 
 HeroSection.displayName = "HeroSection";
+
+export default HeroSection;

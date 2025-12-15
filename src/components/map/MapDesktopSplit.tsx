@@ -1,31 +1,40 @@
-import React, { Suspense, useState, useEffect, useRef } from 'react';
-import { APIProvider, Map, AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
-import { Navigation, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { MarkerClusterer } from '@googlemaps/markerclusterer';
-import { Establishment } from './AirbnbMapLayout';
+import React, { Suspense, useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { APIProvider, Map, AdvancedMarker, useMap } from "@vis.gl/react-google-maps";
+import { Navigation, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MarkerClusterer } from "@googlemaps/markerclusterer";
+import { cn } from "@/lib/utils";
+import { Establishment } from "./AirbnbMapLayout";
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
+const DEFAULT_CENTER = { lat: -27.5954, lng: -48.548 }; // Florianópolis
+const DEFAULT_ZOOM = 13;
+const BOUNDS_PADDING = 50;
 
 const CATEGORY_ICONS: Record<string, string> = {
-  'Restaurante': '🍽️',
-  'Bar': '🍺',
-  'Academia': '💪',
-  'Salão de Beleza': '💇',
-  'Barbearia': '✂️',
-  'Cafeteria': '☕',
-  'Casa Noturna': '🎉',
-  'Confeitaria': '🍰',
-  'Entretenimento': '🎬',
-  'Hospedagem': '🏨',
-  'Loja': '🛍️',
-  'Serviços': '🔧',
-  'Sorveteria': '🍦',
-  'Outros Comércios': '🏪',
+  Restaurante: "🍽️",
+  Bar: "🍺",
+  Academia: "💪",
+  "Salão de Beleza": "💇",
+  Barbearia: "✂️",
+  Cafeteria: "☕",
+  "Casa Noturna": "🎉",
+  Confeitaria: "🍰",
+  Entretenimento: "🎬",
+  Hospedagem: "🏨",
+  Loja: "🛍️",
+  Serviços: "🔧",
+  Sorveteria: "🍦",
+  "Outros Comércios": "🏪",
 };
 
-const getCategoryIcon = (categories: string[]): string => {
-  if (!categories || categories.length === 0) return '📍';
-  return CATEGORY_ICONS[categories[0]] || '📍';
-};
+// =============================================================================
+// TYPES
+// =============================================================================
 
 interface MapDesktopSplitProps {
   establishments: Establishment[];
@@ -40,26 +49,67 @@ interface MapDesktopSplitProps {
   onCardHover: (id: string | null) => void;
 }
 
-// Componente interno que renderiza os markers
-const MapMarkers: React.FC<{
+interface MapMarkersProps {
   establishments: Establishment[];
   selectedId: string | null;
   hoveredId: string | null;
   onMarkerClick: (id: string) => void;
   onMarkerHover: (id: string | null) => void;
   userLocation?: { lat: number; lng: number } | null;
-}> = ({ establishments, selectedId, hoveredId, onMarkerClick, onMarkerHover, userLocation }) => {
+}
+
+// =============================================================================
+// HOOKS
+// =============================================================================
+
+const useReducedMotion = (): boolean => {
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
+  );
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    query.addEventListener("change", handler);
+    return () => query.removeEventListener("change", handler);
+  }, []);
+
+  return reducedMotion;
+};
+
+// =============================================================================
+// UTILS
+// =============================================================================
+
+const getCategoryIcon = (categories: string[]): string => {
+  if (!categories || categories.length === 0) return "📍";
+  return CATEGORY_ICONS[categories[0]] || "📍";
+};
+
+// =============================================================================
+// MAP MARKERS COMPONENT
+// =============================================================================
+
+const MapMarkers = ({
+  establishments,
+  selectedId,
+  hoveredId,
+  onMarkerClick,
+  onMarkerHover,
+  userLocation,
+}: MapMarkersProps) => {
   const map = useMap();
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const clustererRef = useRef<MarkerClusterer | null>(null);
+  const reducedMotion = useReducedMotion();
 
-  // Fit bounds para mostrar todos os estabelecimentos
+  // Fit bounds to show all establishments
   useEffect(() => {
     if (!map || establishments.length === 0) return;
 
     const bounds = new google.maps.LatLngBounds();
-    
-    establishments.forEach(est => {
+
+    establishments.forEach((est) => {
       if (est.latitude && est.longitude) {
         bounds.extend({ lat: est.latitude, lng: est.longitude });
       }
@@ -69,8 +119,13 @@ const MapMarkers: React.FC<{
       bounds.extend(userLocation);
     }
 
-    map.fitBounds(bounds, 50);
+    map.fitBounds(bounds, BOUNDS_PADDING);
   }, [map, establishments, userLocation]);
+
+  // Clear markers ref when establishments change
+  useEffect(() => {
+    markersRef.current = [];
+  }, [establishments]);
 
   // Setup clustering
   useEffect(() => {
@@ -85,7 +140,7 @@ const MapMarkers: React.FC<{
       markers: markersRef.current,
       renderer: {
         render: ({ count, position }) => {
-          const color = count > 10 ? '#ec4899' : count > 5 ? '#a855f7' : '#8b5cf6';
+          const color = count > 10 ? "#ec4899" : count > 5 ? "#a855f7" : "#8b5cf6";
           return new google.maps.Marker({
             position,
             icon: {
@@ -93,14 +148,14 @@ const MapMarkers: React.FC<{
               fillColor: color,
               fillOpacity: 0.9,
               strokeWeight: 3,
-              strokeColor: '#ffffff',
+              strokeColor: "#ffffff",
               scale: Math.min(15 + count * 1.5, 35),
             },
             label: {
               text: String(count),
-              color: '#ffffff',
-              fontSize: '14px',
-              fontWeight: 'bold',
+              color: "#ffffff",
+              fontSize: "14px",
+              fontWeight: "bold",
             },
             zIndex: Number(google.maps.Marker.MAX_ZINDEX) + count,
           });
@@ -109,9 +164,7 @@ const MapMarkers: React.FC<{
     });
 
     return () => {
-      if (clustererRef.current) {
-        clustererRef.current.clearMarkers();
-      }
+      clustererRef.current?.clearMarkers();
     };
   }, [map, establishments]);
 
@@ -122,7 +175,7 @@ const MapMarkers: React.FC<{
         <AdvancedMarker position={userLocation}>
           <div className="relative">
             <div className="absolute inset-0 w-8 h-8 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2">
-              <div className="w-full h-full bg-blue-500/30 rounded-full animate-ping" />
+              <div className={cn("w-full h-full bg-blue-500/30 rounded-full", !reducedMotion && "animate-ping")} />
             </div>
             <div className="absolute inset-0 w-6 h-6 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2">
               <div className="w-full h-full bg-blue-500/20 rounded-full" />
@@ -133,11 +186,12 @@ const MapMarkers: React.FC<{
       )}
 
       {/* Establishment Markers */}
-      {establishments.map(establishment => {
+      {establishments.map((establishment) => {
         if (!establishment.latitude || !establishment.longitude) return null;
 
         const isSelected = selectedId === establishment.id;
         const isHovered = hoveredId === establishment.id;
+        const isHighlighted = isSelected || isHovered;
         const icon = getCategoryIcon(establishment.categoria);
 
         return (
@@ -151,55 +205,51 @@ const MapMarkers: React.FC<{
               }
             }}
           >
-            <div 
-              className={`
-                relative cursor-pointer transition-all duration-200
-                ${isSelected || isHovered ? 'z-50 scale-110' : 'z-10 hover:scale-105 hover:z-40'}
-              `}
+            <div
+              className={cn(
+                "relative cursor-pointer",
+                !reducedMotion && "transition-all duration-200",
+                isHighlighted ? "z-50 scale-110" : "z-10",
+                !reducedMotion && !isHighlighted && "hover:scale-105 hover:z-40",
+              )}
               onMouseEnter={() => onMarkerHover(establishment.id)}
               onMouseLeave={() => onMarkerHover(null)}
             >
-              {/* Balão com nome */}
-              <div 
-                className={`
-                  px-3 py-2 rounded-xl shadow-lg
-                  flex items-center gap-2 whitespace-nowrap
-                  transition-all duration-200
-                  ${isSelected || isHovered 
-                    ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white' 
-                    : 'bg-white text-gray-900 hover:bg-gray-50'
-                  }
-                `}
+              {/* Balloon with name */}
+              <div
+                className={cn(
+                  "px-3 py-2 rounded-xl shadow-lg",
+                  "flex items-center gap-2 whitespace-nowrap",
+                  !reducedMotion && "transition-all duration-200",
+                  isHighlighted
+                    ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white"
+                    : "bg-white text-gray-900 hover:bg-gray-50",
+                )}
                 style={{
-                  boxShadow: isSelected || isHovered 
-                    ? '0 4px 20px rgba(139, 92, 246, 0.5)' 
-                    : '0 2px 10px rgba(0,0,0,0.15)',
+                  boxShadow: isHighlighted ? "0 4px 20px rgba(139, 92, 246, 0.5)" : "0 2px 10px rgba(0,0,0,0.15)",
                 }}
               >
                 <span className="text-base">{icon}</span>
                 <span className="text-sm font-semibold max-w-[140px] truncate">
-                  {establishment.nome_fantasia || 'Estabelecimento'}
+                  {establishment.nome_fantasia || "Estabelecimento"}
                 </span>
               </div>
-              
-              {/* Seta apontando para baixo */}
-              <div 
-                className={`
-                  absolute left-1/2 -translate-x-1/2 -bottom-2
-                  w-0 h-0 
-                  border-l-[8px] border-l-transparent
-                  border-r-[8px] border-r-transparent
-                  border-t-[8px]
-                  transition-colors duration-200
-                  ${isSelected || isHovered 
-                    ? 'border-t-fuchsia-600' 
-                    : 'border-t-white'
-                  }
-                `}
+
+              {/* Arrow pointing down */}
+              <div
+                className={cn(
+                  "absolute left-1/2 -translate-x-1/2 -bottom-2",
+                  "w-0 h-0",
+                  "border-l-[8px] border-l-transparent",
+                  "border-r-[8px] border-r-transparent",
+                  "border-t-[8px]",
+                  !reducedMotion && "transition-colors duration-200",
+                  isHighlighted ? "border-t-fuchsia-600" : "border-t-white",
+                )}
               />
-              
+
               {/* Glow effect */}
-              {(isSelected || isHovered) && (
+              {isHighlighted && !reducedMotion && (
                 <div className="absolute inset-0 -z-10 animate-pulse">
                   <div className="w-full h-full rounded-xl blur-xl bg-violet-500/30" />
                 </div>
@@ -212,7 +262,11 @@ const MapMarkers: React.FC<{
   );
 };
 
-export const MapDesktopSplit: React.FC<MapDesktopSplitProps> = ({
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
+
+export const MapDesktopSplit = ({
   establishments,
   onEstablishmentClick,
   userLocation,
@@ -223,45 +277,50 @@ export const MapDesktopSplit: React.FC<MapDesktopSplitProps> = ({
   children,
   cardRefs,
   onCardHover,
-}) => {
+}: MapDesktopSplitProps) => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const reducedMotion = useReducedMotion();
 
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  const defaultCenter = userLocation || { lat: -27.5954, lng: -48.5480 };
+  const defaultCenter = userLocation || DEFAULT_CENTER;
 
-  const handleMarkerClick = (id: string) => {
-    setSelectedId(id);
-    onPinClick(id);
-  };
+  const handleMarkerClick = useCallback(
+    (id: string) => {
+      setSelectedId(id);
+      onPinClick(id);
+    },
+    [onPinClick],
+  );
 
-  const handleRecenterToUser = () => {
+  const handleRecenterToUser = useCallback(() => {
     if (userLocation && mapInstance) {
       mapInstance.setCenter(userLocation);
       mapInstance.setZoom(15);
     }
-  };
+  }, [userLocation, mapInstance]);
 
-  // Renderiza children diretamente - o parent vai passar os handlers
-  const enhancedChildren = children;
+  // Handle map load
+  const handleMapLoad = useCallback(() => {
+    setMapLoaded(true);
+  }, []);
 
   return (
     <div className="flex h-[calc(100vh-200px)] min-h-[600px]">
-      {/* Lista (esquerda) - 55% */}
+      {/* List (left) - 55% */}
       <div className="w-[55%] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
         {listHeader}
-        {enhancedChildren}
+        {children}
       </div>
 
-      {/* Mapa (direita) - 45% */}
+      {/* Map (right) - 45% */}
       <div className="w-[45%] sticky top-0 h-full rounded-2xl overflow-hidden border border-white/10">
         {/* Loading */}
         {!mapLoaded && !mapError && (
           <div className="absolute inset-0 z-40 flex items-center justify-center bg-slate-900">
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-violet-400" />
+              <Loader2 className={cn("w-8 h-8 text-violet-400", !reducedMotion && "animate-spin")} aria-hidden="true" />
               <p className="text-sm text-slate-400">Carregando mapa...</p>
             </div>
           </div>
@@ -270,8 +329,10 @@ export const MapDesktopSplit: React.FC<MapDesktopSplitProps> = ({
         {/* Error */}
         {mapError && (
           <div className="absolute inset-0 z-40 flex items-center justify-center bg-slate-900 p-6">
-            <div className="text-center">
-              <div className="text-6xl mb-4">🗺️</div>
+            <div className="text-center" role="alert">
+              <div className="text-6xl mb-4" aria-hidden="true">
+                🗺️
+              </div>
               <p className="text-slate-400">{mapError}</p>
             </div>
           </div>
@@ -282,25 +343,26 @@ export const MapDesktopSplit: React.FC<MapDesktopSplitProps> = ({
           <Button
             onClick={handleRecenterToUser}
             variant="ghost"
-            className="absolute top-4 right-4 z-50 bg-slate-900/90 backdrop-blur-md border border-white/10 hover:bg-slate-800/90 hover:scale-110 active:scale-95 transition-all duration-200"
             size="icon"
-            title="Centralizar na minha localização"
+            aria-label="Centralizar na minha localização"
+            className={cn(
+              "absolute top-4 right-4 z-50",
+              "bg-slate-900/90 backdrop-blur-md",
+              "border border-white/10",
+              !reducedMotion && "transition-all duration-200 hover:bg-slate-800/90 hover:scale-110 active:scale-95",
+            )}
           >
-            <Navigation className="w-5 h-5 text-blue-400" />
+            <Navigation className="w-5 h-5 text-blue-400" aria-hidden="true" />
           </Button>
         )}
 
         {/* Map */}
         {!mapError && (
           <Suspense fallback={null}>
-            <APIProvider 
-              apiKey={apiKey}
-              onLoad={() => setMapLoaded(true)}
-              onError={() => setMapError('Não foi possível carregar o mapa.')}
-            >
+            <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
               <Map
                 defaultCenter={defaultCenter}
-                defaultZoom={13}
+                defaultZoom={DEFAULT_ZOOM}
                 mapId="aniversariante-vip-map-split"
                 gestureHandling="greedy"
                 disableDefaultUI={false}
@@ -309,6 +371,7 @@ export const MapDesktopSplit: React.FC<MapDesktopSplitProps> = ({
                 streetViewControl={false}
                 mapTypeControl={false}
                 className="w-full h-full"
+                onTilesLoaded={handleMapLoad}
                 onCameraChanged={(ev) => {
                   if (!mapInstance) {
                     setMapInstance(ev.map);

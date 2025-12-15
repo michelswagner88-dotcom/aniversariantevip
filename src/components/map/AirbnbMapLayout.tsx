@@ -5,9 +5,16 @@ import { cn } from "@/lib/utils";
 import { MapDesktopSplit } from "./MapDesktopSplit";
 import { MapMobileFullscreen } from "./MapMobileFullscreen";
 
-// ============================================================
-// TIPOS
-// ============================================================
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const HIGHLIGHT_TIMEOUT_MS = 2000;
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
+
+// =============================================================================
+// TYPES
+// =============================================================================
 
 export interface Establishment {
   id: string;
@@ -33,10 +40,6 @@ interface AirbnbMapLayoutProps {
   className?: string;
 }
 
-// ============================================================
-// CONTEXT
-// ============================================================
-
 interface MapCardContextValue {
   cardRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
   hoveredId: string | null;
@@ -44,27 +47,61 @@ interface MapCardContextValue {
   setHoveredId: (id: string | null) => void;
 }
 
-export const MapCardContext = React.createContext<MapCardContextValue | null>(null);
+// =============================================================================
+// HOOKS
+// =============================================================================
 
-export const useMapCardContext = () => {
-  const context = React.useContext(MapCardContext);
-  if (!context) {
-    // Retorna valores padrão se usado fora do provider (fallback seguro)
-    return {
-      cardRefs: { current: {} },
-      hoveredId: null,
-      highlightedId: null,
-      setHoveredId: () => {},
-    };
-  }
-  return context;
+const useReducedMotion = (): boolean => {
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
+  );
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    query.addEventListener("change", handler);
+    return () => query.removeEventListener("change", handler);
+  }, []);
+
+  return reducedMotion;
 };
 
-// ============================================================
-// COMPONENTE PRINCIPAL
-// ============================================================
+// =============================================================================
+// CONTEXT
+// =============================================================================
 
-export const AirbnbMapLayout: React.FC<AirbnbMapLayoutProps> = ({
+// Fallback value (stable reference)
+const FALLBACK_CARD_REFS = { current: {} };
+const FALLBACK_SET_HOVERED = () => {};
+
+const fallbackContextValue: MapCardContextValue = {
+  cardRefs: FALLBACK_CARD_REFS,
+  hoveredId: null,
+  highlightedId: null,
+  setHoveredId: FALLBACK_SET_HOVERED,
+};
+
+export const MapCardContext = React.createContext<MapCardContextValue>(fallbackContextValue);
+
+export const useMapCardContext = () => {
+  return React.useContext(MapCardContext);
+};
+
+// =============================================================================
+// UTILS
+// =============================================================================
+
+const haptic = (pattern: number = 10) => {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
+export const AirbnbMapLayout = ({
   establishments,
   onEstablishmentClick,
   userLocation,
@@ -72,13 +109,14 @@ export const AirbnbMapLayout: React.FC<AirbnbMapLayoutProps> = ({
   showMap = true,
   listHeader,
   className,
-}) => {
+}: AirbnbMapLayoutProps) => {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [isMapOpen, setIsMapOpen] = useState(false);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const reducedMotion = useReducedMotion();
 
-  // Filtrar estabelecimentos com coordenadas válidas
+  // Filter establishments with valid coordinates
   const validEstablishments = useMemo(
     () =>
       establishments.filter(
@@ -87,30 +125,33 @@ export const AirbnbMapLayout: React.FC<AirbnbMapLayoutProps> = ({
     [establishments],
   );
 
-  // Limpar highlight após timeout
+  // Clear highlight after timeout
   useEffect(() => {
     if (!highlightedId) return;
 
     const timer = setTimeout(() => {
       setHighlightedId(null);
-    }, 2000);
+    }, HIGHLIGHT_TIMEOUT_MS);
 
     return () => clearTimeout(timer);
   }, [highlightedId]);
 
-  // Scroll para card quando clicar no pin
-  const scrollToCard = useCallback((id: string) => {
-    const cardElement = cardRefs.current[id];
-    if (cardElement) {
-      cardElement.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-      setHighlightedId(id);
-    }
-  }, []);
+  // Scroll to card when clicking pin
+  const scrollToCard = useCallback(
+    (id: string) => {
+      const cardElement = cardRefs.current[id];
+      if (cardElement) {
+        cardElement.scrollIntoView({
+          behavior: reducedMotion ? "auto" : "smooth",
+          block: "center",
+        });
+        setHighlightedId(id);
+      }
+    },
+    [reducedMotion],
+  );
 
-  // Handler quando clicar no pin do mapa
+  // Handler for pin click
   const handlePinClick = useCallback(
     (id: string) => {
       scrollToCard(id);
@@ -119,12 +160,21 @@ export const AirbnbMapLayout: React.FC<AirbnbMapLayoutProps> = ({
     [scrollToCard],
   );
 
-  // Verificar se API key está disponível
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  const hasValidEstablishments = validEstablishments.length > 0;
-  const isMapAvailable = showMap && !!apiKey && hasValidEstablishments;
+  // Handler for FAB click
+  const handleOpenMap = useCallback(() => {
+    haptic();
+    setIsMapOpen(true);
+  }, []);
 
-  // Context value
+  const handleCloseMap = useCallback(() => {
+    setIsMapOpen(false);
+  }, []);
+
+  // Check if map is available
+  const hasValidEstablishments = validEstablishments.length > 0;
+  const isMapAvailable = showMap && !!GOOGLE_MAPS_API_KEY && hasValidEstablishments;
+
+  // Context value (memoized)
   const contextValue = useMemo<MapCardContextValue>(
     () => ({
       cardRefs,
@@ -157,7 +207,7 @@ export const AirbnbMapLayout: React.FC<AirbnbMapLayoutProps> = ({
           </div>
         )}
 
-        {/* Desktop fallback quando não pode mostrar mapa */}
+        {/* Desktop fallback when map is not available */}
         {!isMapAvailable && (
           <div className="hidden lg:block">
             {listHeader}
@@ -165,41 +215,43 @@ export const AirbnbMapLayout: React.FC<AirbnbMapLayoutProps> = ({
           </div>
         )}
 
-        {/* MOBILE/TABLET: Lista + FAB (< 1024px) */}
+        {/* MOBILE/TABLET: List + FAB (< 1024px) */}
         <div className="lg:hidden">
           {listHeader}
           {children}
 
-          {/* FAB para abrir mapa */}
+          {/* FAB to open map */}
           {isMapAvailable && (
             <Button
-              onClick={() => setIsMapOpen(true)}
-              aria-label="Abrir mapa com estabelecimentos"
+              onClick={handleOpenMap}
+              aria-label={`Abrir mapa com ${validEstablishments.length} estabelecimentos`}
               className={cn(
                 "fixed bottom-20 left-1/2 z-30",
                 "-translate-x-1/2",
                 "flex items-center gap-2",
-                "px-5 py-3 rounded-full",
-                "bg-slate-900/95 backdrop-blur-md",
+                "px-5 py-3 rounded-full min-h-[44px]",
+                "bg-[#240046]/95 backdrop-blur-md",
                 "border border-white/10",
                 "shadow-2xl shadow-black/50",
-                "hover:bg-slate-800 hover:scale-105",
-                "active:scale-95",
-                "transition-all duration-200",
+                !reducedMotion && [
+                  "transition-all duration-200",
+                  "hover:bg-[#3C096C] hover:scale-105",
+                  "active:scale-95",
+                ],
               )}
             >
-              <MapPin className="w-5 h-5 text-violet-400" />
+              <MapPin className="w-5 h-5 text-violet-400" aria-hidden="true" />
               <span className="font-semibold text-white">Ver Mapa</span>
             </Button>
           )}
 
-          {/* Mapa fullscreen mobile */}
+          {/* Fullscreen mobile map */}
           {isMapAvailable && isMapOpen && (
             <MapMobileFullscreen
               establishments={validEstablishments}
               onEstablishmentClick={onEstablishmentClick}
               userLocation={userLocation}
-              onClose={() => setIsMapOpen(false)}
+              onClose={handleCloseMap}
             />
           )}
         </div>

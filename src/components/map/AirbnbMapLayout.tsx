@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect, memo } from "react";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,12 +10,16 @@ import { MapMobileFullscreen } from "./MapMobileFullscreen";
 // =============================================================================
 
 const HIGHLIGHT_TIMEOUT_MS = 2000;
+
+// SEGURANÇA: Esta key é exposta no frontend (normal para Maps JS API)
+// Certifique-se de ter restrições de domínio configuradas no Google Cloud Console
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 
 // =============================================================================
 // TYPES
 // =============================================================================
 
+// TODO: Mover para @/types/establishment.ts e importar
 export interface Establishment {
   id: string;
   nome_fantasia: string;
@@ -51,6 +55,7 @@ interface MapCardContextValue {
 // HOOKS
 // =============================================================================
 
+// TODO: Extrair para @/hooks/useReducedMotion.ts
 const useReducedMotion = (): boolean => {
   const [reducedMotion, setReducedMotion] = useState(() =>
     typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
@@ -70,7 +75,6 @@ const useReducedMotion = (): boolean => {
 // CONTEXT
 // =============================================================================
 
-// Fallback value (stable reference)
 const FALLBACK_CARD_REFS = { current: {} };
 const FALLBACK_SET_HOVERED = () => {};
 
@@ -83,15 +87,13 @@ const fallbackContextValue: MapCardContextValue = {
 
 export const MapCardContext = React.createContext<MapCardContextValue>(fallbackContextValue);
 
-export const useMapCardContext = () => {
-  return React.useContext(MapCardContext);
-};
+export const useMapCardContext = () => React.useContext(MapCardContext);
 
 // =============================================================================
 // UTILS
 // =============================================================================
 
-const haptic = (pattern: number = 10) => {
+const haptic = (pattern: number = 10): void => {
   if (navigator.vibrate) {
     navigator.vibrate(pattern);
   }
@@ -101,7 +103,7 @@ const haptic = (pattern: number = 10) => {
 // COMPONENT
 // =============================================================================
 
-export const AirbnbMapLayout = ({
+export const AirbnbMapLayout = memo(function AirbnbMapLayout({
   establishments,
   onEstablishmentClick,
   userLocation,
@@ -109,7 +111,7 @@ export const AirbnbMapLayout = ({
   showMap = true,
   listHeader,
   className,
-}: AirbnbMapLayoutProps) => {
+}: AirbnbMapLayoutProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [isMapOpen, setIsMapOpen] = useState(false);
@@ -124,6 +126,18 @@ export const AirbnbMapLayout = ({
       ),
     [establishments],
   );
+
+  // Limpa refs antigas quando establishments mudam
+  useEffect(() => {
+    const validIds = new Set(establishments.map((est) => est.id));
+    const currentRefs = cardRefs.current;
+
+    Object.keys(currentRefs).forEach((id) => {
+      if (!validIds.has(id)) {
+        delete currentRefs[id];
+      }
+    });
+  }, [establishments]);
 
   // Clear highlight after timeout
   useEffect(() => {
@@ -258,4 +272,4 @@ export const AirbnbMapLayout = ({
       </div>
     </MapCardContext.Provider>
   );
-};
+});

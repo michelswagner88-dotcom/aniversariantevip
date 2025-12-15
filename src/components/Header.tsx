@@ -1,25 +1,92 @@
+// src/components/Header.tsx
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, LogOut, Gift } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Menu, X, User, LogOut, Gift, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PersonalGreeting } from "@/components/PersonalGreeting";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { useBirthdayTheme } from "@/hooks/useBirthdayTheme";
-import { useScrollHeader } from "@/hooks/useScrollHeader";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
-export const Header = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [userName, setUserName] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [dataNascimento, setDataNascimento] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const { isBirthday } = useBirthdayTheme(dataNascimento);
-  const { isVisible } = useScrollHeader({ threshold: 80, sensitivity: 8 });
-  const isMobile = useIsMobile();
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const BIRTHDAY_BANNER_HEIGHT = 48;
+const SCROLL_THRESHOLD = 100;
+
+// =============================================================================
+// HOOKS
+// =============================================================================
+
+const useScrollState = (threshold: number = SCROLL_THRESHOLD) => {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > threshold);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [threshold]);
+
+  return isScrolled;
+};
+
+const useUserSession = () => {
+  const [userData, setUserData] = useState<{
+    name: string | null;
+    role: string | null;
+    birthDate: string | null;
+  }>({
+    name: null,
+    role: null,
+    birthDate: null,
+  });
+
+  const checkUser = useCallback(async () => {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        setUserData({ name: null, role: null, birthDate: null });
+        return;
+      }
+
+      const [profileResult, rolesResult] = await Promise.allSettled([
+        supabase.from("profiles").select("nome").eq("id", session.user.id).single(),
+        supabase.from("user_roles").select("role").eq("user_id", session.user.id),
+      ]);
+
+      const profileData = profileResult.status === "fulfilled" ? profileResult.value.data : null;
+      const rolesData = rolesResult.status === "fulfilled" ? rolesResult.value.data : null;
+
+      const name = profileData?.nome || session.user.email?.split("@")[0] || "Usuario";
+      const role = rolesData?.[0]?.role || null;
+
+      let birthDate: string | null = null;
+      if (role === "aniversariante") {
+        const { data: aniversarianteData } = await supabase
+          .from("aniversariantes")
+          .select("data_nascimento")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        birthDate = aniversarianteData?.data_nascimento || null;
+      }
+
+      setUserData({ name, role, birthDate });
+    } catch (error) {
+      console.error("[Header] Erro:", error);
+      setUserData({ name: null, role: null, birthDate: null });
+    }
+  }, []);
 
   useEffect(() => {
     checkUser();
@@ -29,131 +96,208 @@ export const Header = () => {
       checkUser();
     });
     return () => subscription.unsubscribe();
+  }, [checkUser]);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setUserData({ name: null, role: null, birthDate: null });
+    toast.success("Logout realizado com sucesso!");
   }, []);
 
-  const checkUser = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (session) {
-      const { data: profile } = await supabase.from("profiles").select("nome").eq("id", session.user.id).single();
-      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", session.user.id);
-      setUserName(profile?.nome || session.user.email?.split("@")[0] || "Usuário");
-      setUserRole(roles?.[0]?.role || null);
+  return { ...userData, logout };
+};
 
-      if (roles?.[0]?.role === "aniversariante") {
-        const { data: aniversarianteData } = await supabase
-          .from("aniversariantes")
-          .select("data_nascimento")
-          .eq("id", session.user.id)
-          .maybeSingle();
+// =============================================================================
+// SEARCH PILL
+// =============================================================================
 
-        if (aniversarianteData?.data_nascimento) {
-          setDataNascimento(aniversarianteData.data_nascimento);
-        }
-      }
+const SearchPill = memo(({ onClick, className }: { onClick?: () => void; className?: string }) => {
+  return (
+    <button
+      onClick={onClick}
+      aria-label="Abrir busca"
+      className={cn(
+        "flex items-center gap-2",
+        "px-4 py-2.5 rounded-full",
+        "bg-gray-100 hover:bg-gray-200",
+        "text-gray-500 text-sm",
+        "transition-colors duration-200",
+        "active:scale-[0.98]",
+        "min-h-[44px]",
+        className,
+      )}
+    >
+      <Search className="w-4 h-4 text-gray-400" />
+      <span className="truncate">Buscar estabelecimentos...</span>
+    </button>
+  );
+});
+
+SearchPill.displayName = "SearchPill";
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
+
+export const Header = memo(() => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { name: userName, role: userRole, birthDate: dataNascimento, logout } = useUserSession();
+  const { isBirthday } = useBirthdayTheme(dataNascimento);
+  const isMobile = useIsMobile();
+  const isScrolled = useScrollState(SCROLL_THRESHOLD);
+
+  // Lock body scroll when menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
     } else {
-      setUserName(null);
-      setUserRole(null);
-      setDataNascimento(null);
+      document.body.style.overflow = "";
     }
-  };
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Logout realizado com sucesso!");
+  // Close on Escape
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [mobileMenuOpen]);
+
+  // Handlers
+  const handleLogout = useCallback(async () => {
+    await logout();
     navigate("/");
-  };
+    setMobileMenuOpen(false);
+  }, [logout, navigate]);
 
-  const getAreaLink = () => {
+  const handleSearchClick = useCallback(() => {
+    const searchInput = document.querySelector("[data-search-input]") as HTMLInputElement;
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    setMobileMenuOpen(false);
+  }, []);
+
+  const areaLink = useMemo(() => {
     if (userRole === "aniversariante") return "/area-aniversariante";
     if (userRole === "estabelecimento") return "/area-estabelecimento";
     if (userRole === "admin") return "/area-colaborador";
     return "/";
-  };
+  }, [userRole]);
 
-  // Calcula o top considerando safe-area e birthday banner
-  const getHeaderTop = () => {
-    if (isBirthday && userName) {
-      return "calc(48px + env(safe-area-inset-top, 0px))";
-    }
-    return "env(safe-area-inset-top, 0px)";
-  };
+  const userInitials = userName?.slice(0, 2).toUpperCase() || "??";
+  const firstName = userName?.split(" ")[0] || "";
+  const headerTop = isBirthday && userName ? BIRTHDAY_BANNER_HEIGHT : 0;
 
   return (
     <>
-      {isBirthday && userName && <BirthdayBanner firstName={userName.split(" ")[0]} />}
+      {isBirthday && userName && <BirthdayBanner firstName={firstName} />}
 
       <header
-        className={`
-          fixed left-0 right-0 z-50 
-          transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
-          ${isMobile && !isVisible ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"}
-          bg-[#240046] py-3
-        `}
-        style={{ top: getHeaderTop() }}
+        className={cn(
+          "fixed left-0 right-0 z-50",
+          "transition-all duration-300 ease-out",
+          isScrolled
+            ? "bg-white/95 backdrop-blur-xl border-b border-gray-200/50 shadow-sm py-2"
+            : "bg-transparent py-3",
+        )}
+        style={{
+          top: headerTop,
+          paddingTop: `calc(0.5rem + env(safe-area-inset-top, 0px))`,
+        }}
+        role="banner"
       >
         <nav className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
-          <div className="flex items-center justify-between h-14">
-            {/* Logo + Nome - VISÍVEL EM TODAS AS TELAS */}
-            <Link to="/" className="flex items-center gap-2 group">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center bg-white/10 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:bg-white/20 flex-shrink-0">
-                <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <div className="flex items-center justify-between h-12 lg:h-14">
+            {/* Logo */}
+            <Link
+              to="/"
+              className="flex items-center gap-2 group shrink-0"
+              aria-label="Aniversariante VIP - Pagina inicial"
+            >
+              <div
+                className={cn(
+                  "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-6",
+                  isScrolled ? "bg-[#240046]/10" : "bg-white/10",
+                )}
+              >
+                <Gift className={cn("w-5 h-5", isScrolled ? "text-[#240046]" : "text-white")} />
               </div>
-              {/* Nome SEMPRE visível - ajustado para caber no mobile */}
-              <div className="flex items-center gap-0.5 sm:gap-1 font-display font-extrabold text-sm sm:text-base lg:text-lg tracking-tight transition-transform duration-300 group-hover:scale-105">
-                <span className="bg-gradient-to-r from-[#9D4EDD] to-[#C77DFF] bg-clip-text text-transparent">
-                  ANIVERSARIANTE
-                </span>
-                <span className="bg-gradient-to-r from-[#C77DFF] to-[#22D3EE] bg-clip-text text-transparent">VIP</span>
+              <div className="hidden sm:flex items-center gap-0.5 font-display font-extrabold text-sm lg:text-base tracking-tight">
+                {isScrolled ? (
+                  <>
+                    <span className="text-[#240046]">ANIVERSARIANTE</span>
+                    <span className="text-[#7C3AED]">VIP</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="bg-gradient-to-r from-[#9D4EDD] to-[#C77DFF] bg-clip-text text-transparent">
+                      ANIVERSARIANTE
+                    </span>
+                    <span className="bg-gradient-to-r from-[#C77DFF] to-[#22D3EE] bg-clip-text text-transparent">
+                      VIP
+                    </span>
+                  </>
+                )}
               </div>
             </Link>
 
-            {/* Menu Desktop - Links centrais */}
-            <div className="hidden lg:flex items-center justify-center flex-1 gap-1 min-w-0 mx-4">
-              <NavLink
-                to="/como-funciona"
-                className="relative text-sm font-medium text-white/80 hover:text-white transition-colors duration-200 px-4 py-2 group"
-                activeClassName="text-white"
-              >
-                Como Funciona
-                <span className="absolute -bottom-0.5 left-4 right-4 h-0.5 bg-white scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
-              </NavLink>
-              <NavLink
-                to="/seja-parceiro"
-                className="relative text-sm font-medium text-white/80 hover:text-white transition-colors duration-200 px-4 py-2 group"
-                activeClassName="text-white"
-              >
-                Seja Parceiro
-                <span className="absolute -bottom-0.5 left-4 right-4 h-0.5 bg-white scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
-              </NavLink>
-            </div>
+            {/* Search Pill - Desktop (so aparece quando scrolled) */}
+            {isScrolled && (
+              <div className="hidden lg:flex flex-1 justify-center mx-8">
+                <SearchPill onClick={handleSearchClick} className="w-full max-w-md" />
+              </div>
+            )}
 
-            {/* Menu Desktop - Botões direita */}
-            <div className="hidden lg:flex items-center gap-4 flex-shrink-0">
+            {/* Search Pill - Mobile (so aparece quando scrolled) */}
+            {isScrolled && isMobile && (
+              <div className="flex-1 mx-3">
+                <SearchPill onClick={handleSearchClick} className="w-full" />
+              </div>
+            )}
+
+            {/* Desktop User Area */}
+            <div className="hidden lg:flex items-center gap-3 shrink-0">
               {userName ? (
                 <>
-                  <div className="hidden xl:block">
-                    <PersonalGreeting userName={userName} />
-                  </div>
+                  {!isScrolled && (
+                    <div className="hidden xl:block">
+                      <PersonalGreeting userName={userName} />
+                    </div>
+                  )}
                   <Button
                     variant="ghost"
-                    onClick={() => navigate(getAreaLink())}
-                    className="flex items-center gap-2 px-3 h-10 hover:bg-white/10 transition-all duration-200"
+                    onClick={() => navigate(areaLink)}
+                    className={cn(
+                      "flex items-center gap-2 px-3 h-10 rounded-full transition-all duration-200",
+                      isScrolled ? "hover:bg-gray-100 text-gray-700" : "hover:bg-white/10 text-white",
+                    )}
                   >
-                    <div className="w-8 h-8 rounded-full bg-white/20 p-0.5">
+                    <div className={cn("w-8 h-8 rounded-full p-0.5", isScrolled ? "bg-[#240046]/20" : "bg-white/20")}>
                       <div className="w-full h-full rounded-full bg-[#240046] flex items-center justify-center">
-                        <span className="text-xs font-bold text-white">{userName.slice(0, 2).toUpperCase()}</span>
+                        <span className="text-xs font-bold text-white">{userInitials}</span>
                       </div>
                     </div>
-                    <span className="text-white text-sm hidden sm:block">{userName.split(" ")[0]}</span>
+                    {!isScrolled && <span className="text-sm hidden xl:block">{firstName}</span>}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleLogout}
-                    className="text-white hover:bg-white/10 h-9 w-9 p-0 transition-all duration-200"
-                    aria-label="Sair"
+                    aria-label="Sair da conta"
+                    className={cn(
+                      "h-9 rounded-full transition-all duration-200",
+                      isScrolled ? "text-gray-600 hover:bg-gray-100" : "text-white hover:bg-white/10",
+                    )}
                   >
                     <LogOut className="w-4 h-4" />
                   </Button>
@@ -161,14 +305,22 @@ export const Header = () => {
               ) : (
                 <>
                   <Link
-                    to="/selecionar-perfil"
-                    className="text-white/80 hover:text-white transition-colors duration-200 px-4 py-2 text-sm font-medium"
+                    to="/login"
+                    className={cn(
+                      "px-4 py-2 text-sm font-medium rounded-full transition-colors duration-200",
+                      isScrolled ? "text-gray-700 hover:bg-gray-100" : "text-white hover:text-white/80",
+                    )}
                   >
                     Entrar
                   </Link>
                   <Link
-                    to="/auth?tipo=aniversariante"
-                    className="relative bg-white text-[#240046] font-semibold px-6 py-2.5 rounded-full transition-all duration-300 hover:bg-white/90 hover:scale-105 active:scale-95 text-sm"
+                    to="/cadastro"
+                    className={cn(
+                      "font-semibold px-5 py-2.5 rounded-full text-sm transition-all duration-300 hover:scale-105 active:scale-95",
+                      isScrolled
+                        ? "bg-[#240046] text-white hover:bg-[#3C096C]"
+                        : "bg-white text-[#240046] hover:bg-white/90",
+                    )}
                   >
                     Cadastro Gratuito
                   </Link>
@@ -176,85 +328,102 @@ export const Header = () => {
               )}
             </div>
 
-            {/* Botão Menu Hambúrguer - Mobile/Tablet */}
+            {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden flex items-center justify-center w-11 h-11 -mr-2 text-white hover:bg-white/10 rounded-xl transition-all duration-200 active:scale-95"
               aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
               aria-expanded={mobileMenuOpen}
+              className={cn(
+                "lg:hidden p-2.5 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0 transition-all duration-200 active:scale-95",
+                isScrolled ? "text-gray-700 hover:bg-gray-100" : "text-white hover:bg-white/10",
+              )}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
 
-          {/* Menu Mobile Expandido */}
+          {/* Mobile Menu */}
           {mobileMenuOpen && (
             <div
-              className="lg:hidden mt-4 p-4 bg-[#3C096C]/95 backdrop-blur-sm rounded-2xl border border-white/10 shadow-2xl shadow-black/40"
-              style={{
-                animation: "fadeIn 0.2s ease-out",
-              }}
+              ref={mobileMenuRef}
+              className={cn(
+                "lg:hidden mt-4 p-4 rounded-2xl border shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200",
+                isScrolled ? "bg-white border-gray-200" : "bg-[#1a0033] border-white/10",
+              )}
             >
               <div className="flex flex-col gap-1">
-                {/* Links de navegação */}
                 <NavLink
                   to="/como-funciona"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-sm font-medium text-white/80 hover:text-white py-3 px-4 hover:bg-white/10 rounded-xl transition-all duration-200 min-h-[44px] flex items-center"
-                  activeClassName="text-white bg-white/10"
+                  className={cn(
+                    "text-sm font-medium py-3 px-4 rounded-xl min-h-[44px] flex items-center transition-all duration-200",
+                    isScrolled ? "text-gray-600 hover:bg-gray-100" : "text-white/80 hover:bg-white/5",
+                  )}
+                  activeClassName={isScrolled ? "text-[#240046] bg-gray-100" : "text-white bg-white/5"}
                 >
                   Como Funciona
                 </NavLink>
                 <NavLink
                   to="/seja-parceiro"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-sm font-medium text-white/80 hover:text-white py-3 px-4 hover:bg-white/10 rounded-xl transition-all duration-200 min-h-[44px] flex items-center"
-                  activeClassName="text-white bg-white/10"
+                  className={cn(
+                    "text-sm font-medium py-3 px-4 rounded-xl min-h-[44px] flex items-center transition-all duration-200",
+                    isScrolled ? "text-gray-600 hover:bg-gray-100" : "text-white/80 hover:bg-white/5",
+                  )}
+                  activeClassName={isScrolled ? "text-[#240046] bg-gray-100" : "text-white bg-white/5"}
                 >
                   Seja Parceiro
                 </NavLink>
 
-                <div className="h-px bg-white/10 my-3" />
+                <div className={cn("h-px my-3", isScrolled ? "bg-gray-200" : "bg-white/10")} />
 
-                {/* Área do usuário ou botões de login */}
                 {userName ? (
                   <>
                     <Button
                       variant="ghost"
                       onClick={() => {
-                        navigate(getAreaLink());
+                        navigate(areaLink);
                         setMobileMenuOpen(false);
                       }}
-                      className="justify-start text-white hover:bg-white/10 py-3 h-auto min-h-[44px]"
+                      className={cn(
+                        "justify-start py-3 h-auto min-h-[44px] rounded-xl",
+                        isScrolled ? "text-gray-700 hover:bg-gray-100" : "text-white hover:bg-white/10",
+                      )}
                     >
-                      <User className="w-5 h-5 mr-3" />
-                      Minha Área ({userName.split(" ")[0]})
+                      <User className="w-4 h-4 mr-2" />
+                      Minha Area ({firstName})
                     </Button>
                     <Button
                       variant="ghost"
-                      onClick={() => {
-                        handleLogout();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="justify-start text-white/70 hover:text-white hover:bg-white/10 py-3 h-auto min-h-[44px]"
+                      onClick={handleLogout}
+                      className={cn(
+                        "justify-start py-3 h-auto min-h-[44px] rounded-xl",
+                        isScrolled ? "text-gray-500 hover:bg-gray-100" : "text-white/70 hover:bg-white/10",
+                      )}
                     >
-                      <LogOut className="w-5 h-5 mr-3" />
+                      <LogOut className="w-4 h-4 mr-2" />
                       Sair
                     </Button>
                   </>
                 ) : (
                   <>
                     <Link
-                      to="/selecionar-perfil"
+                      to="/login"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-white/80 hover:text-white py-3 px-4 hover:bg-white/10 rounded-xl transition-all duration-200 text-sm font-medium min-h-[44px] flex items-center"
+                      className={cn(
+                        "py-3 px-4 rounded-xl text-sm font-medium min-h-[44px] flex items-center transition-all duration-200",
+                        isScrolled ? "text-gray-600 hover:bg-gray-100" : "text-white/80 hover:bg-white/5",
+                      )}
                     >
                       Entrar
                     </Link>
                     <Link
-                      to="/auth?tipo=aniversariante"
+                      to="/cadastro"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="mt-2 bg-white text-[#240046] font-semibold py-3 px-6 rounded-full text-center transition-all duration-300 active:scale-95 text-sm min-h-[44px] flex items-center justify-center"
+                      className={cn(
+                        "mt-2 font-semibold py-3 px-6 rounded-full text-center text-sm min-h-[44px] flex items-center justify-center transition-all duration-300 active:scale-95",
+                        isScrolled ? "bg-[#240046] text-white" : "bg-white text-[#240046]",
+                      )}
                     >
                       Cadastro Gratuito
                     </Link>
@@ -265,20 +434,8 @@ export const Header = () => {
           )}
         </nav>
       </header>
-
-      {/* CSS para animação inline (fallback caso não tenha no Tailwind config) */}
-      <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </>
   );
-};
+});
+
+Header.displayName = "Header";

@@ -8,6 +8,7 @@ import {
   createContext,
   useContext,
   type ReactNode,
+  type CSSProperties,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, MapPin, Gift, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
@@ -20,12 +21,20 @@ import { EmptyState } from "@/components/EmptyState";
 // CONSTANTS
 // =============================================================================
 
-const CARD_WIDTH = 300;
+const CARD_WIDTH_MOBILE = 280;
+const CARD_WIDTH_DESKTOP = 300;
 const CARD_GAP = 16;
-const CARD_TOTAL_WIDTH = CARD_WIDTH + CARD_GAP; // 316px
 const SKELETON_COUNT = 6;
 const PRELOAD_AHEAD = 3;
+const DOUBLE_TAP_DELAY = 300;
 const FAVORITES_STORAGE_KEY = "aniversariantevip_favorites";
+
+// Estilos para esconder scrollbar (cross-browser)
+const SCROLL_HIDE_STYLES: CSSProperties = {
+  WebkitOverflowScrolling: "touch",
+  scrollbarWidth: "none",
+  msOverflowStyle: "none",
+};
 
 // =============================================================================
 // TYPES
@@ -81,7 +90,7 @@ const saveFavoritesToStorage = (favorites: Set<string>) => {
   try {
     localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([...favorites]));
   } catch {
-    // Storage full or disabled
+    // Storage full or disabled - silently fail
   }
 };
 
@@ -108,36 +117,31 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
   return <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>;
 };
 
+/**
+ * Hook para usar favoritos - funciona com ou sem Provider
+ */
 const useFavorites = (): FavoritesContextType => {
   const context = useContext(FavoritesContext);
+  const [localFavorites, setLocalFavorites] = useState<Set<string>>(() =>
+    context ? new Set() : loadFavoritesFromStorage(),
+  );
 
-  // Fallback para uso standalone (sem provider)
-  const [localFavorites, setLocalFavorites] = useState<Set<string> | null>(null);
-
-  // Lazy init apenas se não tiver context
-  useEffect(() => {
-    if (!context && localFavorites === null) {
-      setLocalFavorites(loadFavoritesFromStorage());
-    }
-  }, [context, localFavorites]);
-
+  // Se tem context, usa ele
   if (context) return context;
 
-  // Fallback functions
-  const favorites = localFavorites ?? new Set<string>();
-
+  // Fallback standalone (memoizado para evitar re-renders)
   return {
-    favorites,
+    favorites: localFavorites,
     toggleFavorite: (id: string) => {
       setLocalFavorites((prev) => {
-        const next = new Set(prev ?? []);
+        const next = new Set(prev);
         if (next.has(id)) next.delete(id);
         else next.add(id);
         saveFavoritesToStorage(next);
         return next;
       });
     },
-    isFavorite: (id: string) => favorites.has(id),
+    isFavorite: (id: string) => localFavorites.has(id),
   };
 };
 
@@ -161,7 +165,10 @@ const useReducedMotion = (): boolean => {
   return reducedMotion;
 };
 
-const useDebounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number): T => {
+const useDebounce = <T extends (...args: Parameters<T>) => void>(
+  fn: T,
+  delay: number,
+): ((...args: Parameters<T>) => void) => {
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   return useCallback(
@@ -170,7 +177,7 @@ const useDebounce = <T extends (...args: unknown[]) => void>(fn: T, delay: numbe
       timeoutRef.current = setTimeout(() => fn(...args), delay);
     },
     [fn, delay],
-  ) as T;
+  );
 };
 
 const INTERSECTION_OPTIONS: IntersectionObserverInit = {
@@ -179,7 +186,6 @@ const INTERSECTION_OPTIONS: IntersectionObserverInit = {
 };
 
 const useInView = () => {
-  const [isInView, setIsInView] = useState(false);
   const [hasBeenInView, setHasBeenInView] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -188,9 +194,9 @@ const useInView = () => {
     if (!element) return;
 
     const observer = new IntersectionObserver(([entry]) => {
-      setIsInView(entry.isIntersecting);
       if (entry.isIntersecting) {
         setHasBeenInView(true);
+        observer.disconnect(); // Uma vez visível, não precisa mais observar
       }
     }, INTERSECTION_OPTIONS);
 
@@ -198,7 +204,7 @@ const useInView = () => {
     return () => observer.disconnect();
   }, []);
 
-  return { ref, isInView, hasBeenInView };
+  return { ref, hasBeenInView };
 };
 
 // =============================================================================
@@ -222,44 +228,62 @@ const formatarDistancia = (km: number): string => {
   return `${Math.round(km)} km`;
 };
 
-const preloadImage = (src: string) => {
+const preloadImage = (src: string): void => {
   const img = new Image();
   img.src = src;
+};
+
+const getCardWidth = (): number => {
+  if (typeof window === "undefined") return CARD_WIDTH_DESKTOP;
+  return window.innerWidth < 640 ? CARD_WIDTH_MOBILE : CARD_WIDTH_DESKTOP;
 };
 
 // =============================================================================
 // SKELETON
 // =============================================================================
 
+const shimmerKeyframes = `
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+`;
+
 const AirbnbCardSkeleton = memo(() => {
   const reducedMotion = useReducedMotion();
 
   return (
-    <div
-      className="flex-shrink-0 w-[280px] sm:w-[300px] snap-start"
-      role="status"
-      aria-label="Carregando estabelecimento"
-    >
-      <div className="relative aspect-[4/3] rounded-xl bg-gray-200 dark:bg-gray-700 overflow-hidden mb-3">
-        {!reducedMotion && (
-          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent animate-[shimmer_1.5s_infinite]" />
-        )}
-        <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600" />
-        <div className="absolute bottom-3 left-3 w-20 h-6 rounded-full bg-gray-300 dark:bg-gray-600" />
-      </div>
-
-      <div className="space-y-2 pr-4">
-        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-md w-[85%]" />
-        <div className="flex items-center gap-1">
-          <div className="w-3.5 h-3.5 bg-gray-200 dark:bg-gray-700 rounded" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-[60%]" />
+    <>
+      <style>{shimmerKeyframes}</style>
+      <div
+        className="flex-shrink-0 w-[280px] sm:w-[300px] snap-start"
+        role="status"
+        aria-label="Carregando estabelecimento"
+      >
+        <div className="relative aspect-[4/3] rounded-xl bg-gray-200 dark:bg-gray-700 overflow-hidden mb-3">
+          {!reducedMotion && (
+            <div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent"
+              style={{ animation: "shimmer 1.5s infinite" }}
+            />
+          )}
+          <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600" />
+          <div className="absolute bottom-3 left-3 w-20 h-6 rounded-full bg-gray-300 dark:bg-gray-600" />
         </div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-[40%]" />
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-[70%]" />
-      </div>
 
-      <span className="sr-only">Carregando estabelecimento...</span>
-    </div>
+        <div className="space-y-2 pr-4">
+          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-md w-[85%]" />
+          <div className="flex items-center gap-1">
+            <div className="w-3.5 h-3.5 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-[60%]" />
+          </div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-[40%]" />
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-[70%]" />
+        </div>
+
+        <span className="sr-only">Carregando estabelecimento...</span>
+      </div>
+    </>
   );
 });
 
@@ -269,53 +293,59 @@ AirbnbCardSkeleton.displayName = "AirbnbCardSkeleton";
 // CARD IMAGE
 // =============================================================================
 
-const CardImage = memo(
-  ({ src, fallback, alt, priority }: { src: string; fallback: string; alt: string; priority: boolean }) => {
-    const [status, setStatus] = useState<"loading" | "loaded" | "error">(priority ? "loaded" : "loading");
-    const [currentSrc, setCurrentSrc] = useState(src);
-    const reducedMotion = useReducedMotion();
+interface CardImageProps {
+  src: string;
+  fallback: string;
+  alt: string;
+  priority: boolean;
+}
 
-    const handleLoad = useCallback(() => setStatus("loaded"), []);
+const CardImage = memo(({ src, fallback, alt, priority }: CardImageProps) => {
+  const [status, setStatus] = useState<"loading" | "loaded" | "error">(priority ? "loaded" : "loading");
+  const [currentSrc, setCurrentSrc] = useState(src);
+  const reducedMotion = useReducedMotion();
 
-    const handleError = useCallback(() => {
-      if (currentSrc !== fallback) {
-        setCurrentSrc(fallback);
-      } else {
-        setStatus("error");
-      }
-    }, [currentSrc, fallback]);
+  const handleLoad = useCallback(() => setStatus("loaded"), []);
 
-    return (
-      <div className="relative w-full h-full">
-        {status === "loading" && (
-          <div className={cn("absolute inset-0 bg-gray-200 dark:bg-gray-700", !reducedMotion && "animate-pulse")} />
+  const handleError = useCallback(() => {
+    if (currentSrc !== fallback) {
+      setCurrentSrc(fallback);
+    } else {
+      setStatus("error");
+    }
+  }, [currentSrc, fallback]);
+
+  return (
+    <div className="relative w-full h-full">
+      {status === "loading" && (
+        <div className={cn("absolute inset-0 bg-gray-200 dark:bg-gray-700", !reducedMotion && "animate-pulse")} />
+      )}
+
+      <img
+        src={currentSrc}
+        alt={alt}
+        className={cn(
+          "w-full h-full object-cover",
+          !reducedMotion && "transition-all duration-500",
+          status === "loading" && "opacity-0 scale-105",
+          status === "loaded" && "opacity-100 scale-100",
+          status === "error" && "opacity-50",
         )}
+        loading={priority ? "eager" : "lazy"}
+        decoding={priority ? "sync" : "async"}
+        draggable={false}
+        onLoad={handleLoad}
+        onError={handleError}
+      />
 
-        <img
-          src={currentSrc}
-          alt={alt}
-          className={cn(
-            "w-full h-full object-cover transition-all duration-500",
-            status === "loading" && "opacity-0 scale-105",
-            status === "loaded" && "opacity-100 scale-100",
-            status === "error" && "opacity-50",
-          )}
-          loading={priority ? "eager" : "lazy"}
-          decoding={priority ? "sync" : "async"}
-          draggable={false}
-          onLoad={handleLoad}
-          onError={handleError}
-        />
-
-        {status === "error" && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-            <AlertCircle className="w-8 h-8 text-gray-400" aria-hidden="true" />
-          </div>
-        )}
-      </div>
-    );
-  },
-);
+      {status === "error" && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+          <AlertCircle className="w-8 h-8 text-gray-400" aria-hidden="true" />
+        </div>
+      )}
+    </div>
+  );
+});
 
 CardImage.displayName = "CardImage";
 
@@ -353,9 +383,11 @@ const AirbnbCard = memo(
     const est = estabelecimento;
     const isFavorited = isFavorite(est.id);
 
-    // Track impression
+    // Track impression (só uma vez)
+    const impressionTrackedRef = useRef(false);
     useEffect(() => {
-      if (hasBeenInView && onImpression) {
+      if (hasBeenInView && onImpression && !impressionTrackedRef.current) {
+        impressionTrackedRef.current = true;
         onImpression(est.id);
       }
     }, [hasBeenInView, est.id, onImpression]);
@@ -411,14 +443,16 @@ const AirbnbCard = memo(
     }, [fotoUrl]);
 
     const handleFavoriteToggle = useCallback(
-      (e?: React.MouseEvent) => {
+      (e?: React.MouseEvent | React.TouchEvent) => {
         e?.preventDefault();
         e?.stopPropagation();
 
+        // Haptic feedback
         if (navigator.vibrate) {
           navigator.vibrate(isFavorited ? [10] : [10, 50, 10]);
         }
 
+        // Animação
         if (!reducedMotion) {
           setIsAnimating(true);
           setTimeout(() => setIsAnimating(false), 600);
@@ -431,15 +465,18 @@ const AirbnbCard = memo(
     );
 
     // Double tap to favorite
-    const handleTouchEnd = useCallback(() => {
-      const now = Date.now();
-      const DOUBLE_TAP_DELAY = 300;
+    const handleTouchEnd = useCallback(
+      (e: React.TouchEvent) => {
+        const now = Date.now();
 
-      if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-        handleFavoriteToggle();
-      }
-      lastTapRef.current = now;
-    }, [handleFavoriteToggle]);
+        if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+          e.preventDefault();
+          handleFavoriteToggle();
+        }
+        lastTapRef.current = now;
+      },
+      [handleFavoriteToggle],
+    );
 
     return (
       <article
@@ -480,11 +517,18 @@ const AirbnbCard = memo(
             <div className="w-full h-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
           )}
 
+          {/* Overlay gradient */}
           <div
-            className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+            className={cn(
+              "absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10",
+              "opacity-0 group-hover:opacity-100",
+              !reducedMotion && "transition-opacity duration-300",
+              "pointer-events-none",
+            )}
             aria-hidden="true"
           />
 
+          {/* Favorite button */}
           <button
             onClick={handleFavoriteToggle}
             aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
@@ -492,23 +536,25 @@ const AirbnbCard = memo(
             className={cn(
               "absolute top-3 right-3 z-10 p-2 rounded-full",
               "bg-black/20 backdrop-blur-sm",
-              "transition-all duration-200",
               "hover:bg-black/40 hover:scale-110",
               "active:scale-95",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+              !reducedMotion && "transition-all duration-200",
             )}
           >
             <Heart
               className={cn(
-                "w-5 h-5 drop-shadow-lg transition-all duration-200",
+                "w-5 h-5 drop-shadow-lg",
+                !reducedMotion && "transition-all duration-200",
                 isFavorited ? "text-red-500 fill-red-500" : "text-white fill-white/20",
-                isAnimating && !reducedMotion && "animate-bounce",
+                isAnimating && !reducedMotion && "scale-125",
               )}
               strokeWidth={2}
               aria-hidden="true"
             />
           </button>
 
+          {/* Benefit badge */}
           {temBeneficio && (
             <div
               className={cn(
@@ -526,6 +572,7 @@ const AirbnbCard = memo(
           )}
         </div>
 
+        {/* Content */}
         <div className="space-y-1 pr-4">
           <h3 className="font-semibold text-[15px] text-gray-900 dark:text-gray-100 truncate leading-tight">
             {nomeDisplay}
@@ -564,42 +611,113 @@ AirbnbCard.displayName = "AirbnbCard";
 // POSITION INDICATOR
 // =============================================================================
 
-const PositionIndicator = memo(
-  ({ total, current, visible = 5 }: { total: number; current: number; visible?: number }) => {
-    if (total <= visible) {
-      return (
-        <div className="flex items-center justify-center gap-1.5 py-3" role="tablist" aria-label="Posição no carrossel">
-          {Array.from({ length: total }).map((_, i) => (
-            <div
-              key={i}
-              role="tab"
-              aria-selected={i === current}
-              className={cn(
-                "w-1.5 h-1.5 rounded-full transition-all duration-300",
-                i === current ? "w-4 bg-purple-600 dark:bg-purple-400" : "bg-gray-300 dark:bg-gray-600",
-              )}
-            />
-          ))}
-        </div>
-      );
-    }
+interface PositionIndicatorProps {
+  total: number;
+  current: number;
+  visible?: number;
+}
 
-    const progress = (current / (total - 1)) * 100;
-
+const PositionIndicator = memo(({ total, current, visible = 5 }: PositionIndicatorProps) => {
+  if (total <= visible) {
     return (
-      <div className="flex items-center justify-center py-3 px-4">
-        <div className="w-24 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+      <div className="flex items-center justify-center gap-1.5 py-3" role="tablist" aria-label="Posição no carrossel">
+        {Array.from({ length: total }).map((_, i) => (
           <div
-            className="h-full bg-purple-600 dark:bg-purple-400 rounded-full transition-all duration-300"
-            style={{ width: `${Math.max(10, progress)}%` }}
+            key={i}
+            role="tab"
+            aria-selected={i === current}
+            className={cn(
+              "h-1.5 rounded-full transition-all duration-300",
+              i === current ? "w-4 bg-purple-600 dark:bg-purple-400" : "w-1.5 bg-gray-300 dark:bg-gray-600",
+            )}
           />
-        </div>
+        ))}
       </div>
     );
-  },
-);
+  }
+
+  const progress = total > 1 ? (current / (total - 1)) * 100 : 0;
+
+  return (
+    <div className="flex items-center justify-center py-3 px-4">
+      <div className="w-24 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-purple-600 dark:bg-purple-400 rounded-full transition-all duration-300"
+          style={{ width: `${Math.max(10, progress)}%` }}
+        />
+      </div>
+    </div>
+  );
+});
 
 PositionIndicator.displayName = "PositionIndicator";
+
+// =============================================================================
+// NAVIGATION BUTTON
+// =============================================================================
+
+interface NavButtonProps {
+  direction: "left" | "right";
+  onClick: () => void;
+  disabled: boolean;
+  reducedMotion: boolean;
+}
+
+const NavButton = memo(({ direction, onClick, disabled, reducedMotion }: NavButtonProps) => {
+  const isLeft = direction === "left";
+  const Icon = isLeft ? ChevronLeft : ChevronRight;
+
+  return (
+    <button
+      onClick={onClick}
+      aria-label={isLeft ? "Ver estabelecimentos anteriores" : "Ver próximos estabelecimentos"}
+      disabled={disabled}
+      className={cn(
+        "absolute top-1/2 -translate-y-1/2 z-20",
+        isLeft ? "left-2 sm:left-4 lg:left-8" : "right-2 sm:right-4 lg:right-8",
+        "w-11 h-11 sm:w-12 sm:h-12 rounded-full",
+        "bg-white dark:bg-gray-800",
+        "shadow-lg border border-gray-200 dark:border-gray-700",
+        "flex items-center justify-center",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500",
+        "disabled:opacity-0 disabled:pointer-events-none",
+        "opacity-0 group-hover/carousel:opacity-100 sm:opacity-100",
+        !reducedMotion && "transition-all duration-200 hover:scale-105 active:scale-95",
+        disabled && "!opacity-0 pointer-events-none",
+      )}
+    >
+      <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-200" aria-hidden="true" />
+    </button>
+  );
+});
+
+NavButton.displayName = "NavButton";
+
+// =============================================================================
+// FADE OVERLAY
+// =============================================================================
+
+interface FadeOverlayProps {
+  direction: "left" | "right";
+  visible: boolean;
+  reducedMotion: boolean;
+}
+
+const FadeOverlay = memo(({ direction, visible, reducedMotion }: FadeOverlayProps) => (
+  <div
+    className={cn(
+      "absolute top-0 bottom-0 w-8 sm:w-16 lg:w-24 z-10 pointer-events-none",
+      direction === "left"
+        ? "left-0 bg-gradient-to-r from-white dark:from-gray-900 to-transparent"
+        : "right-0 bg-gradient-to-l from-white dark:from-gray-900 to-transparent",
+      !reducedMotion && "transition-opacity duration-300",
+      visible ? "opacity-100" : "opacity-0",
+    )}
+    aria-hidden="true"
+  />
+));
+
+FadeOverlay.displayName = "FadeOverlay";
 
 // =============================================================================
 // MAIN GRID COMPONENT
@@ -618,6 +736,7 @@ export const AirbnbCardGrid = memo(
       if (!estabelecimentos.length) return;
 
       const nextItems = estabelecimentos.slice(currentIndex + 4, currentIndex + 4 + PRELOAD_AHEAD);
+
       nextItems.forEach((est) => {
         const url = getFotoEstabelecimento(est.logo_url, null, est.galeria_fotos, est.categoria);
         if (url) preloadImage(url);
@@ -629,10 +748,11 @@ export const AirbnbCardGrid = memo(
       if (!el) return;
 
       const { scrollLeft, scrollWidth, clientWidth } = el;
+      const cardTotalWidth = getCardWidth() + CARD_GAP;
 
       setShowLeftArrow(scrollLeft > 20);
       setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 20);
-      setCurrentIndex(Math.round(scrollLeft / CARD_TOTAL_WIDTH));
+      setCurrentIndex(Math.round(scrollLeft / cardTotalWidth));
     }, []);
 
     const debouncedCheckScroll = useDebounce(checkScrollPosition, 50);
@@ -656,8 +776,9 @@ export const AirbnbCardGrid = memo(
         const el = scrollRef.current;
         if (!el) return;
 
-        const visibleCards = Math.floor(el.clientWidth / CARD_TOTAL_WIDTH);
-        const scrollAmount = CARD_TOTAL_WIDTH * Math.max(1, visibleCards - 1);
+        const cardTotalWidth = getCardWidth() + CARD_GAP;
+        const visibleCards = Math.floor(el.clientWidth / cardTotalWidth);
+        const scrollAmount = cardTotalWidth * Math.max(1, visibleCards - 1);
 
         el.scrollBy({
           left: direction === "left" ? -scrollAmount : scrollAmount,
@@ -691,8 +812,8 @@ export const AirbnbCardGrid = memo(
     if (isLoading) {
       return (
         <div
-          className="flex gap-4 overflow-x-auto px-4 sm:px-6 lg:px-12 xl:px-20 scrollbar-hide"
-          style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="flex gap-4 overflow-x-auto px-4 sm:px-6 lg:px-12 xl:px-20"
+          style={SCROLL_HIDE_STYLES}
           aria-busy="true"
           aria-label="Carregando estabelecimentos"
         >
@@ -717,71 +838,23 @@ export const AirbnbCardGrid = memo(
         aria-label={`Carrossel com ${totalCards} estabelecimentos`}
         onKeyDown={handleKeyDown}
       >
-        {/* Left Arrow */}
-        <button
+        <NavButton
+          direction="left"
           onClick={() => scrollByAmount("left")}
-          aria-label="Ver estabelecimentos anteriores"
           disabled={!showLeftArrow}
-          className={cn(
-            "absolute left-2 sm:left-4 lg:left-8 top-1/2 -translate-y-1/2 z-20",
-            "w-11 h-11 sm:w-12 sm:h-12 rounded-full",
-            "bg-white dark:bg-gray-800",
-            "shadow-lg border border-gray-200 dark:border-gray-700",
-            "flex items-center justify-center",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500",
-            "disabled:opacity-0 disabled:pointer-events-none",
-            !reducedMotion && "transition-all duration-200 hover:scale-105 active:scale-95",
-            "opacity-0 group-hover/carousel:opacity-100 sm:opacity-100",
-            !showLeftArrow && "!opacity-0 pointer-events-none",
-          )}
-        >
-          <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-200" aria-hidden="true" />
-        </button>
+          reducedMotion={reducedMotion}
+        />
 
-        {/* Right Arrow */}
-        <button
+        <NavButton
+          direction="right"
           onClick={() => scrollByAmount("right")}
-          aria-label="Ver próximos estabelecimentos"
           disabled={!showRightArrow}
-          className={cn(
-            "absolute right-2 sm:right-4 lg:right-8 top-1/2 -translate-y-1/2 z-20",
-            "w-11 h-11 sm:w-12 sm:h-12 rounded-full",
-            "bg-white dark:bg-gray-800",
-            "shadow-lg border border-gray-200 dark:border-gray-700",
-            "flex items-center justify-center",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500",
-            "disabled:opacity-0 disabled:pointer-events-none",
-            !reducedMotion && "transition-all duration-200 hover:scale-105 active:scale-95",
-            "opacity-0 group-hover/carousel:opacity-100 sm:opacity-100",
-            !showRightArrow && "!opacity-0 pointer-events-none",
-          )}
-        >
-          <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-200" aria-hidden="true" />
-        </button>
-
-        {/* Left fade */}
-        <div
-          className={cn(
-            "absolute left-0 top-0 bottom-0 w-8 sm:w-16 lg:w-24",
-            "bg-gradient-to-r from-white dark:from-gray-900 to-transparent",
-            "z-10 pointer-events-none",
-            !reducedMotion && "transition-opacity duration-300",
-            showLeftArrow ? "opacity-100" : "opacity-0",
-          )}
-          aria-hidden="true"
+          reducedMotion={reducedMotion}
         />
 
-        {/* Right fade */}
-        <div
-          className={cn(
-            "absolute right-0 top-0 bottom-0 w-8 sm:w-16 lg:w-24",
-            "bg-gradient-to-l from-white dark:from-gray-900 to-transparent",
-            "z-10 pointer-events-none",
-            !reducedMotion && "transition-opacity duration-300",
-            showRightArrow ? "opacity-100" : "opacity-0",
-          )}
-          aria-hidden="true"
-        />
+        <FadeOverlay direction="left" visible={showLeftArrow} reducedMotion={reducedMotion} />
+
+        <FadeOverlay direction="right" visible={showRightArrow} reducedMotion={reducedMotion} />
 
         {/* Scroll Container */}
         <div
@@ -790,14 +863,9 @@ export const AirbnbCardGrid = memo(
             "flex gap-4 overflow-x-auto px-4 sm:px-6 lg:px-12 xl:px-20 py-2",
             "snap-x snap-mandatory",
             "touch-pan-x",
-            "scrollbar-hide",
             reducedMotion ? "scroll-auto" : "scroll-smooth",
           )}
-          style={{
-            WebkitOverflowScrolling: "touch",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-          }}
+          style={SCROLL_HIDE_STYLES}
           role="list"
           aria-label="Lista de estabelecimentos"
         >
@@ -815,10 +883,9 @@ export const AirbnbCardGrid = memo(
           ))}
         </div>
 
-        {/* Position indicator */}
         {totalCards > 4 && <PositionIndicator total={totalCards} current={currentIndex} />}
 
-        {/* Live region */}
+        {/* Live region for screen readers */}
         <div aria-live="polite" aria-atomic="true" className="sr-only">
           Mostrando item {currentIndex + 1} de {totalCards}
         </div>

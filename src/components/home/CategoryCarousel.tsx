@@ -11,27 +11,9 @@ import { CATEGORIAS } from "@/constants/categories";
 // =============================================================================
 
 const FAVORITES_KEY = "aniversariantevip_favorites";
-const RESIZE_DEBOUNCE = 150;
 const HEART_ANIMATION_DURATION = 400;
 const HAPTIC_LIGHT = 5;
 const HAPTIC_MEDIUM: number[] = [10, 50, 10];
-
-const BREAKPOINTS = {
-  sm: 640,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
-  "2xl": 1536,
-} as const;
-
-const GRID_COLS_MAP: Record<number, string> = {
-  1: "grid-cols-1",
-  2: "grid-cols-2",
-  3: "grid-cols-3",
-  4: "grid-cols-4",
-  5: "grid-cols-5",
-  6: "grid-cols-6",
-};
 
 // =============================================================================
 // TYPES
@@ -118,38 +100,6 @@ const useFavorites = () => {
   return { toggleFavorite, isFavorite };
 };
 
-const useCardsPerPage = (): number => {
-  const [cardsPerPage, setCardsPerPage] = useState(4);
-
-  useEffect(() => {
-    const calculateCardsPerPage = () => {
-      const width = window.innerWidth;
-      if (width < BREAKPOINTS.sm) setCardsPerPage(1);
-      else if (width < BREAKPOINTS.md) setCardsPerPage(2);
-      else if (width < BREAKPOINTS.lg) setCardsPerPage(3);
-      else if (width < BREAKPOINTS.xl) setCardsPerPage(4);
-      else if (width < BREAKPOINTS["2xl"]) setCardsPerPage(5);
-      else setCardsPerPage(6);
-    };
-
-    let timeoutId: ReturnType<typeof setTimeout>;
-    const debouncedCalculate = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(calculateCardsPerPage, RESIZE_DEBOUNCE);
-    };
-
-    calculateCardsPerPage();
-    window.addEventListener("resize", debouncedCalculate);
-
-    return () => {
-      window.removeEventListener("resize", debouncedCalculate);
-      clearTimeout(timeoutId);
-    };
-  }, []);
-
-  return cardsPerPage;
-};
-
 // =============================================================================
 // UTILS
 // =============================================================================
@@ -173,11 +123,6 @@ const haptic = (pattern: number | number[] = HAPTIC_LIGHT) => {
   }
 };
 
-const preloadImage = (src: string) => {
-  const img = new Image();
-  img.src = src;
-};
-
 // =============================================================================
 // SKELETON
 // =============================================================================
@@ -186,7 +131,7 @@ const CardSkeleton = memo(() => {
   const reducedMotion = useReducedMotion();
 
   return (
-    <div className="w-full" role="status" aria-label="Carregando">
+    <div className="flex-shrink-0 w-[280px]" role="status" aria-label="Carregando">
       <div className={cn("aspect-square rounded-xl bg-violet-100 mb-3", !reducedMotion && "animate-pulse")} />
       <div className="space-y-2">
         <div className={cn("h-4 bg-violet-100 rounded w-3/4", !reducedMotion && "animate-pulse")} />
@@ -280,7 +225,7 @@ const CarouselCard = memo(
         role="link"
         aria-label={`Ver ${nomeDisplay}${temBeneficio ? ", possui benefício" : ""}`}
         className={cn(
-          "group cursor-pointer w-full",
+          "flex-shrink-0 w-[280px] group cursor-pointer",
           "outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl",
         )}
       >
@@ -349,192 +294,144 @@ const CarouselCard = memo(
 CarouselCard.displayName = "CarouselCard";
 
 // =============================================================================
-// MAIN COMPONENT
+// MAIN COMPONENT - SCROLL CONTÍNUO ESTILO AIRBNB
 // =============================================================================
 
 export const CategoryCarousel = memo(
   ({ title, subtitle, estabelecimentos, sectionId, isLoading = false, onUserInteraction }: CategoryCarouselProps) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [currentPage, setCurrentPage] = useState(0);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(true);
     const reducedMotion = useReducedMotion();
     const { toggleFavorite, isFavorite } = useFavorites();
-    const cardsPerPage = useCardsPerPage();
 
-    // Notify interaction
-    const notifyInteraction = useCallback(() => {
-      if (sectionId && onUserInteraction) {
-        onUserInteraction(sectionId);
-      }
-    }, [sectionId, onUserInteraction]);
+    // Verifica posição do scroll
+    const checkScrollPosition = useCallback(() => {
+      const el = scrollRef.current;
+      if (!el) return;
 
-    // Reset page when cards per page changes
+      const { scrollLeft, scrollWidth, clientWidth } = el;
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }, []);
+
+    // Monitora scroll
     useEffect(() => {
-      setCurrentPage(0);
-    }, [cardsPerPage]);
+      const el = scrollRef.current;
+      if (!el) return;
 
-    const totalPages = useMemo(
-      () => Math.ceil(estabelecimentos.length / cardsPerPage),
-      [estabelecimentos.length, cardsPerPage],
-    );
+      checkScrollPosition();
+      el.addEventListener("scroll", checkScrollPosition, { passive: true });
+      window.addEventListener("resize", checkScrollPosition);
 
-    const visibleCards = useMemo(() => {
-      const startIndex = currentPage * cardsPerPage;
-      return estabelecimentos.slice(startIndex, startIndex + cardsPerPage);
-    }, [estabelecimentos, currentPage, cardsPerPage]);
+      return () => {
+        el.removeEventListener("scroll", checkScrollPosition);
+        window.removeEventListener("resize", checkScrollPosition);
+      };
+    }, [checkScrollPosition, estabelecimentos]);
 
-    // Preload next page images
-    useEffect(() => {
-      if (currentPage < totalPages - 1) {
-        const nextStartIndex = (currentPage + 1) * cardsPerPage;
-        const nextCards = estabelecimentos.slice(nextStartIndex, nextStartIndex + cardsPerPage);
-        nextCards.forEach((est) => {
-          const url = getFotoEstabelecimento(est.logo_url, null, est.galeria_fotos, est.categoria);
-          if (url) preloadImage(url);
-        });
-      }
-    }, [currentPage, cardsPerPage, estabelecimentos, totalPages]);
-
-    const canScrollLeft = currentPage > 0;
-    const canScrollRight = currentPage < totalPages - 1;
-
+    // Scroll por card (não por página)
     const scroll = useCallback(
       (direction: "left" | "right") => {
-        haptic(HAPTIC_LIGHT);
-        notifyInteraction();
+        const el = scrollRef.current;
+        if (!el) return;
 
-        setCurrentPage((prev) => {
-          return direction === "right" ? prev + 1 : prev - 1;
+        haptic(HAPTIC_LIGHT);
+
+        if (sectionId && onUserInteraction) {
+          onUserInteraction(sectionId);
+        }
+
+        // Scroll de 1 card por vez (280px + 24px gap = 304px)
+        const cardWidth = 304;
+        const scrollAmount = direction === "left" ? -cardWidth : cardWidth;
+
+        el.scrollBy({
+          left: scrollAmount,
+          behavior: reducedMotion ? "auto" : "smooth",
         });
       },
-      [notifyInteraction],
-    );
-
-    const goToPage = useCallback(
-      (page: number) => {
-        haptic(HAPTIC_LIGHT);
-        notifyInteraction();
-        setCurrentPage(page);
-      },
-      [notifyInteraction],
-    );
-
-    const gridClasses = useMemo(
-      () =>
-        cn(
-          "grid gap-6",
-          !reducedMotion && "transition-opacity duration-300",
-          GRID_COLS_MAP[cardsPerPage] || "grid-cols-4",
-        ),
-      [cardsPerPage, reducedMotion],
+      [reducedMotion, sectionId, onUserInteraction],
     );
 
     if (!isLoading && estabelecimentos.length === 0) return null;
 
     return (
-      <section aria-label={title} className="relative" role="region">
+      <section aria-label={title} className="relative group/carousel" role="region">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-[22px] font-semibold text-[#240046]">{title}</h2>
             {subtitle && <p className="text-sm text-[#7C3AED] mt-0.5">{subtitle}</p>}
           </div>
-
-          {totalPages > 1 && (
-            <div className="text-sm text-[#7C3AED] tabular-nums" aria-live="polite">
-              {currentPage + 1} / {totalPages}
-            </div>
-          )}
         </div>
 
-        {/* Carousel */}
-        <div className="relative" ref={containerRef}>
+        {/* Carousel Container */}
+        <div className="relative">
           {/* Left Arrow */}
-          <button
-            onClick={() => scroll("left")}
-            disabled={!canScrollLeft}
-            aria-label="Página anterior"
-            className={cn(
-              "absolute -left-4 top-1/3 -translate-y-1/2 z-10",
-              "w-10 h-10 bg-white rounded-full",
-              "shadow-lg border border-violet-200",
-              "flex items-center justify-center",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
-              "disabled:opacity-40 disabled:cursor-not-allowed",
-              !reducedMotion && "transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95",
-              !canScrollLeft && "hover:scale-100",
-            )}
-          >
-            <ChevronLeft className="w-5 h-5 text-[#240046]" aria-hidden="true" />
-          </button>
+          {canScrollLeft && (
+            <button
+              onClick={() => scroll("left")}
+              aria-label="Anterior"
+              className={cn(
+                "absolute left-0 top-1/3 -translate-y-1/2 z-10",
+                "w-10 h-10 bg-white rounded-full",
+                "shadow-lg border border-violet-200",
+                "flex items-center justify-center",
+                "opacity-0 group-hover/carousel:opacity-100",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:opacity-100",
+                !reducedMotion && "transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95",
+              )}
+            >
+              <ChevronLeft className="w-5 h-5 text-[#240046]" aria-hidden="true" />
+            </button>
+          )}
 
-          {/* Grid */}
-          <div className={gridClasses} role="list">
+          {/* Scroll Container */}
+          <div
+            ref={scrollRef}
+            className={cn(
+              "flex gap-6 overflow-x-auto pb-2 -mb-2",
+              "scrollbar-hide",
+              reducedMotion ? "scroll-auto" : "scroll-smooth",
+            )}
+            style={{
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
             {isLoading
-              ? Array.from({ length: cardsPerPage }).map((_, i) => (
-                  <div key={`skeleton-${i}`} role="listitem">
-                    <CardSkeleton />
-                  </div>
-                ))
-              : visibleCards.map((est) => (
-                  <div key={est.id} role="listitem">
-                    <CarouselCard
-                      estabelecimento={est}
-                      isFavorite={isFavorite(est.id)}
-                      onToggleFavorite={toggleFavorite}
-                      reducedMotion={reducedMotion}
-                    />
-                  </div>
+              ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={`skeleton-${i}`} />)
+              : estabelecimentos.map((est) => (
+                  <CarouselCard
+                    key={est.id}
+                    estabelecimento={est}
+                    isFavorite={isFavorite(est.id)}
+                    onToggleFavorite={toggleFavorite}
+                    reducedMotion={reducedMotion}
+                  />
                 ))}
           </div>
 
           {/* Right Arrow */}
-          <button
-            onClick={() => scroll("right")}
-            disabled={!canScrollRight}
-            aria-label="Próxima página"
-            className={cn(
-              "absolute -right-4 top-1/3 -translate-y-1/2 z-10",
-              "w-10 h-10 bg-white rounded-full",
-              "shadow-lg border border-violet-200",
-              "flex items-center justify-center",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
-              "disabled:opacity-40 disabled:cursor-not-allowed",
-              !reducedMotion && "transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95",
-              !canScrollRight && "hover:scale-100",
-            )}
-          >
-            <ChevronRight className="w-5 h-5 text-[#240046]" aria-hidden="true" />
-          </button>
-        </div>
-
-        {/* Pagination Dots */}
-        {totalPages > 1 && (
-          <div
-            className="flex items-center justify-center gap-1.5 mt-4"
-            role="tablist"
-            aria-label="Navegação por páginas"
-          >
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => goToPage(i)}
-                role="tab"
-                aria-selected={currentPage === i}
-                aria-label={`Página ${i + 1}`}
-                className={cn(
-                  "h-2 rounded-full",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
-                  !reducedMotion && "transition-all duration-300",
-                  currentPage === i ? "bg-[#240046] w-4" : "bg-violet-200 w-2 hover:bg-violet-300",
-                )}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Live region */}
-        <div role="status" aria-live="polite" className="sr-only">
-          Página {currentPage + 1} de {totalPages}
+          {canScrollRight && (
+            <button
+              onClick={() => scroll("right")}
+              aria-label="Próximo"
+              className={cn(
+                "absolute right-0 top-1/3 -translate-y-1/2 z-10",
+                "w-10 h-10 bg-white rounded-full",
+                "shadow-lg border border-violet-200",
+                "flex items-center justify-center",
+                "opacity-0 group-hover/carousel:opacity-100",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:opacity-100",
+                !reducedMotion && "transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95",
+              )}
+            >
+              <ChevronRight className="w-5 h-5 text-[#240046]" aria-hidden="true" />
+            </button>
+          )}
         </div>
       </section>
     );

@@ -8,6 +8,19 @@ import { VoiceSearchModal } from "@/components/VoiceSearchModal";
 import { parseVoiceSearch } from "@/utils/voiceSearchParser";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const RECENT_SEARCHES_KEY = "aniversariantevip_recent_searches";
+const MAX_RECENT_SEARCHES = 5;
+const DEBOUNCE_DELAY = 300;
+const VOICE_LANGUAGE = "pt-BR";
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
 interface AirbnbSearchBarProps {
   cidade: string;
   estado: string;
@@ -20,15 +33,17 @@ interface AirbnbSearchBarProps {
   showRecentSearches?: boolean;
 }
 
-const RECENT_SEARCHES_KEY = "aniversariantevip_recent_searches";
-const MAX_RECENT_SEARCHES = 5;
+// =============================================================================
+// HOOKS
+// =============================================================================
 
 const useReducedMotion = (): boolean => {
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
+  );
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(query.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     query.addEventListener("change", handler);
     return () => query.removeEventListener("change", handler);
@@ -59,14 +74,17 @@ const useRecentSearches = () => {
   });
 
   const addSearch = useCallback((term: string) => {
-    if (!term.trim()) return;
+    const trimmed = term.trim();
+    if (!trimmed) return;
 
     setSearches((prev) => {
-      const filtered = prev.filter((s) => s.toLowerCase() !== term.toLowerCase());
-      const updated = [term, ...filtered].slice(0, MAX_RECENT_SEARCHES);
+      const filtered = prev.filter((s) => s.toLowerCase() !== trimmed.toLowerCase());
+      const updated = [trimmed, ...filtered].slice(0, MAX_RECENT_SEARCHES);
       try {
         localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
-      } catch {}
+      } catch {
+        // Storage full or disabled
+      }
       return updated;
     });
   }, []);
@@ -75,11 +93,25 @@ const useRecentSearches = () => {
     setSearches([]);
     try {
       localStorage.removeItem(RECENT_SEARCHES_KEY);
-    } catch {}
+    } catch {
+      // Ignore
+    }
   }, []);
 
   return { searches, addSearch, clearSearches };
 };
+
+const useHaptic = () => {
+  return useCallback((pattern: number | number[] = 10) => {
+    if (navigator.vibrate) {
+      navigator.vibrate(pattern);
+    }
+  }, []);
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
 
 export const AirbnbSearchBar = memo(
   ({
@@ -98,23 +130,45 @@ export const AirbnbSearchBar = memo(
     const [isFocused, setIsFocused] = useState(false);
     const [showVoiceModal, setShowVoiceModal] = useState(false);
     const [showRecent, setShowRecent] = useState(false);
+
     const inputRef = useRef<HTMLInputElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
     const reducedMotion = useReducedMotion();
+    const haptic = useHaptic();
     const inputId = useId();
+    const listboxId = useId();
+
     const { searches, addSearch } = useRecentSearches();
+    const debouncedBusca = useDebounce(buscaInterna, DEBOUNCE_DELAY);
 
-    const debouncedBusca = useDebounce(buscaInterna, 300);
-
+    // Sync debounced value with parent
     useEffect(() => {
-      if (debouncedBusca !== busca && debouncedBusca.length >= 2) {
-        onBuscaChange(debouncedBusca);
+      // Dispara mesmo se vazio (para limpar busca)
+      if (debouncedBusca !== busca) {
+        // Só dispara busca real se >= 2 chars ou se estiver limpando
+        if (debouncedBusca.length >= 2 || debouncedBusca === "") {
+          onBuscaChange(debouncedBusca);
+        }
       }
     }, [debouncedBusca, busca, onBuscaChange]);
 
+    // Sync external busca prop
+    useEffect(() => {
+      if (busca !== buscaInterna && busca !== debouncedBusca) {
+        setBuscaInterna(busca);
+      }
+    }, [busca]);
+
+    // Click outside to close dropdown
     useEffect(() => {
       const handleClickOutside = (e: MouseEvent) => {
-        if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        const target = e.target as Node;
+        const isOutsideContainer = containerRef.current && !containerRef.current.contains(target);
+        const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(target);
+
+        if (isOutsideContainer && isOutsideDropdown) {
           setShowRecent(false);
         }
       };
@@ -123,6 +177,20 @@ export const AirbnbSearchBar = memo(
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // Keyboard navigation
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape" && showRecent) {
+          setShowRecent(false);
+          inputRef.current?.focus();
+        }
+      };
+
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [showRecent]);
+
+    // Voice search result handler
     const handleVoiceResult = useCallback(
       (transcriptResult: string) => {
         setTimeout(() => setShowVoiceModal(false), 600);
@@ -154,10 +222,11 @@ export const AirbnbSearchBar = memo(
       startListening,
       stopListening,
       resetTranscript,
-    } = useVoiceSearch(handleVoiceResult, { language: "pt-BR" });
+    } = useVoiceSearch(handleVoiceResult, { language: VOICE_LANGUAGE });
 
+    // Handlers
     const handleVoiceClick = useCallback(() => {
-      if (navigator.vibrate) navigator.vibrate(10);
+      haptic(10);
 
       if (isListening) {
         stopListening();
@@ -167,7 +236,7 @@ export const AirbnbSearchBar = memo(
         setShowVoiceModal(true);
         startListening();
       }
-    }, [isListening, stopListening, resetTranscript, startListening]);
+    }, [isListening, stopListening, resetTranscript, startListening, haptic]);
 
     const handleRetry = useCallback(() => {
       resetTranscript();
@@ -177,25 +246,26 @@ export const AirbnbSearchBar = memo(
     const handleBuscaSubmit = useCallback(
       (e: React.FormEvent) => {
         e.preventDefault();
-        if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
+        haptic([10, 30, 10]);
 
-        if (buscaInterna.trim()) {
-          onBuscaChange(buscaInterna);
-          addSearch(buscaInterna);
+        const trimmed = buscaInterna.trim();
+        if (trimmed) {
+          onBuscaChange(trimmed);
+          addSearch(trimmed);
           setShowRecent(false);
           inputRef.current?.blur();
         }
       },
-      [buscaInterna, onBuscaChange, addSearch],
+      [buscaInterna, onBuscaChange, addSearch, haptic],
     );
 
     const handleCidadeSelect = useCallback(
       (novaCidade: string, novoEstado: string) => {
-        if (navigator.vibrate) navigator.vibrate(10);
+        haptic(10);
         onCidadeSelect(novaCidade, novoEstado);
         setDialogOpen(false);
       },
-      [onCidadeSelect],
+      [onCidadeSelect, haptic],
     );
 
     const handleClear = useCallback(() => {
@@ -204,9 +274,20 @@ export const AirbnbSearchBar = memo(
       inputRef.current?.focus();
     }, [onBuscaChange]);
 
-    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-      setBuscaInterna(e.target.value);
-    }, []);
+    const handleInputChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setBuscaInterna(value);
+
+        // Show recent searches when input is empty
+        if (!value && searches.length > 0) {
+          setShowRecent(true);
+        } else {
+          setShowRecent(false);
+        }
+      },
+      [searches.length],
+    );
 
     const handleFocus = useCallback(() => {
       setIsFocused(true);
@@ -217,17 +298,23 @@ export const AirbnbSearchBar = memo(
 
     const handleBlur = useCallback(() => {
       setIsFocused(false);
+      // Delay to allow click on dropdown items
+      setTimeout(() => {
+        if (!dropdownRef.current?.contains(document.activeElement)) {
+          // Keep dropdown logic in mousedown handler
+        }
+      }, 100);
     }, []);
 
     const handleRecentClick = useCallback(
       (term: string) => {
-        if (navigator.vibrate) navigator.vibrate(10);
+        haptic(10);
         setBuscaInterna(term);
         onBuscaChange(term);
         setShowRecent(false);
         inputRef.current?.blur();
       },
-      [onBuscaChange],
+      [onBuscaChange, haptic],
     );
 
     const handleCloseVoiceModal = useCallback(() => {
@@ -235,10 +322,13 @@ export const AirbnbSearchBar = memo(
       stopListening();
     }, [stopListening]);
 
+    // Derived values
     const cidadeDisplay = cidade ? `${cidade}, ${estado}` : "Qualquer lugar";
+    const hasRecentSearches = showRecentSearches && searches.length > 0;
 
     return (
-      <div className="w-full max-w-3xl mx-auto p-1" ref={containerRef}>
+      <div className="relative w-full max-w-3xl mx-auto" ref={containerRef}>
+        {/* Search Bar */}
         <div
           role="search"
           className={cn(
@@ -253,12 +343,18 @@ export const AirbnbSearchBar = memo(
               "border-primary ring-[3px] ring-primary/15 shadow-[0_0_0_3px_rgba(139,92,246,0.15),0_4px_16px_rgba(139,92,246,0.1)]",
           )}
         >
+          {/* Location Selector */}
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <button
+                type="button"
                 aria-label={`Localização atual: ${cidadeDisplay}. Clique para alterar`}
+                aria-expanded={dialogOpen}
+                aria-haspopup="dialog"
                 className={cn(
-                  "flex items-center gap-2.5 px-5 py-3.5 border-r border-border/50 rounded-l-full min-w-[160px] sm:min-w-[180px]",
+                  "flex items-center gap-2.5 px-5 py-3.5",
+                  "border-r border-border/50 rounded-l-full",
+                  "min-w-[160px] sm:min-w-[180px]",
                   !reducedMotion && "transition-colors hover:bg-accent/50",
                 )}
               >
@@ -287,6 +383,7 @@ export const AirbnbSearchBar = memo(
             </DialogContent>
           </Dialog>
 
+          {/* Search Form */}
           <form onSubmit={handleBuscaSubmit} className="flex-1 flex items-center gap-2 min-w-0">
             <Search
               className={cn(
@@ -300,6 +397,7 @@ export const AirbnbSearchBar = memo(
             <label htmlFor={inputId} className="sr-only">
               Buscar estabelecimentos
             </label>
+
             <input
               id={inputId}
               ref={inputRef}
@@ -313,16 +411,30 @@ export const AirbnbSearchBar = memo(
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
-              className="flex-1 bg-transparent py-3.5 text-[15px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none min-w-0"
+              role="combobox"
+              aria-expanded={showRecent}
+              aria-controls={listboxId}
+              aria-haspopup="listbox"
+              aria-autocomplete="list"
+              className={cn(
+                "flex-1 min-w-0",
+                "bg-transparent py-3.5",
+                "text-[15px] text-foreground",
+                "placeholder:text-muted-foreground/70",
+                "focus:outline-none",
+              )}
             />
 
+            {/* Clear Button */}
             {buscaInterna && (
               <button
                 type="button"
                 onClick={handleClear}
                 aria-label="Limpar busca"
                 className={cn(
-                  "flex items-center justify-center w-7 h-7 rounded-full bg-muted text-muted-foreground shrink-0",
+                  "flex items-center justify-center",
+                  "w-7 h-7 rounded-full shrink-0",
+                  "bg-muted text-muted-foreground",
                   !reducedMotion && "transition-all hover:bg-muted/80 hover:text-foreground",
                 )}
               >
@@ -330,16 +442,20 @@ export const AirbnbSearchBar = memo(
               </button>
             )}
 
+            {/* Voice Search */}
             <VoiceSearchButton isListening={isListening} isSupported={isSupported} onClick={handleVoiceClick} />
 
+            {/* Divider */}
             <div className="w-px h-6 bg-border/50 shrink-0" aria-hidden="true" />
 
+            {/* Submit Button */}
             <button
               type="submit"
               aria-label="Buscar"
               disabled={isLoading}
               className={cn(
-                "flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 mr-1.5 rounded-full",
+                "flex items-center justify-center",
+                "w-10 h-10 sm:w-11 sm:h-11 mr-1.5 rounded-full",
                 "bg-gradient-to-r from-violet-600 to-fuchsia-600",
                 "shadow-lg shadow-violet-500/25",
                 "disabled:opacity-70 disabled:cursor-not-allowed",
@@ -350,9 +466,11 @@ export const AirbnbSearchBar = memo(
               {isLoading ? (
                 <div
                   className={cn(
-                    "w-[18px] h-[18px] border-2 border-white/30 border-t-white rounded-full",
+                    "w-[18px] h-[18px]",
+                    "border-2 border-white/30 border-t-white rounded-full",
                     !reducedMotion && "animate-spin",
                   )}
+                  aria-hidden="true"
                 />
               ) : (
                 <Search className="w-[18px] h-[18px] text-white" aria-hidden="true" />
@@ -361,12 +479,17 @@ export const AirbnbSearchBar = memo(
           </form>
         </div>
 
-        {showRecent && searches.length > 0 && (
+        {/* Recent Searches Dropdown */}
+        {showRecent && hasRecentSearches && (
           <div
+            ref={dropdownRef}
+            id={listboxId}
+            role="listbox"
+            aria-label="Buscas recentes"
             className={cn(
-              "absolute left-0 right-0 mt-2 mx-4 sm:mx-auto max-w-3xl",
+              "absolute left-0 right-0 mt-2 z-50",
               "bg-card border border-border rounded-xl shadow-lg",
-              "overflow-hidden z-50",
+              "overflow-hidden",
               !reducedMotion && "animate-in fade-in slide-in-from-top-2 duration-200",
             )}
           >
@@ -374,12 +497,16 @@ export const AirbnbSearchBar = memo(
               <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Buscas recentes
               </p>
+
               {searches.map((term, index) => (
                 <button
                   key={`${term}-${index}`}
+                  type="button"
+                  role="option"
                   onClick={() => handleRecentClick(term)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left",
+                    "w-full flex items-center gap-3",
+                    "px-3 py-2.5 rounded-lg text-left",
                     !reducedMotion && "transition-colors hover:bg-accent",
                   )}
                 >
@@ -391,6 +518,7 @@ export const AirbnbSearchBar = memo(
           </div>
         )}
 
+        {/* Voice Search Modal */}
         <VoiceSearchModal
           isOpen={showVoiceModal}
           isListening={isListening}

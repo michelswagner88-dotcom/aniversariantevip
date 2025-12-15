@@ -6,6 +6,37 @@ import { cn } from "@/lib/utils";
 import { getFotoEstabelecimento, getPlaceholderPorCategoria } from "@/lib/photoUtils";
 import { CATEGORIAS } from "@/constants/categories";
 
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const FAVORITES_KEY = "aniversariantevip_favorites";
+const RESIZE_DEBOUNCE = 150;
+const HEART_ANIMATION_DURATION = 400;
+const HAPTIC_LIGHT = 5;
+const HAPTIC_MEDIUM: number[] = [10, 50, 10];
+
+const BREAKPOINTS = {
+  sm: 640,
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+  "2xl": 1536,
+} as const;
+
+const GRID_COLS_MAP: Record<number, string> = {
+  1: "grid-cols-1",
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+  4: "grid-cols-4",
+  5: "grid-cols-5",
+  6: "grid-cols-6",
+};
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
 interface Estabelecimento {
   id: string;
   nome_fantasia?: string;
@@ -24,20 +55,29 @@ interface CategoryCarouselProps {
   title: string;
   subtitle?: string;
   estabelecimentos: Estabelecimento[];
-  variant?: "default" | "featured" | "compact";
   sectionId?: string;
   isLoading?: boolean;
-  onUserInteraction?: (sectionId: string) => void;
+  onPageChange?: (sectionId: string, page: number) => void;
 }
 
-const FAVORITES_KEY = "aniversariantevip_favorites";
+interface CarouselCardProps {
+  estabelecimento: Estabelecimento;
+  isFavorite: boolean;
+  onToggleFavorite: (id: string) => void;
+  reducedMotion: boolean;
+}
+
+// =============================================================================
+// HOOKS
+// =============================================================================
 
 const useReducedMotion = (): boolean => {
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
+  );
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(query.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     query.addEventListener("change", handler);
     return () => query.removeEventListener("change", handler);
@@ -66,7 +106,9 @@ const useFavorites = () => {
       }
       try {
         localStorage.setItem(FAVORITES_KEY, JSON.stringify([...next]));
-      } catch {}
+      } catch {
+        // Storage full or disabled
+      }
       return next;
     });
   }, []);
@@ -75,6 +117,42 @@ const useFavorites = () => {
 
   return { toggleFavorite, isFavorite };
 };
+
+const useCardsPerPage = (): number => {
+  const [cardsPerPage, setCardsPerPage] = useState(4);
+
+  useEffect(() => {
+    const calculateCardsPerPage = () => {
+      const width = window.innerWidth;
+      if (width < BREAKPOINTS.sm) setCardsPerPage(1);
+      else if (width < BREAKPOINTS.md) setCardsPerPage(2);
+      else if (width < BREAKPOINTS.lg) setCardsPerPage(3);
+      else if (width < BREAKPOINTS.xl) setCardsPerPage(4);
+      else if (width < BREAKPOINTS["2xl"]) setCardsPerPage(5);
+      else setCardsPerPage(6);
+    };
+
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const debouncedCalculate = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(calculateCardsPerPage, RESIZE_DEBOUNCE);
+    };
+
+    calculateCardsPerPage();
+    window.addEventListener("resize", debouncedCalculate);
+
+    return () => {
+      window.removeEventListener("resize", debouncedCalculate);
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  return cardsPerPage;
+};
+
+// =============================================================================
+// UTILS
+// =============================================================================
 
 const getCategoriaLabel = (categoria: string): string => {
   if (!categoria) return "Estabelecimento";
@@ -89,16 +167,31 @@ const getCategoriaLabel = (categoria: string): string => {
   return cat?.label || categoria;
 };
 
+const haptic = (pattern: number | number[] = HAPTIC_LIGHT) => {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};
+
+const preloadImage = (src: string) => {
+  const img = new Image();
+  img.src = src;
+};
+
+// =============================================================================
+// SKELETON
+// =============================================================================
+
 const CardSkeleton = memo(() => {
   const reducedMotion = useReducedMotion();
 
   return (
     <div className="w-full" role="status" aria-label="Carregando">
-      <div className={cn("aspect-square rounded-xl bg-gray-200 mb-3", !reducedMotion && "animate-pulse")} />
+      <div className={cn("aspect-square rounded-xl bg-muted mb-3", !reducedMotion && "animate-pulse")} />
       <div className="space-y-2">
-        <div className={cn("h-4 bg-gray-200 rounded w-3/4", !reducedMotion && "animate-pulse")} />
-        <div className={cn("h-4 bg-gray-200 rounded w-1/2", !reducedMotion && "animate-pulse")} />
-        <div className={cn("h-4 bg-gray-200 rounded w-2/3", !reducedMotion && "animate-pulse")} />
+        <div className={cn("h-4 bg-muted rounded w-3/4", !reducedMotion && "animate-pulse")} />
+        <div className={cn("h-4 bg-muted rounded w-1/2", !reducedMotion && "animate-pulse")} />
+        <div className={cn("h-4 bg-muted rounded w-2/3", !reducedMotion && "animate-pulse")} />
       </div>
       <span className="sr-only">Carregando...</span>
     </div>
@@ -107,12 +200,9 @@ const CardSkeleton = memo(() => {
 
 CardSkeleton.displayName = "CardSkeleton";
 
-interface CarouselCardProps {
-  estabelecimento: Estabelecimento;
-  isFavorite: boolean;
-  onToggleFavorite: (id: string) => void;
-  reducedMotion: boolean;
-}
+// =============================================================================
+// CARD
+// =============================================================================
 
 const CarouselCard = memo(
   ({ estabelecimento, isFavorite: isFavorited, onToggleFavorite, reducedMotion }: CarouselCardProps) => {
@@ -151,23 +241,17 @@ const CarouselCard = memo(
         e.stopPropagation();
         e.preventDefault();
 
-        if (navigator.vibrate) {
-          navigator.vibrate(isFavorited ? [10] : [10, 50, 10]);
-        }
+        haptic(isFavorited ? HAPTIC_LIGHT : HAPTIC_MEDIUM);
 
         if (!reducedMotion) {
           setIsAnimating(true);
-          setTimeout(() => setIsAnimating(false), 400);
+          setTimeout(() => setIsAnimating(false), HEART_ANIMATION_DURATION);
         }
 
         onToggleFavorite(est.id);
       },
       [est.id, isFavorited, onToggleFavorite, reducedMotion],
     );
-
-    const handleImageError = useCallback(() => {
-      setImageError(true);
-    }, []);
 
     const categoriaRaw = useMemo(
       () => (Array.isArray(est.categoria) ? est.categoria[0] : est.categoria),
@@ -195,10 +279,10 @@ const CarouselCard = memo(
         aria-label={`Ver ${nomeDisplay}${temBeneficio ? ", possui benefício" : ""}`}
         className={cn(
           "group cursor-pointer w-full",
-          "outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 rounded-xl",
+          "outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl",
         )}
       >
-        <div className="relative aspect-square rounded-xl overflow-hidden mb-3 bg-gray-100">
+        <div className="relative aspect-square rounded-xl overflow-hidden mb-3 bg-muted">
           <img
             src={imageSrc}
             alt={nomeDisplay}
@@ -209,7 +293,7 @@ const CarouselCard = memo(
             loading="lazy"
             decoding="async"
             draggable={false}
-            onError={handleImageError}
+            onError={() => setImageError(true)}
           />
 
           <button
@@ -228,7 +312,7 @@ const CarouselCard = memo(
                 "w-5 h-5 drop-shadow-md",
                 !reducedMotion && "transition-all duration-200",
                 isFavorited ? "text-red-500 fill-red-500" : "text-white fill-white/20",
-                isAnimating && !reducedMotion && "animate-[heartBounce_0.4s_ease-out]",
+                isAnimating && !reducedMotion && "animate-bounce",
               )}
               strokeWidth={1.5}
               aria-hidden="true"
@@ -237,15 +321,13 @@ const CarouselCard = memo(
         </div>
 
         <div className="space-y-0.5">
-          <h3 className="font-semibold text-[15px] text-[#240046] truncate">{nomeDisplay}</h3>
-          <p className="text-[15px] text-[#3C096C] truncate">{est.bairro || est.cidade}</p>
-          <p className="text-[15px] text-[#3C096C]">{categoria}</p>
+          <h3 className="font-semibold text-[15px] text-foreground truncate">{nomeDisplay}</h3>
+          <p className="text-[15px] text-muted-foreground truncate">{est.bairro || est.cidade}</p>
+          <p className="text-[15px] text-muted-foreground">{categoria}</p>
           {temBeneficio && (
-            <p className="text-[15px] text-[#3C096C] mt-1">
-              <span className="font-semibold text-[#240046]" aria-hidden="true">
-                🎁
-              </span>{" "}
-              <span className="font-semibold text-[#240046]">Benefício</span> no aniversário
+            <p className="text-[15px] text-muted-foreground mt-1">
+              <span aria-hidden="true">🎁</span> <span className="font-semibold text-foreground">Benefício</span> no
+              aniversário
             </p>
           )}
         </div>
@@ -256,54 +338,19 @@ const CarouselCard = memo(
 
 CarouselCard.displayName = "CarouselCard";
 
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
+
 export const CategoryCarousel = memo(
-  ({
-    title,
-    subtitle,
-    estabelecimentos,
-    variant = "default",
-    sectionId,
-    isLoading = false,
-    onUserInteraction,
-  }: CategoryCarouselProps) => {
+  ({ title, subtitle, estabelecimentos, sectionId, isLoading = false, onPageChange }: CategoryCarouselProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [currentPage, setCurrentPage] = useState(0);
-    const [cardsPerPage, setCardsPerPage] = useState(4);
     const reducedMotion = useReducedMotion();
     const { toggleFavorite, isFavorite } = useFavorites();
+    const cardsPerPage = useCardsPerPage();
 
-    const notifyInteraction = useCallback(() => {
-      if (sectionId && onUserInteraction) {
-        onUserInteraction(sectionId);
-      }
-    }, [sectionId, onUserInteraction]);
-
-    useEffect(() => {
-      const calculateCardsPerPage = () => {
-        const width = window.innerWidth;
-        if (width < 640) setCardsPerPage(1);
-        else if (width < 768) setCardsPerPage(2);
-        else if (width < 1024) setCardsPerPage(3);
-        else if (width < 1280) setCardsPerPage(4);
-        else if (width < 1536) setCardsPerPage(5);
-        else setCardsPerPage(6);
-      };
-
-      let timeoutId: NodeJS.Timeout;
-      const debouncedCalculate = () => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(calculateCardsPerPage, 150);
-      };
-
-      calculateCardsPerPage();
-      window.addEventListener("resize", debouncedCalculate);
-
-      return () => {
-        window.removeEventListener("resize", debouncedCalculate);
-        clearTimeout(timeoutId);
-      };
-    }, []);
-
+    // Reset page when cards per page changes
     useEffect(() => {
       setCurrentPage(0);
     }, [cardsPerPage]);
@@ -318,44 +365,48 @@ export const CategoryCarousel = memo(
       return estabelecimentos.slice(startIndex, startIndex + cardsPerPage);
     }, [estabelecimentos, currentPage, cardsPerPage]);
 
+    // Preload next page images
+    useEffect(() => {
+      if (currentPage < totalPages - 1) {
+        const nextStartIndex = (currentPage + 1) * cardsPerPage;
+        const nextCards = estabelecimentos.slice(nextStartIndex, nextStartIndex + cardsPerPage);
+        nextCards.forEach((est) => {
+          const url = getFotoEstabelecimento(est.logo_url, null, est.galeria_fotos, est.categoria);
+          if (url) preloadImage(url);
+        });
+      }
+    }, [currentPage, cardsPerPage, estabelecimentos, totalPages]);
+
     const canScrollLeft = currentPage > 0;
     const canScrollRight = currentPage < totalPages - 1;
 
     const scroll = useCallback(
       (direction: "left" | "right") => {
-        if (navigator.vibrate) navigator.vibrate(5);
-        notifyInteraction();
+        haptic(HAPTIC_LIGHT);
 
         setCurrentPage((prev) => {
-          if (direction === "right") {
-            return prev < totalPages - 1 ? prev + 1 : 0;
+          const newPage = direction === "right" ? prev + 1 : prev - 1;
+
+          if (sectionId && onPageChange) {
+            onPageChange(sectionId, newPage);
           }
-          return prev > 0 ? prev - 1 : totalPages - 1;
+
+          return newPage;
         });
       },
-      [notifyInteraction, totalPages],
+      [sectionId, onPageChange],
     );
 
     const goToPage = useCallback(
       (page: number) => {
-        if (navigator.vibrate) navigator.vibrate(5);
-        notifyInteraction();
+        haptic(HAPTIC_LIGHT);
         setCurrentPage(page);
-      },
-      [notifyInteraction],
-    );
 
-    const handleKeyDown = useCallback(
-      (e: React.KeyboardEvent) => {
-        if (e.key === "ArrowLeft" && canScrollLeft) {
-          e.preventDefault();
-          scroll("left");
-        } else if (e.key === "ArrowRight" && canScrollRight) {
-          e.preventDefault();
-          scroll("right");
+        if (sectionId && onPageChange) {
+          onPageChange(sectionId, page);
         }
       },
-      [scroll, canScrollLeft, canScrollRight],
+      [sectionId, onPageChange],
     );
 
     const gridClasses = useMemo(
@@ -363,12 +414,7 @@ export const CategoryCarousel = memo(
         cn(
           "grid gap-6",
           !reducedMotion && "transition-opacity duration-300",
-          cardsPerPage === 1 && "grid-cols-1",
-          cardsPerPage === 2 && "grid-cols-2",
-          cardsPerPage === 3 && "grid-cols-3",
-          cardsPerPage === 4 && "grid-cols-4",
-          cardsPerPage === 5 && "grid-cols-5",
-          cardsPerPage === 6 && "grid-cols-6",
+          GRID_COLS_MAP[cardsPerPage] || "grid-cols-4",
         ),
       [cardsPerPage, reducedMotion],
     );
@@ -376,38 +422,43 @@ export const CategoryCarousel = memo(
     if (!isLoading && estabelecimentos.length === 0) return null;
 
     return (
-      <section aria-label={title} className="relative" onKeyDown={handleKeyDown} tabIndex={0} role="region">
+      <section aria-label={title} className="relative" role="region">
+        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-[22px] font-semibold text-[#240046]">{title}</h2>
-            {subtitle && <p className="text-sm text-[#3C096C] mt-0.5">{subtitle}</p>}
+            <h2 className="text-[22px] font-semibold text-foreground">{title}</h2>
+            {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
           </div>
 
           {totalPages > 1 && (
-            <div className="text-sm text-[#3C096C] tabular-nums" aria-live="polite">
+            <div className="text-sm text-muted-foreground tabular-nums" aria-live="polite">
               {currentPage + 1} / {totalPages}
             </div>
           )}
         </div>
 
+        {/* Carousel */}
         <div className="relative" ref={containerRef}>
+          {/* Left Arrow */}
           <button
             onClick={() => scroll("left")}
             disabled={!canScrollLeft}
             aria-label="Página anterior"
             className={cn(
               "absolute -left-4 top-1/3 -translate-y-1/2 z-10",
-              "w-10 h-10 bg-white rounded-full",
-              "shadow-lg border border-[#DDDDDD] flex items-center justify-center",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500",
+              "w-10 h-10 bg-background rounded-full",
+              "shadow-lg border border-border",
+              "flex items-center justify-center",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
               "disabled:opacity-40 disabled:cursor-not-allowed",
               !reducedMotion && "transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95",
               !canScrollLeft && "hover:scale-100",
             )}
           >
-            <ChevronLeft className="w-5 h-5 text-[#240046]" aria-hidden="true" />
+            <ChevronLeft className="w-5 h-5 text-foreground" aria-hidden="true" />
           </button>
 
+          {/* Grid */}
           <div className={gridClasses} role="list">
             {isLoading
               ? Array.from({ length: cardsPerPage }).map((_, i) => (
@@ -427,24 +478,27 @@ export const CategoryCarousel = memo(
                 ))}
           </div>
 
+          {/* Right Arrow */}
           <button
             onClick={() => scroll("right")}
             disabled={!canScrollRight}
             aria-label="Próxima página"
             className={cn(
               "absolute -right-4 top-1/3 -translate-y-1/2 z-10",
-              "w-10 h-10 bg-white rounded-full",
-              "shadow-lg border border-[#DDDDDD] flex items-center justify-center",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500",
+              "w-10 h-10 bg-background rounded-full",
+              "shadow-lg border border-border",
+              "flex items-center justify-center",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
               "disabled:opacity-40 disabled:cursor-not-allowed",
               !reducedMotion && "transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95",
               !canScrollRight && "hover:scale-100",
             )}
           >
-            <ChevronRight className="w-5 h-5 text-[#240046]" aria-hidden="true" />
+            <ChevronRight className="w-5 h-5 text-foreground" aria-hidden="true" />
           </button>
         </div>
 
+        {/* Pagination Dots */}
         {totalPages > 1 && (
           <div
             className="flex items-center justify-center gap-1.5 mt-4"
@@ -460,15 +514,16 @@ export const CategoryCarousel = memo(
                 aria-label={`Página ${i + 1}`}
                 className={cn(
                   "h-2 rounded-full",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                   !reducedMotion && "transition-all duration-300",
-                  currentPage === i ? "bg-[#240046] w-4" : "bg-[#DDDDDD] w-2 hover:bg-[#3C096C]",
+                  currentPage === i ? "bg-foreground w-4" : "bg-muted w-2 hover:bg-muted-foreground",
                 )}
               />
             ))}
           </div>
         )}
 
+        {/* Live region */}
         <div role="status" aria-live="polite" className="sr-only">
           Página {currentPage + 1} de {totalPages}
         </div>

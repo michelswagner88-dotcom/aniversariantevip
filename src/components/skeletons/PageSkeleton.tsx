@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CardSkeleton } from "./CardSkeleton";
 
 /**
  * Skeleton para página inteira durante carregamento inicial
@@ -33,31 +34,6 @@ export const PageSkeleton = memo(function PageSkeleton() {
             <CardSkeleton key={i} />
           ))}
         </div>
-      </div>
-    </div>
-  );
-});
-
-/**
- * Skeleton genérico para cards
- */
-export const CardSkeleton = memo(function CardSkeleton() {
-  return (
-    <div
-      className="bg-card border border-border rounded-xl overflow-hidden animate-in fade-in duration-300 motion-reduce:animate-none"
-      role="article"
-      aria-hidden="true"
-    >
-      {/* Imagem */}
-      <div className="relative aspect-[4/3] bg-muted overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-muted-foreground/5 to-transparent animate-pulse motion-reduce:animate-none" />
-      </div>
-
-      {/* Conteúdo */}
-      <div className="p-4 space-y-3">
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="h-10 w-full" />
       </div>
     </div>
   );

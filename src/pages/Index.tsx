@@ -320,16 +320,18 @@ const Index = () => {
 
         {/* Search Bar alternativa quando filtrado */}
         {isFiltered && (
-          <div className="pt-20 max-w-3xl mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 mb-8">
-            <AirbnbSearchBar
-              cidade={cidadeFinal || ""}
-              estado={estadoFinal || ""}
-              busca={buscaParam || ""}
-              onBuscaChange={handleBuscaChange}
-              onCidadeSelect={handleCidadeChange}
-              onCategoriaChange={handleCategoriaChange}
-              onUseLocation={requestLocation}
-            />
+          <div className="bg-[#240046] pt-24 pb-6">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
+              <AirbnbSearchBar
+                cidade={cidadeFinal || ""}
+                estado={estadoFinal || ""}
+                busca={buscaParam || ""}
+                onBuscaChange={handleBuscaChange}
+                onCidadeSelect={handleCidadeChange}
+                onCategoriaChange={handleCategoriaChange}
+                onUseLocation={requestLocation}
+              />
+            </div>
           </div>
         )}
 

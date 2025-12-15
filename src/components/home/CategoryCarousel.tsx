@@ -268,20 +268,21 @@ const CarouselCard = memo(
 
     const fallbackUrl = useMemo(() => getPlaceholderPorCategoria(est.categoria), [est.categoria]);
     const imageSrc = imageError ? fallbackUrl : fotoUrl || fallbackUrl;
-    const nomeDisplay = est.nome_fantasia || est.razao_social || "Estabelecimento";
 
-    // DEBUG - REMOVER DEPOIS
-    useEffect(() => {
-      console.log(`[CategoryCarousel Card]`, {
-        id: est.id,
-        nome_fantasia: est.nome_fantasia,
-        razao_social: est.razao_social,
-        bairro: est.bairro,
-        cidade: est.cidade,
-        nomeDisplay,
-        todasAsChaves: Object.keys(est)
-      });
-    }, []);
+    // CORRIGIDO: Garantir que nomeDisplay nunca seja undefined/vazio
+    const nomeDisplay = est.nome_fantasia || est.razao_social || "Estabelecimento";
+    const bairroDisplay = est.bairro || est.cidade || "";
+
+    // DEBUG - Log no render para ver valores exatos
+    console.log("🔴 RENDER:", {
+      id: est.id?.substring(0, 8),
+      nome_fantasia: est.nome_fantasia,
+      razao_social: est.razao_social,
+      nomeDisplay,
+      bairro: est.bairro,
+      bairroDisplay,
+      keys: Object.keys(est),
+    });
 
     return (
       <article
@@ -333,10 +334,20 @@ const CarouselCard = memo(
           </button>
         </div>
 
+        {/* CONTEÚDO DO CARD - Com debug visual */}
         <div className="space-y-0.5">
-          <h3 className="font-semibold text-[15px] text-foreground truncate">{nomeDisplay}</h3>
-          <p className="text-[15px] text-muted-foreground truncate">{est.bairro || est.cidade}</p>
+          {/* LINHA 1: Nome do estabelecimento */}
+          <h3 className="font-semibold text-[15px] text-foreground truncate">
+            {nomeDisplay || `[VAZIO: ${est.nome_fantasia}]`}
+          </h3>
+
+          {/* LINHA 2: Bairro */}
+          <p className="text-[15px] text-muted-foreground truncate">{bairroDisplay}</p>
+
+          {/* LINHA 3: Categoria */}
           <p className="text-[15px] text-muted-foreground">{categoria}</p>
+
+          {/* LINHA 4: Benefício */}
           {temBeneficio && (
             <p className="text-[15px] text-muted-foreground mt-1">
               <span aria-hidden="true">🎁</span> <span className="font-semibold text-foreground">Benefício</span> no
@@ -363,13 +374,15 @@ export const CategoryCarousel = memo(
     const { toggleFavorite, isFavorite } = useFavorites();
     const cardsPerPage = useCardsPerPage();
 
-    // DEBUG - REMOVER DEPOIS  
+    // DEBUG - Log dos dados recebidos
     useEffect(() => {
       if (estabelecimentos.length > 0) {
-        console.log(`[CategoryCarousel "${title}"]`, {
+        console.log(`🟡 [CategoryCarousel "${title}"]`, {
           total: estabelecimentos.length,
           primeiroItem: estabelecimentos[0],
-          chavesDoItem: Object.keys(estabelecimentos[0])
+          temNomeFantasia: "nome_fantasia" in estabelecimentos[0],
+          valorNomeFantasia: estabelecimentos[0].nome_fantasia,
+          chavesDoItem: Object.keys(estabelecimentos[0]),
         });
       }
     }, [estabelecimentos, title]);

@@ -1,9 +1,10 @@
-// LocationSection.tsx - Localização Premium 2025
-// Tendências: Mapa integrado, Botões de navegação com logos
+// LocationSection.tsx - Clean Design com Lazy Map
+// Mapa só carrega ao clicar ou entrar no viewport
 
-import { motion } from "framer-motion";
-import { MapPin, Navigation, ExternalLink } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { MapPin, Copy, Check, Navigation, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface LocationSectionProps {
   establishment: {
@@ -23,107 +24,119 @@ interface LocationSectionProps {
 }
 
 const LocationSection = ({ establishment, onOpenMaps, onOpenWaze, onOpenUber, onOpen99 }: LocationSectionProps) => {
+  const [showMap, setShowMap] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
   const { logradouro, numero, bairro, cidade, estado, cep, latitude, longitude } = establishment;
 
-  // Montar endereço formatado
-  const endereco = [logradouro && numero ? `${logradouro}, ${numero}` : logradouro, bairro].filter(Boolean).join(" - ");
+  // Endereço formatado
+  const enderecoLinha1 = [logradouro, numero].filter(Boolean).join(", ");
+  const enderecoLinha2 = [bairro, cidade, estado].filter(Boolean).join(" - ");
+  const enderecoCompleto = [enderecoLinha1, enderecoLinha2, cep].filter(Boolean).join("\n");
 
-  const cidadeEstado = [cidade, estado].filter(Boolean).join(" - ");
+  // Copiar endereço
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(enderecoCompleto.replace(/\n/g, ", "));
+      setCopied(true);
+      toast.success("Endereço copiado!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Erro ao copiar");
+    }
+  };
 
-  // URL do mapa estático (usando embed do Google Maps)
+  // Lazy load do mapa (intersection observer)
+  useEffect(() => {
+    if (!sectionRef.current || showMap) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          // Delay para não impactar scroll
+          setTimeout(() => setShowMap(true), 500);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+
+    observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, [showMap]);
+
+  // URL do mapa
   const mapUrl =
     latitude && longitude
       ? `https://maps.google.com/maps?q=${latitude},${longitude}&z=16&output=embed`
-      : `https://maps.google.com/maps?q=${encodeURIComponent([logradouro, numero, bairro, cidade, estado].filter(Boolean).join(", "))}&z=16&output=embed`;
+      : `https://maps.google.com/maps?q=${encodeURIComponent(
+          [logradouro, numero, bairro, cidade, estado].filter(Boolean).join(", "),
+        )}&z=16&output=embed`;
 
-  const navigationApps = [
-    {
-      id: "maps",
-      name: "Maps",
-      icon: "https://upload.wikimedia.org/wikipedia/commons/a/aa/Google_Maps_icon_%282020%29.svg",
-      fallbackIcon: MapPin,
-      onClick: onOpenMaps,
-      color: "hover:border-green-500",
-    },
-    {
-      id: "waze",
-      name: "Waze",
-      icon: "https://upload.wikimedia.org/wikipedia/commons/2/2e/Waze_app_icon_2022.svg",
-      fallbackIcon: Navigation,
-      onClick: onOpenWaze,
-      color: "hover:border-cyan-500",
-    },
-    {
-      id: "uber",
-      name: "Uber",
-      icon: "https://upload.wikimedia.org/wikipedia/commons/c/cc/Uber_logo_2018.png",
-      fallbackIcon: Navigation,
-      onClick: onOpenUber,
-      color: "hover:border-black",
-    },
-    {
-      id: "99",
-      name: "99",
-      icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/99_logo.svg/1200px-99_logo.svg.png",
-      fallbackIcon: Navigation,
-      onClick: onOpen99,
-      color: "hover:border-yellow-500",
-    },
+  // Botões de navegação
+  const navButtons = [
+    { id: "maps", name: "Maps", onClick: onOpenMaps, color: "text-green-600" },
+    { id: "waze", name: "Waze", onClick: onOpenWaze, color: "text-cyan-500" },
+    { id: "uber", name: "Uber", onClick: onOpenUber, color: "text-black" },
+    { id: "99", name: "99", onClick: onOpen99, color: "text-yellow-500" },
   ];
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.8 }}
-      className="mx-4 sm:mx-6 mt-8 sm:mt-10"
-      aria-labelledby="location-heading"
-    >
+    <section ref={sectionRef} className="mx-4 sm:mx-6 mt-8" aria-labelledby="location-heading">
       <div className="max-w-3xl mx-auto">
-        <div
-          className="
-          overflow-hidden
-          bg-white
-          rounded-3xl
-          border border-[#EBEBEB]
-          shadow-sm
-        "
-        >
-          {/* Header e Endereço */}
-          <div className="p-6 sm:p-8">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-4">
-              <div
-                className="
-                w-10 h-10 rounded-xl
-                bg-gradient-to-br from-[#240046] to-[#3C096C]
-                flex items-center justify-center
-              "
-              >
-                <MapPin className="w-5 h-5 text-white" />
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          {/* Header + Endereço */}
+          <div className="p-5">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn("w-10 h-10 rounded-xl shrink-0", "bg-[#240046]", "flex items-center justify-center")}
+                >
+                  <MapPin className="w-5 h-5 text-white" />
+                </div>
+                <h2 id="location-heading" className="text-lg font-semibold text-gray-900">
+                  Como chegar
+                </h2>
               </div>
-              <h2 id="location-heading" className="text-xl font-semibold text-[#222222]">
-                Como chegar
-              </h2>
+
+              {/* Botão copiar */}
+              <button
+                onClick={handleCopy}
+                aria-label="Copiar endereço"
+                className={cn(
+                  "flex items-center gap-1.5",
+                  "px-3 py-1.5 rounded-lg",
+                  "text-sm font-medium",
+                  copied ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-600 hover:bg-gray-200",
+                  "transition-colors",
+                )}
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Copiado
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    Copiar
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Endereço */}
-            <div className="space-y-1 mb-6">
-              {endereco && <p className="text-[#222222] font-medium">{endereco}</p>}
-              {cidadeEstado && <p className="text-[#717171]">{cidadeEstado}</p>}
-              {cep && <p className="text-[#717171] text-sm">CEP: {cep}</p>}
+            <div className="text-gray-600 text-sm space-y-0.5">
+              {enderecoLinha1 && <p className="font-medium text-gray-900">{enderecoLinha1}</p>}
+              {enderecoLinha2 && <p>{enderecoLinha2}</p>}
+              {cep && <p className="text-gray-500">CEP: {cep}</p>}
             </div>
+          </div>
 
-            {/* Mapa */}
-            <div
-              className="
-              relative
-              w-full h-[200px] sm:h-[250px]
-              rounded-2xl overflow-hidden
-              bg-[#F7F7F7]
-              mb-6
-            "
-            >
+          {/* Mapa - Lazy Load */}
+          <div className="relative w-full h-[180px] bg-gray-100">
+            {showMap ? (
               <iframe
                 src={mapUrl}
                 width="100%"
@@ -133,71 +146,61 @@ const LocationSection = ({ establishment, onOpenMaps, onOpenWaze, onOpenUber, on
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
                 title="Localização no mapa"
-                className="grayscale-[20%]"
               />
+            ) : (
+              <button
+                onClick={() => setShowMap(true)}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center">
+                  <MapPin className="w-6 h-6 text-[#240046]" />
+                </div>
+                <span className="text-sm font-medium text-gray-600">Carregar mapa</span>
+              </button>
+            )}
 
-              {/* Botão ver mapa ampliado */}
+            {/* Botão abrir no Maps */}
+            {showMap && (
               <button
                 onClick={onOpenMaps}
-                className="
-                  absolute top-3 left-3
-                  px-4 py-2 rounded-full
-                  bg-white shadow-lg
-                  text-sm font-medium text-[#240046]
-                  flex items-center gap-2
-                  hover:shadow-xl
-                  transition-shadow
-                "
+                className={cn(
+                  "absolute top-3 left-3",
+                  "flex items-center gap-1.5",
+                  "px-3 py-2 rounded-lg",
+                  "bg-white shadow-md",
+                  "text-sm font-medium text-gray-700",
+                  "hover:shadow-lg transition-shadow",
+                )}
               >
                 <ExternalLink className="w-4 h-4" />
-                Ver mapa ampliado
+                Abrir no mapa
               </button>
-            </div>
+            )}
+          </div>
 
-            {/* Botões de navegação */}
-            <div className="grid grid-cols-4 gap-3">
-              {navigationApps.map((app, index) => (
-                <motion.button
-                  key={app.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={app.onClick}
-                  aria-label={`Navegar com ${app.name}`}
+          {/* Botões de navegação */}
+          <div className="p-4 border-t border-gray-100">
+            <div className="grid grid-cols-4 gap-2">
+              {navButtons.map((btn) => (
+                <button
+                  key={btn.id}
+                  onClick={btn.onClick}
                   className={cn(
-                    "flex flex-col items-center gap-2",
-                    "p-4 rounded-2xl",
-                    "bg-white border-2 border-[#EBEBEB]",
-                    "hover:shadow-lg",
-                    "transition-all duration-300",
-                    app.color,
+                    "flex flex-col items-center gap-1.5",
+                    "py-3 rounded-xl",
+                    "bg-gray-50 hover:bg-gray-100",
+                    "active:scale-[0.97] transition-all",
                   )}
                 >
-                  <div className="w-8 h-8 flex items-center justify-center">
-                    <img
-                      src={app.icon}
-                      alt={app.name}
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        // Fallback para ícone lucide
-                        e.currentTarget.style.display = "none";
-                        const parent = e.currentTarget.parentElement;
-                        if (parent) {
-                          parent.innerHTML = `<svg class="w-6 h-6 text-[#717171]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>`;
-                        }
-                      }}
-                    />
-                  </div>
-                  <span className="text-sm font-medium text-[#484848]">{app.name}</span>
-                </motion.button>
+                  <Navigation className={cn("w-5 h-5", btn.color)} />
+                  <span className="text-xs font-medium text-gray-700">{btn.name}</span>
+                </button>
               ))}
             </div>
           </div>
         </div>
       </div>
-    </motion.section>
+    </section>
   );
 };
 

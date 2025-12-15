@@ -270,6 +270,19 @@ const CarouselCard = memo(
     const imageSrc = imageError ? fallbackUrl : fotoUrl || fallbackUrl;
     const nomeDisplay = est.nome_fantasia || est.razao_social || "Estabelecimento";
 
+    // DEBUG - REMOVER DEPOIS
+    useEffect(() => {
+      console.log(`[CategoryCarousel Card]`, {
+        id: est.id,
+        nome_fantasia: est.nome_fantasia,
+        razao_social: est.razao_social,
+        bairro: est.bairro,
+        cidade: est.cidade,
+        nomeDisplay,
+        todasAsChaves: Object.keys(est)
+      });
+    }, []);
+
     return (
       <article
         onClick={handleClick}
@@ -349,6 +362,17 @@ export const CategoryCarousel = memo(
     const reducedMotion = useReducedMotion();
     const { toggleFavorite, isFavorite } = useFavorites();
     const cardsPerPage = useCardsPerPage();
+
+    // DEBUG - REMOVER DEPOIS  
+    useEffect(() => {
+      if (estabelecimentos.length > 0) {
+        console.log(`[CategoryCarousel "${title}"]`, {
+          total: estabelecimentos.length,
+          primeiroItem: estabelecimentos[0],
+          chavesDoItem: Object.keys(estabelecimentos[0])
+        });
+      }
+    }, [estabelecimentos, title]);
 
     // Notify interaction
     const notifyInteraction = useCallback(() => {

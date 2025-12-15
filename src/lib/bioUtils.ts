@@ -108,12 +108,12 @@ export const separarBeneficio = (beneficioCompleto?: string | null): BeneficioSe
 export const getValidadeTexto = (validade?: string | null): string => {
   switch (validade) {
     case 'dia_aniversario':
-      return 'Dia do aniversário';
+      return 'No dia do aniversário';
     case 'semana_aniversario':
-      return 'Semana do aniversário';
+      return 'Na semana do aniversário';
     case 'mes_aniversario':
-      return 'Mês do aniversário';
+      return 'No mês do aniversário';
     default:
-      return 'Dia do aniversário';
+      return 'No dia do aniversário';
   }
 };

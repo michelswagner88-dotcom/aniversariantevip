@@ -188,9 +188,11 @@ const LazyMap: React.FC<LazyMapProps> = ({
           whileTap={{ scale: 0.95 }}
           className="py-3 flex flex-col items-center gap-1.5 transition-colors"
         >
-          <div className="w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center">
-            <span className="text-white text-[8px] font-bold">W</span>
-          </div>
+          <img 
+            src="https://www.waze.com/favicon.ico" 
+            alt="Waze"
+            className="w-6 h-6 rounded"
+          />
           <span className="text-xs text-white/80">Waze</span>
         </motion.button>
 
@@ -200,9 +202,11 @@ const LazyMap: React.FC<LazyMapProps> = ({
           whileTap={{ scale: 0.95 }}
           className="py-3 flex flex-col items-center gap-1.5 transition-colors"
         >
-          <div className="w-6 h-6 bg-black rounded flex items-center justify-center">
-            <span className="text-white text-[8px] font-bold">Uber</span>
-          </div>
+          <img 
+            src="https://d1a3f4spazzrp4.cloudfront.net/uber-com/1.3.8/d1a3f4spazzrp4.cloudfront.net/images/favicon-32x32.png" 
+            alt="Uber"
+            className="w-6 h-6"
+          />
           <span className="text-xs text-white/80">Uber</span>
         </motion.button>
 
@@ -212,9 +216,11 @@ const LazyMap: React.FC<LazyMapProps> = ({
           whileTap={{ scale: 0.95 }}
           className="py-3 flex flex-col items-center gap-1.5 transition-colors"
         >
-          <div className="w-6 h-6 bg-yellow-400 rounded flex items-center justify-center">
-            <span className="text-black text-[10px] font-bold">99</span>
-          </div>
+          <img 
+            src="https://99app.com/favicon.ico" 
+            alt="99"
+            className="w-6 h-6"
+          />
           <span className="text-xs text-white/80">99</span>
         </motion.button>
       </div>

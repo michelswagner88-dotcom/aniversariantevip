@@ -747,7 +747,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
                 onClick={() => navigate('/seja-parceiro')}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-purple-900 font-bold text-sm shadow-lg shadow-purple-500/25"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#240046] to-[#3C096C] text-white font-bold text-sm shadow-lg shadow-purple-500/25"
               >
                 Cadastrar meu negócio
                 <ArrowRight className="w-4 h-4" />

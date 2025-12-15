@@ -8,19 +8,11 @@ import { getCategoriaIcon } from "@/lib/constants";
 import { getPlaceholderPorCategoria } from "@/lib/photoUtils";
 import { cn } from "@/lib/utils";
 
-// =============================================================================
-// CONSTANTS
-// =============================================================================
-
 const FAVORITES_KEY = "aniversariantevip_favorites";
 const SKELETON_COUNT = 8;
 const HEART_ANIMATION_DURATION = 400;
 const HAPTIC_LIGHT = 10;
 const HAPTIC_MEDIUM: number[] = [10, 50, 10];
-
-// =============================================================================
-// TYPES
-// =============================================================================
 
 interface Estabelecimento {
   id: string;
@@ -50,10 +42,6 @@ interface GridCardProps {
   onToggleFavorite: (id: string) => void;
   reducedMotion: boolean;
 }
-
-// =============================================================================
-// HOOKS
-// =============================================================================
 
 const useReducedMotion = (): boolean => {
   const [reducedMotion, setReducedMotion] = useState(() =>
@@ -90,9 +78,7 @@ const useFavorites = () => {
       }
       try {
         localStorage.setItem(FAVORITES_KEY, JSON.stringify([...next]));
-      } catch {
-        // Storage full or disabled
-      }
+      } catch {}
       return next;
     });
   }, []);
@@ -101,10 +87,6 @@ const useFavorites = () => {
 
   return { toggleFavorite, isFavorite };
 };
-
-// =============================================================================
-// UTILS
-// =============================================================================
 
 const getCategoryBadgeInfo = (est: Estabelecimento) => {
   const categoria = Array.isArray(est.categoria) ? est.categoria[0] : est.categoria;
@@ -122,10 +104,6 @@ const haptic = (pattern: number | number[] = HAPTIC_LIGHT) => {
     navigator.vibrate(pattern);
   }
 };
-
-// =============================================================================
-// GRID CARD
-// =============================================================================
 
 const GridCard = memo(
   ({ estabelecimento, isFavorite: isFavorited, onToggleFavorite, reducedMotion }: GridCardProps) => {
@@ -148,7 +126,6 @@ const GridCard = memo(
     const nomeDisplay = est.nome_fantasia || est.razao_social || "Estabelecimento";
     const temBeneficio = Boolean(est.descricao_beneficio);
 
-    // Image with fallback
     const imageSrc = useMemo(() => {
       if (est.logo_url) return est.logo_url;
       if (est.galeria_fotos?.[0]) return est.galeria_fotos[0];
@@ -206,7 +183,6 @@ const GridCard = memo(
           ],
         )}
       >
-        {/* Image Container */}
         <div className="relative overflow-hidden">
           <SafeImage
             src={imageSrc}
@@ -215,7 +191,6 @@ const GridCard = memo(
             className={cn(!reducedMotion && "transition-transform duration-500 group-hover:scale-110")}
           />
 
-          {/* Favorite Button - Top Right */}
           <button
             onClick={handleFavorite}
             aria-label={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
@@ -239,24 +214,17 @@ const GridCard = memo(
             />
           </button>
 
-          {/* Benefit Badge - Top Left */}
           {temBeneficio && (
             <div className="absolute top-3 left-3">
-              <div
-                className={cn(
-                  "flex items-center gap-1 px-2 py-1 rounded-lg",
-                  "bg-[#7C3AED] backdrop-blur-sm",
-                )}
-              >
+              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#7C3AED] backdrop-blur-sm">
                 <Gift className="w-3 h-3 text-white" aria-hidden="true" />
                 <span className="text-[10px] font-semibold text-white">Benefício</span>
               </div>
             </div>
           )}
 
-          {/* Category Badge - Bottom Left */}
           <div className="absolute bottom-3 left-3">
-            <div className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg", "bg-black/70 backdrop-blur-sm")}>
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/70 backdrop-blur-sm">
               <span className="text-sm" aria-hidden="true">
                 {badgeInfo.icon}
               </span>
@@ -265,7 +233,6 @@ const GridCard = memo(
           </div>
         </div>
 
-        {/* Content */}
         <div className="p-4">
           <h3
             className={cn(
@@ -288,10 +255,6 @@ const GridCard = memo(
 
 GridCard.displayName = "GridCard";
 
-// =============================================================================
-// EMPTY STATE
-// =============================================================================
-
 interface EmptyStateProps {
   message: string;
   onClearFilters?: () => void;
@@ -303,10 +266,7 @@ const EmptyState = memo(({ message, onClearFilters }: EmptyStateProps) => (
     role="status"
     aria-label="Nenhum resultado encontrado"
   >
-    <div
-      className={cn("w-16 h-16 rounded-full mb-4", "bg-violet-100 flex items-center justify-center")}
-      aria-hidden="true"
-    >
+    <div className="w-16 h-16 rounded-full mb-4 bg-violet-100 flex items-center justify-center" aria-hidden="true">
       <Search className="w-8 h-8 text-[#7C3AED]" />
     </div>
 
@@ -317,11 +277,7 @@ const EmptyState = memo(({ message, onClearFilters }: EmptyStateProps) => (
     {onClearFilters && (
       <button
         onClick={onClearFilters}
-        className={cn(
-          "px-4 py-2 rounded-full",
-          "bg-[#7C3AED] text-white font-medium",
-          "transition-all hover:bg-[#6D28D9] active:scale-95",
-        )}
+        className="px-4 py-2 rounded-full bg-[#7C3AED] text-white font-medium transition-all hover:bg-[#6D28D9] active:scale-95"
       >
         Limpar filtros
       </button>
@@ -330,10 +286,6 @@ const EmptyState = memo(({ message, onClearFilters }: EmptyStateProps) => (
 ));
 
 EmptyState.displayName = "EmptyState";
-
-// =============================================================================
-// MAIN COMPONENT
-// =============================================================================
 
 export const EstabelecimentosGrid = memo(
   ({
@@ -385,39 +337,3 @@ export const EstabelecimentosGrid = memo(
 );
 
 EstabelecimentosGrid.displayName = "EstabelecimentosGrid";
-```
-
----
-
-### O que foi corrigido:
-
-1. **Card** - `bg-white` com `border-violet-100`, hover `border-[#7C3AED]/30`
-2. **Badge de benefício** - Cor sólida `bg-[#7C3AED]` em vez de gradient
-3. **Nome do estabelecimento** - `text-[#240046]`, hover `text-[#7C3AED]`
-4. **Localização** - `text-[#7C3AED]`
-5. **EmptyState** - `bg-violet-100`, ícone `text-[#7C3AED]`, textos com cores da marca
-6. **Botão limpar filtros** - `bg-[#7C3AED]` hover `bg-[#6D28D9]`
-7. **Focus ring** - Usando `ring-[#7C3AED]`
-
----
-
-### Checklist
-
-- [x] TypeScript sem erros
-- [x] Cores consistentes com a marca (`#240046`, `#7C3AED`)
-- [x] Fundo branco para cards
-- [x] Responsivo mobile first (1-4 colunas)
-- [x] Acessibilidade mantida (aria-labels, roles)
-- [x] Animações respeitam `prefers-reduced-motion`
-- [x] Não removeu funcionalidades
-
----
-
-### Sugestão de Refatoração Futura
-
-Os hooks `useReducedMotion` e `useFavorites` estão duplicados em vários arquivos. Considere criar:
-```
-/src/hooks/
-  useReducedMotion.ts
-  useFavorites.ts
-  useHaptic.ts

@@ -57,6 +57,11 @@ export default {
           pink: "hsl(var(--cosmic-pink))",
           glow: "hsl(var(--cosmic-glow))",
         },
+        brand: {
+          950: "#240046",
+          900: "#3C096C",
+          800: "#5B21B6",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

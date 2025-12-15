@@ -415,7 +415,6 @@ const Index = () => {
                         subtitle={section.subtitle}
                         estabelecimentos={section.estabelecimentos}
                         sectionId={section.id}
-                        onUserInteraction={lockSection}
                       />
 
                       {index === 0 && (

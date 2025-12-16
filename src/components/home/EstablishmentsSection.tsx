@@ -1,7 +1,7 @@
 import { memo, useRef, useState, useEffect, useCallback, useMemo, useId } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
-import EstablishmentCard from "../EstablishmentCard";
+import { EstablishmentCard } from "@/components/cards";
 import { cn } from "@/lib/utils";
 
 // =============================================================================

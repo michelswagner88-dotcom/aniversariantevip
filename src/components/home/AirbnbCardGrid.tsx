@@ -10,10 +10,8 @@ import {
   type ReactNode,
   type CSSProperties,
 } from "react";
-import { useNavigate } from "react-router-dom";
-import { Heart, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
-import { getEstabelecimentoUrl } from "@/lib/slugUtils";
-import { getFotoEstabelecimento, getPlaceholderPorCategoria } from "@/lib/photoUtils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { EstablishmentCard, EstablishmentCardSkeleton, type EstablishmentData } from "@/components/cards";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/EmptyState";
 
@@ -25,8 +23,6 @@ const CARD_WIDTH_MOBILE = 160;
 const CARD_WIDTH_DESKTOP = 220;
 const CARD_GAP = 12;
 const SKELETON_COUNT = 6;
-const DOUBLE_TAP_DELAY = 300;
-const FAVORITES_STORAGE_KEY = "aniversariantevip_favorites";
 
 const SCROLL_HIDE_STYLES: CSSProperties = {
   WebkitOverflowScrolling: "touch",
@@ -38,24 +34,8 @@ const SCROLL_HIDE_STYLES: CSSProperties = {
 // TYPES
 // =============================================================================
 
-interface Estabelecimento {
-  id: string;
-  nome_fantasia?: string;
-  razao_social?: string;
-  estado: string;
-  cidade: string;
-  bairro?: string;
-  slug?: string;
-  categoria?: string | string[];
-  descricao_beneficio?: string;
-  latitude?: number;
-  longitude?: number;
-  logo_url?: string;
-  galeria_fotos?: string[];
-}
-
 interface AirbnbCardGridProps {
-  estabelecimentos: Estabelecimento[];
+  estabelecimentos: EstablishmentData[];
   isLoading: boolean;
   userLocation?: { lat: number; lng: number } | null;
   onCardClick?: (id: string) => void;
@@ -63,81 +43,6 @@ interface AirbnbCardGridProps {
   onImpression?: (ids: string[]) => void;
   variant?: "carousel" | "grid";
 }
-
-interface FavoritesContextType {
-  favorites: Set<string>;
-  toggleFavorite: (id: string) => void;
-  isFavorite: (id: string) => boolean;
-}
-
-// =============================================================================
-// FAVORITES CONTEXT
-// =============================================================================
-
-const FavoritesContext = createContext<FavoritesContextType | null>(null);
-
-const loadFavoritesFromStorage = (): Set<string> => {
-  try {
-    const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
-    return stored ? new Set(JSON.parse(stored)) : new Set();
-  } catch {
-    return new Set();
-  }
-};
-
-const saveFavoritesToStorage = (favorites: Set<string>) => {
-  try {
-    localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([...favorites]));
-  } catch {
-    // Silent fail
-  }
-};
-
-export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
-  const [favorites, setFavorites] = useState<Set<string>>(() => loadFavoritesFromStorage());
-
-  const toggleFavorite = useCallback((id: string) => {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      saveFavoritesToStorage(next);
-      return next;
-    });
-  }, []);
-
-  const isFavorite = useCallback((id: string) => favorites.has(id), [favorites]);
-
-  const value = useMemo(() => ({ favorites, toggleFavorite, isFavorite }), [favorites, toggleFavorite, isFavorite]);
-
-  return <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>;
-};
-
-const useFavorites = (): FavoritesContextType => {
-  const context = useContext(FavoritesContext);
-  const [localFavorites, setLocalFavorites] = useState<Set<string>>(() =>
-    context ? new Set() : loadFavoritesFromStorage(),
-  );
-
-  if (context) return context;
-
-  return {
-    favorites: localFavorites,
-    toggleFavorite: (id: string) => {
-      setLocalFavorites((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        saveFavoritesToStorage(next);
-        return next;
-      });
-    },
-    isFavorite: (id: string) => localFavorites.has(id),
-  };
-};
 
 // =============================================================================
 // HOOKS
@@ -173,352 +78,14 @@ const useDebounce = <T extends (...args: Parameters<T>) => void>(
   );
 };
 
-const INTERSECTION_OPTIONS: IntersectionObserverInit = {
-  threshold: 0.1,
-  rootMargin: "100px",
-};
-
-const useInView = () => {
-  const [hasBeenInView, setHasBeenInView] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setHasBeenInView(true);
-        observer.disconnect();
-      }
-    }, INTERSECTION_OPTIONS);
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
-  return { ref, hasBeenInView };
-};
-
 // =============================================================================
 // UTILS
 // =============================================================================
-
-const preloadImage = (src: string): void => {
-  const img = new Image();
-  img.src = src;
-};
 
 const getCardWidth = (): number => {
   if (typeof window === "undefined") return CARD_WIDTH_DESKTOP;
   return window.innerWidth < 640 ? CARD_WIDTH_MOBILE : CARD_WIDTH_DESKTOP;
 };
-
-// =============================================================================
-// SHIMMER
-// =============================================================================
-
-const shimmerKeyframes = `
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-`;
-
-// =============================================================================
-// SKELETON
-// =============================================================================
-
-const AirbnbCardSkeleton = memo(({ fullWidth = false }: { fullWidth?: boolean }) => {
-  const reducedMotion = useReducedMotion();
-
-  return (
-    <>
-      <style>{shimmerKeyframes}</style>
-      <div 
-        className={cn(
-          fullWidth ? "w-full" : "flex-shrink-0 w-[160px] sm:w-[220px] snap-start"
-        )} 
-        role="status" 
-        aria-label="Carregando"
-      >
-        <div className="relative aspect-[4/3] rounded-2xl bg-violet-100 overflow-hidden mb-2">
-          {!reducedMotion && (
-            <div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
-              style={{ animation: "shimmer 1.5s infinite" }}
-            />
-          )}
-        </div>
-        <div className="space-y-1.5 min-h-[90px]">
-          <div className="h-4 bg-violet-100 rounded w-[85%]" />
-          <div className="h-3 bg-violet-100 rounded w-[60%]" />
-          <div className="h-3 bg-violet-100 rounded w-[50%]" />
-        </div>
-        <span className="sr-only">Carregando...</span>
-      </div>
-    </>
-  );
-});
-
-AirbnbCardSkeleton.displayName = "AirbnbCardSkeleton";
-
-// =============================================================================
-// CARD IMAGE
-// =============================================================================
-
-interface CardImageProps {
-  src: string;
-  fallback: string;
-  alt: string;
-  priority: boolean;
-}
-
-const CardImage = memo(({ src, fallback, alt, priority }: CardImageProps) => {
-  const [status, setStatus] = useState<"loading" | "loaded" | "error">(priority ? "loaded" : "loading");
-  const [currentSrc, setCurrentSrc] = useState(src);
-  const reducedMotion = useReducedMotion();
-
-  const handleLoad = useCallback(() => setStatus("loaded"), []);
-
-  const handleError = useCallback(() => {
-    if (currentSrc !== fallback) {
-      setCurrentSrc(fallback);
-    } else {
-      setStatus("error");
-    }
-  }, [currentSrc, fallback]);
-
-  return (
-    <div className="relative w-full h-full">
-      {status === "loading" && (
-        <div className={cn("absolute inset-0 bg-violet-100", !reducedMotion && "animate-pulse")} />
-      )}
-
-      <img
-        src={currentSrc}
-        alt={alt}
-        className={cn(
-          "w-full h-full object-cover",
-          !reducedMotion && "transition-opacity duration-300",
-          status === "loading" && "opacity-0",
-          status === "loaded" && "opacity-100",
-          status === "error" && "opacity-50",
-        )}
-        loading={priority ? "eager" : "lazy"}
-        decoding={priority ? "sync" : "async"}
-        draggable={false}
-        onLoad={handleLoad}
-        onError={handleError}
-      />
-
-      {status === "error" && (
-        <div className="absolute inset-0 flex items-center justify-center bg-violet-50">
-          <AlertCircle className="w-6 h-6 text-violet-300" aria-hidden="true" />
-        </div>
-      )}
-    </div>
-  );
-});
-
-CardImage.displayName = "CardImage";
-
-// =============================================================================
-// CARD COMPONENT
-// =============================================================================
-
-interface AirbnbCardProps {
-  estabelecimento: Estabelecimento;
-  priority?: boolean;
-  index: number;
-  onImpression?: (id: string) => void;
-  onFavoriteChange?: (id: string, isFavorited: boolean) => void;
-  onClick?: (id: string) => void;
-  fullWidth?: boolean;
-}
-
-const AirbnbCard = memo(
-  ({ estabelecimento, priority = false, index, onImpression, onFavoriteChange, onClick, fullWidth = false }: AirbnbCardProps) => {
-    const navigate = useNavigate();
-    const { isFavorite, toggleFavorite } = useFavorites();
-    const [isAnimating, setIsAnimating] = useState(false);
-    const lastTapRef = useRef<number>(0);
-    const reducedMotion = useReducedMotion();
-    const { ref, hasBeenInView } = useInView();
-
-    const est = estabelecimento;
-    const isFavorited = isFavorite(est.id);
-
-    // Track impression
-    const impressionTrackedRef = useRef(false);
-    useEffect(() => {
-      if (hasBeenInView && onImpression && !impressionTrackedRef.current) {
-        impressionTrackedRef.current = true;
-        onImpression(est.id);
-      }
-    }, [hasBeenInView, est.id, onImpression]);
-
-    // Memoized values
-    const url = useMemo(
-      () =>
-        getEstabelecimentoUrl({
-          estado: est.estado,
-          cidade: est.cidade,
-          slug: est.slug,
-          id: est.id,
-        }),
-      [est.estado, est.cidade, est.slug, est.id],
-    );
-
-    const categoria = useMemo(() => (Array.isArray(est.categoria) ? est.categoria[0] : est.categoria), [est.categoria]);
-
-    const fotoUrl = useMemo(
-      () => getFotoEstabelecimento(est.logo_url, null, est.galeria_fotos, est.categoria),
-      [est.logo_url, est.galeria_fotos, est.categoria],
-    );
-
-    const fallbackUrl = useMemo(() => getPlaceholderPorCategoria(est.categoria), [est.categoria]);
-
-    const temBeneficio = Boolean(est.descricao_beneficio);
-    const nomeDisplay = est.nome_fantasia || est.razao_social || "Estabelecimento";
-    const bairroDisplay = est.bairro || est.cidade || "";
-
-    // Handlers
-    const handleClick = useCallback(() => {
-      onClick?.(est.id);
-      navigate(url);
-    }, [navigate, url, onClick, est.id]);
-
-    const handleKeyDown = useCallback(
-      (e: React.KeyboardEvent) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          handleClick();
-        }
-      },
-      [handleClick],
-    );
-
-    const handleMouseEnter = useCallback(() => {
-      if (fotoUrl) preloadImage(fotoUrl);
-    }, [fotoUrl]);
-
-    const handleFavoriteToggle = useCallback(
-      (e?: React.MouseEvent | React.TouchEvent) => {
-        e?.preventDefault();
-        e?.stopPropagation();
-
-        if (navigator.vibrate) {
-          navigator.vibrate(isFavorited ? [10] : [10, 50, 10]);
-        }
-
-        if (!reducedMotion) {
-          setIsAnimating(true);
-          setTimeout(() => setIsAnimating(false), 300);
-        }
-
-        toggleFavorite(est.id);
-        onFavoriteChange?.(est.id, !isFavorited);
-      },
-      [est.id, isFavorited, toggleFavorite, reducedMotion, onFavoriteChange],
-    );
-
-    const handleTouchEnd = useCallback(
-      (e: React.TouchEvent) => {
-        const now = Date.now();
-        if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-          e.preventDefault();
-          handleFavoriteToggle();
-        }
-        lastTapRef.current = now;
-      },
-      [handleFavoriteToggle],
-    );
-
-    return (
-      <article
-        ref={ref}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        onMouseEnter={handleMouseEnter}
-        onTouchEnd={handleTouchEnd}
-        tabIndex={0}
-        role="link"
-        aria-label={`Ver ${nomeDisplay}`}
-        data-index={index}
-        className={cn(
-          "group cursor-pointer",
-          fullWidth ? "w-full" : "flex-shrink-0 w-[160px] sm:w-[220px] snap-start",
-          "outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 rounded-2xl",
-        )}
-      >
-        {/* Imagem */}
-        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-2 bg-violet-50">
-          {hasBeenInView || priority ? (
-            <CardImage src={fotoUrl || fallbackUrl} fallback={fallbackUrl} alt={nomeDisplay} priority={priority} />
-          ) : (
-            <div className="w-full h-full bg-violet-100 animate-pulse" />
-          )}
-
-          {/* Badge Benefício - apenas no modo carousel */}
-          {temBeneficio && !fullWidth && (
-            <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-white/95 shadow-sm">
-              <span className="text-[10px] sm:text-xs font-medium text-[#7C3AED]">Benefício</span>
-            </div>
-          )}
-
-          {/* Coração */}
-          <button
-            onClick={handleFavoriteToggle}
-            aria-label={isFavorited ? "Remover dos favoritos" : "Salvar"}
-            aria-pressed={isFavorited}
-            className={cn(
-              "absolute top-2 right-2 p-1",
-              "transition-transform duration-200",
-              "hover:scale-110 active:scale-95",
-              "focus-visible:outline-none",
-            )}
-          >
-            <Heart
-              className={cn(
-                "w-5 h-5 sm:w-6 sm:h-6",
-                "drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]",
-                "transition-all duration-200",
-                isFavorited ? "text-red-500 fill-red-500" : "text-white fill-white/40 stroke-2",
-                isAnimating && "scale-125",
-              )}
-              aria-hidden="true"
-            />
-          </button>
-        </div>
-
-        {/* CONTEÚDO DO CARD - Cores roxas consistentes */}
-        <div className="flex flex-col min-h-[90px] space-y-0.5 px-0.5">
-          {/* Nome - Roxo escuro */}
-          <h3 className="font-semibold text-sm sm:text-[15px] leading-tight text-[#240046] line-clamp-2">
-            {nomeDisplay}
-          </h3>
-
-          {/* Bairro - Roxo claro */}
-          <p className="text-xs sm:text-sm text-[#7C3AED] truncate">{bairroDisplay}</p>
-
-          {/* Categoria - Roxo claro */}
-          {categoria && <p className="text-xs sm:text-sm text-[#7C3AED] truncate">{categoria}</p>}
-
-          {/* Benefício */}
-          {temBeneficio && (
-            <p className="text-xs sm:text-sm text-[#7C3AED] font-medium flex items-center gap-1 pt-0.5 mt-auto">
-              <span>🎁</span>
-              <span className="text-[#240046]">Benefício</span> no aniversário
-            </p>
-          )}
-        </div>
-      </article>
-    );
-  },
-);
-
-AirbnbCard.displayName = "AirbnbCard";
 
 // =============================================================================
 // NAVIGATION BUTTON
@@ -600,13 +167,12 @@ export const AirbnbCardGrid = memo(
       };
     }, [checkScrollPosition, debouncedCheckScroll, estabelecimentos, isGrid]);
 
-    // CORRIGIDO: Scroll de 1 card por vez
+    // Scroll by 1 card at a time
     const scrollByAmount = useCallback(
       (direction: "left" | "right") => {
         const el = scrollRef.current;
         if (!el) return;
 
-        // 1 card por vez: largura do card + gap
         const cardTotalWidth = getCardWidth() + CARD_GAP;
 
         el.scrollBy({
@@ -642,7 +208,7 @@ export const AirbnbCardGrid = memo(
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6" aria-busy="true">
           {Array.from({ length: 6 }).map((_, i) => (
-            <AirbnbCardSkeleton key={`skeleton-${i}`} fullWidth />
+            <EstablishmentCardSkeleton key={`skeleton-${i}`} fullWidth />
           ))}
         </div>
       );
@@ -653,7 +219,7 @@ export const AirbnbCardGrid = memo(
       return (
         <div className="flex gap-3 overflow-x-auto px-4 sm:px-6" style={SCROLL_HIDE_STYLES} aria-busy="true">
           {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-            <AirbnbCardSkeleton key={`skeleton-${i}`} />
+            <EstablishmentCardSkeleton key={`skeleton-${i}`} />
           ))}
         </div>
       );
@@ -673,9 +239,9 @@ export const AirbnbCardGrid = memo(
           aria-label={`${estabelecimentos.length} estabelecimentos`}
         >
           {estabelecimentos.map((est, index) => (
-            <AirbnbCard
+            <EstablishmentCard
               key={est.id}
-              estabelecimento={est}
+              establishment={est}
               priority={index < 6}
               index={index}
               onImpression={handleImpression}
@@ -721,15 +287,16 @@ export const AirbnbCardGrid = memo(
           role="list"
         >
           {estabelecimentos.map((est, index) => (
-            <AirbnbCard
-              key={est.id}
-              estabelecimento={est}
-              priority={index < 4}
-              index={index}
-              onImpression={handleImpression}
-              onFavoriteChange={onFavoriteChange}
-              onClick={onCardClick}
-            />
+            <div key={est.id} className="flex-shrink-0 w-[160px] sm:w-[220px] snap-start">
+              <EstablishmentCard
+                establishment={est}
+                priority={index < 4}
+                index={index}
+                onImpression={handleImpression}
+                onFavoriteChange={onFavoriteChange}
+                onClick={onCardClick}
+              />
+            </div>
           ))}
         </div>
       </div>

@@ -18,7 +18,7 @@ import { Footer } from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
 import HeroSection from "@/components/home/HeroSection";
 import { AirbnbSearchBar } from "@/components/home/AirbnbSearchBar";
-import { CategoriasPills } from "@/components/home/CategoriasPills";
+import CategoriasPills, { DEFAULT_CATEGORIES } from "@/components/home/CategoriasPills";
 import { AirbnbCardGrid } from "@/components/home/AirbnbCardGrid";
 import { CategoryCarousel } from "@/components/home/CategoryCarousel";
 import { AirbnbMapLayout } from "@/components/map/AirbnbMapLayout";
@@ -312,11 +312,9 @@ const Index = () => {
         {/* Hero Section - Apenas na home sem filtros */}
         {!isFiltered && (
           <HeroSection
-            cidade={cidadeFinal || undefined}
-            estado={estadoFinal || undefined}
-            onCidadeSelect={handleCidadeChange}
-            onBuscaChange={handleBuscaChange}
-            onBuscar={handleHeroBuscar}
+            selectedCity={cidadeFinal || undefined}
+            onCityChange={(city) => handleCidadeChange(city, estadoFinal || '')}
+            onSearch={handleHeroBuscar}
           />
         )}
 
@@ -343,12 +341,12 @@ const Index = () => {
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <CategoriasPills
-                  categoriaAtiva={categoriaParam}
-                  onCategoriaChange={(cat) => {
-                    handleCategoriaChange(cat);
+                  categories={DEFAULT_CATEGORIES}
+                  selectedCategory={categoriaParam || 'all'}
+                  onSelectCategory={(cat) => {
+                    handleCategoriaChange(cat === 'all' ? null : cat);
                     setSelectedSubcategories([]);
                   }}
-                  estabelecimentos={estabelecimentos || []}
                 />
               </div>
 

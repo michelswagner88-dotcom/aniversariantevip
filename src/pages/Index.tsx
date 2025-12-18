@@ -1,6 +1,6 @@
 // =============================================================================
 // INDEX.TSX - ANIVERSARIANTE VIP
-// V8 - Coração Transparente Estilo Airbnb
+// V9 - Fix Mobile (Logo Visível + Categorias Sem Corte)
 // =============================================================================
 
 import { useMemo, useState, useEffect, useCallback, useRef, memo } from "react";
@@ -261,16 +261,16 @@ const useRotatingCategories = () => {
 };
 
 // =============================================================================
-// LOGO
+// LOGO - SEMPRE VISÍVEL
 // =============================================================================
 
-const Logo = memo(() => (
-  <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
-    <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-      <Gift className="w-5 h-5 text-white" />
+const Logo = memo(({ showTextOnMobile = false }: { showTextOnMobile?: boolean }) => (
+  <Link to="/" className="flex items-center gap-2 flex-shrink-0">
+    <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+      <Gift className="w-4.5 h-4.5 text-white" />
     </div>
     <span
-      className="text-base font-bold tracking-tight hidden sm:block"
+      className={cn("font-bold tracking-tight", showTextOnMobile ? "text-sm" : "text-base hidden sm:block")}
       style={{
         background: "linear-gradient(90deg, #9D4EDD 0%, #00D4FF 100%)",
         WebkitBackgroundClip: "text",
@@ -353,7 +353,7 @@ const LocationButton = memo(({ onUseCurrentLocation }: { onUseCurrentLocation: (
 });
 
 // =============================================================================
-// HEADER
+// HEADER - MOBILE COM LOGO SEMPRE VISÍVEL
 // =============================================================================
 
 const Header = memo(
@@ -366,6 +366,7 @@ const Header = memo(
       <>
         <header className="sticky top-0 z-40" style={{ backgroundColor: HEADER_COLOR }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* DESKTOP */}
             <div className="hidden sm:flex items-center justify-between h-16 gap-6">
               <Logo />
               <div className="flex-1 max-w-xl flex items-center gap-2">
@@ -383,17 +384,22 @@ const Header = memo(
                 </div>
               </button>
             </div>
+
+            {/* MOBILE - LOGO SEMPRE VISÍVEL */}
             <div className="sm:hidden">
-              <div className="flex items-center justify-between h-14">
-                <Logo />
+              {/* Linha 1: Logo + Menu */}
+              <div className="flex items-center justify-between h-12 py-2">
+                <Logo showTextOnMobile />
                 <button
                   onClick={() => setMenuOpen(true)}
-                  className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20"
+                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
                   aria-label="Abrir menu"
                 >
                   <Menu className="w-5 h-5 text-white" />
                 </button>
               </div>
+
+              {/* Linha 2: Busca */}
               {children && (
                 <div className="pb-3 flex items-center gap-2">
                   {onUseCurrentLocation && <LocationButton onUseCurrentLocation={onUseCurrentLocation} />}
@@ -404,6 +410,7 @@ const Header = memo(
           </div>
         </header>
 
+        {/* MENU LATERAL */}
         {menuOpen && (
           <>
             <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setMenuOpen(false)} />
@@ -639,12 +646,12 @@ const SearchPill = memo(({ city, state, isLoading, onSelect, availableCities }: 
       <div className="sm:hidden">
         <div
           className={cn(
-            "flex items-center h-12 bg-white rounded-full shadow-sm transition-all",
+            "flex items-center h-11 bg-white rounded-full shadow-sm transition-all",
             isOpen ? "shadow-md ring-2 ring-violet-300" : "",
           )}
         >
           <div className="flex items-center gap-2.5 px-4 flex-1">
-            <Search className="w-5 h-5 text-zinc-400 flex-shrink-0" />
+            <Search className="w-4 h-4 text-zinc-400 flex-shrink-0" />
             <input
               type="text"
               value={query}
@@ -702,7 +709,7 @@ const SearchPill = memo(({ city, state, isLoading, onSelect, availableCities }: 
 });
 
 // =============================================================================
-// CATEGORIES
+// CATEGORIES - SEM CORTAR ÚLTIMO ITEM
 // =============================================================================
 
 const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) => {
@@ -712,35 +719,42 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
   ];
 
   return (
-    <div className="sticky top-[56px] sm:top-[64px] z-30" style={{ backgroundColor: HEADER_COLOR }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center overflow-x-auto scrollbar-hide py-1" style={{ scrollbarWidth: "none" }}>
-          {cats.map((cat) => {
-            const Icon = CATEGORY_ICONS[cat.id.toLowerCase()] || Sparkles;
-            const isActive = selected === cat.id;
-            const shortLabel = CATEGORY_LABELS_SHORT[cat.id.toLowerCase()] || cat.label;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => onSelect(cat.id)}
-                className={cn(
-                  "flex flex-col items-center gap-1 min-w-[64px] sm:min-w-[72px] px-3 py-2 relative transition-colors",
-                  isActive ? "text-white" : "text-white/90 hover:text-white",
-                )}
-              >
-                <Icon className={cn("w-5 h-5", isActive ? "text-white" : "text-white/85")} />
-                <span
+    <div className="sticky top-[88px] sm:top-[64px] z-30" style={{ backgroundColor: HEADER_COLOR }}>
+      <div className="max-w-7xl mx-auto">
+        {/* Container com padding e scroll */}
+        <div
+          className="flex items-center overflow-x-auto scrollbar-hide pl-4 sm:pl-6 lg:pl-8"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {/* Wrapper interno com gap e padding final */}
+          <div className="flex items-center gap-1 py-2 pr-6 sm:pr-8">
+            {cats.map((cat) => {
+              const Icon = CATEGORY_ICONS[cat.id.toLowerCase()] || Sparkles;
+              const isActive = selected === cat.id;
+              const shortLabel = CATEGORY_LABELS_SHORT[cat.id.toLowerCase()] || cat.label;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => onSelect(cat.id)}
                   className={cn(
-                    "text-[11px] font-semibold whitespace-nowrap",
-                    isActive ? "text-white" : "text-white/90",
+                    "flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[72px] px-2 sm:px-3 py-2 relative transition-colors flex-shrink-0",
+                    isActive ? "text-white" : "text-white/80 hover:text-white",
                   )}
                 >
-                  {shortLabel}
-                </span>
-                {isActive && <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-white rounded-full" />}
-              </button>
-            );
-          })}
+                  <Icon className={cn("w-5 h-5 sm:w-5 sm:h-5", isActive ? "text-white" : "text-white/80")} />
+                  <span
+                    className={cn(
+                      "text-[10px] sm:text-[11px] font-semibold whitespace-nowrap",
+                      isActive ? "text-white" : "text-white/80",
+                    )}
+                  >
+                    {shortLabel}
+                  </span>
+                  {isActive && <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-white rounded-full" />}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
@@ -748,7 +762,7 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
 });
 
 // =============================================================================
-// BENEFIT CHIP - NUNCA TRUNCA
+// BENEFIT CHIP
 // =============================================================================
 
 const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => {
@@ -776,7 +790,7 @@ const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => 
 };
 
 // =============================================================================
-// SKELETON PREMIUM (SHIMMER)
+// SKELETON
 // =============================================================================
 
 const CardSkeleton = memo(() => (
@@ -790,7 +804,7 @@ const CardSkeleton = memo(() => (
 ));
 
 // =============================================================================
-// FAVORITE BUTTON - ESTILO AIRBNB (TRANSPARENTE)
+// FAVORITE BUTTON - ESTILO AIRBNB
 // =============================================================================
 
 const FavoriteButton = memo(
@@ -819,29 +833,18 @@ const FavoriteButton = memo(
 
       setIsAnimating(true);
       setIsFavorited((prev) => !prev);
-
-      // Reset animation
       setTimeout(() => setIsAnimating(false), 300);
-
-      // TODO: Chamar API para salvar favorito
-      // saveFavorite(estabelecimentoId, !isFavorited);
     };
 
     return (
       <button
         onClick={handleClick}
         className={cn(
-          // Botão transparente - sem bg, sem border
           "absolute top-2 right-2",
-          // Hit area grande: 44px mobile, 36px desktop
           "w-[44px] h-[44px] sm:w-[36px] sm:h-[36px]",
-          // Centralizar ícone
           "flex items-center justify-center",
-          // Hover sutil
           "hover:scale-110 active:scale-95",
-          // Animação
           "transition-transform duration-200",
-          // Focus visible para acessibilidade
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-0 rounded-full",
         )}
         aria-label={
@@ -852,15 +855,10 @@ const FavoriteButton = memo(
       >
         <Heart
           className={cn(
-            // Tamanho do ícone
             "w-6 h-6 sm:w-5 sm:h-5",
-            // Sombra para contraste em qualquer foto
             "drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]",
-            // Transição suave
             "transition-all duration-200",
-            // Animação de pulse quando clica
             isAnimating && "animate-pulse",
-            // Estados de cor
             isFavorited
               ? "fill-red-500 text-red-500 stroke-white stroke-[1.5]"
               : "fill-black/30 text-white stroke-white stroke-2",
@@ -872,7 +870,7 @@ const FavoriteButton = memo(
 );
 
 // =============================================================================
-// CARD - PREMIUM COM CORAÇÃO AIRBNB
+// CARD
 // =============================================================================
 
 const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
@@ -887,7 +885,6 @@ const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
   return (
     <article onClick={onClick} className="cursor-pointer group">
       <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-zinc-100 mb-2.5">
-        {/* Imagem */}
         {img && !error && (
           <img
             src={img}
@@ -902,12 +899,10 @@ const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
           />
         )}
 
-        {/* Skeleton enquanto carrega */}
         {(!img || error || !loaded) && (
           <div className="absolute inset-0 bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:400%_100%] animate-[shimmer_2s_ease-in-out_infinite]" />
         )}
 
-        {/* Benefit Chip */}
         <div className="absolute top-2.5 left-2.5">
           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/95 backdrop-blur-sm text-[11px] font-semibold text-zinc-800 rounded-full shadow-sm border border-zinc-200/80">
             <span>{chip.emoji}</span>
@@ -915,7 +910,6 @@ const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
           </span>
         </div>
 
-        {/* Favorito - Estilo Airbnb (Transparente) */}
         <FavoriteButton
           estabelecimentoId={data.id}
           estabelecimentoNome={nome}
@@ -924,7 +918,6 @@ const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
         />
       </div>
 
-      {/* Info */}
       <div className="px-0.5">
         <h3 className="font-semibold text-zinc-900 text-sm leading-tight line-clamp-1">{nome}</h3>
         <p className="text-zinc-500 text-sm line-clamp-1 mt-0.5">
@@ -938,7 +931,7 @@ const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
 });
 
 // =============================================================================
-// CAROUSEL - PRIMEIRO E ÚLTIMO 100% VISÍVEIS
+// CAROUSEL
 // =============================================================================
 
 const Carousel = memo(({ title, subtitle, items, onSeeAll, isLoggedIn, onLoginRequired }: any) => {
@@ -981,7 +974,6 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll, isLoggedIn, onLoginRe
 
   return (
     <section className="mb-6">
-      {/* Header com título e setas */}
       <div className="flex items-center justify-between mb-3 px-4 sm:px-6 lg:px-8">
         <button onClick={onSeeAll} className="flex items-center gap-1 group text-left">
           <div>
@@ -991,7 +983,6 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll, isLoggedIn, onLoginRe
           <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:text-zinc-600 mt-0.5 flex-shrink-0" />
         </button>
 
-        {/* Setas - Desktop */}
         <div className="hidden sm:flex items-center gap-2">
           <button
             onClick={() => scroll("left")}
@@ -1012,7 +1003,6 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll, isLoggedIn, onLoginRe
         </div>
       </div>
 
-      {/* Track do Carrossel */}
       <div
         ref={scrollRef}
         className={cn(
@@ -1043,7 +1033,6 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll, isLoggedIn, onLoginRe
             />
           </div>
         ))}
-        {/* Spacer final */}
         <div className="flex-shrink-0 w-4 sm:w-6 lg:w-8" aria-hidden="true" />
       </div>
     </section>
@@ -1113,7 +1102,6 @@ const Index = () => {
   const rotation = useRotatingCategories();
   const categoria = searchParams.get("categoria") || "all";
 
-  // Auth para favoritos
   const { user } = useAuth();
   const isLoggedIn = !!user;
 

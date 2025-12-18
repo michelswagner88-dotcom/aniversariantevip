@@ -236,10 +236,10 @@ export const HeroSection = memo(function HeroSection({ selectedCity = "", onCity
       id="search-section"
       className={cn(
         "relative w-full",
-        "min-h-[50vh] max-h-[60vh]", // 50-60vh máximo
+        "min-h-[35vh] max-h-[45vh]",
         "flex flex-col justify-center",
         "px-4 sm:px-6 lg:px-8",
-        "pt-20 pb-8", // pt-20 para compensar header
+        "pt-16 pb-6",
         "bg-gradient-to-br from-[#240046] via-[#3C096C] to-[#5B21B6]",
         "overflow-hidden",
       )}
@@ -253,14 +253,14 @@ export const HeroSection = memo(function HeroSection({ selectedCity = "", onCity
       {/* Content */}
       <div className="relative z-10 max-w-4xl mx-auto w-full">
         {/* Headline */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <h1
             className={cn(
-              "text-2xl sm:text-3xl lg:text-4xl",
+              "text-xl sm:text-2xl lg:text-3xl",
               "font-display font-bold",
               "text-white",
               "leading-tight",
-              "mb-3",
+              "mb-2",
             )}
           >
             Seu aniversário merece{" "}
@@ -268,7 +268,7 @@ export const HeroSection = memo(function HeroSection({ selectedCity = "", onCity
               benefícios exclusivos
             </span>
           </h1>
-          <p className={cn("text-base sm:text-lg", "text-white/70", "max-w-lg mx-auto", "leading-relaxed")}>
+          <p className={cn("text-sm sm:text-base", "text-white/70", "max-w-lg mx-auto")}>
             Descubra restaurantes, bares e muito mais com vantagens especiais
           </p>
         </div>

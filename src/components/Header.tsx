@@ -13,7 +13,7 @@
 // ✅ Reduced motion support
 // =============================================================================
 
-import { memo, useState, useCallback, useEffect, useRef } from "react";
+import { memo, useState, useCallback, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Search, Menu, X, User, Gift, Building2, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -61,10 +61,10 @@ const HEADER_HEIGHT_COLLAPSED = 64;
 
 const useScrollDetection = (threshold: number = SCROLL_THRESHOLD) => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const sentinel = sentinelRef.current;
+    // Tentar usar sentinel externo primeiro (do Index.tsx)
+    const sentinel = document.getElementById("scroll-sentinel");
 
     if (sentinel && "IntersectionObserver" in window) {
       const observer = new IntersectionObserver(
@@ -78,6 +78,7 @@ const useScrollDetection = (threshold: number = SCROLL_THRESHOLD) => {
       return () => observer.disconnect();
     }
 
+    // Fallback: scroll event listener
     let ticking = false;
     const handleScroll = () => {
       if (!ticking) {
@@ -90,12 +91,12 @@ const useScrollDetection = (threshold: number = SCROLL_THRESHOLD) => {
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
+    handleScroll(); // Check inicial
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, [threshold]);
 
-  return { isScrolled, sentinelRef };
+  return isScrolled;
 };
 
 const useReducedMotion = (): boolean => {
@@ -547,7 +548,7 @@ MobileMenu.displayName = "MobileMenu";
 export const Header = memo(function Header({ showSearch = true, cityName, onSearchClick }: HeaderProps) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isScrolled, sentinelRef } = useScrollDetection(SCROLL_THRESHOLD);
+  const isScrolled = useScrollDetection(SCROLL_THRESHOLD);
   const { user, signOut } = useAuth();
 
   const isHomePage = location.pathname === "/";
@@ -576,9 +577,6 @@ export const Header = memo(function Header({ showSearch = true, cityName, onSear
 
   return (
     <>
-      {/* Sentinel */}
-      <div ref={sentinelRef} className="absolute top-0 left-0 w-full h-px pointer-events-none" aria-hidden="true" />
-
       {/* Header */}
       <header
         className={cn(

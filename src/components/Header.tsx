@@ -60,10 +60,13 @@ const useScrollDetection = (threshold: number = SCROLL_THRESHOLD) => {
   useEffect(() => {
     // Tenta usar sentinel externo primeiro (mais confiável)
     const sentinel = document.getElementById("scroll-sentinel");
+    console.log('[SCROLL DEBUG] Sentinel found:', !!sentinel);
+    console.log('[SCROLL DEBUG] Sentinel rect:', sentinel?.getBoundingClientRect());
 
     if (sentinel && "IntersectionObserver" in window) {
       const observer = new IntersectionObserver(
         ([entry]) => {
+          console.log('[SCROLL DEBUG] isIntersecting:', entry.isIntersecting, 'isScrolled:', !entry.isIntersecting);
           setIsScrolled(!entry.isIntersecting);
         },
         { threshold: 0, rootMargin: `-${threshold}px 0px 0px 0px` },

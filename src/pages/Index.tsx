@@ -175,16 +175,24 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-violet-600">
+      <header className="sticky top-0 z-40 bg-[#240046]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           {/* Desktop */}
           <div className="hidden sm:flex items-center justify-between h-14 gap-4">
             <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
-                <Gift className="w-3.5 h-3.5 text-white" />
+              <div className="w-8 h-8 rounded-xl bg-[#3d1a5c] flex items-center justify-center">
+                <Gift className="w-4 h-4 text-white" />
               </div>
-              <span className="text-sm font-bold text-white">
-                Aniversariante<span className="text-white/80">VIP</span>
+              <span 
+                className="text-sm font-bold uppercase tracking-wide"
+                style={{
+                  background: "linear-gradient(to right, #A78BFA, #60A5FA, #22D3EE)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                ANIVERSARIANTE VIP
               </span>
             </Link>
 
@@ -206,11 +214,19 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
           <div className="sm:hidden">
             <div className="flex items-center justify-between h-12">
               <Link to="/" className="flex items-center gap-1.5">
-                <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-xl bg-[#3d1a5c] flex items-center justify-center">
                   <Gift className="w-3.5 h-3.5 text-white" />
                 </div>
-                <span className="text-sm font-bold text-white">
-                  Aniversariante<span className="text-white/80">VIP</span>
+                <span 
+                  className="text-xs font-bold uppercase tracking-wide"
+                  style={{
+                    background: "linear-gradient(to right, #A78BFA, #60A5FA, #22D3EE)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  ANIVERSARIANTE VIP
                 </span>
               </Link>
               <button
@@ -534,7 +550,7 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
   ];
 
   return (
-    <div className="sticky top-[48px] sm:top-[56px] z-30 bg-violet-600">
+    <div className="sticky top-[48px] sm:top-[56px] z-30 bg-[#240046]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
           {cats.map((cat) => {

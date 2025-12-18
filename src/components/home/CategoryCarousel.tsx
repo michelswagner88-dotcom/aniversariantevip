@@ -1,13 +1,14 @@
 // =============================================================================
-// CATEGORYCAROUSEL.TSX - ANIVERSARIANTE VIP
-// Design: Carrossel com cards compactos estilo Airbnb
+// CARDCAROUSEL.TSX - ANIVERSARIANTE VIP
+// Design: Snap scroll, ~1.5 cards visíveis no mobile
 // =============================================================================
 
 import { memo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Heart, Gift } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ChevronRight } from "lucide-react";
+import { EstabelecimentoCard } from "./EstabelecimentoCard";
 import { getEstabelecimentoUrl } from "@/lib/slugUtils";
+import { cn } from "@/lib/utils";
 
 // =============================================================================
 // TYPES
@@ -26,92 +27,22 @@ interface Estabelecimento {
   slug?: string;
 }
 
-interface CategoryCarouselProps {
+interface CardCarouselProps {
   title: string;
   subtitle?: string;
-  estabelecimentos: Estabelecimento[];
-  sectionId?: string;
+  items: Estabelecimento[];
+  seeAllHref?: string;
 }
 
 // =============================================================================
-// CARD COMPONENT - Compacto para carrossel
+// MAIN
 // =============================================================================
 
-interface CarouselCardProps {
-  estabelecimento: Estabelecimento;
-  onClick?: () => void;
-}
-
-const CarouselCard = memo(({ estabelecimento, onClick }: CarouselCardProps) => {
-  const categoria = Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria;
-
-  const imageUrl = estabelecimento.imagem_url || estabelecimento.logo_url;
-
-  return (
-    <article onClick={onClick} className="cursor-pointer group flex-shrink-0 w-[160px] sm:w-[180px]">
-      {/* Imagem - Proporção 1:1 */}
-      <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 mb-2">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={estabelecimento.nome_fantasia || "Estabelecimento"}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-100 to-fuchsia-100">
-            <Gift className="w-8 h-8 text-violet-300" />
-          </div>
-        )}
-
-        {/* Favorito */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-          className="absolute top-2 right-2"
-          aria-label="Adicionar aos favoritos"
-        >
-          <Heart className="w-5 h-5 text-white drop-shadow-md hover:scale-110 transition-transform" />
-        </button>
-      </div>
-
-      {/* Info */}
-      <div className="space-y-0.5">
-        <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-1">
-          {estabelecimento.nome_fantasia || "Estabelecimento"}
-        </h3>
-        <p className="text-gray-500 text-xs line-clamp-1">
-          {categoria && <span className="capitalize">{categoria}</span>}
-          {categoria && estabelecimento.bairro && <span> · </span>}
-          {estabelecimento.bairro && <span>{estabelecimento.bairro}</span>}
-        </p>
-        {estabelecimento.descricao_beneficio && (
-          <p className="text-xs text-violet-600 font-medium line-clamp-1 flex items-center gap-1">
-            <Gift className="w-3 h-3 flex-shrink-0" />
-            <span className="truncate">{estabelecimento.descricao_beneficio}</span>
-          </p>
-        )}
-      </div>
-    </article>
-  );
-});
-CarouselCard.displayName = "CarouselCard";
-
-// =============================================================================
-// MAIN COMPONENT
-// =============================================================================
-
-export const CategoryCarousel = memo(function CategoryCarousel({
-  title,
-  subtitle,
-  estabelecimentos,
-  sectionId,
-}: CategoryCarouselProps) {
+export const CardCarousel = memo(function CardCarousel({ title, subtitle, items, seeAllHref }: CardCarouselProps) {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const handleCardClick = (est: Estabelecimento) => {
+  const handleClick = (est: Estabelecimento) => {
     const url = getEstabelecimentoUrl({
       estado: est.estado || "",
       cidade: est.cidade || "",
@@ -121,59 +52,46 @@ export const CategoryCarousel = memo(function CategoryCarousel({
     navigate(url);
   };
 
-  const scroll = (direction: "left" | "right") => {
-    if (!scrollRef.current) return;
-    const scrollAmount = 200;
-    scrollRef.current.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
-
-  if (!estabelecimentos || estabelecimentos.length === 0) {
-    return null;
-  }
+  if (!items || items.length === 0) return null;
 
   return (
-    <section className="relative" id={sectionId}>
+    <section>
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-end justify-between gap-4 mb-3">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 leading-tight">{title}</h2>
           {subtitle && <p className="text-sm text-violet-600 mt-0.5">{subtitle}</p>}
         </div>
 
-        {/* Arrows - Desktop */}
-        <div className="hidden sm:flex items-center gap-2">
+        {seeAllHref && (
           <button
-            onClick={() => scroll("left")}
-            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors"
-            aria-label="Anterior"
+            onClick={() => navigate(seeAllHref)}
+            className="flex items-center gap-0.5 text-sm font-medium text-gray-900 hover:underline flex-shrink-0"
           >
-            <ChevronLeft className="w-4 h-4 text-gray-600" />
+            Ver todos
+            <ChevronRight className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => scroll("right")}
-            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors"
-            aria-label="Próximo"
-          >
-            <ChevronRight className="w-4 h-4 text-gray-600" />
-          </button>
-        </div>
+        )}
       </div>
 
-      {/* Carrossel */}
+      {/* Cards */}
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth -mx-4 px-4"
+        className={cn("flex gap-3", "overflow-x-auto", "snap-x snap-mandatory", "scrollbar-hide", "-mx-4 px-4")}
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        {estabelecimentos.map((est) => (
-          <CarouselCard key={est.id} estabelecimento={est} onClick={() => handleCardClick(est)} />
+        {items.map((est) => (
+          <div
+            key={est.id}
+            className="snap-start flex-shrink-0"
+            style={{ width: "calc(50% - 6px)" }} // ~2 cards visíveis
+          >
+            <EstabelecimentoCard data={est} onClick={() => handleClick(est)} />
+          </div>
         ))}
       </div>
     </section>
   );
 });
 
-export default CategoryCarousel;
+export default CardCarousel;

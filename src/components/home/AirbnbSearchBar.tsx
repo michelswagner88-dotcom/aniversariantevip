@@ -1,517 +1,222 @@
-import { useState, useRef, useCallback, useEffect, memo, useId } from "react";
-import { Search, MapPin, X, Clock } from "lucide-react";
-import { CityCombobox } from "@/components/CityCombobox";
+// =============================================================================
+// SEARCHBAR.TSX - ANIVERSARIANTE VIP
+// Design: Simples, funcional, sem over-engineering
+// =============================================================================
+
+import { memo, useState, useRef, useEffect } from "react";
+import { MapPin, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useVoiceSearch } from "@/hooks/useVoiceSearch";
-import { VoiceSearchButton } from "@/components/VoiceSearchButton";
-import { VoiceSearchModal } from "@/components/VoiceSearchModal";
-import { parseVoiceSearch } from "@/utils/voiceSearchParser";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
-// =============================================================================
-// CONSTANTS
-// =============================================================================
-
-const RECENT_SEARCHES_KEY = "aniversariantevip_recent_searches";
-const MAX_RECENT_SEARCHES = 5;
-const DEBOUNCE_DELAY = 300;
-const VOICE_LANGUAGE = "pt-BR";
 
 // =============================================================================
 // TYPES
 // =============================================================================
 
-interface AirbnbSearchBarProps {
-  cidade: string;
-  estado: string;
-  busca: string;
-  onBuscaChange: (termo: string) => void;
-  onCidadeSelect: (cidade: string, estado: string) => void;
-  onCategoriaChange?: (categoria: string | null) => void;
-  onUseLocation?: () => void;
+interface SearchBarProps {
+  city: string;
+  state: string;
   isLoading?: boolean;
-  showRecentSearches?: boolean;
+  onCityChange: (city: string, state: string) => void;
 }
 
 // =============================================================================
-// HOOKS
+// CITY MODAL
 // =============================================================================
 
-const useReducedMotion = (): boolean => {
-  const [reducedMotion, setReducedMotion] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
-  );
+interface CityModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentCity: string;
+  currentState: string;
+  onSelect: (city: string, state: string) => void;
+}
+
+const CityModal = memo(({ isOpen, onClose, currentCity, currentState, onSelect }: CityModalProps) => {
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<Array<{ cidade: string; estado: string }>>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    query.addEventListener("change", handler);
-    return () => query.removeEventListener("change", handler);
-  }, []);
-
-  return reducedMotion;
-};
-
-const useRecentSearches = () => {
-  const [searches, setSearches] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
+    if (isOpen) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    } else {
+      setQuery("");
+      setSuggestions([]);
     }
-  });
+  }, [isOpen]);
 
-  const addSearch = useCallback((term: string) => {
-    const trimmed = term.trim();
-    if (!trimmed) return;
+  useEffect(() => {
+    if (query.length < 2) {
+      setSuggestions([]);
+      return;
+    }
 
-    setSearches((prev) => {
-      const filtered = prev.filter((s) => s.toLowerCase() !== trimmed.toLowerCase());
-      const updated = [trimmed, ...filtered].slice(0, MAX_RECENT_SEARCHES);
+    const timeoutId = setTimeout(async () => {
+      setIsSearching(true);
       try {
-        localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
-      } catch {
-        // Storage full or disabled
+        const response = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome`);
+        const data = await response.json();
+
+        const filtered = data
+          .filter((m: any) => m.nome.toLowerCase().includes(query.toLowerCase()))
+          .slice(0, 8)
+          .map((m: any) => ({
+            cidade: m.nome,
+            estado: m.microrregiao.mesorregiao.UF.sigla,
+          }));
+
+        setSuggestions(filtered);
+      } catch (error) {
+        console.error("Erro ao buscar cidades:", error);
+      } finally {
+        setIsSearching(false);
       }
-      return updated;
-    });
-  }, []);
+    }, 300);
 
-  const clearSearches = useCallback(() => {
-    setSearches([]);
-    try {
-      localStorage.removeItem(RECENT_SEARCHES_KEY);
-    } catch {
-      // Ignore
-    }
-  }, []);
+    return () => clearTimeout(timeoutId);
+  }, [query]);
 
-  return { searches, addSearch, clearSearches };
-};
+  const handleSelect = (cidade: string, estado: string) => {
+    onSelect(cidade, estado);
+    onClose();
+  };
 
-const useHaptic = () => {
-  return useCallback((pattern: number | number[] = 10) => {
-    if (navigator.vibrate) {
-      navigator.vibrate(pattern);
-    }
-  }, []);
-};
+  if (!isOpen) return null;
 
-// =============================================================================
-// COMPONENT
-// =============================================================================
-
-export const AirbnbSearchBar = memo(
-  ({
-    cidade,
-    estado,
-    busca,
-    onBuscaChange,
-    onCidadeSelect,
-    onCategoriaChange,
-    onUseLocation,
-    isLoading = false,
-    showRecentSearches = true,
-  }: AirbnbSearchBarProps) => {
-    const [buscaInterna, setBuscaInterna] = useState(busca);
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [isFocused, setIsFocused] = useState(false);
-    const [showVoiceModal, setShowVoiceModal] = useState(false);
-    const [showRecent, setShowRecent] = useState(false);
-
-    const inputRef = useRef<HTMLInputElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-    const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-
-    const reducedMotion = useReducedMotion();
-    const haptic = useHaptic();
-    const inputId = useId();
-    const listboxId = useId();
-
-    const { searches, addSearch } = useRecentSearches();
-
-    // Debounced search
-    useEffect(() => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-
-      if (buscaInterna === busca) return;
-
-      if (buscaInterna === "") {
-        onBuscaChange("");
-        return;
-      }
-
-      if (buscaInterna.length < 2) return;
-
-      debounceRef.current = setTimeout(() => {
-        onBuscaChange(buscaInterna);
-      }, DEBOUNCE_DELAY);
-
-      return () => {
-        if (debounceRef.current) {
-          clearTimeout(debounceRef.current);
-        }
-      };
-    }, [buscaInterna, busca, onBuscaChange]);
-
-    // Sync external busca prop
-    useEffect(() => {
-      setBuscaInterna(busca);
-    }, [busca]);
-
-    // Click outside to close dropdown
-    useEffect(() => {
-      const handleClickOutside = (e: MouseEvent) => {
-        const target = e.target as Node;
-        const isOutsideContainer = containerRef.current && !containerRef.current.contains(target);
-        const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(target);
-
-        if (isOutsideContainer && isOutsideDropdown) {
-          setShowRecent(false);
-        }
-      };
-
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    // Keyboard navigation
-    useEffect(() => {
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape" && showRecent) {
-          setShowRecent(false);
-          inputRef.current?.focus();
-        }
-      };
-
-      document.addEventListener("keydown", handleKeyDown);
-      return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [showRecent]);
-
-    // Voice search result handler
-    const handleVoiceResult = useCallback(
-      (transcriptResult: string) => {
-        setTimeout(() => setShowVoiceModal(false), 600);
-
-        const parsed = parseVoiceSearch(transcriptResult);
-
-        if (parsed.searchText) {
-          setBuscaInterna(parsed.searchText);
-          onBuscaChange(parsed.searchText);
-          addSearch(parsed.searchText);
-        }
-
-        if (parsed.categoria && onCategoriaChange) {
-          onCategoriaChange(parsed.categoria);
-        }
-
-        if (parsed.usarLocalizacao && onUseLocation) {
-          onUseLocation();
-        }
-      },
-      [onBuscaChange, onCategoriaChange, onUseLocation, addSearch],
-    );
-
-    const {
-      isListening,
-      isSupported,
-      transcript,
-      error: voiceError,
-      startListening,
-      stopListening,
-      resetTranscript,
-    } = useVoiceSearch(handleVoiceResult, { language: VOICE_LANGUAGE });
-
-    // Handlers
-    const handleVoiceClick = useCallback(() => {
-      haptic(10);
-
-      if (isListening) {
-        stopListening();
-        setShowVoiceModal(false);
-      } else {
-        resetTranscript();
-        setShowVoiceModal(true);
-        startListening();
-      }
-    }, [isListening, stopListening, resetTranscript, startListening, haptic]);
-
-    const handleRetry = useCallback(() => {
-      resetTranscript();
-      startListening();
-    }, [resetTranscript, startListening]);
-
-    const handleBuscaSubmit = useCallback(
-      (e: React.FormEvent) => {
-        e.preventDefault();
-        haptic([10, 30, 10]);
-
-        const trimmed = buscaInterna.trim();
-        if (trimmed) {
-          onBuscaChange(trimmed);
-          addSearch(trimmed);
-          setShowRecent(false);
-          inputRef.current?.blur();
-        }
-      },
-      [buscaInterna, onBuscaChange, addSearch, haptic],
-    );
-
-    const handleCidadeSelect = useCallback(
-      (novaCidade: string, novoEstado: string) => {
-        haptic(10);
-        onCidadeSelect(novaCidade, novoEstado);
-        setDialogOpen(false);
-      },
-      [onCidadeSelect, haptic],
-    );
-
-    const handleClear = useCallback(() => {
-      setBuscaInterna("");
-      onBuscaChange("");
-      inputRef.current?.focus();
-    }, [onBuscaChange]);
-
-    const handleInputChange = useCallback(
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setBuscaInterna(value);
-
-        if (!value && searches.length > 0) {
-          setShowRecent(true);
-        } else {
-          setShowRecent(false);
-        }
-      },
-      [searches.length],
-    );
-
-    const handleFocus = useCallback(() => {
-      setIsFocused(true);
-      if (showRecentSearches && searches.length > 0 && !buscaInterna) {
-        setShowRecent(true);
-      }
-    }, [showRecentSearches, searches.length, buscaInterna]);
-
-    const handleBlur = useCallback(() => {
-      setIsFocused(false);
-    }, []);
-
-    const handleRecentClick = useCallback(
-      (term: string) => {
-        haptic(10);
-        setBuscaInterna(term);
-        onBuscaChange(term);
-        setShowRecent(false);
-        inputRef.current?.blur();
-      },
-      [onBuscaChange, haptic],
-    );
-
-    const handleCloseVoiceModal = useCallback(() => {
-      setShowVoiceModal(false);
-      stopListening();
-    }, [stopListening]);
-
-    // Derived values
-    const cidadeDisplay = cidade ? `${cidade}, ${estado}` : "Qualquer lugar";
-    const hasRecentSearches = showRecentSearches && searches.length > 0;
-
-    return (
-      <div className="relative w-full max-w-3xl mx-auto" ref={containerRef}>
-        {/* Search Bar - TEMA BRANCO */}
-        <div
-          role="search"
-          className={cn(
-            "flex items-center rounded-full",
-            "bg-white",
-            "border border-[#240046]/10",
-            "shadow-2xl shadow-black/20",
-            !reducedMotion && "transition-all duration-200",
-            !reducedMotion && "hover:border-[#240046]/20",
-            isFocused && "border-[#240046]/30 ring-2 ring-[#240046]/10",
-          )}
+  return (
+    <div className="fixed inset-0 z-50 bg-white">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 h-14 border-b border-gray-100">
+        <button
+          onClick={onClose}
+          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100"
+          aria-label="Voltar"
         >
-          {/* Location Selector */}
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
+          <X className="w-5 h-5 text-gray-500" />
+        </button>
+        <span className="font-semibold text-gray-900">Alterar cidade</span>
+      </div>
+
+      {/* Search */}
+      <div className="p-4">
+        <div className="flex items-center gap-3 bg-gray-100 rounded-xl px-4 h-12">
+          <Search className="w-5 h-5 text-gray-400" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar cidade..."
+            className="flex-1 bg-transparent text-gray-900 placeholder:text-gray-400 outline-none"
+          />
+          {isSearching && (
+            <div className="w-5 h-5 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
+          )}
+        </div>
+      </div>
+
+      {/* Current */}
+      {query.length < 2 && (
+        <div className="px-4 mb-2">
+          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2 px-1">Cidade atual</p>
+          <button
+            onClick={onClose}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-violet-50 text-left"
+          >
+            <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
+              <MapPin className="w-5 h-5 text-violet-600" />
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">{currentCity}</p>
+              <p className="text-sm text-gray-500">{currentState}</p>
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* Results */}
+      {suggestions.length > 0 && (
+        <div className="px-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2 px-1">Resultados</p>
+          <div className="space-y-1">
+            {suggestions.map((s, i) => (
               <button
-                type="button"
-                aria-label={`Localização atual: ${cidadeDisplay}. Clique para alterar`}
-                aria-expanded={dialogOpen}
-                aria-haspopup="dialog"
-                className={cn(
-                  "flex items-center gap-2.5 px-5 py-3.5",
-                  "border-r border-[#240046]/10 rounded-l-full",
-                  "min-w-[160px] sm:min-w-[180px]",
-                  !reducedMotion && "transition-colors hover:bg-[#240046]/5",
-                )}
+                key={i}
+                onClick={() => handleSelect(s.cidade, s.estado)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 text-left"
               >
-                <MapPin
-                  className={cn("w-5 h-5 shrink-0", isFocused ? "text-[#7C3AED]" : "text-[#240046]/70")}
-                  aria-hidden="true"
-                />
-                <div className="text-left min-w-0">
-                  <p className="text-[11px] font-medium text-[#240046]/60 uppercase tracking-wide">Onde</p>
-                  <p className="text-sm font-medium text-[#240046] truncate">{cidadeDisplay}</p>
+                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-gray-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">{s.cidade}</p>
+                  <p className="text-sm text-gray-500">{s.estado}</p>
                 </div>
               </button>
-            </DialogTrigger>
-
-            <DialogContent className="bg-white border-violet-200">
-              <DialogHeader>
-                <DialogTitle className="text-[#240046]">Escolha uma cidade</DialogTitle>
-              </DialogHeader>
-              <div className="py-4">
-                <CityCombobox onSelect={handleCidadeSelect} placeholder="Digite o nome da cidade..." />
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Search Form */}
-          <form onSubmit={handleBuscaSubmit} className="flex-1 flex items-center gap-2 min-w-0">
-            <Search
-              className={cn("w-5 h-5 ml-4 shrink-0", isFocused ? "text-[#7C3AED]" : "text-[#240046]/70")}
-              aria-hidden="true"
-            />
-
-            <label htmlFor={inputId} className="sr-only">
-              Buscar estabelecimentos
-            </label>
-
-            <input
-              id={inputId}
-              ref={inputRef}
-              type="text"
-              placeholder="Buscar restaurante, bar, academia..."
-              value={buscaInterna}
-              onChange={handleInputChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck={false}
-              role="combobox"
-              aria-expanded={showRecent}
-              aria-controls={listboxId}
-              aria-haspopup="listbox"
-              aria-autocomplete="list"
-              className={cn(
-                "flex-1 min-w-0",
-                "bg-transparent py-3.5",
-                "text-[15px] text-[#240046]",
-                "placeholder:text-[#240046]/50",
-                "focus:outline-none",
-              )}
-            />
-
-            {/* Clear Button */}
-            {buscaInterna && (
-              <button
-                type="button"
-                onClick={handleClear}
-                aria-label="Limpar busca"
-                className={cn(
-                  "flex items-center justify-center",
-                  "w-7 h-7 rounded-full shrink-0",
-                  "bg-[#240046]/10 text-[#240046]",
-                  !reducedMotion && "transition-all hover:bg-[#240046]/20",
-                )}
-              >
-                <X size={14} aria-hidden="true" />
-              </button>
-            )}
-
-            {/* Voice Search */}
-            <VoiceSearchButton isListening={isListening} isSupported={isSupported} onClick={handleVoiceClick} />
-
-            {/* Divider */}
-            <div className="w-px h-6 bg-[#240046]/20 shrink-0" aria-hidden="true" />
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              aria-label="Buscar"
-              disabled={isLoading}
-              className={cn(
-                "flex items-center justify-center",
-                "w-10 h-10 sm:w-11 sm:h-11 mr-1.5 rounded-full",
-                "bg-[#7C3AED]",
-                "shadow-lg shadow-violet-500/25",
-                "disabled:opacity-70 disabled:cursor-not-allowed",
-                !reducedMotion && "transition-all hover:bg-[#6D28D9] hover:scale-105 active:scale-95",
-              )}
-            >
-              {isLoading ? (
-                <div
-                  className={cn(
-                    "w-[18px] h-[18px]",
-                    "border-2 border-white/30 border-t-white rounded-full",
-                    !reducedMotion && "animate-spin",
-                  )}
-                  aria-hidden="true"
-                />
-              ) : (
-                <Search className="w-[18px] h-[18px] text-white" aria-hidden="true" />
-              )}
-            </button>
-          </form>
-        </div>
-
-        {/* Recent Searches Dropdown */}
-        {showRecent && hasRecentSearches && (
-          <div
-            ref={dropdownRef}
-            id={listboxId}
-            role="listbox"
-            aria-label="Buscas recentes"
-            className={cn(
-              "absolute left-0 right-0 mt-2 z-50",
-              "bg-white border border-violet-100 rounded-xl shadow-lg",
-              "overflow-hidden",
-              !reducedMotion && "animate-in fade-in slide-in-from-top-2 duration-200",
-            )}
-          >
-            <div className="p-2">
-              <p className="px-3 py-2 text-xs font-medium text-[#7C3AED] uppercase tracking-wide">Buscas recentes</p>
-
-              {searches.map((term, index) => (
-                <button
-                  key={`${term}-${index}`}
-                  type="button"
-                  role="option"
-                  onClick={() => handleRecentClick(term)}
-                  className={cn(
-                    "w-full flex items-center gap-3",
-                    "px-3 py-2.5 rounded-lg text-left",
-                    !reducedMotion && "transition-colors hover:bg-violet-50",
-                  )}
-                >
-                  <Clock className="w-4 h-4 text-[#7C3AED] shrink-0" aria-hidden="true" />
-                  <span className="text-sm text-[#240046] truncate">{term}</span>
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
+        </div>
+      )}
+
+      {query.length >= 2 && suggestions.length === 0 && !isSearching && (
+        <div className="text-center py-12">
+          <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500">Nenhuma cidade encontrada</p>
+        </div>
+      )}
+    </div>
+  );
+});
+CityModal.displayName = "CityModal";
+
+// =============================================================================
+// MAIN
+// =============================================================================
+
+export const SearchBar = memo(function SearchBar({ city, state, isLoading, onCityChange }: SearchBarProps) {
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleSelect = (newCity: string, newState: string) => {
+    localStorage.setItem("aniversariantevip_city", newCity);
+    localStorage.setItem("aniversariantevip_state", newState);
+    onCityChange(newCity, newState);
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => setModalOpen(true)}
+        disabled={isLoading}
+        className={cn(
+          "w-full flex items-center gap-3",
+          "h-12 px-4",
+          "bg-white rounded-full",
+          "shadow-sm",
+          "text-left",
+          "transition-shadow hover:shadow-md",
+          isLoading && "opacity-70",
         )}
+      >
+        <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
+          <MapPin className="w-4 h-4 text-violet-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-gray-500 leading-none mb-0.5">ONDE</p>
+          <p className="text-sm font-medium text-gray-900 truncate">
+            {isLoading ? "Detectando..." : `${city}, ${state}`}
+          </p>
+        </div>
+      </button>
 
-        {/* Voice Search Modal */}
-        <VoiceSearchModal
-          isOpen={showVoiceModal}
-          isListening={isListening}
-          transcript={transcript}
-          error={voiceError}
-          onClose={handleCloseVoiceModal}
-          onRetry={handleRetry}
-        />
-      </div>
-    );
-  },
-);
+      <CityModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        currentCity={city}
+        currentState={state}
+        onSelect={handleSelect}
+      />
+    </>
+  );
+});
 
-AirbnbSearchBar.displayName = "AirbnbSearchBar";
+export default SearchBar;

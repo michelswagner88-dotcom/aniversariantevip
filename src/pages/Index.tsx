@@ -664,17 +664,17 @@ const Card = memo(({ data, onClick }: any) => {
         )}
 
         <div className="absolute top-2.5 left-2.5">
-          <span className="inline-flex items-center px-2 py-1 bg-white/95 backdrop-blur-sm text-[11px] font-medium text-zinc-800 rounded-full shadow-sm border border-zinc-100">
+          <span className="inline-flex items-center px-2 py-0.5 bg-white/95 backdrop-blur-sm text-[10px] font-semibold text-zinc-700 rounded-full shadow-sm">
             {chipText}
           </span>
         </div>
 
         <button
           onClick={(e) => e.stopPropagation()}
-          className="absolute top-2.5 right-2.5 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm border border-zinc-200 shadow-sm flex items-center justify-center hover:scale-110 transition-transform"
+          className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center"
           aria-label="Favoritar"
         >
-          <Heart className="w-4 h-4 text-zinc-600 hover:text-red-500 hover:fill-red-500 transition-colors" />
+          <Heart className="w-3.5 h-3.5 text-zinc-500" />
         </button>
       </div>
 

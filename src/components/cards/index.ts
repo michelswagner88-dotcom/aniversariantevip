@@ -8,3 +8,6 @@ export {
   type EstablishmentCardProps,
   type EstablishmentData,
 } from "./EstablishmentCard";
+
+// Alias padrão
+export { EstablishmentCard as default } from "./EstablishmentCard";

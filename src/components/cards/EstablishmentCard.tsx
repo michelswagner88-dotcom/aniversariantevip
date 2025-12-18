@@ -25,7 +25,9 @@ export interface EstablishmentData {
 }
 
 export interface EstablishmentCardProps {
-  data: EstablishmentData;
+  data?: EstablishmentData;
+  establishment?: EstablishmentData; // Compatibilidade com código existente
+  index?: number; // Ignorado, mas aceito para compatibilidade
   onClick?: () => void;
   onFavorite?: (id: string) => void;
   isFavorite?: boolean;
@@ -37,15 +39,26 @@ export interface EstablishmentCardProps {
 
 export const EstablishmentCard = memo(function EstablishmentCard({
   data,
+  establishment,
+  index: _index, // Ignorado
   onClick,
   onFavorite,
   isFavorite = false,
 }: EstablishmentCardProps) {
+  // Aceita tanto "data" quanto "establishment"
+  const item = data || establishment;
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
 
-  const categoria = Array.isArray(data.categoria) ? data.categoria[0] : data.categoria;
-  const imageUrl = data.imagem_url || data.logo_url;
+  // Se não tiver dados, não renderiza
+  if (!item) return null;
+
+  // Suporta tanto o formato antigo (name, photo_url, benefit_description) quanto o novo
+  const nome = item.nome_fantasia || (item as any).name || "Estabelecimento";
+  const categoria = Array.isArray(item.categoria) ? item.categoria[0] : item.categoria || (item as any).category;
+  const imageUrl = item.imagem_url || item.logo_url || (item as any).photo_url;
+  const beneficio = item.descricao_beneficio || (item as any).benefit_description;
+  const bairro = item.bairro;
   const showFallback = !imageUrl || imgError;
 
   return (
@@ -55,7 +68,7 @@ export const EstablishmentCard = memo(function EstablishmentCard({
         {!showFallback && (
           <img
             src={imageUrl}
-            alt={data.nome_fantasia || ""}
+            alt={nome}
             className={cn(
               "w-full h-full object-cover",
               "group-hover:scale-105 transition-transform duration-300",
@@ -76,11 +89,11 @@ export const EstablishmentCard = memo(function EstablishmentCard({
         {!showFallback && !imgLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
 
         {/* Benefício */}
-        {data.descricao_beneficio && (
+        {beneficio && (
           <div className="absolute top-2 left-2">
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm text-xs font-medium text-gray-900 rounded-md shadow-sm">
               <Gift className="w-3 h-3 text-violet-600" />
-              <span className="max-w-[90px] truncate">{data.descricao_beneficio}</span>
+              <span className="max-w-[90px] truncate">{beneficio}</span>
             </span>
           </div>
         )}
@@ -89,7 +102,7 @@ export const EstablishmentCard = memo(function EstablishmentCard({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onFavorite?.(data.id);
+            onFavorite?.(item.id);
           }}
           className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center"
           aria-label={isFavorite ? "Remover favorito" : "Adicionar favorito"}
@@ -105,13 +118,11 @@ export const EstablishmentCard = memo(function EstablishmentCard({
 
       {/* Info */}
       <div className="space-y-0.5">
-        <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-1">
-          {data.nome_fantasia || "Estabelecimento"}
-        </h3>
+        <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-1">{nome}</h3>
         <p className="text-gray-500 text-xs line-clamp-1">
           {categoria && <span className="capitalize">{categoria}</span>}
-          {categoria && data.bairro && " · "}
-          {data.bairro}
+          {categoria && bairro && " · "}
+          {bairro}
         </p>
       </div>
     </article>

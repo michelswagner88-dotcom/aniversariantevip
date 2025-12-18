@@ -562,10 +562,7 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
               <button
                 key={cat.id}
                 onClick={() => onSelect(cat.id)}
-                className={cn(
-                  "flex flex-col items-center gap-0.5 min-w-[60px] sm:min-w-[68px] px-2 py-2 relative transition-colors",
-                  isActive ? "text-white" : "text-white/70 hover:text-white/90",
-                )}
+                className="flex flex-col items-center gap-0.5 min-w-[60px] sm:min-w-[68px] px-2 py-2 relative text-white"
               >
                 <Icon className="w-5 h-5" />
                 <span className="text-[11px] font-medium whitespace-nowrap">{shortLabel}</span>

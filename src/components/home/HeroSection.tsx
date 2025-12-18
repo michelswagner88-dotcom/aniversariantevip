@@ -3,11 +3,10 @@
 // Design System: Top 1% Mundial - Nível Airbnb
 // =============================================================================
 // FEATURES:
-// ✅ Altura máxima 50vh (não domina a tela inteira)
-// ✅ Busca compacta estilo Airbnb (pill única)
+// ✅ Mobile-first: hero compacto para mostrar conteúdo mais cedo
+// ✅ Desktop: mantém proporções elegantes
+// ✅ Busca estilo Airbnb (pill única)
 // ✅ Sem bordas grossas - sombras suaves
-// ✅ Tipografia com respiro
-// ✅ Mobile-first responsivo
 // =============================================================================
 
 import { memo, useState, useCallback, useRef, useEffect } from "react";
@@ -51,7 +50,7 @@ const hapticFeedback = (pattern: number | number[] = 10) => {
 };
 
 // =============================================================================
-// SEARCH BAR COMPONENT (Airbnb Style)
+// SEARCH BAR COMPONENT (Airbnb Style - Compacto)
 // =============================================================================
 
 interface SearchBarProps {
@@ -102,31 +101,33 @@ const SearchBar = memo(
             onCityClick();
           }}
           className={cn(
-            "w-full px-5 py-4 text-left",
+            "w-full px-4 py-3 sm:px-5 sm:py-4 text-left",
             "border-b border-gray-100",
             "hover:bg-gray-50 transition-colors",
             "focus-visible:outline-none focus-visible:bg-gray-50",
           )}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <MapPin className="w-5 h-5 text-gray-600" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+              <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Onde</p>
-              <p className="text-base font-semibold text-gray-900 truncate">{selectedCity || "Escolha uma cidade"}</p>
+              <p className="text-[10px] sm:text-xs text-gray-500 font-medium uppercase tracking-wide">Onde</p>
+              <p className="text-sm sm:text-base font-semibold text-gray-900 truncate">
+                {selectedCity || "Escolha uma cidade"}
+              </p>
             </div>
           </div>
         </button>
 
         {/* Busca */}
-        <div className="px-5 py-4">
+        <div className="px-4 py-3 sm:px-5 sm:py-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <Search className="w-5 h-5 text-gray-600" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">O que busca</p>
+              <p className="text-[10px] sm:text-xs text-gray-500 font-medium uppercase tracking-wide">O que busca</p>
               <div className="relative">
                 <input
                   ref={inputRef}
@@ -135,10 +136,10 @@ const SearchBar = memo(
                   onChange={(e) => onSearchChange(e.target.value)}
                   placeholder="Restaurantes, bares, academias..."
                   className={cn(
-                    "w-full text-base font-medium text-gray-900",
+                    "w-full text-sm sm:text-base font-medium text-gray-900",
                     "placeholder:text-gray-400 placeholder:font-normal",
                     "bg-transparent border-none outline-none",
-                    "py-1",
+                    "py-0.5 sm:py-1",
                   )}
                 />
                 {/* Clear button */}
@@ -163,7 +164,7 @@ const SearchBar = memo(
                   onVoiceSearch();
                 }}
                 className={cn(
-                  "w-10 h-10 rounded-full",
+                  "w-9 h-9 sm:w-10 sm:h-10 rounded-full",
                   "bg-gray-100 hover:bg-gray-200",
                   "flex items-center justify-center",
                   "transition-colors",
@@ -171,20 +172,20 @@ const SearchBar = memo(
                 )}
                 aria-label="Busca por voz"
               >
-                <Mic className="w-5 h-5 text-gray-600" />
+                <Mic className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
               </button>
             )}
           </div>
         </div>
 
         {/* Submit Button */}
-        <div className="px-5 pb-5">
+        <div className="px-4 pb-4 sm:px-5 sm:pb-5">
           <Button
             type="submit"
             className={cn(
-              "w-full h-12 rounded-xl",
+              "w-full h-10 sm:h-12 rounded-xl",
               "bg-[#240046] hover:bg-[#3C096C]",
-              "text-white font-semibold",
+              "text-white font-semibold text-sm sm:text-base",
               "transition-all duration-200",
               "shadow-md shadow-[#240046]/30",
               !reducedMotion && "active:scale-[0.98]",
@@ -236,31 +237,34 @@ export const HeroSection = memo(function HeroSection({ selectedCity = "", onCity
       id="search-section"
       className={cn(
         "relative w-full",
-        "min-h-[35vh] max-h-[45vh]",
+        // MOBILE: mais compacto | DESKTOP: mais espaço
+        "min-h-0 sm:min-h-[30vh] lg:min-h-[35vh]",
         "flex flex-col justify-center",
         "px-4 sm:px-6 lg:px-8",
-        "pt-16 pb-6",
+        // MOBILE: padding reduzido | DESKTOP: padding normal
+        "pt-20 pb-4 sm:pt-20 sm:pb-6 lg:pt-24 lg:pb-8",
         "bg-gradient-to-br from-[#240046] via-[#3C096C] to-[#5B21B6]",
         "overflow-hidden",
       )}
     >
       {/* Background decorativo sutil */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/2 -right-1/4 w-[600px] h-[600px] rounded-full bg-violet-500/10 blur-3xl" />
-        <div className="absolute -bottom-1/2 -left-1/4 w-[600px] h-[600px] rounded-full bg-fuchsia-500/10 blur-3xl" />
+        <div className="absolute -top-1/2 -right-1/4 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] rounded-full bg-violet-500/10 blur-3xl" />
+        <div className="absolute -bottom-1/2 -left-1/4 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] rounded-full bg-fuchsia-500/10 blur-3xl" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 max-w-4xl mx-auto w-full">
-        {/* Headline */}
-        <div className="text-center mb-6">
+        {/* Headline - COMPACTA no mobile */}
+        <div className="text-center mb-4 sm:mb-6">
           <h1
             className={cn(
-              "text-xl sm:text-2xl lg:text-3xl",
+              // MOBILE: menor | DESKTOP: maior
+              "text-lg sm:text-xl lg:text-3xl",
               "font-display font-bold",
               "text-white",
               "leading-tight",
-              "mb-2",
+              "mb-1 sm:mb-2",
             )}
           >
             Seu aniversário merece{" "}
@@ -268,7 +272,15 @@ export const HeroSection = memo(function HeroSection({ selectedCity = "", onCity
               benefícios exclusivos
             </span>
           </h1>
-          <p className={cn("text-sm sm:text-base", "text-white/70", "max-w-lg mx-auto")}>
+          {/* Subtítulo - ESCONDIDO no mobile pequeno, visível no resto */}
+          <p
+            className={cn(
+              "text-xs sm:text-sm lg:text-base",
+              "text-white/70",
+              "max-w-lg mx-auto",
+              "hidden xs:block", // Esconde em telas muito pequenas
+            )}
+          >
             Descubra restaurantes, bares e muito mais com vantagens especiais
           </p>
         </div>

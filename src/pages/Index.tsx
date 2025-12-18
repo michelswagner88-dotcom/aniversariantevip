@@ -30,7 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { SlidersHorizontal, MapPin, X, Bell, Sparkles } from "lucide-react";
+import { MapPin, X, Bell, Sparkles } from "lucide-react";
 
 // =============================================================================
 // EMPTY STATE BANNER - Premium Component
@@ -288,7 +288,6 @@ const Index = () => {
 
   // Handler para notificacao de cidade
   const handleNotifyMe = () => {
-    // TODO: Implementar modal ou redirect para cadastro de interesse
     navigate("/cadastro?interesse=" + encodeURIComponent(cidadeFinal || ""));
   };
 
@@ -314,7 +313,6 @@ const Index = () => {
   });
 
   // Titulo e subtitulo da secao baseado no contexto
-  // CORRIGIDO: Se usandoFallback, não mostra cidade no título
   const destaquesConfig = usandoFallback
     ? { titulo: "Em destaque no Brasil", subtitulo: "Os melhores benefícios para aniversariantes" }
     : getSectionTitle("destaques", cidadeFinal || undefined);
@@ -375,7 +373,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col relative">
-      {/* Sentinel para scroll detection - FIXED para funcionar no mobile */}
+      {/* Sentinel para scroll detection */}
       <div
         id="scroll-sentinel"
         className="fixed top-0 left-0 w-full h-1 pointer-events-none z-[100]"
@@ -411,40 +409,20 @@ const Index = () => {
           </div>
         )}
 
-        {/* Pills de categorias - sticky ajustado para header dinamico */}
+        {/* Pills de categorias - COM FILTROS INTEGRADO */}
         <div className="bg-[#240046] sticky top-14 lg:top-16 z-30">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
-            <div className="flex items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <CategoriasPills
-                  categories={DEFAULT_CATEGORIES}
-                  selectedCategory={categoriaParam || "all"}
-                  onSelectCategory={(cat) => {
-                    handleCategoriaChange(cat === "all" ? null : cat);
-                    setSelectedSubcategories([]);
-                  }}
-                />
-              </div>
-
-              {/* Botao de Filtros */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(true)}
-                className="shrink-0 gap-2 bg-white border-white text-[#240046] hover:bg-white/90 font-medium"
-              >
-                <SlidersHorizontal className="h-4 w-4 text-[#240046]" />
-                <span className="hidden sm:inline">Filtros</span>
-                {activeFiltersCount > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-gradient-to-r from-[#240046] to-[#3C096C] text-white border-0"
-                  >
-                    {activeFiltersCount}
-                  </Badge>
-                )}
-              </Button>
-            </div>
+            <CategoriasPills
+              categories={DEFAULT_CATEGORIES}
+              selectedCategory={categoriaParam || "all"}
+              onSelectCategory={(cat) => {
+                handleCategoriaChange(cat === "all" ? null : cat);
+                setSelectedSubcategories([]);
+              }}
+              onFilterClick={() => setShowFilters(true)}
+              showFilter={true}
+              activeFiltersCount={activeFiltersCount}
+            />
           </div>
         </div>
 
@@ -484,7 +462,7 @@ const Index = () => {
                 {secoesDinamicas.map((section, index) => {
                   const isFeatured = index === 0 && section.priority === "featured";
 
-                  // CORRIGIDO: Se usandoFallback, NÃO mostra cidade no título
+                  // Se usandoFallback, NÃO mostra cidade no título
                   const displayTitle =
                     isFeatured && cidadeFinal && !usandoFallback
                       ? `${section.title} em ${cidadeFinal}`
@@ -676,7 +654,7 @@ const Index = () => {
 
               {/* Distancia */}
               <div>
-                <h3 className="text-sm font-medium text-foreground mb-3">Distancia</h3>
+                <h3 className="text-sm font-medium text-foreground mb-3">Distância</h3>
                 {!userLocation ? (
                   <Button
                     variant="outline"
@@ -686,7 +664,7 @@ const Index = () => {
                     className="gap-2"
                   >
                     <MapPin className="h-4 w-4" />
-                    {locationLoading ? "Obtendo localizacao..." : "Usar minha localizacao"}
+                    {locationLoading ? "Obtendo localização..." : "Usar minha localização"}
                   </Button>
                 ) : (
                   <div className="flex flex-wrap gap-2">
@@ -701,7 +679,7 @@ const Index = () => {
                         }`}
                         onClick={() => setFilterDistance(filterDistance === km ? null : km)}
                       >
-                        Ate {km} km
+                        Até {km} km
                       </Badge>
                     ))}
                   </div>
@@ -710,12 +688,12 @@ const Index = () => {
 
               {/* Validade */}
               <div>
-                <h3 className="text-sm font-medium text-foreground mb-3">Validade do Beneficio</h3>
+                <h3 className="text-sm font-medium text-foreground mb-3">Validade do Benefício</h3>
                 <div className="flex flex-wrap gap-2">
                   {[
                     { value: "dia", label: "No dia" },
                     { value: "semana", label: "Na semana" },
-                    { value: "mes", label: "No mes" },
+                    { value: "mes", label: "No mês" },
                   ].map((opt) => (
                     <Badge
                       key={opt.value}

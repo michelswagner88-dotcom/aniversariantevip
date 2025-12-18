@@ -53,36 +53,19 @@ const useScrollDetection = (threshold: number = SCROLL_THRESHOLD) => {
   useEffect(() => {
     const sentinel = document.getElementById("scroll-sentinel");
 
-    console.log("[SCROLL INIT]", {
-      sentinelFound: !!sentinel,
-      scrollY: window.scrollY,
-      isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
-    });
-
     if (sentinel && "IntersectionObserver" in window) {
       const observer = new IntersectionObserver(
         ([entry]) => {
-          const newIsScrolled = !entry.isIntersecting;
-          console.log("[SCROLL OBSERVER]", {
-            isIntersecting: entry.isIntersecting,
-            newIsScrolled,
-            boundingRect: entry.boundingClientRect,
-          });
-          setIsScrolled(newIsScrolled);
+          setIsScrolled(!entry.isIntersecting);
         },
         { threshold: 0 },
       );
 
       observer.observe(sentinel);
 
-      // Check inicial FORÇADO
+      // Check inicial
       const rect = sentinel.getBoundingClientRect();
-      const initialScrolled = rect.top < 0;
-      console.log("[SCROLL INITIAL CHECK]", {
-        rectTop: rect.top,
-        initialScrolled,
-      });
-      setIsScrolled(initialScrolled);
+      setIsScrolled(rect.top < 0);
 
       return () => observer.disconnect();
     }
@@ -92,9 +75,7 @@ const useScrollDetection = (threshold: number = SCROLL_THRESHOLD) => {
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          const newIsScrolled = window.scrollY > threshold;
-          console.log("[SCROLL FALLBACK]", { scrollY: window.scrollY, newIsScrolled });
-          setIsScrolled(newIsScrolled);
+          setIsScrolled(window.scrollY > threshold);
           ticking = false;
         });
         ticking = true;
@@ -331,16 +312,6 @@ export const Header = memo(function Header({ showSearch = true, cityName, onSear
   const isHomePage = location.pathname === "/";
   const isTransparent = isHomePage && !isScrolled;
 
-  // DEBUG COMPLETO
-  console.log("[HEADER RENDER]", {
-    isScrolled,
-    isHomePage,
-    isTransparent,
-    pathname: location.pathname,
-    isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
-    screenWidth: window.innerWidth,
-  });
-
   const showSearchPill = isScrolled || !isHomePage;
 
   const handleSearchClick = useCallback(() => {
@@ -354,7 +325,7 @@ export const Header = memo(function Header({ showSearch = true, cityName, onSear
     }
   }, [onSearchClick]);
 
-  // ESTILO INLINE FORÇADO
+  // Estilo inline para garantir transparência no mobile
   const headerStyle = isTransparent
     ? {
         backgroundColor: "transparent",

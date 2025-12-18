@@ -157,26 +157,21 @@ const Logo = memo(({ variant }: LogoProps) => {
     <Link
       to="/"
       className={cn(
-        "flex items-center gap-1.5",
+        "flex items-center gap-1.5", // Espaço entre as palavras
         "font-bold tracking-tight",
         "text-lg sm:text-xl",
         "transition-opacity duration-200",
         "hover:opacity-80",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 rounded",
-        isLight ? "text-white focus-visible:ring-white" : "text-[#240046] focus-visible:ring-violet-500",
+        isLight ? "focus-visible:ring-white" : "focus-visible:ring-violet-500",
       )}
       aria-label="AniversarianteVIP - Ir para página inicial"
     >
-      <span>Aniversariante</span>
-      <span
-        className={cn(
-          "font-bold",
-          "bg-gradient-to-r from-fuchsia-400 via-pink-500 to-violet-500",
-          "bg-clip-text text-transparent",
-        )}
-      >
-        VIP
+      {/* Gradiente roxo → azul → ciano */}
+      <span className="bg-gradient-to-r from-violet-500 via-blue-500 to-cyan-400 bg-clip-text text-transparent font-bold">
+        Aniversariante
       </span>
+      <span className="bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent font-bold">VIP</span>
     </Link>
   );
 });

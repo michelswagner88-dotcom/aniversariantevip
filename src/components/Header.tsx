@@ -2,13 +2,6 @@
 // HEADER.TSX - ANIVERSARIANTE VIP
 // Design System: Top 1% Mundial - Nível Airbnb/Booking
 // =============================================================================
-// DECISÕES DE ARQUITETURA:
-// ✅ Mobile: Header LIMPO (só logo) - navegação fica no BottomNav
-// ✅ Desktop: Header completo com menu dropdown
-// ✅ Transparente no topo da home (mobile E desktop)
-// ✅ Glassmorphism quando scrolla
-// ✅ Logo BRANCO quando transparente
-// =============================================================================
 
 import { memo, useState, useCallback, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -58,22 +51,38 @@ const useScrollDetection = (threshold: number = SCROLL_THRESHOLD) => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    // Tenta usar sentinel externo primeiro (mais confiável)
     const sentinel = document.getElementById("scroll-sentinel");
+
+    console.log("[SCROLL INIT]", {
+      sentinelFound: !!sentinel,
+      scrollY: window.scrollY,
+      isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
+    });
 
     if (sentinel && "IntersectionObserver" in window) {
       const observer = new IntersectionObserver(
         ([entry]) => {
-          setIsScrolled(!entry.isIntersecting);
+          const newIsScrolled = !entry.isIntersecting;
+          console.log("[SCROLL OBSERVER]", {
+            isIntersecting: entry.isIntersecting,
+            newIsScrolled,
+            boundingRect: entry.boundingClientRect,
+          });
+          setIsScrolled(newIsScrolled);
         },
-        { threshold: 0 }, // Removido rootMargin negativo que causava problema no mobile
+        { threshold: 0 },
       );
 
       observer.observe(sentinel);
 
-      // Check inicial - força verificação da posição atual
+      // Check inicial FORÇADO
       const rect = sentinel.getBoundingClientRect();
-      setIsScrolled(rect.top < 0);
+      const initialScrolled = rect.top < 0;
+      console.log("[SCROLL INITIAL CHECK]", {
+        rectTop: rect.top,
+        initialScrolled,
+      });
+      setIsScrolled(initialScrolled);
 
       return () => observer.disconnect();
     }
@@ -83,7 +92,9 @@ const useScrollDetection = (threshold: number = SCROLL_THRESHOLD) => {
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          setIsScrolled(window.scrollY > threshold);
+          const newIsScrolled = window.scrollY > threshold;
+          console.log("[SCROLL FALLBACK]", { scrollY: window.scrollY, newIsScrolled });
+          setIsScrolled(newIsScrolled);
           ticking = false;
         });
         ticking = true;
@@ -91,7 +102,7 @@ const useScrollDetection = (threshold: number = SCROLL_THRESHOLD) => {
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // Check inicial
+    handleScroll();
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, [threshold]);
@@ -159,10 +170,14 @@ const Logo = memo(({ isTransparent }: LogoProps) => {
         "text-lg sm:text-xl",
         isTransparent ? "text-white focus-visible:ring-white" : "text-[#240046] focus-visible:ring-violet-500",
       )}
+      style={isTransparent ? { color: "white" } : { color: "#240046" }}
       aria-label="Ir para página inicial"
     >
       Aniversariante
-      <span className={cn("transition-colors duration-300", isTransparent ? "text-violet-300" : "text-violet-600")}>
+      <span
+        className={cn("transition-colors duration-300", isTransparent ? "text-violet-300" : "text-violet-600")}
+        style={isTransparent ? { color: "#c4b5fd" } : { color: "#7c3aed" }}
+      >
         VIP
       </span>
     </Link>
@@ -226,13 +241,15 @@ const DesktopNav = memo(({ isTransparent, user, onSignOut }: DesktopNavProps) =>
 
   return (
     <nav className="flex items-center gap-2" role="navigation" aria-label="Menu principal">
-      {/* Para Empresas - só desktop */}
-      <button onClick={() => navigate("/seja-parceiro")} className={linkClasses}>
+      <button
+        onClick={() => navigate("/seja-parceiro")}
+        className={linkClasses}
+        style={isTransparent ? { color: "rgba(255,255,255,0.9)" } : { color: "#374151" }}
+      >
         <Building2 className="w-4 h-4 mr-2" />
         Para Empresas
       </button>
 
-      {/* User Menu - Desktop */}
       <div className="hidden lg:block">
         {user ? (
           <DropdownMenu>
@@ -287,6 +304,11 @@ const DesktopNav = memo(({ isTransparent, user, onSignOut }: DesktopNavProps) =>
                 ? "bg-white text-[#240046] hover:bg-white/90"
                 : "bg-[#240046] hover:bg-[#3C096C] text-white",
             )}
+            style={
+              isTransparent
+                ? { backgroundColor: "white", color: "#240046" }
+                : { backgroundColor: "#240046", color: "white" }
+            }
           >
             Entrar
           </Button>
@@ -306,16 +328,19 @@ export const Header = memo(function Header({ showSearch = true, cityName, onSear
   const isScrolled = useScrollDetection(SCROLL_THRESHOLD);
   const { user, signOut } = useAuth();
 
-  // Lógica de transparência
   const isHomePage = location.pathname === "/";
   const isTransparent = isHomePage && !isScrolled;
 
-  // DEBUG TEMPORÁRIO - remover depois de testar
-  console.log("[HEADER MOBILE]", { isScrolled, isHomePage, isTransparent, pathname: location.pathname });
+  // DEBUG COMPLETO
+  console.log("[HEADER RENDER]", {
+    isScrolled,
+    isHomePage,
+    isTransparent,
+    pathname: location.pathname,
+    isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
+    screenWidth: window.innerWidth,
+  });
 
-  // SearchPill só aparece quando:
-  // - scrollou (em qualquer página) OU
-  // - NÃO é a home
   const showSearchPill = isScrolled || !isHomePage;
 
   const handleSearchClick = useCallback(() => {
@@ -329,9 +354,23 @@ export const Header = memo(function Header({ showSearch = true, cityName, onSear
     }
   }, [onSearchClick]);
 
+  // ESTILO INLINE FORÇADO
+  const headerStyle = isTransparent
+    ? {
+        backgroundColor: "transparent",
+        background: "none",
+        boxShadow: "none",
+        borderBottom: "none",
+      }
+    : {
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
+        backdropFilter: "blur(24px)",
+        boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        borderBottom: "1px solid rgb(243 244 246)",
+      };
+
   return (
     <>
-      {/* Header */}
       <header
         className={cn(
           "fixed top-0 left-0 right-0 z-50",
@@ -339,21 +378,16 @@ export const Header = memo(function Header({ showSearch = true, cityName, onSear
           "h-16",
           isTransparent ? "bg-transparent" : "bg-white/95 backdrop-blur-xl shadow-sm border-b border-gray-100",
         )}
+        style={headerStyle}
         role="banner"
       >
         <div className="h-full mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl flex items-center justify-between">
-          {/* Logo - sempre visível */}
           <Logo isTransparent={isTransparent} />
-
-          {/* Search Pill - centro (só desktop) */}
           {showSearch && <SearchPill isVisible={showSearchPill} cityName={cityName} onClick={handleSearchClick} />}
-
-          {/* Desktop Nav */}
           <DesktopNav isTransparent={isTransparent} user={user} onSignOut={signOut} />
         </div>
       </header>
 
-      {/* Spacer - só quando header NÃO é transparente */}
       {!isTransparent && <div className="h-16" aria-hidden="true" />}
     </>
   );

@@ -364,36 +364,36 @@ const MenuBtn = ({ icon, label, sub, onClick, danger }: any) => (
 
 const SearchPill = memo(({ city, state, isLoading, onCityClick, onFilterClick, filterCount }: any) => (
   <>
-    {/* Desktop - Pill branca + botão filtros separado */}
+    {/* Desktop - Filtro antes + Pill branca */}
     <div className="hidden sm:flex items-center gap-2">
-      <button
-        onClick={onCityClick}
-        className="flex items-center gap-2 h-11 pl-4 pr-3 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow flex-1"
-        aria-label="Selecionar cidade"
-      >
-        <MapPin className="w-4 h-4 text-violet-600 flex-shrink-0" />
-        <div className="text-left flex-1 min-w-0">
-          <p className="text-[10px] text-zinc-500 uppercase font-medium leading-none">Onde</p>
-          <p className="text-sm font-medium text-zinc-900 truncate">{isLoading ? "..." : `${city}, ${state}`}</p>
-        </div>
-        <div className="w-px h-5 bg-zinc-200 mx-1" />
-        <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0">
-          <Search className="w-4 h-4 text-white" />
-        </div>
-      </button>
-
-      {/* Filtros separado */}
+      {/* Botão filtro PRIMEIRO (menor) */}
       <button
         onClick={onFilterClick}
-        className="w-11 h-11 rounded-full bg-white shadow-sm hover:shadow-md flex items-center justify-center relative"
+        className="w-9 h-9 rounded-full bg-white shadow-sm hover:shadow-md flex items-center justify-center relative flex-shrink-0"
         aria-label="Abrir filtros"
       >
-        <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
+        <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-600" />
         {filterCount > 0 && (
           <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
             {filterCount}
           </span>
         )}
+      </button>
+
+      {/* Barra de localização DEPOIS */}
+      <button
+        onClick={onCityClick}
+        className="flex items-center gap-2 h-10 pl-3.5 pr-2.5 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow"
+        aria-label="Selecionar cidade"
+      >
+        <MapPin className="w-3.5 h-3.5 text-violet-600 flex-shrink-0" />
+        <div className="text-left min-w-0">
+          <p className="text-[10px] text-zinc-500 uppercase font-medium leading-none">Onde</p>
+          <p className="text-sm font-medium text-zinc-900 truncate">{isLoading ? "..." : `${city}, ${state}`}</p>
+        </div>
+        <div className="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0 ml-1">
+          <Search className="w-3.5 h-3.5 text-white" />
+        </div>
       </button>
     </div>
 

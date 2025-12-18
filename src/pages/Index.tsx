@@ -1,6 +1,6 @@
 // =============================================================================
 // INDEX.TSX - ANIVERSARIANTE VIP
-// Redesign Airbnb-like - TUDO INLINE
+// V2 Polish - Top 1 Mundial
 // =============================================================================
 
 import { useMemo, useState, useEffect, useCallback, useRef, memo } from "react";
@@ -19,6 +19,7 @@ import {
   HelpCircle,
   Heart,
   SlidersHorizontal,
+  Cake,
   Sparkles,
   Dumbbell,
   Beer,
@@ -71,6 +72,18 @@ const CATEGORY_ICONS: Record<string, any> = {
   salao: Paintbrush,
   salão: Paintbrush,
   sorveteria: IceCream,
+};
+
+// Labels curtos para mobile
+const CATEGORY_LABELS_SHORT: Record<string, string> = {
+  "casa noturna": "Baladas",
+  cafeteria: "Cafés",
+  entretenimento: "Lazer",
+  hospedagem: "Hotéis",
+  restaurante: "Restaurantes",
+  sorveteria: "Sorvetes",
+  salao: "Beleza",
+  salão: "Beleza",
 };
 
 // =============================================================================
@@ -154,7 +167,7 @@ const useLocation = () => {
 };
 
 // =============================================================================
-// HEADER - Branco, limpo, estilo Airbnb
+// HEADER - Compacto
 // =============================================================================
 
 const Header = memo(({ children }: { children?: React.ReactNode }) => {
@@ -164,41 +177,38 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white border-b border-zinc-200">
+      <header className="sticky top-0 z-40 bg-white border-b border-zinc-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           {/* Desktop */}
-          <div className="hidden sm:flex items-center justify-between h-16 gap-4">
-            {/* Logo */}
+          <div className="hidden sm:flex items-center justify-between h-14 gap-4">
             <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
-                <Gift className="w-4 h-4 text-white" />
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                <Gift className="w-3.5 h-3.5 text-white" />
               </div>
-              <span className="text-base font-bold text-zinc-900">
+              <span className="text-sm font-bold text-zinc-900">
                 Aniversariante<span className="text-violet-600">VIP</span>
               </span>
             </Link>
 
-            {/* SearchPill Desktop */}
-            <div className="flex-1 max-w-2xl">{children}</div>
+            <div className="flex-1 max-w-xl">{children}</div>
 
-            {/* Menu */}
             <button
               onClick={() => setMenuOpen(true)}
-              className="flex items-center gap-2 h-10 pl-3 pr-2 rounded-full bg-white border border-zinc-200 hover:shadow-md transition-shadow"
+              className="flex items-center gap-1.5 h-9 pl-2.5 pr-1.5 rounded-full bg-white border border-zinc-200 hover:shadow-md transition-shadow"
             >
-              <Menu className="w-4 h-4 text-zinc-600" />
-              <div className="w-7 h-7 rounded-full bg-zinc-500 flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
+              <Menu className="w-3.5 h-3.5 text-zinc-600" />
+              <div className="w-6 h-6 rounded-full bg-zinc-500 flex items-center justify-center">
+                <User className="w-3.5 h-3.5 text-white" />
               </div>
             </button>
           </div>
 
-          {/* Mobile */}
+          {/* Mobile - Mais compacto */}
           <div className="sm:hidden">
-            <div className="flex items-center justify-between h-14">
-              <Link to="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
-                  <Gift className="w-4 h-4 text-white" />
+            <div className="flex items-center justify-between h-12">
+              <Link to="/" className="flex items-center gap-1.5">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                  <Gift className="w-3.5 h-3.5 text-white" />
                 </div>
                 <span className="text-sm font-bold text-zinc-900">
                   Aniversariante<span className="text-violet-600">VIP</span>
@@ -206,12 +216,12 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
               </Link>
               <button
                 onClick={() => setMenuOpen(true)}
-                className="w-10 h-10 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-50"
+                className="w-9 h-9 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-50"
               >
-                <Menu className="w-5 h-5 text-zinc-600" />
+                <Menu className="w-4 h-4 text-zinc-600" />
               </button>
             </div>
-            {children && <div className="pb-3">{children}</div>}
+            {children && <div className="pb-2">{children}</div>}
           </div>
         </div>
       </header>
@@ -225,22 +235,22 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
               <span className="font-semibold text-zinc-900">Menu</span>
               <button
                 onClick={() => setMenuOpen(false)}
-                className="w-9 h-9 rounded-full hover:bg-zinc-100 flex items-center justify-center"
+                className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center"
               >
-                <X className="w-5 h-5 text-zinc-500" />
+                <X className="w-4 h-4 text-zinc-500" />
               </button>
             </div>
             <div className="p-3">
               {user ? (
                 <>
-                  <div className="px-3 py-3 mb-2 bg-violet-50 rounded-xl">
+                  <div className="px-3 py-2.5 mb-2 bg-violet-50 rounded-xl">
                     <p className="text-sm font-semibold text-zinc-900 truncate">
                       {user.user_metadata?.full_name || "Usuário"}
                     </p>
                     <p className="text-xs text-zinc-500 truncate">{user.email}</p>
                   </div>
                   <MenuBtn
-                    icon={<Gift className="w-5 h-5 text-violet-600" />}
+                    icon={<Gift className="w-4 h-4 text-violet-600" />}
                     label="Minha Área"
                     onClick={() => {
                       navigate("/area-aniversariante");
@@ -248,7 +258,7 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
                     }}
                   />
                   <MenuBtn
-                    icon={<Settings className="w-5 h-5 text-zinc-400" />}
+                    icon={<Settings className="w-4 h-4 text-zinc-400" />}
                     label="Configurações"
                     onClick={() => {
                       navigate("/configuracoes");
@@ -257,7 +267,7 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
                   />
                   <div className="my-2 mx-3 border-t border-zinc-100" />
                   <MenuBtn
-                    icon={<LogOut className="w-5 h-5 text-red-500" />}
+                    icon={<LogOut className="w-4 h-4 text-red-500" />}
                     label="Sair"
                     onClick={() => {
                       signOut();
@@ -269,7 +279,7 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
               ) : (
                 <>
                   <MenuBtn
-                    icon={<User className="w-5 h-5 text-violet-600" />}
+                    icon={<User className="w-4 h-4 text-violet-600" />}
                     label="Entrar"
                     sub="Aniversariante"
                     onClick={() => {
@@ -278,7 +288,7 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
                     }}
                   />
                   <MenuBtn
-                    icon={<Gift className="w-5 h-5 text-fuchsia-600" />}
+                    icon={<Gift className="w-4 h-4 text-fuchsia-600" />}
                     label="Cadastrar"
                     sub="É grátis"
                     onClick={() => {
@@ -288,7 +298,7 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
                   />
                   <div className="my-2 mx-3 border-t border-zinc-100" />
                   <MenuBtn
-                    icon={<Building2 className="w-5 h-5 text-blue-600" />}
+                    icon={<Building2 className="w-4 h-4 text-blue-600" />}
                     label="Para Empresas"
                     sub="Cadastre seu estabelecimento"
                     onClick={() => {
@@ -298,7 +308,7 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
                   />
                   <div className="my-2 mx-3 border-t border-zinc-100" />
                   <MenuBtn
-                    icon={<HelpCircle className="w-5 h-5 text-zinc-400" />}
+                    icon={<HelpCircle className="w-4 h-4 text-zinc-400" />}
                     label="Como Funciona"
                     onClick={() => {
                       navigate("/como-funciona");
@@ -319,70 +329,77 @@ const MenuBtn = ({ icon, label, sub, onClick, danger }: any) => (
   <button
     onClick={onClick}
     className={cn(
-      "w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left",
+      "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left",
       danger ? "hover:bg-red-50" : "hover:bg-zinc-50",
     )}
   >
     {icon}
     <div>
-      <span className={cn("font-medium block", danger ? "text-red-600" : "text-zinc-900")}>{label}</span>
+      <span className={cn("text-sm font-medium block", danger ? "text-red-600" : "text-zinc-900")}>{label}</span>
       {sub && <span className="text-xs text-zinc-500">{sub}</span>}
     </div>
   </button>
 );
 
 // =============================================================================
-// SEARCH PILL
+// SEARCH PILL - Sem Filtros duplicado
 // =============================================================================
 
-const SearchPill = memo(({ city, state, isLoading, onCityClick, categoria, onFilterClick, filterCount }: any) => (
+const SearchPill = memo(({ city, state, isLoading, onCityClick, onFilterClick, filterCount }: any) => (
   <>
-    {/* Desktop */}
-    <div className="hidden sm:flex items-center h-12 bg-white rounded-full border border-zinc-200 shadow-sm hover:shadow-md transition-shadow">
+    {/* Desktop - Com Filtros integrado */}
+    <div className="hidden sm:flex items-center h-11 bg-white rounded-full border border-zinc-200 shadow-sm hover:shadow-md transition-shadow">
       <button
         onClick={onCityClick}
         className="flex items-center gap-2 h-full pl-4 pr-3 rounded-l-full hover:bg-zinc-50"
       >
-        <MapPin className="w-4 h-4 text-violet-600" />
+        <MapPin className="w-4 h-4 text-violet-600 flex-shrink-0" />
         <div className="text-left">
           <p className="text-[10px] text-zinc-500 uppercase font-medium leading-none">Onde</p>
-          <p className="text-sm font-medium text-zinc-900">{isLoading ? "..." : `${city}, ${state}`}</p>
+          <p className="text-sm font-medium text-zinc-900 truncate max-w-[120px]">
+            {isLoading ? "..." : `${city}, ${state}`}
+          </p>
         </div>
       </button>
-      <div className="w-px h-6 bg-zinc-200" />
-      {categoria && categoria !== "all" && (
-        <>
-          <div className="px-3">
-            <span className="text-sm text-zinc-700 capitalize">{categoria}</span>
-          </div>
-          <div className="w-px h-6 bg-zinc-200" />
-        </>
-      )}
-      <button onClick={onFilterClick} className="flex items-center gap-2 h-full px-3 hover:bg-zinc-50 relative">
+      <div className="w-px h-5 bg-zinc-200" />
+      <button onClick={onFilterClick} className="flex items-center gap-1.5 h-full px-3 hover:bg-zinc-50 relative">
         <SlidersHorizontal className="w-4 h-4 text-zinc-500" />
-        <span className="text-sm text-zinc-500">Filtros</span>
+        <span className="text-sm text-zinc-600">Filtros</span>
         {filterCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center">
+          <span className="w-4 h-4 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
             {filterCount}
           </span>
         )}
       </button>
-      <button className="w-10 h-10 m-1 rounded-full bg-violet-600 hover:bg-violet-700 flex items-center justify-center">
+      <button className="w-9 h-9 m-1 rounded-full bg-violet-600 hover:bg-violet-700 flex items-center justify-center flex-shrink-0">
         <Search className="w-4 h-4 text-white" />
       </button>
     </div>
 
-    {/* Mobile */}
-    <button
-      onClick={onCityClick}
-      className="sm:hidden w-full flex items-center gap-3 h-12 px-4 bg-white rounded-full border border-zinc-200 shadow-sm"
-    >
-      <Search className="w-5 h-5 text-zinc-400" />
-      <div className="text-left flex-1">
-        <p className="text-sm font-medium text-zinc-900">Onde você quer comemorar?</p>
-        <p className="text-xs text-zinc-500">{isLoading ? "Detectando..." : `${city}, ${state}`}</p>
-      </div>
-    </button>
+    {/* Mobile - Compacto com ícone de filtro */}
+    <div className="sm:hidden flex items-center gap-2">
+      <button
+        onClick={onCityClick}
+        className="flex-1 flex items-center gap-2.5 h-11 px-3.5 bg-white rounded-full border border-zinc-200 shadow-sm"
+      >
+        <Search className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+        <div className="text-left flex-1 min-w-0">
+          <p className="text-sm font-medium text-zinc-900 truncate">Onde você quer comemorar?</p>
+          <p className="text-xs text-zinc-500 truncate">{isLoading ? "Detectando..." : `${city}, ${state}`}</p>
+        </div>
+      </button>
+      <button
+        onClick={onFilterClick}
+        className="w-11 h-11 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-50 relative flex-shrink-0"
+      >
+        <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
+        {filterCount > 0 && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
+            {filterCount}
+          </span>
+        )}
+      </button>
+    </div>
   </>
 ));
 
@@ -430,47 +447,47 @@ const CityModal = memo(({ isOpen, onClose, city, state, onSelect }: any) => {
 
   return (
     <div className="fixed inset-0 z-50 bg-white">
-      <div className="flex items-center gap-3 px-4 h-14 border-b border-zinc-100">
-        <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-zinc-100 flex items-center justify-center">
-          <X className="w-5 h-5 text-zinc-500" />
+      <div className="flex items-center gap-3 px-4 h-12 border-b border-zinc-100">
+        <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center">
+          <X className="w-4 h-4 text-zinc-500" />
         </button>
-        <span className="font-semibold text-zinc-900">Alterar cidade</span>
+        <span className="font-semibold text-zinc-900 text-sm">Alterar cidade</span>
       </div>
-      <div className="p-4">
-        <div className="flex items-center gap-3 bg-zinc-100 rounded-xl px-4 h-12">
-          <Search className="w-5 h-5 text-zinc-400" />
+      <div className="p-3">
+        <div className="flex items-center gap-2.5 bg-zinc-100 rounded-xl px-3.5 h-11">
+          <Search className="w-4 h-4 text-zinc-400" />
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar cidade..."
-            className="flex-1 bg-transparent outline-none"
+            className="flex-1 bg-transparent outline-none text-sm"
           />
           {searching && (
-            <div className="w-5 h-5 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
           )}
         </div>
       </div>
       {query.length < 2 && (
-        <div className="px-4">
-          <p className="text-xs text-zinc-500 uppercase mb-2 px-1">Cidade atual</p>
+        <div className="px-3">
+          <p className="text-[10px] text-zinc-500 uppercase mb-1.5 px-1 font-medium">Cidade atual</p>
           <button
             onClick={onClose}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-violet-50 text-left"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-violet-50 text-left"
           >
-            <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-violet-600" />
+            <div className="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center">
+              <MapPin className="w-4 h-4 text-violet-600" />
             </div>
             <div>
-              <p className="font-medium text-zinc-900">{city}</p>
-              <p className="text-sm text-zinc-500">{state}</p>
+              <p className="font-medium text-zinc-900 text-sm">{city}</p>
+              <p className="text-xs text-zinc-500">{state}</p>
             </div>
           </button>
         </div>
       )}
       {results.length > 0 && (
-        <div className="px-4 mt-2">
-          <p className="text-xs text-zinc-500 uppercase mb-2 px-1">Resultados</p>
+        <div className="px-3 mt-2">
+          <p className="text-[10px] text-zinc-500 uppercase mb-1.5 px-1 font-medium">Resultados</p>
           {results.map((r, i) => (
             <button
               key={i}
@@ -478,14 +495,14 @@ const CityModal = memo(({ isOpen, onClose, city, state, onSelect }: any) => {
                 onSelect(r.cidade, r.estado);
                 onClose();
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-50 text-left"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-50 text-left"
             >
-              <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-zinc-500" />
+              <div className="w-9 h-9 rounded-xl bg-zinc-100 flex items-center justify-center">
+                <MapPin className="w-4 h-4 text-zinc-500" />
               </div>
               <div>
-                <p className="font-medium text-zinc-900">{r.cidade}</p>
-                <p className="text-sm text-zinc-500">{r.estado}</p>
+                <p className="font-medium text-zinc-900 text-sm">{r.cidade}</p>
+                <p className="text-xs text-zinc-500">{r.estado}</p>
               </div>
             </button>
           ))}
@@ -496,59 +513,41 @@ const CityModal = memo(({ isOpen, onClose, city, state, onSelect }: any) => {
 });
 
 // =============================================================================
-// CATEGORIES
+// CATEGORIES - Sem botão Filtros (removido), underline roxo
 // =============================================================================
 
-const Categories = memo(({ selected, onSelect, onFilterClick, filterCount }: any) => {
+const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) => {
   const cats = [
     { id: "all", label: "Todos" },
     ...CATEGORIAS_ESTABELECIMENTO.map((c) => ({ id: c.value, label: c.label })),
   ];
 
   return (
-    <div className="sticky top-[56px] sm:top-[64px] z-30 bg-white border-b border-zinc-100">
+    <div className="sticky top-[48px] sm:top-[56px] z-30 bg-white border-b border-zinc-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center gap-2 py-2">
-          <div
-            className="flex-1 flex items-center gap-1 overflow-x-auto scrollbar-hide"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {cats.map((cat) => {
-              const Icon = CATEGORY_ICONS[cat.id.toLowerCase()] || Sparkles;
-              const isActive = selected === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => onSelect(cat.id)}
-                  className="flex flex-col items-center gap-1 min-w-[56px] px-2 py-2 relative"
-                >
-                  <Icon className={cn("w-5 h-5", isActive ? "text-zinc-900" : "text-zinc-400")} />
-                  <span
-                    className={cn(
-                      "text-[11px] font-medium whitespace-nowrap",
-                      isActive ? "text-zinc-900" : "text-zinc-500",
-                    )}
-                  >
-                    {cat.label}
-                  </span>
-                  {isActive && <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-zinc-900 rounded-full" />}
-                </button>
-              );
-            })}
-          </div>
-          <div className="w-px h-8 bg-zinc-200 flex-shrink-0" />
-          <button
-            onClick={onFilterClick}
-            className="flex items-center gap-2 h-10 px-4 border border-zinc-200 rounded-xl hover:bg-zinc-50 flex-shrink-0"
-          >
-            <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
-            <span className="text-sm font-medium text-zinc-700">Filtros</span>
-            {filterCount > 0 && (
-              <span className="w-5 h-5 rounded-full bg-zinc-900 text-white text-xs flex items-center justify-center">
-                {filterCount}
-              </span>
-            )}
-          </button>
+        <div className="flex items-center overflow-x-auto scrollbar-hide -mx-1" style={{ scrollbarWidth: "none" }}>
+          {cats.map((cat) => {
+            const Icon = CATEGORY_ICONS[cat.id.toLowerCase()] || Sparkles;
+            const isActive = selected === cat.id;
+            const shortLabel = CATEGORY_LABELS_SHORT[cat.id.toLowerCase()] || cat.label;
+
+            return (
+              <button
+                key={cat.id}
+                onClick={() => onSelect(cat.id)}
+                className={cn(
+                  "flex flex-col items-center gap-0.5 min-w-[64px] sm:min-w-[72px] px-3 py-2 relative transition-colors",
+                  isActive ? "text-zinc-900" : "text-zinc-500 hover:text-zinc-700",
+                )}
+              >
+                <Icon className={cn("w-5 h-5", isActive ? "text-zinc-900" : "text-zinc-400")} />
+                <span className={cn("text-[11px] font-medium whitespace-nowrap", isActive && "text-zinc-900")}>
+                  {shortLabel}
+                </span>
+                {isActive && <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-violet-600 rounded-full" />}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -556,49 +555,54 @@ const Categories = memo(({ selected, onSelect, onFilterClick, filterCount }: any
 });
 
 // =============================================================================
-// EMPTY BANNER
+// EMPTY BANNER - Mais discreto
 // =============================================================================
 
 const EmptyBanner = memo(({ cidade, onNotify, onDismiss }: any) => (
-  <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-zinc-200 rounded-2xl mb-4">
-    <div className="w-10 h-10 rounded-full bg-zinc-200 flex items-center justify-center flex-shrink-0">
-      <MapPin className="w-5 h-5 text-zinc-500" />
+  <div className="flex items-center gap-2.5 p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl mb-3">
+    <div className="w-9 h-9 rounded-full bg-zinc-200 flex items-center justify-center flex-shrink-0">
+      <MapPin className="w-4 h-4 text-zinc-500" />
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-sm font-medium text-zinc-900">Ainda não chegamos em {cidade}</p>
+      <p className="text-sm font-medium text-zinc-900 truncate">Ainda não chegamos em {cidade}</p>
       <p className="text-xs text-zinc-500">Mostrando outros lugares</p>
     </div>
     <button
       onClick={onNotify}
-      className="h-9 px-4 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-full flex items-center gap-1.5 flex-shrink-0"
+      className="h-8 px-3 bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium rounded-full flex items-center gap-1 flex-shrink-0"
     >
-      <Bell className="w-4 h-4" />
-      Avise-me
+      <Bell className="w-3.5 h-3.5" />
+      <span className="hidden sm:inline">Avise-me</span>
     </button>
     <button
       onClick={onDismiss}
-      className="w-9 h-9 rounded-full hover:bg-zinc-200 flex items-center justify-center flex-shrink-0"
+      className="w-8 h-8 rounded-full hover:bg-zinc-200 flex items-center justify-center flex-shrink-0"
     >
-      <X className="w-4 h-4 text-zinc-400" />
+      <X className="w-3.5 h-3.5 text-zinc-400" />
     </button>
   </div>
 ));
 
 // =============================================================================
-// CARD
+// CARD - Premium
 // =============================================================================
 
 const Card = memo(({ data, onClick }: any) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
+
   const nome = data.nome_fantasia || data.name || "Estabelecimento";
   const cat = Array.isArray(data.categoria) ? data.categoria[0] : data.categoria || data.category;
   const img = data.imagem_url || data.logo_url || data.photo_url;
   const beneficio = data.descricao_beneficio || data.benefit_description;
 
+  // Chip de benefício - nunca truncar "Aniversaria..."
+  const chipText = beneficio && beneficio.length > 2 ? beneficio : "Benefício de aniversário";
+
   return (
     <article onClick={onClick} className="cursor-pointer group">
       <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-zinc-100 mb-2">
+        {/* Imagem ou Skeleton */}
         {img && !error ? (
           <img
             src={img}
@@ -612,23 +616,36 @@ const Card = memo(({ data, onClick }: any) => {
             onError={() => setError(true)}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-100 to-fuchsia-100">
-            <Gift className="w-10 h-10 text-violet-300" />
+          // Skeleton neutro (não roxo)
+          <div className="w-full h-full bg-zinc-100 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-zinc-200 flex items-center justify-center">
+              <Cake className="w-6 h-6 text-zinc-300" />
+            </div>
           </div>
         )}
+
+        {/* Loading skeleton com shimmer */}
         {!loaded && img && !error && <div className="absolute inset-0 bg-zinc-200 animate-pulse" />}
-        {beneficio && (
-          <div className="absolute top-2.5 left-2.5">
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm text-xs font-medium text-zinc-900 rounded-full shadow-sm">
-              <Gift className="w-3 h-3 text-violet-600" />
-              <span className="max-w-[80px] truncate">{beneficio}</span>
-            </span>
-          </div>
-        )}
-        <button onClick={(e) => e.stopPropagation()} className="absolute top-2.5 right-2.5" aria-label="Favoritar">
-          <Heart className="w-6 h-6 text-white drop-shadow-md fill-black/20 hover:fill-red-500 hover:text-red-500 transition-colors" />
+
+        {/* Chip de benefício - Premium */}
+        <div className="absolute top-2 left-2">
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/95 backdrop-blur-sm text-[11px] font-medium text-zinc-800 rounded-full shadow-sm border border-zinc-100">
+            <Gift className="w-3 h-3 text-violet-600 flex-shrink-0" />
+            <span className="truncate max-w-[100px]">{chipText}</span>
+          </span>
+        </div>
+
+        {/* Coração Premium - Circular com fundo */}
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm border border-zinc-200 shadow-sm flex items-center justify-center hover:scale-110 transition-transform"
+          aria-label="Favoritar"
+        >
+          <Heart className="w-4 h-4 text-zinc-600 hover:text-red-500 hover:fill-red-500 transition-colors" />
         </button>
       </div>
+
+      {/* Info */}
       <div className="px-0.5">
         <h3 className="font-semibold text-zinc-900 text-sm leading-tight line-clamp-1">{nome}</h3>
         <p className="text-zinc-500 text-sm line-clamp-1">
@@ -650,17 +667,17 @@ const Carousel = memo(({ title, subtitle, items }: any) => {
   if (!items?.length) return null;
 
   return (
-    <section className="mb-8">
-      <div className="mb-3">
-        <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
+    <section className="mb-6">
+      <div className="mb-2.5">
+        <h2 className="text-base font-semibold text-zinc-900">{title}</h2>
         {subtitle && <p className="text-sm text-violet-600">{subtitle}</p>}
       </div>
       <div
-        className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4"
+        className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4"
         style={{ scrollbarWidth: "none" }}
       >
         {items.map((est: any) => (
-          <div key={est.id} className="snap-start flex-shrink-0 w-[45%] sm:w-[200px]">
+          <div key={est.id} className="snap-start flex-shrink-0 w-[46%] sm:w-[180px]">
             <Card
               data={est}
               onClick={() =>
@@ -690,7 +707,7 @@ const Grid = memo(({ items, isLoading }: any) => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
         {Array.from({ length: 10 }).map((_, i) => (
           <div key={i} className="animate-pulse">
             <div className="aspect-[4/5] rounded-2xl bg-zinc-200 mb-2" />
@@ -704,18 +721,18 @@ const Grid = memo(({ items, isLoading }: any) => {
 
   if (!items?.length) {
     return (
-      <div className="text-center py-16">
-        <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
-          <Gift className="w-8 h-8 text-zinc-400" />
+      <div className="text-center py-12">
+        <div className="w-14 h-14 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-3">
+          <Gift className="w-7 h-7 text-zinc-400" />
         </div>
-        <p className="text-zinc-900 font-medium">Nenhum resultado</p>
+        <p className="text-zinc-900 font-medium text-sm">Nenhum resultado</p>
         <p className="text-zinc-500 text-sm">Tente ajustar os filtros</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
       {items.map((est: any) => (
         <Card
           key={est.id}
@@ -836,21 +853,15 @@ const Index = () => {
           state={state}
           isLoading={locationLoading}
           onCityClick={() => setCityModalOpen(true)}
-          categoria={categoria}
           onFilterClick={() => setShowFilters(true)}
           filterCount={filterCount}
         />
       </Header>
 
-      <Categories
-        selected={categoria}
-        onSelect={handleCategoria}
-        onFilterClick={() => setShowFilters(true)}
-        filterCount={filterCount}
-      />
+      <Categories selected={categoria} onSelect={handleCategoria} />
 
-      <main className="flex-1 pb-20 sm:pb-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+      <main className="flex-1 pb-20 sm:pb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           {!isLoading && fallback && !bannerDismissed && (
             <EmptyBanner
               cidade={city}
@@ -874,8 +885,8 @@ const Index = () => {
 
           {!isLoading && showGrid && (
             <>
-              <div className="mb-4">
-                <h2 className="text-lg font-semibold text-zinc-900 capitalize">
+              <div className="mb-3">
+                <h2 className="text-base font-semibold text-zinc-900 capitalize">
                   {fallback ? `${categoria} no Brasil` : `${categoria} em ${city}`}
                 </h2>
                 <p className="text-sm text-zinc-500">{filtered.length} lugares</p>
@@ -886,7 +897,7 @@ const Index = () => {
 
           {!isLoading && !showCarousels && !showGrid && filtered.length > 0 && (
             <>
-              <h2 className="text-lg font-semibold text-zinc-900 mb-4">Em destaque</h2>
+              <h2 className="text-base font-semibold text-zinc-900 mb-3">Em destaque</h2>
               <Grid items={filtered} isLoading={false} />
             </>
           )}
@@ -906,23 +917,23 @@ const Index = () => {
 
       {/* Filters Modal */}
       <Dialog open={showFilters} onOpenChange={setShowFilters}>
-        <DialogContent className="max-w-md max-h-[85vh] p-0 rounded-2xl">
+        <DialogContent className="max-w-md max-h-[80vh] p-0 rounded-2xl">
           <DialogHeader className="p-4 pb-0">
-            <DialogTitle>Filtros</DialogTitle>
+            <DialogTitle className="text-base">Filtros</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh] px-4">
-            <div className="space-y-6 py-4">
+          <ScrollArea className="max-h-[55vh] px-4">
+            <div className="space-y-5 py-4">
               {categoria !== "all" && (
                 <div>
-                  <h3 className="text-sm font-medium text-zinc-900 mb-3">Tipo</h3>
+                  <h3 className="text-sm font-medium text-zinc-900 mb-2">Tipo</h3>
                   <div className="flex flex-wrap gap-2">
                     {getSubcategoriesForCategory(categoria).map((s) => (
                       <Badge
                         key={s.id}
                         variant={subcategories.includes(s.label) ? "default" : "outline"}
                         className={cn(
-                          "cursor-pointer h-9 rounded-full",
-                          subcategories.includes(s.label) && "bg-violet-600",
+                          "cursor-pointer h-8 rounded-full text-xs",
+                          subcategories.includes(s.label) && "bg-violet-600 hover:bg-violet-700",
                         )}
                         onClick={() =>
                           setSubcategories((prev) =>
@@ -937,10 +948,16 @@ const Index = () => {
                 </div>
               )}
               <div>
-                <h3 className="text-sm font-medium text-zinc-900 mb-3">Distância</h3>
+                <h3 className="text-sm font-medium text-zinc-900 mb-2">Distância</h3>
                 {!userLocation ? (
-                  <Button variant="outline" size="sm" onClick={requestLocation} disabled={geoLoading} className="gap-2">
-                    <MapPin className="w-4 h-4" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={requestLocation}
+                    disabled={geoLoading}
+                    className="gap-2 h-8 text-xs"
+                  >
+                    <MapPin className="w-3.5 h-3.5" />
                     {geoLoading ? "Obtendo..." : "Usar localização"}
                   </Button>
                 ) : (
@@ -949,7 +966,10 @@ const Index = () => {
                       <Badge
                         key={km}
                         variant={distance === km ? "default" : "outline"}
-                        className={cn("cursor-pointer h-9 rounded-full", distance === km && "bg-violet-600")}
+                        className={cn(
+                          "cursor-pointer h-8 rounded-full text-xs",
+                          distance === km && "bg-violet-600 hover:bg-violet-700",
+                        )}
                         onClick={() => setDistance(distance === km ? null : km)}
                       >
                         Até {km} km
@@ -968,13 +988,14 @@ const Index = () => {
                 setSubcategories([]);
                 setDistance(null);
               }}
+              className="text-xs h-8"
             >
               Limpar
             </Button>
             <Button
               size="sm"
               onClick={() => setShowFilters(false)}
-              className="bg-violet-600 hover:bg-violet-700 rounded-full px-6"
+              className="bg-violet-600 hover:bg-violet-700 rounded-full px-5 h-8 text-xs"
             >
               Ver {filtered.length} lugares
             </Button>

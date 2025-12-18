@@ -1,6 +1,6 @@
 // =============================================================================
 // INDEX.TSX - ANIVERSARIANTE VIP
-// V7 - Lapidação Premium (Carrosséis 100%, Chips, Skeleton)
+// V8 - Coração Transparente Estilo Airbnb
 // =============================================================================
 
 import { useMemo, useState, useEffect, useCallback, useRef, memo } from "react";
@@ -755,12 +755,9 @@ const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => 
   if (!beneficio || beneficio.length < 3) return { emoji: "🎂", text: "Benefício" };
 
   const b = beneficio.toLowerCase();
-
-  // Descontos
   const descontoMatch = beneficio.match(/(\d+)\s*%/);
   if (descontoMatch) return { emoji: "🎁", text: `${descontoMatch[1]}% OFF` };
 
-  // Grátis específicos
   if (b.includes("grátis") || b.includes("gratis") || b.includes("free")) {
     if (b.includes("drink") || b.includes("bebida")) return { emoji: "🥂", text: "Drink grátis" };
     if (b.includes("sobremesa") || b.includes("doce")) return { emoji: "🍰", text: "Sobremesa" };
@@ -773,13 +770,8 @@ const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => 
     return { emoji: "🎁", text: "Grátis" };
   }
 
-  // Brindes/presentes
   if (b.includes("brinde") || b.includes("presente") || b.includes("mimo")) return { emoji: "🎁", text: "Brinde" };
-
-  // Se for curto o suficiente, usa direto
   if (beneficio.length <= 10) return { emoji: "🎁", text: beneficio };
-
-  // Fallback
   return { emoji: "🎂", text: "Benefício" };
 };
 
@@ -798,10 +790,92 @@ const CardSkeleton = memo(() => (
 ));
 
 // =============================================================================
-// CARD - PREMIUM
+// FAVORITE BUTTON - ESTILO AIRBNB (TRANSPARENTE)
 // =============================================================================
 
-const Card = memo(({ data, onClick }: any) => {
+const FavoriteButton = memo(
+  ({
+    estabelecimentoId,
+    estabelecimentoNome,
+    isLoggedIn,
+    onLoginRequired,
+  }: {
+    estabelecimentoId: string;
+    estabelecimentoNome: string;
+    isLoggedIn: boolean;
+    onLoginRequired: () => void;
+  }) => {
+    const [isFavorited, setIsFavorited] = useState(false);
+    const [isAnimating, setIsAnimating] = useState(false);
+
+    const handleClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+
+      if (!isLoggedIn) {
+        onLoginRequired();
+        return;
+      }
+
+      setIsAnimating(true);
+      setIsFavorited((prev) => !prev);
+
+      // Reset animation
+      setTimeout(() => setIsAnimating(false), 300);
+
+      // TODO: Chamar API para salvar favorito
+      // saveFavorite(estabelecimentoId, !isFavorited);
+    };
+
+    return (
+      <button
+        onClick={handleClick}
+        className={cn(
+          // Botão transparente - sem bg, sem border
+          "absolute top-2 right-2",
+          // Hit area grande: 44px mobile, 36px desktop
+          "w-[44px] h-[44px] sm:w-[36px] sm:h-[36px]",
+          // Centralizar ícone
+          "flex items-center justify-center",
+          // Hover sutil
+          "hover:scale-110 active:scale-95",
+          // Animação
+          "transition-transform duration-200",
+          // Focus visible para acessibilidade
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-0 rounded-full",
+        )}
+        aria-label={
+          isFavorited
+            ? `Remover ${estabelecimentoNome} dos favoritos`
+            : `Adicionar ${estabelecimentoNome} aos favoritos`
+        }
+      >
+        <Heart
+          className={cn(
+            // Tamanho do ícone
+            "w-6 h-6 sm:w-5 sm:h-5",
+            // Sombra para contraste em qualquer foto
+            "drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]",
+            // Transição suave
+            "transition-all duration-200",
+            // Animação de pulse quando clica
+            isAnimating && "animate-pulse",
+            // Estados de cor
+            isFavorited
+              ? "fill-red-500 text-red-500 stroke-white stroke-[1.5]"
+              : "fill-black/30 text-white stroke-white stroke-2",
+          )}
+        />
+      </button>
+    );
+  },
+);
+
+// =============================================================================
+// CARD - PREMIUM COM CORAÇÃO AIRBNB
+// =============================================================================
+
+const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
 
@@ -833,7 +907,7 @@ const Card = memo(({ data, onClick }: any) => {
           <div className="absolute inset-0 bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:400%_100%] animate-[shimmer_2s_ease-in-out_infinite]" />
         )}
 
-        {/* Benefit Chip - NUNCA trunca */}
+        {/* Benefit Chip */}
         <div className="absolute top-2.5 left-2.5">
           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/95 backdrop-blur-sm text-[11px] font-semibold text-zinc-800 rounded-full shadow-sm border border-zinc-200/80">
             <span>{chip.emoji}</span>
@@ -841,14 +915,13 @@ const Card = memo(({ data, onClick }: any) => {
           </span>
         </div>
 
-        {/* Favorito - Premium */}
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="absolute top-2.5 right-2.5 w-9 h-9 min-w-[44px] min-h-[44px] rounded-full bg-white/95 backdrop-blur-sm border border-zinc-200/80 shadow-sm flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
-          aria-label={`Favoritar ${nome}`}
-        >
-          <Heart className="w-4 h-4 text-zinc-600 hover:text-red-500 hover:fill-red-500 transition-colors" />
-        </button>
+        {/* Favorito - Estilo Airbnb (Transparente) */}
+        <FavoriteButton
+          estabelecimentoId={data.id}
+          estabelecimentoNome={nome}
+          isLoggedIn={isLoggedIn}
+          onLoginRequired={onLoginRequired}
+        />
       </div>
 
       {/* Info */}
@@ -868,7 +941,7 @@ const Card = memo(({ data, onClick }: any) => {
 // CAROUSEL - PRIMEIRO E ÚLTIMO 100% VISÍVEIS
 // =============================================================================
 
-const Carousel = memo(({ title, subtitle, items, onSeeAll }: any) => {
+const Carousel = memo(({ title, subtitle, items, onSeeAll, isLoggedIn, onLoginRequired }: any) => {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -939,7 +1012,7 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll }: any) => {
         </div>
       </div>
 
-      {/* Track do Carrossel - PADDING SIMÉTRICO */}
+      {/* Track do Carrossel */}
       <div
         ref={scrollRef}
         className={cn(
@@ -965,10 +1038,12 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll }: any) => {
                   }),
                 )
               }
+              isLoggedIn={isLoggedIn}
+              onLoginRequired={onLoginRequired}
             />
           </div>
         ))}
-        {/* Spacer final para garantir último card 100% visível */}
+        {/* Spacer final */}
         <div className="flex-shrink-0 w-4 sm:w-6 lg:w-8" aria-hidden="true" />
       </div>
     </section>
@@ -979,7 +1054,7 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll }: any) => {
 // GRID
 // =============================================================================
 
-const Grid = memo(({ items, isLoading }: any) => {
+const Grid = memo(({ items, isLoading, isLoggedIn, onLoginRequired }: any) => {
   const navigate = useNavigate();
 
   if (isLoading) {
@@ -1020,6 +1095,8 @@ const Grid = memo(({ items, isLoading }: any) => {
               }),
             )
           }
+          isLoggedIn={isLoggedIn}
+          onLoginRequired={onLoginRequired}
         />
       ))}
     </div>
@@ -1035,6 +1112,20 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const rotation = useRotatingCategories();
   const categoria = searchParams.get("categoria") || "all";
+
+  // Auth para favoritos
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
+
+  const handleLoginRequired = useCallback(() => {
+    toast("Faça login para favoritar", {
+      description: "Crie uma conta gratuita para salvar seus favoritos",
+      action: {
+        label: "Entrar",
+        onClick: () => navigate("/login"),
+      },
+    });
+  }, [navigate]);
 
   const { data: estabelecimentos, isLoading } = useEstabelecimentos({ showAll: true, enabled: true });
   const availableCities = useAvailableCities(estabelecimentos || []);
@@ -1068,7 +1159,6 @@ const Index = () => {
 
     const result: any[] = [];
 
-    // 1º: Destaques
     const hl = rotatedCategories[0];
     const hlItems = getByCategory(hl.id).slice(0, 12);
     if (hlItems.length >= 2)
@@ -1080,7 +1170,6 @@ const Index = () => {
         items: hlItems,
       });
 
-    // 2-9: Categorias
     let count = 1;
     for (let i = 1; i < rotatedCategories.length && count < 9; i++) {
       const cat = rotatedCategories[i];
@@ -1097,7 +1186,6 @@ const Index = () => {
       }
     }
 
-    // Completar
     if (result.length < 9) {
       for (let i = 0; i < rotatedCategories.length && result.length < 9; i++) {
         const cat = rotatedCategories[i];
@@ -1183,7 +1271,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      {/* Keyframes do shimmer */}
       <style>{`
         @keyframes shimmer {
           0% { background-position: 200% 0; }
@@ -1208,7 +1295,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto py-4 sm:py-5">
           {(isLoading || locationLoading) && (
             <div className="px-4 sm:px-6 lg:px-8">
-              <Grid items={[]} isLoading />
+              <Grid items={[]} isLoading isLoggedIn={isLoggedIn} onLoginRequired={handleLoginRequired} />
             </div>
           )}
 
@@ -1222,6 +1309,8 @@ const Index = () => {
                 subtitle={c.subtitle}
                 items={c.items}
                 onSeeAll={() => handleSeeAll(c.categoryId)}
+                isLoggedIn={isLoggedIn}
+                onLoginRequired={handleLoginRequired}
               />
             ))}
 
@@ -1233,13 +1322,13 @@ const Index = () => {
                 </h2>
                 <p className="text-sm text-zinc-600">{filtered.length} lugares encontrados</p>
               </div>
-              <Grid items={filtered} isLoading={false} />
+              <Grid items={filtered} isLoading={false} isLoggedIn={isLoggedIn} onLoginRequired={handleLoginRequired} />
             </div>
           )}
 
           {!isLoading && !locationLoading && !showCarousels && !showGrid && (
             <div className="px-4 sm:px-6 lg:px-8">
-              <Grid items={[]} isLoading={false} />
+              <Grid items={[]} isLoading={false} isLoggedIn={isLoggedIn} onLoginRequired={handleLoginRequired} />
             </div>
           )}
         </div>

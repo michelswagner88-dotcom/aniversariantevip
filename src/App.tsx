@@ -20,7 +20,7 @@ import { useAppUpdate } from "@/hooks/useAppUpdate";
 import ScrollToTop from "@/components/ScrollToTop";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
 // VersionBadge removido - não exibir mais badge de versão
-// import PasswordProtection from "@/components/auth/PasswordProtection"; // Temporariamente desabilitado
+import PasswordProtection from "@/components/auth/PasswordProtection";
 
 // Lazy load das páginas principais
 const Index = lazy(() => import("./pages/Index"));
@@ -101,6 +101,7 @@ const App = () => (
         )}
       >
         <BrowserRouter>
+          <PasswordProtection>
           <ScrollToTop />
           <CarolProvider>
             <AnalyticsProvider>
@@ -461,6 +462,7 @@ const App = () => (
               </ErrorBoundary>
             </AnalyticsProvider>
           </CarolProvider>
+          </PasswordProtection>
         </BrowserRouter>
       </Sentry.ErrorBoundary>
     </TooltipProvider>

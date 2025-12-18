@@ -342,9 +342,6 @@ export const Header = memo(function Header({ showSearch = true, cityName, onSear
   const isHomePage = location.pathname === "/";
   const isTransparent = isHomePage && !isScrolled;
 
-  // DEBUG TEMPORÁRIO - REMOVER DEPOIS
-  console.log('[HEADER DEBUG]', { isHomePage, isScrolled, isTransparent, pathname: location.pathname });
-
   const handleSearchClick = useCallback(() => {
     hapticFeedback(10);
     if (onSearchClick) {

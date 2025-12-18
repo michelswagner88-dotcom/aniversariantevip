@@ -584,20 +584,20 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
 // =============================================================================
 
 const EmptyBanner = memo(({ cidade, onNotify, onDismiss }: any) => (
-  <div className="flex items-center gap-2.5 p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl mb-3">
-    <div className="w-9 h-9 rounded-full bg-zinc-200 flex items-center justify-center flex-shrink-0">
-      <MapPin className="w-4 h-4 text-zinc-500" />
+<div className="flex items-center gap-2 p-2 bg-zinc-50 border border-zinc-200 rounded-xl mb-3">
+    <div className="w-8 h-8 rounded-full bg-zinc-200 flex items-center justify-center flex-shrink-0">
+      <MapPin className="w-3.5 h-3.5 text-zinc-500" />
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-sm font-medium text-zinc-900 truncate">Ainda não chegamos em {cidade}</p>
-      <p className="text-xs text-zinc-500">Mostrando outros lugares</p>
+      <p className="text-xs font-medium text-zinc-900">Ainda não chegamos em {cidade}</p>
+      <p className="text-[10px] text-zinc-500">Mostrando outros lugares</p>
     </div>
     <button
       onClick={onNotify}
-      className="h-8 px-3 bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium rounded-full flex items-center gap-1.5 flex-shrink-0"
+      className="h-7 px-2.5 bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-medium rounded-full flex items-center gap-1 flex-shrink-0"
       aria-label="Avise-me quando chegar"
     >
-      <Bell className="w-3.5 h-3.5" />
+      <Bell className="w-3 h-3" />
       Avise-me
     </button>
     <button

@@ -127,23 +127,23 @@ const Chip = memo(({ category, isSelected, onClick }: ChipProps) => {
       onClick={handleClick}
       className={cn(
         "flex flex-col items-center gap-1",
-        "px-4 py-3 min-w-[72px]",
-        "rounded-xl",
-        "transition-all duration-200",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
+        "px-4 py-2.5 min-w-[64px]",
+        "rounded-full",
+        "transition-all duration-200 ease-out",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50",
         "flex-shrink-0",
         isSelected
-          ? "bg-[#240046] text-white shadow-md shadow-[#240046]/30"
-          : "bg-gray-100 text-gray-700 hover:bg-gray-200",
+          ? "bg-slate-900 text-white shadow-md"
+          : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300 hover:shadow-sm",
       )}
       aria-pressed={isSelected}
     >
-      <span className="text-xl leading-none" role="img" aria-hidden="true">
+      <span className="text-lg leading-none" role="img" aria-hidden="true">
         {category.icon}
       </span>
-      <span className="text-xs font-medium whitespace-nowrap">{category.label}</span>
+      <span className="text-[11px] font-medium whitespace-nowrap">{category.label}</span>
       {category.count !== undefined && (
-        <span className={cn("text-[10px] font-medium", isSelected ? "text-white/70" : "text-gray-500")}>
+        <span className={cn("text-[9px]", isSelected ? "text-white/60" : "text-slate-400")}>
           {category.count}
         </span>
       )}

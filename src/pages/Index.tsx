@@ -1,6 +1,6 @@
 // =============================================================================
 // INDEX.TSX - ANIVERSARIANTE VIP
-// V2 Polish - Top 1 Mundial
+// V3 - Topo Roxo Premium + Polish Final
 // =============================================================================
 
 import { useMemo, useState, useEffect, useCallback, useRef, memo } from "react";
@@ -74,13 +74,11 @@ const CATEGORY_ICONS: Record<string, any> = {
   sorveteria: IceCream,
 };
 
-// Labels curtos para mobile
 const CATEGORY_LABELS_SHORT: Record<string, string> = {
   "casa noturna": "Baladas",
   cafeteria: "Cafés",
   entretenimento: "Lazer",
   hospedagem: "Hotéis",
-  restaurante: "Restaurantes",
   sorveteria: "Sorvetes",
   salao: "Beleza",
   salão: "Beleza",
@@ -167,7 +165,7 @@ const useLocation = () => {
 };
 
 // =============================================================================
-// HEADER - Compacto
+// HEADER - TOPO ROXO
 // =============================================================================
 
 const Header = memo(({ children }: { children?: React.ReactNode }) => {
@@ -177,16 +175,16 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white border-b border-zinc-100">
+      <header className="sticky top-0 z-40 bg-violet-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           {/* Desktop */}
           <div className="hidden sm:flex items-center justify-between h-14 gap-4">
             <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
                 <Gift className="w-3.5 h-3.5 text-white" />
               </div>
-              <span className="text-sm font-bold text-zinc-900">
-                Aniversariante<span className="text-violet-600">VIP</span>
+              <span className="text-sm font-bold text-white">
+                Aniversariante<span className="text-white/80">VIP</span>
               </span>
             </Link>
 
@@ -194,34 +192,36 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
 
             <button
               onClick={() => setMenuOpen(true)}
-              className="flex items-center gap-1.5 h-9 pl-2.5 pr-1.5 rounded-full bg-white border border-zinc-200 hover:shadow-md transition-shadow"
+              className="flex items-center gap-1.5 h-9 pl-2.5 pr-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              aria-label="Abrir menu"
             >
-              <Menu className="w-3.5 h-3.5 text-zinc-600" />
-              <div className="w-6 h-6 rounded-full bg-zinc-500 flex items-center justify-center">
+              <Menu className="w-3.5 h-3.5 text-white" />
+              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
                 <User className="w-3.5 h-3.5 text-white" />
               </div>
             </button>
           </div>
 
-          {/* Mobile - Mais compacto */}
+          {/* Mobile */}
           <div className="sm:hidden">
             <div className="flex items-center justify-between h-12">
               <Link to="/" className="flex items-center gap-1.5">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
                   <Gift className="w-3.5 h-3.5 text-white" />
                 </div>
-                <span className="text-sm font-bold text-zinc-900">
-                  Aniversariante<span className="text-violet-600">VIP</span>
+                <span className="text-sm font-bold text-white">
+                  Aniversariante<span className="text-white/80">VIP</span>
                 </span>
               </Link>
               <button
                 onClick={() => setMenuOpen(true)}
-                className="w-9 h-9 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-50"
+                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20"
+                aria-label="Abrir menu"
               >
-                <Menu className="w-4 h-4 text-zinc-600" />
+                <Menu className="w-4 h-4 text-white" />
               </button>
             </div>
-            {children && <div className="pb-2">{children}</div>}
+            {children && <div className="pb-3">{children}</div>}
           </div>
         </div>
       </header>
@@ -236,6 +236,7 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
               <button
                 onClick={() => setMenuOpen(false)}
                 className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center"
+                aria-label="Fechar menu"
               >
                 <X className="w-4 h-4 text-zinc-500" />
               </button>
@@ -342,55 +343,61 @@ const MenuBtn = ({ icon, label, sub, onClick, danger }: any) => (
 );
 
 // =============================================================================
-// SEARCH PILL - Sem Filtros duplicado
+// SEARCH PILL - Branca sobre fundo roxo
 // =============================================================================
 
 const SearchPill = memo(({ city, state, isLoading, onCityClick, onFilterClick, filterCount }: any) => (
   <>
-    {/* Desktop - Com Filtros integrado */}
-    <div className="hidden sm:flex items-center h-11 bg-white rounded-full border border-zinc-200 shadow-sm hover:shadow-md transition-shadow">
+    {/* Desktop - Pill branca + botão filtros separado */}
+    <div className="hidden sm:flex items-center gap-2">
       <button
         onClick={onCityClick}
-        className="flex items-center gap-2 h-full pl-4 pr-3 rounded-l-full hover:bg-zinc-50"
+        className="flex items-center gap-2 h-11 pl-4 pr-3 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow flex-1"
+        aria-label="Selecionar cidade"
       >
         <MapPin className="w-4 h-4 text-violet-600 flex-shrink-0" />
-        <div className="text-left">
+        <div className="text-left flex-1 min-w-0">
           <p className="text-[10px] text-zinc-500 uppercase font-medium leading-none">Onde</p>
-          <p className="text-sm font-medium text-zinc-900 truncate max-w-[120px]">
-            {isLoading ? "..." : `${city}, ${state}`}
-          </p>
+          <p className="text-sm font-medium text-zinc-900 truncate">{isLoading ? "..." : `${city}, ${state}`}</p>
+        </div>
+        <div className="w-px h-5 bg-zinc-200 mx-1" />
+        <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0">
+          <Search className="w-4 h-4 text-white" />
         </div>
       </button>
-      <div className="w-px h-5 bg-zinc-200" />
-      <button onClick={onFilterClick} className="flex items-center gap-1.5 h-full px-3 hover:bg-zinc-50 relative">
-        <SlidersHorizontal className="w-4 h-4 text-zinc-500" />
-        <span className="text-sm text-zinc-600">Filtros</span>
+
+      {/* Filtros separado */}
+      <button
+        onClick={onFilterClick}
+        className="w-11 h-11 rounded-full bg-white shadow-sm hover:shadow-md flex items-center justify-center relative"
+        aria-label="Abrir filtros"
+      >
+        <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
         {filterCount > 0 && (
-          <span className="w-4 h-4 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
             {filterCount}
           </span>
         )}
       </button>
-      <button className="w-9 h-9 m-1 rounded-full bg-violet-600 hover:bg-violet-700 flex items-center justify-center flex-shrink-0">
-        <Search className="w-4 h-4 text-white" />
-      </button>
     </div>
 
-    {/* Mobile - Compacto com ícone de filtro */}
+    {/* Mobile - Pill branca */}
     <div className="sm:hidden flex items-center gap-2">
       <button
         onClick={onCityClick}
-        className="flex-1 flex items-center gap-2.5 h-11 px-3.5 bg-white rounded-full border border-zinc-200 shadow-sm"
+        className="flex-1 flex items-center gap-2.5 h-11 px-3.5 bg-white rounded-full shadow-sm"
+        aria-label="Selecionar cidade"
       >
         <Search className="w-4 h-4 text-zinc-400 flex-shrink-0" />
         <div className="text-left flex-1 min-w-0">
-          <p className="text-sm font-medium text-zinc-900 truncate">Onde você quer comemorar?</p>
+          <p className="text-sm font-medium text-zinc-900 truncate">Onde você quer aproveitar os benefícios?</p>
           <p className="text-xs text-zinc-500 truncate">{isLoading ? "Detectando..." : `${city}, ${state}`}</p>
         </div>
       </button>
       <button
         onClick={onFilterClick}
-        className="w-11 h-11 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-50 relative flex-shrink-0"
+        className="w-11 h-11 rounded-full bg-white shadow-sm flex items-center justify-center relative flex-shrink-0"
+        aria-label="Abrir filtros"
       >
         <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
         {filterCount > 0 && (
@@ -448,7 +455,11 @@ const CityModal = memo(({ isOpen, onClose, city, state, onSelect }: any) => {
   return (
     <div className="fixed inset-0 z-50 bg-white">
       <div className="flex items-center gap-3 px-4 h-12 border-b border-zinc-100">
-        <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center">
+        <button
+          onClick={onClose}
+          className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center"
+          aria-label="Fechar"
+        >
           <X className="w-4 h-4 text-zinc-500" />
         </button>
         <span className="font-semibold text-zinc-900 text-sm">Alterar cidade</span>
@@ -513,7 +524,7 @@ const CityModal = memo(({ isOpen, onClose, city, state, onSelect }: any) => {
 });
 
 // =============================================================================
-// CATEGORIES - Sem botão Filtros (removido), underline roxo
+// CATEGORIES - Fundo roxo, ícones brancos
 // =============================================================================
 
 const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) => {
@@ -523,9 +534,9 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
   ];
 
   return (
-    <div className="sticky top-[48px] sm:top-[56px] z-30 bg-white border-b border-zinc-200">
+    <div className="sticky top-[48px] sm:top-[56px] z-30 bg-violet-600">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center overflow-x-auto scrollbar-hide -mx-1" style={{ scrollbarWidth: "none" }}>
+        <div className="flex items-center overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
           {cats.map((cat) => {
             const Icon = CATEGORY_ICONS[cat.id.toLowerCase()] || Sparkles;
             const isActive = selected === cat.id;
@@ -536,15 +547,13 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
                 key={cat.id}
                 onClick={() => onSelect(cat.id)}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 min-w-[64px] sm:min-w-[72px] px-3 py-2 relative transition-colors",
-                  isActive ? "text-zinc-900" : "text-zinc-500 hover:text-zinc-700",
+                  "flex flex-col items-center gap-0.5 min-w-[60px] sm:min-w-[68px] px-2 py-2 relative transition-colors",
+                  isActive ? "text-white" : "text-white/70 hover:text-white/90",
                 )}
               >
-                <Icon className={cn("w-5 h-5", isActive ? "text-zinc-900" : "text-zinc-400")} />
-                <span className={cn("text-[11px] font-medium whitespace-nowrap", isActive && "text-zinc-900")}>
-                  {shortLabel}
-                </span>
-                {isActive && <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-violet-600 rounded-full" />}
+                <Icon className="w-5 h-5" />
+                <span className="text-[11px] font-medium whitespace-nowrap">{shortLabel}</span>
+                {isActive && <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-white rounded-full" />}
               </button>
             );
           })}
@@ -555,7 +564,7 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
 });
 
 // =============================================================================
-// EMPTY BANNER - Mais discreto
+// EMPTY BANNER - Discreto com CTA roxo
 // =============================================================================
 
 const EmptyBanner = memo(({ cidade, onNotify, onDismiss }: any) => (
@@ -569,14 +578,16 @@ const EmptyBanner = memo(({ cidade, onNotify, onDismiss }: any) => (
     </div>
     <button
       onClick={onNotify}
-      className="h-8 px-3 bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium rounded-full flex items-center gap-1 flex-shrink-0"
+      className="h-8 px-3 bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium rounded-full flex items-center gap-1.5 flex-shrink-0"
+      aria-label="Avise-me quando chegar"
     >
       <Bell className="w-3.5 h-3.5" />
-      <span className="hidden sm:inline">Avise-me</span>
+      Avise-me
     </button>
     <button
       onClick={onDismiss}
       className="w-8 h-8 rounded-full hover:bg-zinc-200 flex items-center justify-center flex-shrink-0"
+      aria-label="Fechar aviso"
     >
       <X className="w-3.5 h-3.5 text-zinc-400" />
     </button>
@@ -584,7 +595,28 @@ const EmptyBanner = memo(({ cidade, onNotify, onDismiss }: any) => (
 ));
 
 // =============================================================================
-// CARD - Premium
+// BENEFIT CHIP - Curto e útil
+// =============================================================================
+
+const getBenefitChipText = (beneficio?: string): string => {
+  if (!beneficio || beneficio.length < 3) return "🎂 Benefício";
+
+  const descontoMatch = beneficio.match(/(\d+)\s*%/);
+  if (descontoMatch) return `🎁 ${descontoMatch[1]}% OFF`;
+
+  if (beneficio.toLowerCase().includes("grátis") || beneficio.toLowerCase().includes("gratis")) {
+    if (beneficio.toLowerCase().includes("drink")) return "🥂 Drink grátis";
+    if (beneficio.toLowerCase().includes("sobremesa")) return "🍰 Sobremesa";
+    if (beneficio.toLowerCase().includes("entrada")) return "🎟️ Entrada";
+    return "🎁 Grátis";
+  }
+
+  if (beneficio.length <= 12) return `🎁 ${beneficio}`;
+  return "🎂 Benefício";
+};
+
+// =============================================================================
+// CARD - Premium com skeleton shimmer
 // =============================================================================
 
 const Card = memo(({ data, onClick }: any) => {
@@ -595,14 +627,11 @@ const Card = memo(({ data, onClick }: any) => {
   const cat = Array.isArray(data.categoria) ? data.categoria[0] : data.categoria || data.category;
   const img = data.imagem_url || data.logo_url || data.photo_url;
   const beneficio = data.descricao_beneficio || data.benefit_description;
-
-  // Chip de benefício - nunca truncar "Aniversaria..."
-  const chipText = beneficio && beneficio.length > 2 ? beneficio : "Benefício de aniversário";
+  const chipText = getBenefitChipText(beneficio);
 
   return (
     <article onClick={onClick} className="cursor-pointer group">
       <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-zinc-100 mb-2">
-        {/* Imagem ou Skeleton */}
         {img && !error ? (
           <img
             src={img}
@@ -615,37 +644,27 @@ const Card = memo(({ data, onClick }: any) => {
             onLoad={() => setLoaded(true)}
             onError={() => setError(true)}
           />
-        ) : (
-          // Skeleton neutro (não roxo)
-          <div className="w-full h-full bg-zinc-100 flex items-center justify-center">
-            <div className="w-12 h-12 rounded-2xl bg-zinc-200 flex items-center justify-center">
-              <Cake className="w-6 h-6 text-zinc-300" />
-            </div>
-          </div>
+        ) : null}
+
+        {(!img || error || !loaded) && (
+          <div className="absolute inset-0 bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:200%_100%] animate-[shimmer_1.5s_infinite]" />
         )}
 
-        {/* Loading skeleton com shimmer */}
-        {!loaded && img && !error && <div className="absolute inset-0 bg-zinc-200 animate-pulse" />}
-
-        {/* Chip de benefício - Premium */}
-        <div className="absolute top-2 left-2">
-          <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/95 backdrop-blur-sm text-[11px] font-medium text-zinc-800 rounded-full shadow-sm border border-zinc-100">
-            <Gift className="w-3 h-3 text-violet-600 flex-shrink-0" />
-            <span className="truncate max-w-[100px]">{chipText}</span>
+        <div className="absolute top-2.5 left-2.5">
+          <span className="inline-flex items-center px-2 py-1 bg-white/95 backdrop-blur-sm text-[11px] font-medium text-zinc-800 rounded-full shadow-sm border border-zinc-100">
+            {chipText}
           </span>
         </div>
 
-        {/* Coração Premium - Circular com fundo */}
         <button
           onClick={(e) => e.stopPropagation()}
-          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm border border-zinc-200 shadow-sm flex items-center justify-center hover:scale-110 transition-transform"
+          className="absolute top-2.5 right-2.5 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm border border-zinc-200 shadow-sm flex items-center justify-center hover:scale-110 transition-transform"
           aria-label="Favoritar"
         >
           <Heart className="w-4 h-4 text-zinc-600 hover:text-red-500 hover:fill-red-500 transition-colors" />
         </button>
       </div>
 
-      {/* Info */}
       <div className="px-0.5">
         <h3 className="font-semibold text-zinc-900 text-sm leading-tight line-clamp-1">{nome}</h3>
         <p className="text-zinc-500 text-sm line-clamp-1">
@@ -659,7 +678,7 @@ const Card = memo(({ data, onClick }: any) => {
 });
 
 // =============================================================================
-// CAROUSEL
+// CAROUSEL - Padding corrigido
 // =============================================================================
 
 const Carousel = memo(({ title, subtitle, items }: any) => {
@@ -668,16 +687,16 @@ const Carousel = memo(({ title, subtitle, items }: any) => {
 
   return (
     <section className="mb-6">
-      <div className="mb-2.5">
+      <div className="mb-2.5 px-4 sm:px-0">
         <h2 className="text-base font-semibold text-zinc-900">{title}</h2>
-        {subtitle && <p className="text-sm text-violet-600">{subtitle}</p>}
+        {subtitle && <p className="text-sm text-zinc-600">{subtitle}</p>}
       </div>
       <div
-        className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4"
+        className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-4 sm:px-0 scroll-pl-4 scroll-pr-4"
         style={{ scrollbarWidth: "none" }}
       >
         {items.map((est: any) => (
-          <div key={est.id} className="snap-start flex-shrink-0 w-[46%] sm:w-[180px]">
+          <div key={est.id} className="snap-start flex-shrink-0 w-[44%] sm:w-[180px]">
             <Card
               data={est}
               onClick={() =>
@@ -709,8 +728,8 @@ const Grid = memo(({ items, isLoading }: any) => {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="animate-pulse">
-            <div className="aspect-[4/5] rounded-2xl bg-zinc-200 mb-2" />
+          <div key={i}>
+            <div className="aspect-[4/5] rounded-2xl bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:200%_100%] animate-[shimmer_1.5s_infinite] mb-2" />
             <div className="h-4 bg-zinc-200 rounded w-3/4 mb-1" />
             <div className="h-3 bg-zinc-200 rounded w-1/2" />
           </div>
@@ -774,7 +793,6 @@ const Index = () => {
 
   const { data: estabelecimentos, isLoading } = useEstabelecimentos({ showAll: true, enabled: true });
 
-  // Filter
   const { filtered, fallback } = useMemo(() => {
     if (!estabelecimentos?.length) return { filtered: [], fallback: false };
 
@@ -810,7 +828,6 @@ const Index = () => {
     return { filtered: items, fallback: usingFallback };
   }, [estabelecimentos, city, state, categoria, subcategories, distance, userLocation]);
 
-  // Carousels
   const carousels = useMemo(() => {
     if (!filtered.length || categoria !== "all") return [];
     const cats = ["academia", "bar", "restaurante", "salao"];
@@ -847,6 +864,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
+
       <Header>
         <SearchPill
           city={city}
@@ -861,16 +885,22 @@ const Index = () => {
       <Categories selected={categoria} onSelect={handleCategoria} />
 
       <main className="flex-1 pb-20 sm:pb-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+        <div className="max-w-7xl mx-auto sm:px-6 py-3 sm:py-4">
           {!isLoading && fallback && !bannerDismissed && (
-            <EmptyBanner
-              cidade={city}
-              onNotify={() => navigate("/cadastro?interesse=" + encodeURIComponent(city))}
-              onDismiss={() => setBannerDismissed(true)}
-            />
+            <div className="px-4 sm:px-0">
+              <EmptyBanner
+                cidade={city}
+                onNotify={() => navigate("/cadastro?interesse=" + encodeURIComponent(city))}
+                onDismiss={() => setBannerDismissed(true)}
+              />
+            </div>
           )}
 
-          {isLoading && <Grid items={[]} isLoading />}
+          {isLoading && (
+            <div className="px-4 sm:px-0">
+              <Grid items={[]} isLoading />
+            </div>
+          )}
 
           {!isLoading &&
             showCarousels &&
@@ -884,7 +914,7 @@ const Index = () => {
             ))}
 
           {!isLoading && showGrid && (
-            <>
+            <div className="px-4 sm:px-0">
               <div className="mb-3">
                 <h2 className="text-base font-semibold text-zinc-900 capitalize">
                   {fallback ? `${categoria} no Brasil` : `${categoria} em ${city}`}
@@ -892,14 +922,14 @@ const Index = () => {
                 <p className="text-sm text-zinc-500">{filtered.length} lugares</p>
               </div>
               <Grid items={filtered} isLoading={false} />
-            </>
+            </div>
           )}
 
           {!isLoading && !showCarousels && !showGrid && filtered.length > 0 && (
-            <>
+            <div className="px-4 sm:px-0">
               <h2 className="text-base font-semibold text-zinc-900 mb-3">Em destaque</h2>
               <Grid items={filtered} isLoading={false} />
-            </>
+            </div>
           )}
         </div>
       </main>
@@ -915,7 +945,6 @@ const Index = () => {
         onSelect={updateCity}
       />
 
-      {/* Filters Modal */}
       <Dialog open={showFilters} onOpenChange={setShowFilters}>
         <DialogContent className="max-w-md max-h-[80vh] p-0 rounded-2xl">
           <DialogHeader className="p-4 pb-0">

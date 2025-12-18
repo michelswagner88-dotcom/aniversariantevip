@@ -19,7 +19,7 @@ import { CarolProvider } from "@/components/ChatBot/CarolProvider";
 import { useAppUpdate } from "@/hooks/useAppUpdate";
 import ScrollToTop from "@/components/ScrollToTop";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
-import VersionBadge from "@/components/debug/VersionBadge";
+// VersionBadge removido - não exibir mais badge de versão
 // import PasswordProtection from "@/components/auth/PasswordProtection"; // Temporariamente desabilitado
 
 // Lazy load das páginas principais
@@ -458,7 +458,6 @@ const App = () => (
                   </Routes>
                 </PageTransition>
                 <CookieConsent />
-                <VersionBadge />
               </ErrorBoundary>
             </AnalyticsProvider>
           </CarolProvider>

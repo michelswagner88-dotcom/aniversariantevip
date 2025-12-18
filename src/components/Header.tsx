@@ -58,8 +58,23 @@ const useScrollDetection = (threshold: number = SCROLL_THRESHOLD) => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
+    // Tentar usar sentinel externo primeiro (definido no Index.tsx)
+    const sentinel = document.getElementById("scroll-sentinel");
+    
+    if (sentinel && "IntersectionObserver" in window) {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          setIsScrolled(!entry.isIntersecting);
+        },
+        { threshold: 0, rootMargin: `-${threshold}px 0px 0px 0px` }
+      );
+      
+      observer.observe(sentinel);
+      return () => observer.disconnect();
+    }
+    
+    // Fallback: scroll event listener
     let ticking = false;
-
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
@@ -326,6 +341,9 @@ export const Header = memo(function Header({ showSearch = true, cityName, onSear
 
   const isHomePage = location.pathname === "/";
   const isTransparent = isHomePage && !isScrolled;
+
+  // DEBUG TEMPORÁRIO - REMOVER DEPOIS
+  console.log('[HEADER DEBUG]', { isHomePage, isScrolled, isTransparent, pathname: location.pathname });
 
   const handleSearchClick = useCallback(() => {
     hapticFeedback(10);

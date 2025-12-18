@@ -30,7 +30,72 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { SlidersHorizontal, MapPin, X } from "lucide-react";
+import { SlidersHorizontal, MapPin, X, Bell, Sparkles } from "lucide-react";
+
+// =============================================================================
+// EMPTY STATE BANNER - Premium Component
+// =============================================================================
+
+interface EmptyStateBannerProps {
+  cidade: string;
+  onNotifyMe?: () => void;
+  onSuggestPlace?: () => void;
+}
+
+const EmptyStateBanner = ({ cidade, onNotifyMe, onSuggestPlace }: EmptyStateBannerProps) => {
+  const [dismissed, setDismissed] = useState(false);
+
+  if (dismissed) return null;
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#240046] to-[#5A189A] p-4 sm:p-5">
+      {/* Background decoration */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+      <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+
+      {/* Close button */}
+      <button
+        onClick={() => setDismissed(true)}
+        className="absolute top-3 right-3 p-1 rounded-full hover:bg-white/10 transition-colors"
+        aria-label="Fechar"
+      >
+        <X className="w-4 h-4 text-white/60" />
+      </button>
+
+      <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
+        {/* Icon */}
+        <div className="hidden sm:flex w-12 h-12 rounded-xl bg-white/10 items-center justify-center shrink-0">
+          <Sparkles className="w-6 h-6 text-violet-300" />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <p className="text-white font-medium text-sm sm:text-base">Ainda não chegamos em {cidade}</p>
+          <p className="text-white/70 text-xs sm:text-sm mt-0.5">
+            Mostrando lugares de outras cidades. Em breve teremos novidades!
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={onNotifyMe}
+            className="bg-white text-[#240046] hover:bg-white/90 font-medium text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
+          >
+            <Bell className="w-3.5 h-3.5 mr-1.5" />
+            Me avise
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
 
 const Index = () => {
   const navigate = useNavigate();
@@ -221,6 +286,12 @@ const Index = () => {
     setSearchParams(new URLSearchParams());
   };
 
+  // Handler para notificacao de cidade
+  const handleNotifyMe = () => {
+    // TODO: Implementar modal ou redirect para cadastro de interesse
+    navigate("/cadastro?interesse=" + encodeURIComponent(cidadeFinal || ""));
+  };
+
   // Handler para scroll ate o search do hero
   const handleSearchClick = () => {
     const searchInput = document.querySelector("[data-search-input]") as HTMLInputElement;
@@ -232,16 +303,21 @@ const Index = () => {
 
   // SEO dinamico
   useSEO({
-    title: cidadeFinal
-      ? `Beneficios para Aniversariantes em ${cidadeFinal}, ${estadoFinal}`
-      : "O Maior Guia de Beneficios para Aniversariantes",
-    description: cidadeFinal
-      ? `Encontre ${estabelecimentosFiltrados.length} estabelecimentos com beneficios exclusivos para aniversariantes em ${cidadeFinal}. Restaurantes, bares, academias e muito mais!`
-      : "Descubra beneficios exclusivos para aniversariantes em restaurantes, bares, academias e mais de 50 categorias. Cadastre-se gratis!",
+    title:
+      cidadeFinal && !usandoFallback
+        ? `Beneficios para Aniversariantes em ${cidadeFinal}, ${estadoFinal}`
+        : "O Maior Guia de Beneficios para Aniversariantes do Brasil",
+    description:
+      cidadeFinal && !usandoFallback
+        ? `Encontre ${estabelecimentosFiltrados.length} estabelecimentos com beneficios exclusivos para aniversariantes em ${cidadeFinal}. Restaurantes, bares, academias e muito mais!`
+        : "Descubra beneficios exclusivos para aniversariantes em restaurantes, bares, academias e mais de 50 categorias. Cadastre-se gratis!",
   });
 
   // Titulo e subtitulo da secao baseado no contexto
-  const destaquesConfig = getSectionTitle("destaques", cidadeFinal || undefined);
+  // CORRIGIDO: Se usandoFallback, não mostra cidade no título
+  const destaquesConfig = usandoFallback
+    ? { titulo: "Em destaque no Brasil", subtitulo: "Os melhores benefícios para aniversariantes" }
+    : getSectionTitle("destaques", cidadeFinal || undefined);
 
   // Sistema de rotacao dinamica de secoes
   const {
@@ -402,18 +478,19 @@ const Index = () => {
             {/* MODO CARROSSEIS */}
             {!isLoadingEstabelecimentos && mostrarCarrosseis && (
               <div className="space-y-8 md:space-y-12">
-                {usandoFallback && cidadeFinal && (
-                  <div className="bg-[#240046]/10 border border-[#240046]/20 rounded-xl px-6 py-4">
-                    <p className="text-sm text-[#222222] text-center">
-                      <span className="font-medium">Ainda nao temos estabelecimentos em {cidadeFinal}.</span> Mostrando
-                      lugares de outras cidades disponiveis.
-                    </p>
-                  </div>
-                )}
+                {/* EMPTY STATE BANNER - Premium */}
+                {usandoFallback && cidadeFinal && <EmptyStateBanner cidade={cidadeFinal} onNotifyMe={handleNotifyMe} />}
 
                 {secoesDinamicas.map((section, index) => {
                   const isFeatured = index === 0 && section.priority === "featured";
-                  const displayTitle = isFeatured && cidadeFinal ? `${section.title} em ${cidadeFinal}` : section.title;
+
+                  // CORRIGIDO: Se usandoFallback, NÃO mostra cidade no título
+                  const displayTitle =
+                    isFeatured && cidadeFinal && !usandoFallback
+                      ? `${section.title} em ${cidadeFinal}`
+                      : usandoFallback && isFeatured
+                        ? `${section.title} no Brasil`
+                        : section.title;
 
                   return (
                     <div key={`${section.id}-${animationKey}`}>
@@ -444,14 +521,8 @@ const Index = () => {
             {/* MODO GRID SIMPLES */}
             {!isLoadingEstabelecimentos && mostrarGridSimples && dadosParaExibir.length > 0 && (
               <div className="space-y-8">
-                {usandoFallback && cidadeFinal && (
-                  <div className="bg-[#240046]/10 border border-[#240046]/20 rounded-xl px-6 py-4">
-                    <p className="text-sm text-[#222222] text-center">
-                      <span className="font-medium">Ainda nao temos estabelecimentos em {cidadeFinal}.</span> Mostrando
-                      lugares de outras cidades disponiveis.
-                    </p>
-                  </div>
-                )}
+                {/* EMPTY STATE BANNER - Premium */}
+                {usandoFallback && cidadeFinal && <EmptyStateBanner cidade={cidadeFinal} onNotifyMe={handleNotifyMe} />}
 
                 <div className="flex items-center justify-between">
                   <div>
@@ -489,7 +560,9 @@ const Index = () => {
                       <div>
                         <h2 className="text-xl md:text-2xl font-semibold text-[#222222]">
                           {categoriaParam
-                            ? getCategoryTitle(categoriaParam, cidadeFinal || undefined)
+                            ? usandoFallback
+                              ? `${getCategoryTitle(categoriaParam, undefined)} no Brasil`
+                              : getCategoryTitle(categoriaParam, cidadeFinal || undefined)
                             : destaquesConfig.titulo}
                         </h2>
                         {categoriaParam && getCategorySubtitle(categoriaParam) && (
@@ -504,15 +577,9 @@ const Index = () => {
                       )}
                     </div>
 
+                    {/* EMPTY STATE BANNER - Premium (no modo filtrado) */}
                     {usandoFallback && cidadeFinal && (
-                      <div className="bg-[#240046]/10 border border-[#240046]/20 rounded-lg px-4 py-2">
-                        <p className="text-sm text-[#240046]">
-                          <span className="font-medium">
-                            Ainda nao temos {categoriaParam?.toLowerCase() || "lugares"} em {cidadeFinal}.
-                          </span>{" "}
-                          Mostrando de outras cidades disponiveis.
-                        </p>
-                      </div>
+                      <EmptyStateBanner cidade={cidadeFinal} onNotifyMe={handleNotifyMe} />
                     )}
                   </div>
                 }

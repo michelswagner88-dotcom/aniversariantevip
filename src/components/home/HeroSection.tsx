@@ -1,19 +1,11 @@
 // =============================================================================
 // HEROSECTION.TSX - ANIVERSARIANTE VIP
-// Design System: Top 1% Mundial - Nível Airbnb/Stripe
+// Design: Estilo Airbnb Mobile - Geolocalização automática
 // =============================================================================
 
-import { memo, useState, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { Search, MapPin, ChevronRight } from "lucide-react";
+import { memo, useState, useRef, useEffect } from "react";
+import { MapPin, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// =============================================================================
-// DESIGN TOKENS
-// =============================================================================
-
-const BRAND_GRADIENT = "bg-gradient-to-br from-[#240046] via-[#3C096C] to-[#5B21B6]";
-const BRAND_PRIMARY = "#240046";
 
 // =============================================================================
 // TYPES
@@ -21,230 +13,318 @@ const BRAND_PRIMARY = "#240046";
 
 interface HeroSectionProps {
   selectedCity?: string;
-  onCityChange?: (city: string) => void;
-  onSearch?: (query: string) => void;
+  selectedState?: string;
+  onCityChange?: (city: string, state: string) => void;
 }
 
 // =============================================================================
-// SEARCH CARD - Premium Design
+// CONSTANTS
 // =============================================================================
 
-interface SearchCardProps {
-  selectedCity: string;
-  searchQuery: string;
-  onCityClick: () => void;
-  onSearchChange: (value: string) => void;
-  onSearchSubmit: () => void;
+const DEFAULT_CITY = "São Paulo";
+const DEFAULT_STATE = "SP";
+
+// =============================================================================
+// HOOKS - Geolocalização automática
+// =============================================================================
+
+interface UseAutoLocationResult {
+  city: string;
+  state: string;
+  isLoading: boolean;
+  isUsingDefault: boolean;
 }
 
-const SearchCard = memo(
-  ({ selectedCity, searchQuery, onCityClick, onSearchChange, onSearchSubmit }: SearchCardProps) => {
-    const inputRef = useRef<HTMLInputElement>(null);
+const useAutoLocation = (
+  initialCity?: string,
+  initialState?: string,
+  onCityChange?: (city: string, state: string) => void,
+): UseAutoLocationResult => {
+  const [city, setCity] = useState(initialCity || DEFAULT_CITY);
+  const [state, setState] = useState(initialState || DEFAULT_STATE);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUsingDefault, setIsUsingDefault] = useState(!initialCity);
+  const hasAsked = useRef(false);
 
-    const handleSubmit = useCallback(
-      (e: React.FormEvent) => {
-        e.preventDefault();
-        onSearchSubmit();
-      },
-      [onSearchSubmit],
-    );
+  useEffect(() => {
+    // Se já tem cidade definida, não pede localização
+    if (initialCity && initialState) {
+      setCity(initialCity);
+      setState(initialState);
+      setIsUsingDefault(false);
+      return;
+    }
 
-    return (
-      <form
-        onSubmit={handleSubmit}
+    // Só pede uma vez
+    if (hasAsked.current) return;
+    hasAsked.current = true;
+
+    // Verifica se já tem permissão salva
+    const savedCity = localStorage.getItem("aniversariantevip_city");
+    const savedState = localStorage.getItem("aniversariantevip_state");
+
+    if (savedCity && savedState) {
+      setCity(savedCity);
+      setState(savedState);
+      setIsUsingDefault(false);
+      onCityChange?.(savedCity, savedState);
+      return;
+    }
+
+    // Pede geolocalização
+    if ("geolocation" in navigator) {
+      setIsLoading(true);
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+
+            // Reverse geocoding com Nominatim (gratuito)
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
+              { headers: { "Accept-Language": "pt-BR" } },
+            );
+
+            const data = await response.json();
+            const address = data.address;
+
+            const detectedCity = address.city || address.town || address.municipality || DEFAULT_CITY;
+            const detectedState = address.state_code || address["ISO3166-2-lvl4"]?.split("-")[1] || DEFAULT_STATE;
+
+            setCity(detectedCity);
+            setState(detectedState);
+            setIsUsingDefault(false);
+
+            // Salva no localStorage
+            localStorage.setItem("aniversariantevip_city", detectedCity);
+            localStorage.setItem("aniversariantevip_state", detectedState);
+
+            onCityChange?.(detectedCity, detectedState);
+          } catch (error) {
+            console.error("Erro ao obter cidade:", error);
+            // Mantém São Paulo como fallback
+            onCityChange?.(DEFAULT_CITY, DEFAULT_STATE);
+          } finally {
+            setIsLoading(false);
+          }
+        },
+        (error) => {
+          console.log("Geolocalização negada:", error.message);
+          setIsLoading(false);
+          // Usuário negou - usa São Paulo
+          onCityChange?.(DEFAULT_CITY, DEFAULT_STATE);
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 600000, // 10 minutos
+        },
+      );
+    } else {
+      // Navegador não suporta - usa São Paulo
+      onCityChange?.(DEFAULT_CITY, DEFAULT_STATE);
+    }
+  }, [initialCity, initialState, onCityChange]);
+
+  return { city, state, isLoading, isUsingDefault };
+};
+
+// =============================================================================
+// CITY SEARCH BAR
+// =============================================================================
+
+interface CitySearchBarProps {
+  city: string;
+  state: string;
+  isLoading: boolean;
+  onCityChange?: (city: string, state: string) => void;
+}
+
+const CitySearchBar = memo(({ city, state, isLoading, onCityChange }: CitySearchBarProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<Array<{ cidade: string; estado: string }>>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Buscar cidades da API IBGE
+  useEffect(() => {
+    if (query.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome`);
+        const data = await response.json();
+
+        const filtered = data
+          .filter((m: any) => m.nome.toLowerCase().includes(query.toLowerCase()))
+          .slice(0, 8)
+          .map((m: any) => ({
+            cidade: m.nome,
+            estado: m.microrregiao.mesorregiao.UF.sigla,
+          }));
+
+        setSuggestions(filtered);
+      } catch (error) {
+        console.error("Erro ao buscar cidades:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [query]);
+
+  const handleSelect = (cidade: string, estado: string) => {
+    // Salva no localStorage
+    localStorage.setItem("aniversariantevip_city", cidade);
+    localStorage.setItem("aniversariantevip_state", estado);
+
+    onCityChange?.(cidade, estado);
+    setIsOpen(false);
+    setQuery("");
+    setSuggestions([]);
+  };
+
+  const handleOpen = () => {
+    setIsOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 100);
+  };
+
+  return (
+    <>
+      {/* Botão de busca - sempre mostra a cidade atual */}
+      <button
+        onClick={handleOpen}
+        disabled={isLoading}
         className={cn(
-          "w-full max-w-xl mx-auto",
-          "bg-white",
-          "rounded-2xl",
-          "shadow-xl shadow-black/15",
-          "overflow-hidden",
-          "ring-1 ring-black/5",
+          "w-full flex items-center gap-3",
+          "bg-white rounded-full",
+          "px-4 py-3.5",
+          "shadow-lg shadow-black/10",
+          "border border-gray-200",
+          "hover:shadow-xl transition-shadow",
+          "text-left",
+          isLoading && "opacity-70",
         )}
       >
-        {/* Campo: Cidade */}
-        <button
-          type="button"
-          onClick={onCityClick}
-          className={cn(
-            "w-full px-4 sm:px-5 py-3.5 sm:py-4 text-left",
-            "border-b border-gray-100",
-            "hover:bg-gray-50/80 active:bg-gray-100",
-            "transition-colors duration-150",
-            "focus-visible:outline-none focus-visible:bg-gray-50",
-            "group",
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                "w-10 h-10 sm:w-11 sm:h-11 rounded-xl",
-                "bg-gradient-to-br from-violet-100 to-fuchsia-100",
-                "flex items-center justify-center flex-shrink-0",
-                "group-hover:from-violet-200 group-hover:to-fuchsia-200",
-                "transition-colors duration-150",
-              )}
-            >
-              <MapPin className="w-5 h-5 text-violet-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] sm:text-xs text-gray-500 font-medium uppercase tracking-wider">Onde</p>
-              <p className="text-sm sm:text-base font-semibold text-gray-900 truncate mt-0.5">
-                {selectedCity || "Escolha uma cidade"}
-              </p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 group-hover:text-gray-600 transition-colors" />
-          </div>
-        </button>
+        <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
+          <MapPin className="w-5 h-5 text-violet-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Onde</p>
+          <p className="text-sm font-semibold text-gray-900 truncate">
+            {isLoading ? "Detectando..." : `${city}, ${state}`}
+          </p>
+        </div>
+      </button>
 
-        {/* Campo: Busca */}
-        <div className="px-4 sm:px-5 py-3.5 sm:py-4">
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                "w-10 h-10 sm:w-11 sm:h-11 rounded-xl",
-                "bg-gradient-to-br from-violet-100 to-fuchsia-100",
-                "flex items-center justify-center flex-shrink-0",
-              )}
+      {/* Modal de busca */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 bg-white">
+          {/* Header do modal */}
+          <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+            <button
+              onClick={() => setIsOpen(false)}
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
             >
-              <Search className="w-5 h-5 text-violet-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <label
-                htmlFor="search-input"
-                className="text-[11px] sm:text-xs text-gray-500 font-medium uppercase tracking-wider block"
-              >
-                O que busca
-              </label>
+              <span className="text-2xl leading-none text-gray-500">&times;</span>
+            </button>
+            <span className="font-semibold text-gray-900">Alterar cidade</span>
+          </div>
+
+          {/* Campo de busca */}
+          <div className="p-4">
+            <div className="flex items-center gap-3 bg-gray-100 rounded-xl px-4 py-3.5">
+              <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
               <input
                 ref={inputRef}
-                id="search-input"
                 type="text"
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Restaurantes, bares, academias..."
-                className={cn(
-                  "w-full text-sm sm:text-base font-medium text-gray-900",
-                  "placeholder:text-gray-400",
-                  "bg-transparent border-none outline-none",
-                  "mt-0.5",
-                )}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Digite o nome da cidade..."
+                className="flex-1 bg-transparent text-gray-900 placeholder:text-gray-400 outline-none text-base"
               />
+              {isSearching && (
+                <div className="w-5 h-5 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Botão: Buscar */}
-        <div className="px-4 sm:px-5 pb-4 sm:pb-5">
-          <button
-            type="submit"
-            className={cn(
-              "w-full",
-              "h-12 sm:h-[52px]", // 48px mobile, 52px desktop - acima do mínimo 44px
-              "rounded-xl",
-              "bg-[#240046] hover:bg-[#3C096C]",
-              "text-white font-semibold text-sm sm:text-base",
-              "transition-all duration-200",
-              "shadow-lg shadow-[#240046]/25",
-              "hover:shadow-xl hover:shadow-[#240046]/30",
-              "active:scale-[0.98]",
-              "flex items-center justify-center gap-2",
+          {/* Cidade atual */}
+          {query.length < 2 && (
+            <div className="px-4 mb-4">
+              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2 px-1">Cidade atual</p>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-violet-50 text-left"
+              >
+                <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-violet-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">{city}</p>
+                  <p className="text-sm text-gray-500">{state}</p>
+                </div>
+              </button>
+            </div>
+          )}
+
+          {/* Sugestões */}
+          <div className="px-4">
+            {suggestions.length > 0 && (
+              <>
+                <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2 px-1">Resultados</p>
+                <div className="space-y-1">
+                  {suggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSelect(s.cidade, s.estado)}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                        <MapPin className="w-5 h-5 text-gray-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{s.cidade}</p>
+                        <p className="text-sm text-gray-500">{s.estado}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
-          >
-            <Search className="w-4 h-4 sm:w-5 sm:h-5" />
-            Buscar benefícios
-          </button>
+
+            {query.length >= 2 && suggestions.length === 0 && !isSearching && (
+              <div className="text-center py-8">
+                <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">Nenhuma cidade encontrada</p>
+                <p className="text-sm text-gray-400 mt-1">Tente outro nome</p>
+              </div>
+            )}
+          </div>
         </div>
-      </form>
-    );
-  },
-);
-SearchCard.displayName = "SearchCard";
+      )}
+    </>
+  );
+});
+CitySearchBar.displayName = "CitySearchBar";
 
 // =============================================================================
 // MAIN COMPONENT
 // =============================================================================
 
-export const HeroSection = memo(function HeroSection({ selectedCity = "", onCityChange, onSearch }: HeroSectionProps) {
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const handleCityClick = useCallback(() => {
-    // TODO: Abrir modal/dialog de seleção de cidade
-  }, []);
-
-  const handleSearchSubmit = useCallback(() => {
-    if (onSearch) {
-      onSearch(searchQuery);
-    } else {
-      const params = new URLSearchParams();
-      if (selectedCity) params.set("cidade", selectedCity);
-      if (searchQuery) params.set("q", searchQuery);
-      navigate(`/?${params.toString()}`);
-    }
-  }, [searchQuery, selectedCity, navigate, onSearch]);
+export const HeroSection = memo(function HeroSection({ selectedCity, selectedState, onCityChange }: HeroSectionProps) {
+  const { city, state, isLoading } = useAutoLocation(selectedCity, selectedState, onCityChange);
 
   return (
-    <section
-      id="search-section"
-      className={cn(
-        "relative w-full",
-        "flex flex-col justify-end",
-        "px-4 sm:px-6 lg:px-8",
-        // Altura responsiva: compacto no mobile, mais espaço no desktop
-        "pt-16 pb-4", // Mobile
-        "sm:pt-20 sm:pb-5", // Tablet
-        "lg:pt-28 lg:pb-8", // Desktop
-        BRAND_GRADIENT,
-        "overflow-hidden",
-      )}
-    >
-      {/* Background decorativo */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div className="absolute -top-1/3 -right-1/4 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] rounded-full bg-white/5 blur-3xl" />
-        <div className="absolute -bottom-1/3 -left-1/4 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] rounded-full bg-white/5 blur-3xl" />
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 max-w-4xl mx-auto w-full">
-        {/* Headline */}
-        <header className="text-center mb-4 sm:mb-5 lg:mb-8">
-          <h1
-            className={cn(
-              "font-bold text-white leading-tight",
-              // Tamanhos responsivos com boa hierarquia
-              "text-lg", // Mobile: 18px
-              "sm:text-xl", // Tablet: 20px
-              "lg:text-3xl", // Desktop: 30px
-              "xl:text-4xl", // Large: 36px
-            )}
-          >
-            {/* Mobile: texto curto | Desktop: texto completo */}
-            <span className="sm:hidden">
-              Encontre <span className="text-violet-300">benefícios exclusivos</span>
-            </span>
-            <span className="hidden sm:inline">
-              Seu aniversário merece{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-300 to-fuchsia-300">
-                benefícios exclusivos
-              </span>
-            </span>
-          </h1>
-
-          {/* Subtítulo - apenas tablet+ */}
-          <p className={cn("text-white/70", "text-sm lg:text-base", "max-w-md mx-auto", "mt-2", "hidden sm:block")}>
-            Descubra restaurantes, bares e muito mais com vantagens especiais para você
-          </p>
-        </header>
-
-        {/* Search Card */}
-        <SearchCard
-          selectedCity={selectedCity}
-          searchQuery={searchQuery}
-          onCityClick={handleCityClick}
-          onSearchChange={setSearchQuery}
-          onSearchSubmit={handleSearchSubmit}
-        />
-      </div>
+    <section className="bg-[#240046] px-4 pb-4">
+      <CitySearchBar city={city} state={state} isLoading={isLoading} onCityChange={onCityChange} />
     </section>
   );
 });

@@ -1,6 +1,6 @@
 // =============================================================================
 // INDEX.TSX - ANIVERSARIANTE VIP
-// V3 - Topo Roxo Premium + Polish Final
+// V4 - 9 Carrosséis com Rotação de Categorias (Estilo Airbnb)
 // =============================================================================
 
 import { useMemo, useState, useEffect, useCallback, useRef, memo } from "react";
@@ -19,7 +19,7 @@ import {
   HelpCircle,
   Heart,
   SlidersHorizontal,
-  Cake,
+  ChevronRight,
   Sparkles,
   Dumbbell,
   Beer,
@@ -79,10 +79,25 @@ const CATEGORY_LABELS_SHORT: Record<string, string> = {
   cafeteria: "Cafés",
   entretenimento: "Lazer",
   hospedagem: "Hotéis",
-  sorveteria: "Sorveterias",
+  sorveteria: "Sorvetes",
   salao: "Beleza",
   salão: "Beleza",
 };
+
+// Todas as categorias para os carrosséis
+const ALL_CATEGORIES = [
+  { id: "restaurante", label: "Restaurantes", subtitle: "Jante com vantagens" },
+  { id: "bar", label: "Bares", subtitle: "Celebre seu dia" },
+  { id: "academia", label: "Academias", subtitle: "Treine com benefícios" },
+  { id: "salao", label: "Salões de Beleza", subtitle: "Cuide-se" },
+  { id: "cafeteria", label: "Cafeterias", subtitle: "Momentos especiais" },
+  { id: "barbearia", label: "Barbearias", subtitle: "Estilo no seu dia" },
+  { id: "loja", label: "Lojas", subtitle: "Presentes e mimos" },
+  { id: "hospedagem", label: "Hospedagem", subtitle: "Descanse com desconto" },
+  { id: "entretenimento", label: "Entretenimento", subtitle: "Diversão garantida" },
+  { id: "casa noturna", label: "Casas Noturnas", subtitle: "Noite especial" },
+  { id: "sorveteria", label: "Sorveterias", subtitle: "Doce celebração" },
+];
 
 // =============================================================================
 // HOOKS
@@ -164,6 +179,28 @@ const useLocation = () => {
   return { city, state, loading, update };
 };
 
+// Hook para rotação de categorias
+const useRotatingCategories = () => {
+  const [rotation, setRotation] = useState(0);
+
+  useEffect(() => {
+    // Rotação baseada no minuto atual (muda a cada 5 minutos)
+    const now = new Date();
+    const minuteRotation = Math.floor(now.getMinutes() / 5);
+    setRotation(minuteRotation);
+
+    // Atualizar a cada 5 minutos
+    const interval = setInterval(() => {
+      const newNow = new Date();
+      setRotation(Math.floor(newNow.getMinutes() / 5));
+    }, 60000); // Checa a cada minuto
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return rotation;
+};
+
 // =============================================================================
 // HEADER - TOPO ROXO
 // =============================================================================
@@ -175,24 +212,16 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-[#240046]">
+      <header className="sticky top-0 z-40 bg-violet-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           {/* Desktop */}
           <div className="hidden sm:flex items-center justify-between h-14 gap-4">
             <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-8 h-8 rounded-xl bg-[#3d1a5c] flex items-center justify-center">
-                <Gift className="w-4 h-4 text-white" />
+              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
+                <Gift className="w-3.5 h-3.5 text-white" />
               </div>
-              <span 
-                className="text-sm font-bold uppercase tracking-wide"
-                style={{
-                  background: "linear-gradient(to right, #A78BFA, #60A5FA, #22D3EE)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
-                ANIVERSARIANTE VIP
+              <span className="text-sm font-bold text-white">
+                Aniversariante<span className="text-white/80">VIP</span>
               </span>
             </Link>
 
@@ -214,19 +243,11 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
           <div className="sm:hidden">
             <div className="flex items-center justify-between h-12">
               <Link to="/" className="flex items-center gap-1.5">
-                <div className="w-7 h-7 rounded-xl bg-[#3d1a5c] flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
                   <Gift className="w-3.5 h-3.5 text-white" />
                 </div>
-                <span 
-                  className="text-xs font-bold uppercase tracking-wide"
-                  style={{
-                    background: "linear-gradient(to right, #A78BFA, #60A5FA, #22D3EE)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                  }}
-                >
-                  ANIVERSARIANTE VIP
+                <span className="text-sm font-bold text-white">
+                  Aniversariante<span className="text-white/80">VIP</span>
                 </span>
               </Link>
               <button
@@ -359,71 +380,67 @@ const MenuBtn = ({ icon, label, sub, onClick, danger }: any) => (
 );
 
 // =============================================================================
-// SEARCH PILL - Branca sobre fundo roxo
+// SEARCH PILL
 // =============================================================================
 
 const SearchPill = memo(({ city, state, isLoading, onCityClick, onFilterClick, filterCount }: any) => (
   <>
-    {/* Desktop - Filtro antes + Pill branca */}
+    {/* Desktop */}
     <div className="hidden sm:flex items-center gap-2">
-      {/* Botão filtro PRIMEIRO (menor) */}
-      <button
-        onClick={onFilterClick}
-        className="w-9 h-9 rounded-full bg-white shadow-sm hover:shadow-md flex items-center justify-center relative flex-shrink-0"
-        aria-label="Abrir filtros"
-      >
-        <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-600" />
-        {filterCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
-            {filterCount}
-          </span>
-        )}
-      </button>
-
-      {/* Barra de localização DEPOIS */}
       <button
         onClick={onCityClick}
-        className="flex items-center gap-2 h-10 pl-3.5 pr-2.5 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow"
+        className="flex items-center gap-2 h-11 pl-4 pr-3 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow flex-1"
         aria-label="Selecionar cidade"
       >
-        <MapPin className="w-3.5 h-3.5 text-violet-600 flex-shrink-0" />
-        <div className="text-left min-w-0">
-          <p className="text-[10px] text-zinc-500 uppercase font-medium leading-none">Onde</p>
-          <p className="text-sm font-medium text-zinc-900 truncate">{isLoading ? "..." : `${city}, ${state}`}</p>
-        </div>
-        <div className="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0 ml-1">
-          <Search className="w-3.5 h-3.5 text-white" />
-        </div>
-      </button>
-    </div>
-
-    {/* Mobile - Pill compacta */}
-    <div className="sm:hidden flex items-center gap-2">
-      {/* Botão filtro PRIMEIRO (menor) */}
-      <button
-        onClick={onFilterClick}
-        className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center relative flex-shrink-0"
-        aria-label="Abrir filtros"
-      >
-        <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-600" />
-        {filterCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
-            {filterCount}
-          </span>
-        )}
-      </button>
-
-      {/* Barra de busca DEPOIS (menor) */}
-      <button
-        onClick={onCityClick}
-        className="flex-1 flex items-center gap-2 h-9 px-3 bg-white rounded-full shadow-sm"
-        aria-label="Selecionar cidade"
-      >
-        <MapPin className="w-3.5 h-3.5 text-violet-600 flex-shrink-0" />
+        <MapPin className="w-4 h-4 text-violet-600 flex-shrink-0" />
         <div className="text-left flex-1 min-w-0">
           <p className="text-[10px] text-zinc-500 uppercase font-medium leading-none">Onde</p>
           <p className="text-sm font-medium text-zinc-900 truncate">{isLoading ? "..." : `${city}, ${state}`}</p>
         </div>
+        <div className="w-px h-5 bg-zinc-200 mx-1" />
+        <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0">
+          <Search className="w-4 h-4 text-white" />
+        </div>
+      </button>
+
+      <button
+        onClick={onFilterClick}
+        className="w-11 h-11 rounded-full bg-white shadow-sm hover:shadow-md flex items-center justify-center relative"
+        aria-label="Abrir filtros"
+      >
+        <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
+        {filterCount > 0 && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
+            {filterCount}
+          </span>
+        )}
+      </button>
+    </div>
+
+    {/* Mobile */}
+    <div className="sm:hidden flex items-center gap-2">
+      <button
+        onClick={onCityClick}
+        className="flex-1 flex items-center gap-2.5 h-11 px-3.5 bg-white rounded-full shadow-sm"
+        aria-label="Selecionar cidade"
+      >
+        <Search className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+        <div className="text-left flex-1 min-w-0">
+          <p className="text-sm font-medium text-zinc-900 truncate">Onde você quer aproveitar os benefícios?</p>
+          <p className="text-xs text-zinc-500 truncate">{isLoading ? "Detectando..." : `${city}, ${state}`}</p>
+        </div>
+      </button>
+      <button
+        onClick={onFilterClick}
+        className="w-11 h-11 rounded-full bg-white shadow-sm flex items-center justify-center relative flex-shrink-0"
+        aria-label="Abrir filtros"
+      >
+        <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
+        {filterCount > 0 && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
+            {filterCount}
+          </span>
+        )}
       </button>
     </div>
   </>
@@ -543,7 +560,7 @@ const CityModal = memo(({ isOpen, onClose, city, state, onSelect }: any) => {
 });
 
 // =============================================================================
-// CATEGORIES - Fundo roxo, ícones brancos
+// CATEGORIES - Fundo roxo
 // =============================================================================
 
 const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) => {
@@ -553,7 +570,7 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
   ];
 
   return (
-    <div className="sticky top-[48px] sm:top-[56px] z-30 bg-[#240046]">
+    <div className="sticky top-[48px] sm:top-[56px] z-30 bg-violet-600">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
           {cats.map((cat) => {
@@ -565,7 +582,10 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
               <button
                 key={cat.id}
                 onClick={() => onSelect(cat.id)}
-                className="flex flex-col items-center gap-0.5 min-w-[60px] sm:min-w-[68px] px-2 py-2 relative text-white"
+                className={cn(
+                  "flex flex-col items-center gap-0.5 min-w-[60px] sm:min-w-[68px] px-2 py-2 relative transition-colors",
+                  isActive ? "text-white" : "text-white/70 hover:text-white/90",
+                )}
               >
                 <Icon className="w-5 h-5" />
                 <span className="text-[11px] font-medium whitespace-nowrap">{shortLabel}</span>
@@ -580,24 +600,24 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
 });
 
 // =============================================================================
-// EMPTY BANNER - Discreto com CTA roxo
+// EMPTY BANNER
 // =============================================================================
 
 const EmptyBanner = memo(({ cidade, onNotify, onDismiss }: any) => (
-<div className="flex items-center gap-2 p-2 bg-zinc-50 border border-zinc-200 rounded-xl mb-3">
-    <div className="w-8 h-8 rounded-full bg-zinc-200 flex items-center justify-center flex-shrink-0">
-      <MapPin className="w-3.5 h-3.5 text-zinc-500" />
+  <div className="flex items-center gap-2.5 p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl mb-3">
+    <div className="w-9 h-9 rounded-full bg-zinc-200 flex items-center justify-center flex-shrink-0">
+      <MapPin className="w-4 h-4 text-zinc-500" />
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-xs font-medium text-zinc-900">Ainda não chegamos em {cidade}</p>
-      <p className="text-[10px] text-zinc-500">Mostrando outros lugares</p>
+      <p className="text-sm font-medium text-zinc-900 truncate">Ainda não chegamos em {cidade}</p>
+      <p className="text-xs text-zinc-500">Mostrando outros lugares</p>
     </div>
     <button
       onClick={onNotify}
-      className="h-7 px-2.5 bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-medium rounded-full flex items-center gap-1 flex-shrink-0"
+      className="h-8 px-3 bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium rounded-full flex items-center gap-1.5 flex-shrink-0"
       aria-label="Avise-me quando chegar"
     >
-      <Bell className="w-3 h-3" />
+      <Bell className="w-3.5 h-3.5" />
       Avise-me
     </button>
     <button
@@ -611,7 +631,7 @@ const EmptyBanner = memo(({ cidade, onNotify, onDismiss }: any) => (
 ));
 
 // =============================================================================
-// BENEFIT CHIP - Curto e útil
+// BENEFIT CHIP
 // =============================================================================
 
 const getBenefitChipText = (beneficio?: string): string => {
@@ -632,7 +652,7 @@ const getBenefitChipText = (beneficio?: string): string => {
 };
 
 // =============================================================================
-// CARD - Premium com skeleton shimmer
+// CARD
 // =============================================================================
 
 const Card = memo(({ data, onClick }: any) => {
@@ -667,17 +687,17 @@ const Card = memo(({ data, onClick }: any) => {
         )}
 
         <div className="absolute top-2.5 left-2.5">
-          <span className="inline-flex items-center px-2 py-0.5 bg-white/95 backdrop-blur-sm text-[10px] font-semibold text-zinc-700 rounded-full shadow-sm">
+          <span className="inline-flex items-center px-2 py-1 bg-white/95 backdrop-blur-sm text-[11px] font-medium text-zinc-800 rounded-full shadow-sm border border-zinc-100">
             {chipText}
           </span>
         </div>
 
         <button
           onClick={(e) => e.stopPropagation()}
-          className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center"
+          className="absolute top-2.5 right-2.5 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm border border-zinc-200 shadow-sm flex items-center justify-center hover:scale-110 transition-transform"
           aria-label="Favoritar"
         >
-          <Heart className="w-3.5 h-3.5 text-zinc-500" />
+          <Heart className="w-4 h-4 text-zinc-600 hover:text-red-500 hover:fill-red-500 transition-colors" />
         </button>
       </div>
 
@@ -694,19 +714,22 @@ const Card = memo(({ data, onClick }: any) => {
 });
 
 // =============================================================================
-// CAROUSEL - Padding corrigido
+// CAROUSEL - Com título clicável
 // =============================================================================
 
-const Carousel = memo(({ title, subtitle, items }: any) => {
+const Carousel = memo(({ title, subtitle, items, categoryId, onSeeAll }: any) => {
   const navigate = useNavigate();
   if (!items?.length) return null;
 
   return (
-    <section className="mb-6">
-      <div className="mb-2.5 px-4 sm:px-0">
-        <h2 className="text-base font-semibold text-zinc-900">{title}</h2>
-        {subtitle && <p className="text-sm text-zinc-600">{subtitle}</p>}
-      </div>
+    <section className="mb-5">
+      <button onClick={onSeeAll} className="flex items-center gap-1 mb-2 px-4 sm:px-0 group">
+        <div>
+          <h2 className="text-base font-semibold text-zinc-900 group-hover:underline">{title}</h2>
+          {subtitle && <p className="text-sm text-zinc-500">{subtitle}</p>}
+        </div>
+        <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:text-zinc-600 mt-0.5" />
+      </button>
       <div
         className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-4 sm:px-0 scroll-pl-4 scroll-pr-4"
         style={{ scrollbarWidth: "none" }}
@@ -798,6 +821,7 @@ const Index = () => {
 
   const { city, state, loading: locationLoading, update: updateCity } = useLocation();
   const { location: userLocation, requestLocation, loading: geoLoading } = useUserLocation();
+  const rotation = useRotatingCategories();
 
   const [cityModalOpen, setCityModalOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -809,8 +833,9 @@ const Index = () => {
 
   const { data: estabelecimentos, isLoading } = useEstabelecimentos({ showAll: true, enabled: true });
 
-  const { filtered, fallback } = useMemo(() => {
-    if (!estabelecimentos?.length) return { filtered: [], fallback: false };
+  // Filter por cidade
+  const { cityEstablishments, fallback } = useMemo(() => {
+    if (!estabelecimentos?.length) return { cityEstablishments: [], fallback: false };
 
     let items = [...estabelecimentos];
     let usingFallback = false;
@@ -820,6 +845,13 @@ const Index = () => {
     );
     if (byCity.length > 0) items = byCity;
     else usingFallback = true;
+
+    return { cityEstablishments: items, fallback: usingFallback };
+  }, [estabelecimentos, city, state]);
+
+  // Aplicar filtros adicionais
+  const filtered = useMemo(() => {
+    let items = [...cityEstablishments];
 
     if (categoria && categoria !== "all") {
       items = items.filter((e) => {
@@ -841,37 +873,94 @@ const Index = () => {
       );
     }
 
-    return { filtered: items, fallback: usingFallback };
-  }, [estabelecimentos, city, state, categoria, subcategories, distance, userLocation]);
+    return items;
+  }, [cityEstablishments, categoria, subcategories, distance, userLocation]);
 
+  // Gerar 9 carrosséis com rotação
   const carousels = useMemo(() => {
-    if (!filtered.length || categoria !== "all") return [];
-    const cats = ["academia", "bar", "restaurante", "salao"];
-    const titles: any = {
-      academia: { title: "Academias em destaque", subtitle: "Treine com benefícios" },
-      bar: { title: "Bares para comemorar", subtitle: "Celebre seu dia" },
-      restaurante: { title: "Restaurantes especiais", subtitle: "Jante com vantagens" },
-      salao: { title: "Salões de beleza", subtitle: "Cuide-se" },
+    if (!cityEstablishments.length || categoria !== "all") return [];
+
+    // Função para filtrar por categoria
+    const getByCategory = (catId: string) => {
+      return cityEstablishments.filter((e) => {
+        const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
+        return cats.some((c) => c?.toLowerCase() === catId.toLowerCase());
+      });
     };
-    return cats
-      .map((cat) => ({
-        id: cat,
-        ...titles[cat],
-        items: filtered
-          .filter((e) => {
-            const cs = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
-            return cs.some((c) => c?.toLowerCase() === cat);
-          })
-          .slice(0, 10),
-      }))
-      .filter((c) => c.items.length >= 2);
-  }, [filtered, categoria]);
+
+    // Rotacionar array de categorias baseado no rotation
+    const rotatedCategories = [...ALL_CATEGORIES];
+    for (let i = 0; i < rotation; i++) {
+      rotatedCategories.push(rotatedCategories.shift()!);
+    }
+
+    const result: any[] = [];
+    const locationName = fallback ? "no Brasil" : `em ${city}`;
+
+    // 1º Carrossel: Destaques (mix de categorias)
+    const highlightCategory = rotatedCategories[0];
+    const highlightItems = getByCategory(highlightCategory.id).slice(0, 12);
+    if (highlightItems.length >= 2) {
+      result.push({
+        id: "destaques",
+        title: `${highlightCategory.label} em destaque ${locationName}`,
+        subtitle: highlightCategory.subtitle,
+        categoryId: highlightCategory.id,
+        items: highlightItems,
+      });
+    }
+
+    // Carrosséis 2-9: Categorias alternadas
+    let carouselCount = 1;
+    for (let i = 1; i < rotatedCategories.length && carouselCount < 9; i++) {
+      const cat = rotatedCategories[i];
+      const items = getByCategory(cat.id).slice(0, 12);
+
+      if (items.length >= 2) {
+        result.push({
+          id: cat.id,
+          title: `${cat.label} ${locationName}`,
+          subtitle: cat.subtitle,
+          categoryId: cat.id,
+          items,
+        });
+        carouselCount++;
+      }
+    }
+
+    // Se não tiver 9, repetir categorias com mais items
+    if (result.length < 9) {
+      for (let i = 0; i < rotatedCategories.length && result.length < 9; i++) {
+        const cat = rotatedCategories[i];
+        const items = getByCategory(cat.id);
+
+        // Pular se já existe ou não tem items suficientes
+        if (result.some((r) => r.categoryId === cat.id) || items.length < 2) continue;
+
+        // Adicionar variação: "Mais [categoria]" ou "Populares"
+        result.push({
+          id: `${cat.id}-mais`,
+          title: `Mais ${cat.label.toLowerCase()} ${locationName}`,
+          subtitle: "Descubra novos lugares",
+          categoryId: cat.id,
+          items: items.slice(0, 12),
+        });
+      }
+    }
+
+    return result;
+  }, [cityEstablishments, categoria, city, fallback, rotation]);
 
   const handleCategoria = (id: string) => {
     const params = new URLSearchParams(searchParams);
     id === "all" ? params.delete("categoria") : params.set("categoria", id);
     setSearchParams(params);
     setSubcategories([]);
+  };
+
+  const handleSeeAll = (categoryId: string) => {
+    handleCategoria(categoryId);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const filterCount = (subcategories.length > 0 ? 1 : 0) + (distance ? 1 : 0);
@@ -918,17 +1007,21 @@ const Index = () => {
             </div>
           )}
 
+          {/* 9 Carrosséis */}
           {!isLoading &&
             showCarousels &&
             carousels.map((c) => (
               <Carousel
                 key={c.id}
-                title={fallback ? `${c.title} no Brasil` : `${c.title} em ${city}`}
+                title={c.title}
                 subtitle={c.subtitle}
                 items={c.items}
+                categoryId={c.categoryId}
+                onSeeAll={() => handleSeeAll(c.categoryId)}
               />
             ))}
 
+          {/* Grid quando categoria selecionada */}
           {!isLoading && showGrid && (
             <div className="px-4 sm:px-0">
               <div className="mb-3">
@@ -941,6 +1034,7 @@ const Index = () => {
             </div>
           )}
 
+          {/* Fallback se não tiver carrosséis nem grid */}
           {!isLoading && !showCarousels && !showGrid && filtered.length > 0 && (
             <div className="px-4 sm:px-0">
               <h2 className="text-base font-semibold text-zinc-900 mb-3">Em destaque</h2>

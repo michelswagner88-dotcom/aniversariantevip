@@ -1,307 +1,174 @@
-import {
-  useState,
-  useMemo,
-  useCallback,
-  useRef,
-  useEffect,
-  memo,
-  createContext,
-  useContext,
-  type ReactNode,
-  type CSSProperties,
-} from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { EstablishmentCard, EstablishmentCardSkeleton, type EstablishmentData } from "@/components/cards";
+// =============================================================================
+// AIRBNBCARDGRID.TSX - ANIVERSARIANTE VIP
+// Design: Cards compactos estilo Airbnb
+// =============================================================================
+
+import { memo } from "react";
+import { useNavigate } from "react-router-dom";
+import { Heart, MapPin, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { EmptyState } from "@/components/EmptyState";
-
-// =============================================================================
-// CONSTANTS
-// =============================================================================
-
-const CARD_WIDTH_MOBILE = 160;
-const CARD_WIDTH_DESKTOP = 220;
-const CARD_GAP = 12;
-const SKELETON_COUNT = 6;
-
-const SCROLL_HIDE_STYLES: CSSProperties = {
-  WebkitOverflowScrolling: "touch",
-  scrollbarWidth: "none",
-  msOverflowStyle: "none",
-};
+import { getEstabelecimentoUrl } from "@/lib/slugUtils";
 
 // =============================================================================
 // TYPES
 // =============================================================================
 
+interface Estabelecimento {
+  id: string;
+  nome_fantasia?: string;
+  categoria?: string | string[];
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  logo_url?: string;
+  imagem_url?: string;
+  descricao_beneficio?: string;
+  slug?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
 interface AirbnbCardGridProps {
-  estabelecimentos: EstablishmentData[];
-  isLoading: boolean;
+  estabelecimentos: Estabelecimento[];
+  isLoading?: boolean;
   userLocation?: { lat: number; lng: number } | null;
-  onCardClick?: (id: string) => void;
-  onFavoriteChange?: (id: string, isFavorited: boolean) => void;
-  onImpression?: (ids: string[]) => void;
-  variant?: "carousel" | "grid";
+  variant?: "grid" | "carousel";
+}
+
+interface AirbnbCardProps {
+  estabelecimento: Estabelecimento;
+  onClick?: () => void;
 }
 
 // =============================================================================
-// HOOKS
+// CARD COMPONENT - Tamanho compacto igual Airbnb
 // =============================================================================
 
-const useReducedMotion = (): boolean => {
-  const [reducedMotion, setReducedMotion] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
-  );
+const AirbnbCard = memo(({ estabelecimento, onClick }: AirbnbCardProps) => {
+  const categoria = Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria;
 
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    query.addEventListener("change", handler);
-    return () => query.removeEventListener("change", handler);
-  }, []);
-
-  return reducedMotion;
-};
-
-const useDebounce = <T extends (...args: Parameters<T>) => void>(
-  fn: T,
-  delay: number,
-): ((...args: Parameters<T>) => void) => {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
-
-  return useCallback(
-    (...args: Parameters<T>) => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => fn(...args), delay);
-    },
-    [fn, delay],
-  );
-};
-
-// =============================================================================
-// UTILS
-// =============================================================================
-
-const getCardWidth = (): number => {
-  if (typeof window === "undefined") return CARD_WIDTH_DESKTOP;
-  return window.innerWidth < 640 ? CARD_WIDTH_MOBILE : CARD_WIDTH_DESKTOP;
-};
-
-// =============================================================================
-// NAVIGATION BUTTON
-// =============================================================================
-
-interface NavButtonProps {
-  direction: "left" | "right";
-  onClick: () => void;
-  visible: boolean;
-  reducedMotion: boolean;
-}
-
-const NavButton = memo(({ direction, onClick, visible, reducedMotion }: NavButtonProps) => {
-  const isLeft = direction === "left";
-  const Icon = isLeft ? ChevronLeft : ChevronRight;
-
-  if (!visible) return null;
+  const imageUrl = estabelecimento.imagem_url || estabelecimento.logo_url;
 
   return (
-    <button
-      onClick={onClick}
-      aria-label={isLeft ? "Anterior" : "Próximo"}
-      className={cn(
-        "absolute top-[90px] sm:top-[110px] -translate-y-1/2 z-20",
-        isLeft ? "-left-2 sm:-left-3" : "-right-2 sm:-right-3",
-        "w-8 h-8 sm:w-9 sm:h-9 rounded-full",
-        "bg-white",
-        "shadow-lg border border-violet-200",
-        "flex items-center justify-center",
-        "opacity-0 group-hover/carousel:opacity-100",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:opacity-100",
-        !reducedMotion && "transition-all duration-200 hover:scale-110 hover:shadow-xl",
-      )}
-    >
-      <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#240046]" aria-hidden="true" />
-    </button>
+    <article onClick={onClick} className="cursor-pointer group">
+      {/* Imagem - Proporção 1:1 (quadrada) igual Airbnb */}
+      <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 mb-2">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={estabelecimento.nome_fantasia || "Estabelecimento"}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-100 to-fuchsia-100">
+            <Gift className="w-10 h-10 text-violet-300" />
+          </div>
+        )}
+
+        {/* Favorito */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            // TODO: implementar favorito
+          }}
+          className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center"
+          aria-label="Adicionar aos favoritos"
+        >
+          <Heart className="w-6 h-6 text-white drop-shadow-md hover:scale-110 transition-transform" />
+        </button>
+      </div>
+
+      {/* Info - Compacta */}
+      <div className="space-y-0.5">
+        {/* Nome */}
+        <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-1">
+          {estabelecimento.nome_fantasia || "Estabelecimento"}
+        </h3>
+
+        {/* Categoria + Bairro */}
+        <p className="text-gray-500 text-xs line-clamp-1">
+          {categoria && <span className="capitalize">{categoria}</span>}
+          {categoria && estabelecimento.bairro && <span> · </span>}
+          {estabelecimento.bairro && <span>{estabelecimento.bairro}</span>}
+        </p>
+
+        {/* Benefício */}
+        {estabelecimento.descricao_beneficio && (
+          <p className="text-xs text-violet-600 font-medium line-clamp-1 flex items-center gap-1">
+            <Gift className="w-3 h-3 flex-shrink-0" />
+            <span className="truncate">{estabelecimento.descricao_beneficio}</span>
+          </p>
+        )}
+      </div>
+    </article>
+  );
+});
+AirbnbCard.displayName = "AirbnbCard";
+
+// =============================================================================
+// SKELETON
+// =============================================================================
+
+const CardSkeleton = () => (
+  <div className="animate-pulse">
+    <div className="aspect-square rounded-xl bg-gray-200 mb-2" />
+    <div className="space-y-1.5">
+      <div className="h-4 bg-gray-200 rounded w-3/4" />
+      <div className="h-3 bg-gray-200 rounded w-1/2" />
+      <div className="h-3 bg-gray-200 rounded w-2/3" />
+    </div>
+  </div>
+);
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
+
+export const AirbnbCardGrid = memo(function AirbnbCardGrid({
+  estabelecimentos,
+  isLoading = false,
+  userLocation,
+  variant = "grid",
+}: AirbnbCardGridProps) {
+  const navigate = useNavigate();
+
+  const handleCardClick = (est: Estabelecimento) => {
+    const url = getEstabelecimentoUrl({
+      estado: est.estado || "",
+      cidade: est.cidade || "",
+      slug: est.slug || null,
+      id: est.id,
+    });
+    navigate(url);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 gap-4 sm:gap-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <CardSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  if (!estabelecimentos || estabelecimentos.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Gift className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+        <p className="text-gray-500">Nenhum estabelecimento encontrado</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+      {estabelecimentos.map((est) => (
+        <AirbnbCard key={est.id} estabelecimento={est} onClick={() => handleCardClick(est)} />
+      ))}
+    </div>
   );
 });
 
-NavButton.displayName = "NavButton";
-
-// =============================================================================
-// MAIN GRID COMPONENT
-// =============================================================================
-
-export const AirbnbCardGrid = memo(
-  ({ estabelecimentos, isLoading, onCardClick, onFavoriteChange, onImpression, variant = "carousel" }: AirbnbCardGridProps) => {
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const [showLeftArrow, setShowLeftArrow] = useState(false);
-    const [showRightArrow, setShowRightArrow] = useState(true);
-    const reducedMotion = useReducedMotion();
-    const isGrid = variant === "grid";
-
-    const checkScrollPosition = useCallback(() => {
-      const el = scrollRef.current;
-      if (!el) return;
-
-      const { scrollLeft, scrollWidth, clientWidth } = el;
-
-      setShowLeftArrow(scrollLeft > 20);
-      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 20);
-    }, []);
-
-    const debouncedCheckScroll = useDebounce(checkScrollPosition, 50);
-
-    useEffect(() => {
-      if (isGrid) return; // Skip scroll listeners for grid mode
-      
-      const el = scrollRef.current;
-      if (!el) return;
-
-      checkScrollPosition();
-      el.addEventListener("scroll", debouncedCheckScroll, { passive: true });
-      window.addEventListener("resize", checkScrollPosition);
-
-      return () => {
-        el.removeEventListener("scroll", debouncedCheckScroll);
-        window.removeEventListener("resize", checkScrollPosition);
-      };
-    }, [checkScrollPosition, debouncedCheckScroll, estabelecimentos, isGrid]);
-
-    // Scroll by 1 card at a time
-    const scrollByAmount = useCallback(
-      (direction: "left" | "right") => {
-        const el = scrollRef.current;
-        if (!el) return;
-
-        const cardTotalWidth = getCardWidth() + CARD_GAP;
-
-        el.scrollBy({
-          left: direction === "left" ? -cardTotalWidth : cardTotalWidth,
-          behavior: reducedMotion ? "auto" : "smooth",
-        });
-      },
-      [reducedMotion],
-    );
-
-    const handleKeyDown = useCallback(
-      (e: React.KeyboardEvent) => {
-        if (e.key === "ArrowLeft") {
-          e.preventDefault();
-          scrollByAmount("left");
-        } else if (e.key === "ArrowRight") {
-          e.preventDefault();
-          scrollByAmount("right");
-        }
-      },
-      [scrollByAmount],
-    );
-
-    const handleImpression = useCallback(
-      (id: string) => {
-        onImpression?.([id]);
-      },
-      [onImpression],
-    );
-
-    // Loading - Grid mode
-    if (isLoading && isGrid) {
-      return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6" aria-busy="true">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <EstablishmentCardSkeleton key={`skeleton-${i}`} fullWidth />
-          ))}
-        </div>
-      );
-    }
-
-    // Loading - Carousel mode
-    if (isLoading) {
-      return (
-        <div className="flex gap-3 overflow-x-auto px-4 sm:px-6" style={SCROLL_HIDE_STYLES} aria-busy="true">
-          {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-            <EstablishmentCardSkeleton key={`skeleton-${i}`} />
-          ))}
-        </div>
-      );
-    }
-
-    // Empty
-    if (!estabelecimentos.length) {
-      return <EmptyState type="geral" />;
-    }
-
-    // GRID MODE
-    if (isGrid) {
-      return (
-        <div
-          className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6"
-          role="region"
-          aria-label={`${estabelecimentos.length} estabelecimentos`}
-        >
-          {estabelecimentos.map((est, index) => (
-            <EstablishmentCard
-              key={est.id}
-              establishment={est}
-              priority={index < 6}
-              index={index}
-              onImpression={handleImpression}
-              onFavoriteChange={onFavoriteChange}
-              onClick={onCardClick}
-              fullWidth
-            />
-          ))}
-        </div>
-      );
-    }
-
-    // CAROUSEL MODE (default)
-    return (
-      <div
-        className="relative group/carousel px-4 sm:px-6"
-        role="region"
-        aria-label={`${estabelecimentos.length} estabelecimentos`}
-        onKeyDown={handleKeyDown}
-      >
-        <NavButton
-          direction="left"
-          onClick={() => scrollByAmount("left")}
-          visible={showLeftArrow}
-          reducedMotion={reducedMotion}
-        />
-
-        <NavButton
-          direction="right"
-          onClick={() => scrollByAmount("right")}
-          visible={showRightArrow}
-          reducedMotion={reducedMotion}
-        />
-
-        <div
-          ref={scrollRef}
-          className={cn(
-            "flex gap-3 overflow-x-auto py-1 -mx-4 px-4 sm:-mx-6 sm:px-6",
-            "snap-x snap-mandatory",
-            reducedMotion ? "scroll-auto" : "scroll-smooth",
-          )}
-          style={SCROLL_HIDE_STYLES}
-          role="list"
-        >
-          {estabelecimentos.map((est, index) => (
-            <div key={est.id} className="flex-shrink-0 w-[160px] sm:w-[220px] snap-start">
-              <EstablishmentCard
-                establishment={est}
-                priority={index < 4}
-                index={index}
-                onImpression={handleImpression}
-                onFavoriteChange={onFavoriteChange}
-                onClick={onCardClick}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  },
-);
-
-AirbnbCardGrid.displayName = "AirbnbCardGrid";
+export default AirbnbCardGrid;

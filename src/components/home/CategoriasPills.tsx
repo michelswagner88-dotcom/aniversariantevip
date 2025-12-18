@@ -2,16 +2,17 @@
 // CATEGORIASPILLS.TSX - ANIVERSARIANTE VIP
 // Design System: Top 1% Mundial - Estilo Airbnb
 // =============================================================================
-// FEATURES:
-// ✅ Estilo Airbnb: ícone + label + underline no selecionado
-// ✅ Sem bolhas pesadas - visual limpo e "quieto"
-// ✅ Filtros integrado com mesmo estilo
-// ✅ Scroll suave com fade nas bordas
-// =============================================================================
 
 import { memo, useRef, useState, useCallback, useEffect } from "react";
 import { ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// =============================================================================
+// DESIGN TOKENS
+// =============================================================================
+
+const BRAND_PRIMARY = "#240046";
+const MIN_TOUCH_TARGET = 44; // px - acessibilidade
 
 // =============================================================================
 // TYPES
@@ -99,14 +100,8 @@ const useScrollable = () => {
   return { scrollRef, canScrollLeft, canScrollRight, scroll, checkScroll };
 };
 
-const hapticFeedback = (pattern: number | number[] = 10) => {
-  if (typeof navigator !== "undefined" && navigator.vibrate) {
-    navigator.vibrate(pattern);
-  }
-};
-
 // =============================================================================
-// CATEGORY TAB - Estilo Airbnb (ícone + label + underline)
+// CATEGORY TAB - Estilo Airbnb Premium
 // =============================================================================
 
 interface CategoryTabProps {
@@ -116,34 +111,32 @@ interface CategoryTabProps {
 }
 
 const CategoryTab = memo(({ category, isSelected, onClick }: CategoryTabProps) => {
-  const handleClick = useCallback(() => {
-    hapticFeedback(5);
-    onClick();
-  }, [onClick]);
-
   return (
     <button
-      onClick={handleClick}
+      onClick={onClick}
       className={cn(
-        "flex flex-col items-center gap-1",
-        "px-3 sm:px-4 py-2 min-w-[56px] sm:min-w-[64px]",
+        "flex flex-col items-center justify-center gap-1.5",
+        // Touch target: mínimo 44px de altura
+        "min-h-[52px] sm:min-h-[56px]",
+        "px-3 sm:px-4",
+        "min-w-[60px] sm:min-w-[72px]",
         "transition-all duration-200 ease-out",
-        "focus-visible:outline-none",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#240046]",
         "flex-shrink-0",
         "relative",
         "group",
         // Cor do texto
-        isSelected ? "text-white" : "text-white/60 hover:text-white/90",
+        isSelected ? "text-white" : "text-white/60 hover:text-white",
       )}
       aria-pressed={isSelected}
+      aria-label={`Categoria ${category.label}`}
     >
       {/* Ícone */}
       <span
         className={cn(
-          "text-xl sm:text-2xl leading-none",
-          "transition-transform duration-200",
-          "group-hover:scale-110",
-          isSelected && "scale-110",
+          "text-2xl leading-none",
+          "transition-transform duration-200 ease-out",
+          isSelected ? "scale-110" : "group-hover:scale-110",
         )}
         role="img"
         aria-hidden="true"
@@ -152,18 +145,24 @@ const CategoryTab = memo(({ category, isSelected, onClick }: CategoryTabProps) =
       </span>
 
       {/* Label */}
-      <span className={cn("text-[10px] sm:text-xs font-medium whitespace-nowrap", "transition-colors duration-200")}>
+      <span
+        className={cn(
+          "text-[11px] sm:text-xs font-medium whitespace-nowrap",
+          "transition-opacity duration-200",
+          isSelected ? "opacity-100" : "opacity-80 group-hover:opacity-100",
+        )}
+      >
         {category.label}
       </span>
 
-      {/* Underline - só quando selecionado */}
+      {/* Underline indicator */}
       <span
         className={cn(
           "absolute bottom-0 left-1/2 -translate-x-1/2",
-          "h-0.5 rounded-full",
+          "h-[2px] rounded-full",
           "bg-white",
-          "transition-all duration-200",
-          isSelected ? "w-8 sm:w-10 opacity-100" : "w-0 opacity-0",
+          "transition-all duration-200 ease-out",
+          isSelected ? "w-6 sm:w-8 opacity-100" : "w-0 opacity-0",
         )}
         aria-hidden="true"
       />
@@ -173,7 +172,7 @@ const CategoryTab = memo(({ category, isSelected, onClick }: CategoryTabProps) =
 CategoryTab.displayName = "CategoryTab";
 
 // =============================================================================
-// FILTER TAB - Mesmo estilo das categorias
+// FILTER TAB - Design consistente
 // =============================================================================
 
 interface FilterTabProps {
@@ -182,42 +181,49 @@ interface FilterTabProps {
 }
 
 const FilterTab = memo(({ onClick, activeCount = 0 }: FilterTabProps) => {
-  const handleClick = useCallback(() => {
-    hapticFeedback(10);
-    onClick();
-  }, [onClick]);
-
   const hasFilters = activeCount > 0;
 
   return (
     <button
-      onClick={handleClick}
+      onClick={onClick}
       className={cn(
-        "flex flex-col items-center gap-1",
-        "px-3 sm:px-4 py-2 min-w-[56px] sm:min-w-[64px]",
+        "flex flex-col items-center justify-center gap-1.5",
+        "min-h-[52px] sm:min-h-[56px]",
+        "px-3 sm:px-4",
+        "min-w-[60px] sm:min-w-[72px]",
         "transition-all duration-200 ease-out",
-        "focus-visible:outline-none",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50",
         "flex-shrink-0",
         "relative",
         "group",
-        "border-l border-white/20 ml-1",
+        // Separador visual sutil
+        "ml-2 pl-2 sm:ml-3 sm:pl-3",
+        "border-l border-white/20",
         // Cor do texto
-        hasFilters ? "text-white" : "text-white/60 hover:text-white/90",
+        hasFilters ? "text-white" : "text-white/60 hover:text-white",
       )}
+      aria-label={`Filtros${hasFilters ? ` (${activeCount} ativos)` : ""}`}
     >
-      {/* Ícone */}
-      <span className={cn("relative", "transition-transform duration-200", "group-hover:scale-110")}>
-        <SlidersHorizontal className="w-5 h-5 sm:w-6 sm:h-6" />
+      {/* Ícone com badge */}
+      <span
+        className={cn(
+          "relative",
+          "transition-transform duration-200 ease-out",
+          hasFilters ? "scale-110" : "group-hover:scale-110",
+        )}
+      >
+        <SlidersHorizontal className="w-6 h-6" strokeWidth={1.5} />
 
         {/* Badge de contagem */}
         {hasFilters && (
           <span
             className={cn(
-              "absolute -top-1.5 -right-1.5",
-              "w-4 h-4 rounded-full",
+              "absolute -top-1 -right-1.5",
+              "min-w-[16px] h-[16px] px-1 rounded-full",
               "bg-white text-[#240046]",
-              "text-[9px] font-bold",
+              "text-[10px] font-bold",
               "flex items-center justify-center",
+              "shadow-sm",
             )}
           >
             {activeCount}
@@ -226,18 +232,24 @@ const FilterTab = memo(({ onClick, activeCount = 0 }: FilterTabProps) => {
       </span>
 
       {/* Label */}
-      <span className={cn("text-[10px] sm:text-xs font-medium whitespace-nowrap", "transition-colors duration-200")}>
+      <span
+        className={cn(
+          "text-[11px] sm:text-xs font-medium whitespace-nowrap",
+          "transition-opacity duration-200",
+          hasFilters ? "opacity-100" : "opacity-80 group-hover:opacity-100",
+        )}
+      >
         Filtros
       </span>
 
-      {/* Underline - só quando tem filtros ativos */}
+      {/* Underline indicator */}
       <span
         className={cn(
           "absolute bottom-0 left-1/2 -translate-x-1/2",
-          "h-0.5 rounded-full",
+          "h-[2px] rounded-full",
           "bg-white",
-          "transition-all duration-200",
-          hasFilters ? "w-8 sm:w-10 opacity-100" : "w-0 opacity-0",
+          "transition-all duration-200 ease-out",
+          hasFilters ? "w-6 sm:w-8 opacity-100" : "w-0 opacity-0",
         )}
         aria-hidden="true"
       />
@@ -247,7 +259,7 @@ const FilterTab = memo(({ onClick, activeCount = 0 }: FilterTabProps) => {
 FilterTab.displayName = "FilterTab";
 
 // =============================================================================
-// SCROLL BUTTON
+// SCROLL BUTTON - Desktop only
 // =============================================================================
 
 interface ScrollButtonProps {
@@ -266,19 +278,20 @@ const ScrollButton = memo(({ direction, onClick, visible }: ScrollButtonProps) =
       onClick={onClick}
       className={cn(
         "absolute top-1/2 -translate-y-1/2 z-10",
-        "w-7 h-7 rounded-full",
-        "bg-white/90 shadow-md backdrop-blur-sm",
+        "w-8 h-8 rounded-full",
+        "bg-white shadow-lg",
         "flex items-center justify-center",
-        "text-[#240046] hover:bg-white",
+        "text-gray-700 hover:text-gray-900",
         "transition-all duration-200",
-        "hover:scale-110 active:scale-95",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+        "hover:scale-110 hover:shadow-xl",
+        "active:scale-95",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
         "hidden lg:flex",
-        direction === "left" ? "left-0" : "right-0",
+        direction === "left" ? "left-1" : "right-1",
       )}
-      aria-label={direction === "left" ? "Anterior" : "Próximo"}
+      aria-label={direction === "left" ? "Ver categorias anteriores" : "Ver mais categorias"}
     >
-      <Icon className="w-4 h-4" />
+      <Icon className="w-5 h-5" />
     </button>
   );
 });
@@ -303,7 +316,7 @@ export const CategoriasPills = memo(function CategoriasPills({
   }, [categories, checkScroll]);
 
   return (
-    <div className="relative w-full py-2">
+    <nav className="relative w-full py-1" aria-label="Categorias de estabelecimentos">
       {/* Scroll buttons (desktop) */}
       <ScrollButton direction="left" onClick={() => scroll("left")} visible={canScrollLeft} />
 
@@ -311,11 +324,14 @@ export const CategoriasPills = memo(function CategoriasPills({
       <div
         ref={scrollRef}
         className={cn(
-          "flex items-end gap-0 overflow-x-auto",
+          "flex items-stretch",
+          "overflow-x-auto",
           "scrollbar-hide",
           "scroll-smooth",
+          // Full bleed no mobile
           "-mx-4 px-4 sm:mx-0 sm:px-0",
         )}
+        role="tablist"
       >
         {/* Category tabs */}
         {categories.map((category) => (
@@ -333,14 +349,28 @@ export const CategoriasPills = memo(function CategoriasPills({
 
       <ScrollButton direction="right" onClick={() => scroll("right")} visible={canScrollRight} />
 
-      {/* Fade gradients */}
-      {canScrollLeft && (
-        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#240046] to-transparent pointer-events-none" />
-      )}
-      {canScrollRight && (
-        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#240046] to-transparent pointer-events-none" />
-      )}
-    </div>
+      {/* Fade gradients para indicar scroll */}
+      <div
+        className={cn(
+          "absolute left-0 top-0 bottom-0 w-10",
+          "bg-gradient-to-r from-[#240046] to-transparent",
+          "pointer-events-none",
+          "transition-opacity duration-200",
+          canScrollLeft ? "opacity-100" : "opacity-0",
+        )}
+        aria-hidden="true"
+      />
+      <div
+        className={cn(
+          "absolute right-0 top-0 bottom-0 w-10",
+          "bg-gradient-to-l from-[#240046] to-transparent",
+          "pointer-events-none",
+          "transition-opacity duration-200",
+          canScrollRight ? "opacity-100" : "opacity-0",
+        )}
+        aria-hidden="true"
+      />
+    </nav>
   );
 });
 

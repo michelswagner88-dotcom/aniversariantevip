@@ -1,13 +1,12 @@
-import { memo, useCallback, useState, useEffect, useId } from "react";
+// =============================================================================
+// SECTIONHEADER.TSX - ANIVERSARIANTE VIP
+// Design System: Top 1% Mundial
+// =============================================================================
+
+import { memo, useCallback, useId } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// =============================================================================
-// CONSTANTS
-// =============================================================================
-
-const HAPTIC_LIGHT = 10;
 
 // =============================================================================
 // TYPES
@@ -23,95 +22,68 @@ interface SectionHeaderProps {
 }
 
 // =============================================================================
-// HOOKS
-// =============================================================================
-
-const useReducedMotion = (): boolean => {
-  const [reducedMotion, setReducedMotion] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
-  );
-
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    query.addEventListener("change", handler);
-    return () => query.removeEventListener("change", handler);
-  }, []);
-
-  return reducedMotion;
-};
-
-// =============================================================================
-// UTILS
-// =============================================================================
-
-const haptic = (pattern: number = HAPTIC_LIGHT) => {
-  if (navigator.vibrate) {
-    navigator.vibrate(pattern);
-  }
-};
-
-// =============================================================================
 // COMPONENT
 // =============================================================================
 
 export const SectionHeader = memo(
   ({ title, subtitle, count, linkHref, linkText = "Ver todos", id }: SectionHeaderProps) => {
-    const reducedMotion = useReducedMotion();
     const generatedId = useId();
     const headingId = id || `section-heading-${generatedId}`;
-
-    const handleLinkClick = useCallback(() => {
-      haptic();
-    }, []);
 
     const countText = count !== undefined && count > 0 ? `${count} ${count === 1 ? "lugar" : "lugares"}` : null;
 
     return (
-      <div className="flex justify-between items-center mb-6 sm:mb-8">
+      <header className="flex justify-between items-start sm:items-center gap-4 mb-5 sm:mb-6">
         {/* Title & Subtitle */}
-        <div className="flex flex-col gap-1">
-          <h2 id={headingId} className="text-lg sm:text-xl md:text-2xl font-semibold text-foreground leading-tight">
+        <div className="flex-1 min-w-0">
+          <h2
+            id={headingId}
+            className={cn(
+              "text-lg sm:text-xl lg:text-2xl",
+              "font-semibold",
+              "text-gray-900",
+              "leading-tight",
+              "truncate sm:whitespace-normal",
+            )}
+          >
             {title}
           </h2>
-          {subtitle && <span className="text-sm text-muted-foreground">{subtitle}</span>}
-          {!subtitle && countText && <span className="text-sm text-muted-foreground tabular-nums">{countText}</span>}
+
+          {subtitle && <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{subtitle}</p>}
+
+          {!subtitle && countText && <p className="text-sm text-gray-500 mt-0.5 tabular-nums">{countText}</p>}
         </div>
 
         {/* Link */}
         {linkHref && (
           <Link
             to={linkHref}
-            onClick={handleLinkClick}
             aria-label={`${linkText} - ${title}`}
             className={cn(
-              "group flex items-center gap-1 text-sm font-semibold",
-              "text-muted-foreground",
-              "rounded-md px-2 py-1 -mx-2",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-              !reducedMotion && "transition-colors hover:text-foreground",
+              "group flex items-center gap-1",
+              "text-sm font-semibold",
+              "text-gray-600 hover:text-gray-900",
+              "rounded-lg px-3 py-2 -mr-3",
+              "transition-colors duration-150",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
+              "flex-shrink-0",
+              // Touch target mínimo
+              "min-h-[44px] min-w-[44px]",
+              "flex items-center justify-center",
             )}
           >
-            <span className="relative">
-              {linkText}
-              <span
-                className={cn(
-                  "absolute -bottom-0.5 left-0 right-0 h-0.5 bg-current scale-x-0 origin-left",
-                  !reducedMotion && "transition-transform duration-200 group-hover:scale-x-100",
-                )}
-                aria-hidden="true"
-              />
-            </span>
+            <span className="hidden sm:inline">{linkText}</span>
             <ChevronRight
-              size={16}
-              className={cn(!reducedMotion && "transition-transform duration-200 group-hover:translate-x-1")}
+              size={18}
+              className="transition-transform duration-150 group-hover:translate-x-0.5"
               aria-hidden="true"
             />
           </Link>
         )}
-      </div>
+      </header>
     );
   },
 );
 
 SectionHeader.displayName = "SectionHeader";
+export default SectionHeader;

@@ -26,12 +26,80 @@ import { getEstabelecimentoUrl } from "@/lib/slugUtils";
 import { CarouselSkeleton } from "@/components/skeletons";
 import CTABanner from "@/components/home/CTABanner";
 import SubcategoryFilter from "@/components/SubcategoryFilter";
-import EmptyStateBanner from "@/components/EmptyStateBanner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, X } from "lucide-react";
+import { MapPin, X, Bell } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+// =============================================================================
+// EMPTY STATE BANNER - Componente local (inline)
+// =============================================================================
+
+interface EmptyStateBannerProps {
+  cidade: string;
+  onNotifyMe?: () => void;
+  onDismiss?: () => void;
+}
+
+const EmptyStateBanner = ({ cidade, onNotifyMe, onDismiss }: EmptyStateBannerProps) => {
+  const [dismissed, setDismissed] = useState(false);
+
+  if (dismissed) return null;
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    onDismiss?.();
+  };
+
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-3 px-4 py-2.5",
+        "bg-gradient-to-r from-[#240046]/90 to-[#5A189A]/90",
+        "rounded-xl",
+        "backdrop-blur-sm",
+      )}
+    >
+      {/* Ícone */}
+      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+        <MapPin className="w-4 h-4 text-violet-300" />
+      </div>
+
+      {/* Texto */}
+      <div className="flex-1 min-w-0">
+        <p className="text-white text-sm font-medium truncate">Ainda não chegamos em {cidade}</p>
+        <p className="text-white/60 text-xs">Mostrando outros lugares disponíveis</p>
+      </div>
+
+      {/* Ação principal */}
+      <Button
+        size="sm"
+        onClick={onNotifyMe}
+        className={cn(
+          "h-8 px-3 rounded-lg",
+          "bg-white text-[#240046]",
+          "hover:bg-white/90",
+          "font-medium text-xs",
+          "flex-shrink-0",
+        )}
+      >
+        <Bell className="w-3 h-3 mr-1" />
+        Avise-me
+      </Button>
+
+      {/* Close */}
+      <button
+        onClick={handleDismiss}
+        className="p-1 rounded-full hover:bg-white/10 transition-colors flex-shrink-0"
+        aria-label="Fechar"
+      >
+        <X className="w-4 h-4 text-white/60" />
+      </button>
+    </div>
+  );
+};
 
 // =============================================================================
 // MAIN COMPONENT
@@ -226,19 +294,9 @@ const Index = () => {
     setSearchParams(new URLSearchParams());
   };
 
-  // Handlers para EmptyStateBanner
+  // Handler para EmptyStateBanner
   const handleNotifyMe = () => {
     navigate("/cadastro?interesse=" + encodeURIComponent(cidadeFinal || ""));
-  };
-
-  const handleViewCities = () => {
-    // Limpa cidade e mostra todos
-    limparCidade();
-    setSearchParams(new URLSearchParams());
-  };
-
-  const handleSuggestPlace = () => {
-    navigate("/seja-parceiro");
   };
 
   // Handler para scroll ate o search do hero
@@ -333,8 +391,6 @@ const Index = () => {
       <Header />
 
       <main className="flex-1 pb-20 sm:pb-0">
-        {" "}
-        {/* padding-bottom para BottomNav */}
         {/* Hero Section - Apenas na home sem filtros */}
         {!isFiltered && (
           <HeroSection
@@ -343,6 +399,7 @@ const Index = () => {
             onSearch={handleHeroBuscar}
           />
         )}
+
         {/* Search Bar quando filtrado - com padding ajustado */}
         {isFiltered && (
           <div className="bg-[#240046] pt-20 pb-6">
@@ -359,6 +416,7 @@ const Index = () => {
             </div>
           </div>
         )}
+
         {/* Pills de categorias - COM FILTROS INTEGRADO */}
         <div className="bg-[#240046] sticky top-0 z-30">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
@@ -375,6 +433,7 @@ const Index = () => {
             />
           </div>
         </div>
+
         {/* Subcategorias */}
         {categoriaParam && (
           <div className="bg-white border-b border-slate-200">
@@ -389,19 +448,14 @@ const Index = () => {
             </div>
           </div>
         )}
+
         {/* Container principal */}
         <div className="bg-white min-h-[50vh]">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-4 sm:pt-6 pb-12">
-            {/* EMPTY STATE BANNER - COMPACTO (inline) */}
+            {/* EMPTY STATE BANNER - COMPACTO */}
             {!isLoadingEstabelecimentos && usandoFallback && cidadeFinal && (
               <div className="mb-4 sm:mb-6">
-                <EmptyStateBanner
-                  cidade={cidadeFinal}
-                  onNotifyMe={handleNotifyMe}
-                  onViewCities={handleViewCities}
-                  onSuggestPlace={handleSuggestPlace}
-                  variant="inline"
-                />
+                <EmptyStateBanner cidade={cidadeFinal} onNotifyMe={handleNotifyMe} />
               </div>
             )}
 

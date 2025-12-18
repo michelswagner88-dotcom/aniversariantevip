@@ -1,218 +1,208 @@
-// =============================================================================
-// EMPTYSTATEBANNER.TSX - ANIVERSARIANTE VIP
-// Design System: Top 1% Mundial
-// =============================================================================
-// FEATURES:
-// ✅ Compacto - não empurra conteúdo
-// ✅ Estilo toast/inline - discreto
-// ✅ Ações úteis: Me avise, Ver capitais, Indicar lugar
-// ✅ Fechável (dismissable)
-// =============================================================================
+import { Store, MapPin, Search, Building2, Rocket, ArrowRight, Heart, RefreshCw } from "lucide-react";
+import { Button } from "./ui/button";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
-import { memo, useState } from "react";
-import { X, Bell, MapPin, Plus, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+type EmptyStateType = "cidade" | "categoria" | "busca" | "favoritos" | "filtro" | "geral";
 
-// =============================================================================
-// TYPES
-// =============================================================================
-
-interface EmptyStateBannerProps {
-  cidade: string;
-  onNotifyMe?: () => void;
-  onViewCities?: () => void;
-  onSuggestPlace?: () => void;
-  variant?: "inline" | "card";
+interface EmptyStateProps {
+  type?: EmptyStateType;
+  cidade?: string;
+  categoria?: string;
+  termoBusca?: string;
+  onAction?: () => void;
+  onLimparFiltros?: () => void;
+  onMudarCidade?: () => void;
 }
 
-// =============================================================================
-// INLINE VARIANT - Ultra compacto (tipo toast)
-// =============================================================================
-
-const InlineBanner = memo(
-  ({ cidade, onNotifyMe, onDismiss }: { cidade: string; onNotifyMe?: () => void; onDismiss: () => void }) => {
-    return (
-      <div
-        className={cn(
-          "flex items-center gap-3 px-4 py-2.5",
-          "bg-gradient-to-r from-[#240046]/90 to-[#5A189A]/90",
-          "rounded-xl",
-          "backdrop-blur-sm",
-        )}
-      >
-        {/* Ícone */}
-        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-          <MapPin className="w-4 h-4 text-violet-300" />
-        </div>
-
-        {/* Texto */}
-        <div className="flex-1 min-w-0">
-          <p className="text-white text-sm font-medium truncate">Ainda não chegamos em {cidade}</p>
-          <p className="text-white/60 text-xs">Mostrando outros lugares disponíveis</p>
-        </div>
-
-        {/* Ação principal */}
-        <Button
-          size="sm"
-          onClick={onNotifyMe}
-          className={cn(
-            "h-8 px-3 rounded-lg",
-            "bg-white text-[#240046]",
-            "hover:bg-white/90",
-            "font-medium text-xs",
-            "flex-shrink-0",
-          )}
-        >
-          <Bell className="w-3 h-3 mr-1" />
-          Avise-me
-        </Button>
-
-        {/* Close */}
-        <button
-          onClick={onDismiss}
-          className="p-1 rounded-full hover:bg-white/10 transition-colors flex-shrink-0"
-          aria-label="Fechar"
-        >
-          <X className="w-4 h-4 text-white/60" />
-        </button>
-      </div>
-    );
+const configs = {
+  cidade: {
+    icon: Rocket,
+    emoji: "🚀",
+    getTitulo: (cidade?: string) => (cidade ? `Ainda não chegamos em ${cidade}` : "Estamos expandindo!"),
+    getSubtitulo: (cidade?: string) =>
+      cidade
+        ? `Em breve teremos parceiros incríveis em ${cidade}. Fique de olho!`
+        : "Estamos trabalhando para trazer os melhores benefícios para sua região.",
+    acao: "Explorar outras cidades",
   },
-);
-InlineBanner.displayName = "InlineBanner";
-
-// =============================================================================
-// CARD VARIANT - Com múltiplas ações
-// =============================================================================
-
-const CardBanner = memo(
-  ({
-    cidade,
-    onNotifyMe,
-    onViewCities,
-    onSuggestPlace,
-    onDismiss,
-  }: {
-    cidade: string;
-    onNotifyMe?: () => void;
-    onViewCities?: () => void;
-    onSuggestPlace?: () => void;
-    onDismiss: () => void;
-  }) => {
-    return (
-      <div
-        className={cn("relative overflow-hidden", "bg-gradient-to-br from-[#240046] to-[#5A189A]", "rounded-xl", "p-4")}
-      >
-        {/* Background decoration */}
-        <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-
-        {/* Close */}
-        <button
-          onClick={onDismiss}
-          className="absolute top-2 right-2 p-1 rounded-full hover:bg-white/10 transition-colors"
-          aria-label="Fechar"
-        >
-          <X className="w-4 h-4 text-white/60" />
-        </button>
-
-        {/* Content */}
-        <div className="relative">
-          {/* Header */}
-          <div className="flex items-start gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-              <MapPin className="w-5 h-5 text-violet-300" />
-            </div>
-            <div className="flex-1 min-w-0 pr-6">
-              <p className="text-white font-semibold text-sm">Ainda não chegamos em {cidade}</p>
-              <p className="text-white/60 text-xs mt-0.5">
-                Mostrando lugares de outras cidades. Em breve teremos novidades!
-              </p>
-            </div>
-          </div>
-
-          {/* Actions - Grid compacto */}
-          <div className="grid grid-cols-3 gap-2">
-            {/* Me avise */}
-            <button
-              onClick={onNotifyMe}
-              className={cn(
-                "flex flex-col items-center gap-1 p-2.5",
-                "bg-white/10 hover:bg-white/20",
-                "rounded-lg transition-colors",
-                "group",
-              )}
-            >
-              <Bell className="w-4 h-4 text-violet-300 group-hover:scale-110 transition-transform" />
-              <span className="text-[10px] text-white font-medium">Me avise</span>
-            </button>
-
-            {/* Ver capitais */}
-            <button
-              onClick={onViewCities}
-              className={cn(
-                "flex flex-col items-center gap-1 p-2.5",
-                "bg-white/10 hover:bg-white/20",
-                "rounded-lg transition-colors",
-                "group",
-              )}
-            >
-              <MapPin className="w-4 h-4 text-violet-300 group-hover:scale-110 transition-transform" />
-              <span className="text-[10px] text-white font-medium">Capitais</span>
-            </button>
-
-            {/* Indicar lugar */}
-            <button
-              onClick={onSuggestPlace}
-              className={cn(
-                "flex flex-col items-center gap-1 p-2.5",
-                "bg-white/10 hover:bg-white/20",
-                "rounded-lg transition-colors",
-                "group",
-              )}
-            >
-              <Plus className="w-4 h-4 text-violet-300 group-hover:scale-110 transition-transform" />
-              <span className="text-[10px] text-white font-medium">Indicar</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+  categoria: {
+    icon: Building2,
+    emoji: "🎯",
+    getTitulo: (categoria?: string) => `Nenhum ${categoria?.toLowerCase() || "estabelecimento"} encontrado`,
+    getSubtitulo: (cidade?: string, categoria?: string) =>
+      cidade
+        ? `Ainda não temos ${categoria?.toLowerCase()} em ${cidade}. Em breve!`
+        : "Tente outra categoria ou explore outras cidades.",
+    acao: "Ver todas as categorias",
   },
-);
-CardBanner.displayName = "CardBanner";
+  busca: {
+    icon: Search,
+    emoji: "🔍",
+    getTitulo: (termo?: string) => (termo ? `Nenhum resultado para "${termo}"` : "Nenhum resultado encontrado"),
+    getSubtitulo: () => "Tente buscar com outras palavras ou explore as categorias.",
+    acao: "Limpar busca",
+  },
+  favoritos: {
+    icon: Heart,
+    emoji: "💜",
+    getTitulo: () => "Nenhum favorito ainda",
+    getSubtitulo: () => "Explore e salve os lugares que mais gostar!",
+    acao: "Explorar lugares",
+  },
+  filtro: {
+    icon: Search,
+    emoji: "🎯",
+    getTitulo: (categoria?: string) =>
+      categoria ? `Nenhum estabelecimento de ${categoria}` : "Nenhum resultado com esses filtros",
+    getSubtitulo: (cidade?: string) =>
+      cidade
+        ? `Ainda não temos parceiros dessa categoria em ${cidade}`
+        : "Tente ajustar os filtros para encontrar mais opções.",
+    acao: "Limpar filtros",
+  },
+  geral: {
+    icon: Store,
+    emoji: "🎂",
+    getTitulo: () => "Estamos chegando na sua região!",
+    getSubtitulo: () => "O maior guia de benefícios está sendo atualizado com os melhores lugares.",
+    acao: "Indicar um lugar",
+  },
+};
 
-// =============================================================================
-// MAIN COMPONENT
-// =============================================================================
-
-export const EmptyStateBanner = memo(function EmptyStateBanner({
+export const EmptyState = ({
+  type = "geral",
   cidade,
-  onNotifyMe,
-  onViewCities,
-  onSuggestPlace,
-  variant = "inline",
-}: EmptyStateBannerProps) {
-  const [dismissed, setDismissed] = useState(false);
+  categoria,
+  termoBusca,
+  onAction,
+  onLimparFiltros,
+  onMudarCidade,
+}: EmptyStateProps) => {
+  const navigate = useNavigate();
+  const config = configs[type];
+  const Icon = config.icon;
 
-  if (dismissed) return null;
+  // Gerar título e subtítulo dinamicamente
+  const titulo =
+    type === "busca"
+      ? config.getTitulo(termoBusca)
+      : type === "cidade"
+        ? config.getTitulo(cidade)
+        : type === "categoria" || type === "filtro"
+          ? config.getTitulo(categoria)
+          : config.getTitulo();
 
-  const handleDismiss = () => setDismissed(true);
+  const subtitulo =
+    type === "categoria" || type === "filtro"
+      ? config.getSubtitulo(cidade, categoria)
+      : type === "cidade"
+        ? config.getSubtitulo(cidade)
+        : config.getSubtitulo();
 
-  if (variant === "card") {
-    return (
-      <CardBanner
-        cidade={cidade}
-        onNotifyMe={onNotifyMe}
-        onViewCities={onViewCities}
-        onSuggestPlace={onSuggestPlace}
-        onDismiss={handleDismiss}
-      />
-    );
-  }
+  const handleAction = () => {
+    if (onAction) {
+      onAction();
+    } else if (type === "favoritos") {
+      navigate("/explorar");
+    } else if (type === "geral") {
+      navigate("/seja-parceiro");
+    }
+  };
 
-  return <InlineBanner cidade={cidade} onNotifyMe={onNotifyMe} onDismiss={handleDismiss} />;
-});
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="flex flex-col items-center justify-center py-12 sm:py-20 px-6 text-center"
+    >
+      {/* Ícone com efeito glow */}
+      <div className="relative mb-6 sm:mb-8">
+        {/* Glow Effect */}
+        <div className="absolute inset-0 blur-3xl opacity-20">
+          <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-full" />
+        </div>
 
-EmptyStateBanner.displayName = "EmptyStateBanner";
-export default EmptyStateBanner;
+        {/* Container do Ícone */}
+        <div className="relative flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20">
+          <Icon className="w-10 h-10 sm:w-16 sm:h-16 text-violet-400" strokeWidth={1.5} />
+
+          {/* Emoji flutuante */}
+          <span className="absolute -top-2 -right-2 text-2xl sm:text-3xl animate-bounce">{config.emoji}</span>
+        </div>
+      </div>
+
+      {/* Título */}
+      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2 sm:mb-3 font-plus-jakarta max-w-md">
+        {titulo}
+      </h2>
+
+      {/* Subtítulo */}
+      <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base mb-6 sm:mb-8 max-w-md leading-relaxed">
+        {subtitulo}
+      </p>
+
+      {/* Botões de ação */}
+      <div className="flex flex-wrap gap-3 justify-center">
+        {onLimparFiltros && (
+          <Button
+            onClick={onLimparFiltros}
+            variant="outline"
+            size="lg"
+            className="group border-violet-500/30 hover:bg-violet-500/10 min-h-[44px] min-w-[44px]"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Limpar filtros
+          </Button>
+        )}
+
+        {onMudarCidade && (
+          <Button
+            onClick={onMudarCidade}
+            variant="outline"
+            size="lg"
+            className="group border-violet-500/30 hover:bg-violet-500/10 min-h-[44px] min-w-[44px]"
+          >
+            <MapPin className="w-4 h-4 mr-2" />
+            Mudar cidade
+          </Button>
+        )}
+
+        <Button
+          onClick={handleAction}
+          size="lg"
+          className="group bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg shadow-violet-500/20 px-6 sm:px-8 py-5 sm:py-6 text-sm sm:text-base font-semibold min-h-[44px] min-w-[44px]"
+        >
+          <span>{config.acao}</span>
+          <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 transition-transform group-hover:translate-x-1" />
+        </Button>
+      </div>
+
+      {/* Divider decorativo */}
+      <div className="flex items-center gap-3 w-full max-w-xs my-6 sm:my-8">
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-white/10 to-transparent" />
+        <MapPin className="w-4 h-4 text-violet-400" />
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-white/10 to-transparent" />
+      </div>
+
+      {/* Sugestão de indicar estabelecimento */}
+      <div className="text-center">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-500 mb-2">
+          Conhece um lugar que deveria estar aqui?
+        </p>
+        <button
+          onClick={() => navigate("/seja-parceiro")}
+          className="text-xs sm:text-sm font-medium text-violet-500 hover:text-violet-400 transition-colors underline-offset-2 hover:underline"
+        >
+          Indique um estabelecimento →
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
+// Export default para compatibilidade com ambos os imports:
+// import { EmptyState } from "@/components/EmptyState"
+// import EmptyState from "@/components/EmptyState"
+export default EmptyState;

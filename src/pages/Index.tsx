@@ -1,6 +1,6 @@
 // =============================================================================
 // INDEX.TSX - ANIVERSARIANTE VIP
-// V6 - Busca Inline no Header, Sem "no Brasil"
+// V7 - Lapidação Premium (Carrosséis 100%, Chips, Skeleton)
 // =============================================================================
 
 import { useMemo, useState, useEffect, useCallback, useRef, memo } from "react";
@@ -124,7 +124,7 @@ const ALL_CATEGORIES = [
 ];
 
 // =============================================================================
-// HOOKS
+// HOOKS (sem alteração de lógica)
 // =============================================================================
 
 const useAuth = () => {
@@ -293,9 +293,7 @@ const LocationButton = memo(({ onUseCurrentLocation }: { onUseCurrentLocation: (
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setIsOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -316,15 +314,14 @@ const LocationButton = memo(({ onUseCurrentLocation }: { onUseCurrentLocation: (
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-10 h-10 sm:w-9 sm:h-9 rounded-full bg-white shadow-sm border border-zinc-200 flex items-center justify-center hover:shadow-md hover:border-violet-300 transition-all flex-shrink-0"
-        aria-label="Localização"
+        aria-label="Usar minha localização"
       >
         <Navigation className="w-4 h-4 text-violet-600" />
       </button>
-
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40 sm:hidden" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-zinc-200 z-50 overflow-hidden animate-fade-in">
+          <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-zinc-200 z-50 overflow-hidden">
             <div className="p-3 border-b border-zinc-100 bg-gradient-to-r from-violet-50 to-fuchsia-50">
               <p className="text-sm font-medium text-zinc-900">📍 Localização</p>
               <p className="text-xs text-zinc-500 mt-0.5">Encontre benefícios perto de você</p>
@@ -359,150 +356,152 @@ const LocationButton = memo(({ onUseCurrentLocation }: { onUseCurrentLocation: (
 // HEADER
 // =============================================================================
 
-const Header = memo(({ children, onUseCurrentLocation }: { children?: React.ReactNode; onUseCurrentLocation?: () => void }) => {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+const Header = memo(
+  ({ children, onUseCurrentLocation }: { children?: React.ReactNode; onUseCurrentLocation?: () => void }) => {
+    const [menuOpen, setMenuOpen] = useState(false);
+    const { user, signOut } = useAuth();
+    const navigate = useNavigate();
 
-  return (
-    <>
-      <header className="sticky top-0 z-40" style={{ backgroundColor: HEADER_COLOR }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="hidden sm:flex items-center justify-between h-16 gap-6">
-            <Logo />
-            <div className="flex-1 max-w-xl flex items-center gap-2">
-              {onUseCurrentLocation && <LocationButton onUseCurrentLocation={onUseCurrentLocation} />}
-              <div className="flex-1">{children}</div>
-            </div>
-            <button
-              onClick={() => setMenuOpen(true)}
-              className="flex items-center gap-1.5 h-10 pl-3 pr-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-              aria-label="Menu"
-            >
-              <Menu className="w-4 h-4 text-white" />
-              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
-              </div>
-            </button>
-          </div>
-          <div className="sm:hidden">
-            <div className="flex items-center justify-between h-14">
+    return (
+      <>
+        <header className="sticky top-0 z-40" style={{ backgroundColor: HEADER_COLOR }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="hidden sm:flex items-center justify-between h-16 gap-6">
               <Logo />
-              <button
-                onClick={() => setMenuOpen(true)}
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20"
-                aria-label="Menu"
-              >
-                <Menu className="w-5 h-5 text-white" />
-              </button>
-            </div>
-            {children && (
-              <div className="pb-3 flex items-center gap-2">
+              <div className="flex-1 max-w-xl flex items-center gap-2">
                 {onUseCurrentLocation && <LocationButton onUseCurrentLocation={onUseCurrentLocation} />}
                 <div className="flex-1">{children}</div>
               </div>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {menuOpen && (
-        <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setMenuOpen(false)} />
-          <div className="fixed top-0 right-0 bottom-0 w-[280px] bg-white z-50 shadow-2xl overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-100">
-              <span className="font-semibold text-zinc-900">Menu</span>
               <button
-                onClick={() => setMenuOpen(false)}
-                className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center"
+                onClick={() => setMenuOpen(true)}
+                className="flex items-center gap-1.5 h-10 pl-3 pr-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                aria-label="Abrir menu"
               >
-                <X className="w-4 h-4 text-zinc-500" />
+                <Menu className="w-4 h-4 text-white" />
+                <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
               </button>
             </div>
-            <div className="p-3">
-              {user ? (
-                <>
-                  <div className="px-3 py-2.5 mb-2 bg-violet-50 rounded-xl">
-                    <p className="text-sm font-semibold text-zinc-900 truncate">
-                      {user.user_metadata?.full_name || "Usuário"}
-                    </p>
-                    <p className="text-xs text-zinc-500 truncate">{user.email}</p>
-                  </div>
-                  <MenuBtn
-                    icon={<Gift className="w-4 h-4 text-violet-600" />}
-                    label="Minha Área"
-                    onClick={() => {
-                      navigate("/area-aniversariante");
-                      setMenuOpen(false);
-                    }}
-                  />
-                  <MenuBtn
-                    icon={<Settings className="w-4 h-4 text-zinc-400" />}
-                    label="Configurações"
-                    onClick={() => {
-                      navigate("/configuracoes");
-                      setMenuOpen(false);
-                    }}
-                  />
-                  <div className="my-2 mx-3 border-t border-zinc-100" />
-                  <MenuBtn
-                    icon={<LogOut className="w-4 h-4 text-red-500" />}
-                    label="Sair"
-                    onClick={() => {
-                      signOut();
-                      setMenuOpen(false);
-                    }}
-                    danger
-                  />
-                </>
-              ) : (
-                <>
-                  <MenuBtn
-                    icon={<User className="w-4 h-4 text-violet-600" />}
-                    label="Entrar"
-                    sub="Aniversariante"
-                    onClick={() => {
-                      navigate("/login");
-                      setMenuOpen(false);
-                    }}
-                  />
-                  <MenuBtn
-                    icon={<Gift className="w-4 h-4 text-fuchsia-600" />}
-                    label="Cadastrar"
-                    sub="É grátis"
-                    onClick={() => {
-                      navigate("/cadastro");
-                      setMenuOpen(false);
-                    }}
-                  />
-                  <div className="my-2 mx-3 border-t border-zinc-100" />
-                  <MenuBtn
-                    icon={<Building2 className="w-4 h-4 text-blue-600" />}
-                    label="Para Empresas"
-                    sub="Cadastre seu estabelecimento"
-                    onClick={() => {
-                      navigate("/seja-parceiro");
-                      setMenuOpen(false);
-                    }}
-                  />
-                  <div className="my-2 mx-3 border-t border-zinc-100" />
-                  <MenuBtn
-                    icon={<HelpCircle className="w-4 h-4 text-zinc-400" />}
-                    label="Como Funciona"
-                    onClick={() => {
-                      navigate("/como-funciona");
-                      setMenuOpen(false);
-                    }}
-                  />
-                </>
+            <div className="sm:hidden">
+              <div className="flex items-center justify-between h-14">
+                <Logo />
+                <button
+                  onClick={() => setMenuOpen(true)}
+                  className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20"
+                  aria-label="Abrir menu"
+                >
+                  <Menu className="w-5 h-5 text-white" />
+                </button>
+              </div>
+              {children && (
+                <div className="pb-3 flex items-center gap-2">
+                  {onUseCurrentLocation && <LocationButton onUseCurrentLocation={onUseCurrentLocation} />}
+                  <div className="flex-1">{children}</div>
+                </div>
               )}
             </div>
           </div>
-        </>
-      )}
-    </>
-  );
-});
+        </header>
+
+        {menuOpen && (
+          <>
+            <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setMenuOpen(false)} />
+            <div className="fixed top-0 right-0 bottom-0 w-[280px] bg-white z-50 shadow-2xl overflow-y-auto">
+              <div className="flex items-center justify-between p-4 border-b border-zinc-100">
+                <span className="font-semibold text-zinc-900">Menu</span>
+                <button
+                  onClick={() => setMenuOpen(false)}
+                  className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center"
+                >
+                  <X className="w-4 h-4 text-zinc-500" />
+                </button>
+              </div>
+              <div className="p-3">
+                {user ? (
+                  <>
+                    <div className="px-3 py-2.5 mb-2 bg-violet-50 rounded-xl">
+                      <p className="text-sm font-semibold text-zinc-900 truncate">
+                        {user.user_metadata?.full_name || "Usuário"}
+                      </p>
+                      <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+                    </div>
+                    <MenuBtn
+                      icon={<Gift className="w-4 h-4 text-violet-600" />}
+                      label="Minha Área"
+                      onClick={() => {
+                        navigate("/area-aniversariante");
+                        setMenuOpen(false);
+                      }}
+                    />
+                    <MenuBtn
+                      icon={<Settings className="w-4 h-4 text-zinc-400" />}
+                      label="Configurações"
+                      onClick={() => {
+                        navigate("/configuracoes");
+                        setMenuOpen(false);
+                      }}
+                    />
+                    <div className="my-2 mx-3 border-t border-zinc-100" />
+                    <MenuBtn
+                      icon={<LogOut className="w-4 h-4 text-red-500" />}
+                      label="Sair"
+                      onClick={() => {
+                        signOut();
+                        setMenuOpen(false);
+                      }}
+                      danger
+                    />
+                  </>
+                ) : (
+                  <>
+                    <MenuBtn
+                      icon={<User className="w-4 h-4 text-violet-600" />}
+                      label="Entrar"
+                      sub="Aniversariante"
+                      onClick={() => {
+                        navigate("/login");
+                        setMenuOpen(false);
+                      }}
+                    />
+                    <MenuBtn
+                      icon={<Gift className="w-4 h-4 text-fuchsia-600" />}
+                      label="Cadastrar"
+                      sub="É grátis"
+                      onClick={() => {
+                        navigate("/cadastro");
+                        setMenuOpen(false);
+                      }}
+                    />
+                    <div className="my-2 mx-3 border-t border-zinc-100" />
+                    <MenuBtn
+                      icon={<Building2 className="w-4 h-4 text-blue-600" />}
+                      label="Para Empresas"
+                      sub="Cadastre seu estabelecimento"
+                      onClick={() => {
+                        navigate("/seja-parceiro");
+                        setMenuOpen(false);
+                      }}
+                    />
+                    <div className="my-2 mx-3 border-t border-zinc-100" />
+                    <MenuBtn
+                      icon={<HelpCircle className="w-4 h-4 text-zinc-400" />}
+                      label="Como Funciona"
+                      onClick={() => {
+                        navigate("/como-funciona");
+                        setMenuOpen(false);
+                      }}
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </>
+    );
+  },
+);
 
 const MenuBtn = ({ icon, label, sub, onClick, danger }: any) => (
   <button
@@ -521,7 +520,7 @@ const MenuBtn = ({ icon, label, sub, onClick, danger }: any) => (
 );
 
 // =============================================================================
-// SEARCH PILL - INLINE DROPDOWN
+// SEARCH PILL
 // =============================================================================
 
 const SearchPill = memo(({ city, state, isLoading, onSelect, availableCities }: any) => {
@@ -554,17 +553,14 @@ const SearchPill = memo(({ city, state, isLoading, onSelect, availableCities }: 
     setIsOpen(false);
     setQuery("");
   };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
     if (!isOpen) setIsOpen(true);
   };
-
   const handleFocus = () => {
     setIsOpen(true);
     setQuery("");
   };
-
   const displayText = isLoading ? "Carregando..." : `${city}, ${state}`;
 
   return (
@@ -717,7 +713,7 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
 
   return (
     <div className="sticky top-[56px] sm:top-[64px] z-30" style={{ backgroundColor: HEADER_COLOR }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center overflow-x-auto scrollbar-hide py-1" style={{ scrollbarWidth: "none" }}>
           {cats.map((cat) => {
             const Icon = CATEGORY_ICONS[cat.id.toLowerCase()] || Sparkles;
@@ -752,65 +748,113 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
 });
 
 // =============================================================================
-// CARD
+// BENEFIT CHIP - NUNCA TRUNCA
 // =============================================================================
 
-const getBenefitChipText = (beneficio?: string): string => {
-  if (!beneficio || beneficio.length < 3) return "🎂 Benefício";
+const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => {
+  if (!beneficio || beneficio.length < 3) return { emoji: "🎂", text: "Benefício" };
+
+  const b = beneficio.toLowerCase();
+
+  // Descontos
   const descontoMatch = beneficio.match(/(\d+)\s*%/);
-  if (descontoMatch) return `🎁 ${descontoMatch[1]}% OFF`;
-  if (beneficio.toLowerCase().includes("grátis") || beneficio.toLowerCase().includes("gratis")) {
-    if (beneficio.toLowerCase().includes("drink")) return "🥂 Drink grátis";
-    if (beneficio.toLowerCase().includes("sobremesa")) return "🍰 Sobremesa";
-    return "🎁 Grátis";
+  if (descontoMatch) return { emoji: "🎁", text: `${descontoMatch[1]}% OFF` };
+
+  // Grátis específicos
+  if (b.includes("grátis") || b.includes("gratis") || b.includes("free")) {
+    if (b.includes("drink") || b.includes("bebida")) return { emoji: "🥂", text: "Drink grátis" };
+    if (b.includes("sobremesa") || b.includes("doce")) return { emoji: "🍰", text: "Sobremesa" };
+    if (b.includes("entrada") || b.includes("ingresso")) return { emoji: "🎟️", text: "Entrada" };
+    if (b.includes("corte") || b.includes("cabelo")) return { emoji: "✂️", text: "Corte grátis" };
+    if (b.includes("café") || b.includes("coffee")) return { emoji: "☕", text: "Café grátis" };
+    if (b.includes("pizza")) return { emoji: "🍕", text: "Pizza grátis" };
+    if (b.includes("hambur") || b.includes("burger")) return { emoji: "🍔", text: "Burger grátis" };
+    if (b.includes("sorvete") || b.includes("gelato")) return { emoji: "🍦", text: "Sorvete" };
+    return { emoji: "🎁", text: "Grátis" };
   }
-  if (beneficio.length <= 12) return `🎁 ${beneficio}`;
-  return "🎂 Benefício";
+
+  // Brindes/presentes
+  if (b.includes("brinde") || b.includes("presente") || b.includes("mimo")) return { emoji: "🎁", text: "Brinde" };
+
+  // Se for curto o suficiente, usa direto
+  if (beneficio.length <= 10) return { emoji: "🎁", text: beneficio };
+
+  // Fallback
+  return { emoji: "🎂", text: "Benefício" };
 };
+
+// =============================================================================
+// SKELETON PREMIUM (SHIMMER)
+// =============================================================================
+
+const CardSkeleton = memo(() => (
+  <div className="animate-pulse">
+    <div className="aspect-[4/5] rounded-2xl bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:400%_100%] animate-[shimmer_2s_ease-in-out_infinite] mb-2.5" />
+    <div className="space-y-1.5 px-0.5">
+      <div className="h-4 bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:400%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded-md w-4/5" />
+      <div className="h-3.5 bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:400%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded-md w-3/5" />
+    </div>
+  </div>
+));
+
+// =============================================================================
+// CARD - PREMIUM
+// =============================================================================
 
 const Card = memo(({ data, onClick }: any) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
+
   const nome = data.nome_fantasia || data.name || "Estabelecimento";
   const cat = Array.isArray(data.categoria) ? data.categoria[0] : data.categoria || data.category;
   const img = data.imagem_url || data.logo_url || data.photo_url;
-  const chipText = getBenefitChipText(data.descricao_beneficio || data.benefit_description);
+  const chip = getBenefitChip(data.descricao_beneficio || data.benefit_description);
 
   return (
     <article onClick={onClick} className="cursor-pointer group">
-      <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-zinc-100 mb-2">
+      <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-zinc-100 mb-2.5">
+        {/* Imagem */}
         {img && !error && (
           <img
             src={img}
             alt={nome}
             className={cn(
-              "w-full h-full object-cover group-hover:scale-105 transition-transform duration-300",
-              loaded ? "opacity-100" : "opacity-0",
+              "w-full h-full object-cover transition-all duration-300",
+              loaded ? "opacity-100 group-hover:scale-105" : "opacity-0",
             )}
             loading="lazy"
             onLoad={() => setLoaded(true)}
             onError={() => setError(true)}
           />
         )}
+
+        {/* Skeleton enquanto carrega */}
         {(!img || error || !loaded) && (
-          <div className="absolute inset-0 bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:200%_100%] animate-[shimmer_1.5s_infinite]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:400%_100%] animate-[shimmer_2s_ease-in-out_infinite]" />
         )}
+
+        {/* Benefit Chip - NUNCA trunca */}
         <div className="absolute top-2.5 left-2.5">
-          <span className="inline-flex items-center px-2 py-1 bg-white/95 backdrop-blur-sm text-[11px] font-medium text-zinc-800 rounded-full shadow-sm border border-zinc-100">
-            {chipText}
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/95 backdrop-blur-sm text-[11px] font-semibold text-zinc-800 rounded-full shadow-sm border border-zinc-200/80">
+            <span>{chip.emoji}</span>
+            <span>{chip.text}</span>
           </span>
         </div>
+
+        {/* Favorito - Premium */}
         <button
           onClick={(e) => e.stopPropagation()}
-          className="absolute top-2.5 right-2.5 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm border border-zinc-200 shadow-sm flex items-center justify-center hover:scale-110 transition-transform"
-          aria-label="Favoritar"
+          className="absolute top-2.5 right-2.5 w-9 h-9 min-w-[44px] min-h-[44px] rounded-full bg-white/95 backdrop-blur-sm border border-zinc-200/80 shadow-sm flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
+          aria-label={`Favoritar ${nome}`}
         >
           <Heart className="w-4 h-4 text-zinc-600 hover:text-red-500 hover:fill-red-500 transition-colors" />
         </button>
       </div>
+
+      {/* Info */}
       <div className="px-0.5">
         <h3 className="font-semibold text-zinc-900 text-sm leading-tight line-clamp-1">{nome}</h3>
-        <p className="text-zinc-500 text-sm line-clamp-1">
+        <p className="text-zinc-500 text-sm line-clamp-1 mt-0.5">
           {cat && <span className="capitalize">{cat}</span>}
           {cat && data.bairro && " · "}
           {data.bairro}
@@ -821,7 +865,7 @@ const Card = memo(({ data, onClick }: any) => {
 });
 
 // =============================================================================
-// CAROUSEL & GRID
+// CAROUSEL - PRIMEIRO E ÚLTIMO 100% VISÍVEIS
 // =============================================================================
 
 const Carousel = memo(({ title, subtitle, items, onSeeAll }: any) => {
@@ -842,34 +886,39 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll }: any) => {
     updateScrollState();
     const el = scrollRef.current;
     if (el) {
-      el.addEventListener("scroll", updateScrollState);
-      return () => el.removeEventListener("scroll", updateScrollState);
+      el.addEventListener("scroll", updateScrollState, { passive: true });
+      window.addEventListener("resize", updateScrollState);
+      return () => {
+        el.removeEventListener("scroll", updateScrollState);
+        window.removeEventListener("resize", updateScrollState);
+      };
     }
   }, [updateScrollState, items]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
-      const scrollAmount = 400;
-      scrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
+      const cardWidth = window.innerWidth < 640 ? 160 : 192;
+      const gap = 16;
+      const scrollAmount = (cardWidth + gap) * 3;
+      scrollRef.current.scrollBy({ left: direction === "left" ? -scrollAmount : scrollAmount, behavior: "smooth" });
     }
   };
 
   if (!items?.length) return null;
 
   return (
-    <section className="mb-5">
-      <div className="flex items-center justify-between mb-2 px-4 sm:px-0">
-        <button onClick={onSeeAll} className="flex items-center gap-1 group">
+    <section className="mb-6">
+      {/* Header com título e setas */}
+      <div className="flex items-center justify-between mb-3 px-4 sm:px-6 lg:px-8">
+        <button onClick={onSeeAll} className="flex items-center gap-1 group text-left">
           <div>
             <h2 className="text-base font-semibold text-zinc-900 group-hover:underline">{title}</h2>
-            {subtitle && <p className="text-sm text-zinc-500">{subtitle}</p>}
+            {subtitle && <p className="text-sm text-zinc-600">{subtitle}</p>}
           </div>
-          <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:text-zinc-600 mt-0.5" />
+          <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:text-zinc-600 mt-0.5 flex-shrink-0" />
         </button>
-        {/* Setas de navegação - apenas desktop */}
+
+        {/* Setas - Desktop */}
         <div className="hidden sm:flex items-center gap-2">
           <button
             onClick={() => scroll("left")}
@@ -889,13 +938,21 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll }: any) => {
           </button>
         </div>
       </div>
+
+      {/* Track do Carrossel - PADDING SIMÉTRICO */}
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-4 sm:px-0 scroll-pl-4 scroll-pr-4"
-        style={{ scrollbarWidth: "none" }}
+        className={cn(
+          "flex gap-4 overflow-x-auto snap-x snap-mandatory",
+          "px-4 sm:px-6 lg:px-8",
+          "scroll-pl-4 sm:scroll-pl-6 lg:scroll-pl-8",
+          "scroll-pr-4 sm:scroll-pr-6 lg:scroll-pr-8",
+          "scrollbar-hide",
+        )}
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {items.map((est: any) => (
-          <div key={est.id} className="snap-start flex-shrink-0 w-[44%] sm:w-[180px]">
+          <div key={est.id} className="snap-start flex-shrink-0 w-[160px] sm:w-[180px] lg:w-[192px]">
             <Card
               data={est}
               onClick={() =>
@@ -911,37 +968,44 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll }: any) => {
             />
           </div>
         ))}
+        {/* Spacer final para garantir último card 100% visível */}
+        <div className="flex-shrink-0 w-4 sm:w-6 lg:w-8" aria-hidden="true" />
       </div>
     </section>
   );
 });
 
+// =============================================================================
+// GRID
+// =============================================================================
+
 const Grid = memo(({ items, isLoading }: any) => {
   const navigate = useNavigate();
-  if (isLoading)
+
+  if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i}>
-            <div className="aspect-[4/5] rounded-2xl bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:200%_100%] animate-[shimmer_1.5s_infinite] mb-2" />
-            <div className="h-4 bg-zinc-200 rounded w-3/4 mb-1" />
-            <div className="h-3 bg-zinc-200 rounded w-1/2" />
-          </div>
+          <CardSkeleton key={i} />
         ))}
       </div>
     );
-  if (!items?.length)
+  }
+
+  if (!items?.length) {
     return (
-      <div className="text-center py-12">
-        <div className="w-14 h-14 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-3">
-          <Gift className="w-7 h-7 text-zinc-400" />
+      <div className="text-center py-16">
+        <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
+          <Gift className="w-8 h-8 text-zinc-400" />
         </div>
-        <p className="text-zinc-900 font-medium text-sm">Nenhum resultado</p>
-        <p className="text-zinc-500 text-sm">Tente outra categoria</p>
+        <p className="text-zinc-900 font-medium">Nenhum resultado</p>
+        <p className="text-zinc-500 text-sm mt-1">Tente outra categoria</p>
       </div>
     );
+  }
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
       {items.map((est: any) => (
         <Card
           key={est.id}
@@ -998,8 +1062,10 @@ const Index = () => {
         const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
         return cats.some((c) => c?.toLowerCase() === catId.toLowerCase());
       });
+
     const rotatedCategories = [...ALL_CATEGORIES];
     for (let i = 0; i < rotation; i++) rotatedCategories.push(rotatedCategories.shift()!);
+
     const result: any[] = [];
 
     // 1º: Destaques
@@ -1014,7 +1080,7 @@ const Index = () => {
         items: hlItems,
       });
 
-    // 2-9: Categorias com nome da cidade
+    // 2-9: Categorias
     let count = 1;
     for (let i = 1; i < rotatedCategories.length && count < 9; i++) {
       const cat = rotatedCategories[i];
@@ -1078,27 +1144,24 @@ const Index = () => {
             const addr = data.address;
             const userCity = addr.city || addr.town || addr.municipality || "";
             const userState = addr["ISO3166-2-lvl4"]?.split("-")[1] || "";
-            
-            // Verificar se a cidade existe na lista
             const exact = availableCities.find(
-              (c) => c.cidade.toLowerCase() === userCity.toLowerCase() && c.estado.toLowerCase() === userState.toLowerCase(),
+              (c) =>
+                c.cidade.toLowerCase() === userCity.toLowerCase() && c.estado.toLowerCase() === userState.toLowerCase(),
             );
-            
             if (exact) {
               updateCity(exact.cidade, exact.estado);
               toast.success(`Localização atualizada para ${exact.cidade}`);
             } else {
-              // Tentar capital do estado ou cidade mais próxima
               const capital = STATE_CAPITALS[userState.toUpperCase()];
               const capitalCity = availableCities.find(
-                (c) => c.cidade.toLowerCase() === capital?.toLowerCase() && c.estado.toLowerCase() === userState.toLowerCase(),
+                (c) =>
+                  c.cidade.toLowerCase() === capital?.toLowerCase() &&
+                  c.estado.toLowerCase() === userState.toLowerCase(),
               );
               if (capitalCity) {
                 updateCity(capitalCity.cidade, capitalCity.estado);
                 toast.success(`Localização: ${capitalCity.cidade} (capital)`);
-              } else {
-                toast.info(`Não há parceiros em ${userCity || "sua região"} ainda`);
-              }
+              } else toast.info(`Não há parceiros em ${userCity || "sua região"} ainda`);
             }
             resolve();
           } catch {
@@ -1120,7 +1183,14 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
+      {/* Keyframes do shimmer */}
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+      `}</style>
 
       <Header onUseCurrentLocation={handleUseCurrentLocation}>
         <SearchPill
@@ -1135,12 +1205,13 @@ const Index = () => {
       <Categories selected={categoria} onSelect={handleCategoria} />
 
       <main className="flex-1 pb-20 sm:pb-6">
-        <div className="max-w-7xl mx-auto sm:px-6 py-3 sm:py-4">
+        <div className="max-w-7xl mx-auto py-4 sm:py-5">
           {(isLoading || locationLoading) && (
-            <div className="px-4 sm:px-0">
+            <div className="px-4 sm:px-6 lg:px-8">
               <Grid items={[]} isLoading />
             </div>
           )}
+
           {!isLoading &&
             !locationLoading &&
             showCarousels &&
@@ -1153,19 +1224,21 @@ const Index = () => {
                 onSeeAll={() => handleSeeAll(c.categoryId)}
               />
             ))}
+
           {!isLoading && !locationLoading && showGrid && (
-            <div className="px-4 sm:px-0">
-              <div className="mb-3">
-                <h2 className="text-base font-semibold text-zinc-900 capitalize">
+            <div className="px-4 sm:px-6 lg:px-8">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-zinc-900 capitalize">
                   {categoria} em {city}
                 </h2>
-                <p className="text-sm text-zinc-500">{filtered.length} lugares</p>
+                <p className="text-sm text-zinc-600">{filtered.length} lugares encontrados</p>
               </div>
               <Grid items={filtered} isLoading={false} />
             </div>
           )}
+
           {!isLoading && !locationLoading && !showCarousels && !showGrid && (
-            <div className="px-4 sm:px-0">
+            <div className="px-4 sm:px-6 lg:px-8">
               <Grid items={[]} isLoading={false} />
             </div>
           )}

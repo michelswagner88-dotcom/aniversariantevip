@@ -79,7 +79,7 @@ const CATEGORY_LABELS_SHORT: Record<string, string> = {
   cafeteria: "Cafés",
   entretenimento: "Lazer",
   hospedagem: "Hotéis",
-  sorveteria: "Sorvetes",
+  sorveteria: "Sorveterias",
   salao: "Beleza",
   salão: "Beleza",
 };

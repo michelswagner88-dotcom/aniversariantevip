@@ -298,7 +298,14 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
+      {/* Sentinel para scroll detection - PRIMEIRO ELEMENTO */}
+      <div 
+        id="scroll-sentinel" 
+        className="absolute top-0 left-0 w-full h-1 pointer-events-none" 
+        aria-hidden="true" 
+      />
+      
       <Header />
 
       <main className="flex-1">

@@ -1,6 +1,6 @@
 // =============================================================================
 // INDEX.TSX - ANIVERSARIANTE VIP
-// V4 - 9 Carrosséis com Rotação de Categorias (Estilo Airbnb)
+// V6 - Busca Inline no Header, Sem "no Brasil"
 // =============================================================================
 
 import { useMemo, useState, useEffect, useCallback, useRef, memo } from "react";
@@ -9,7 +9,6 @@ import {
   MapPin,
   Search,
   X,
-  Bell,
   Menu,
   User,
   Gift,
@@ -18,7 +17,6 @@ import {
   Settings,
   HelpCircle,
   Heart,
-  SlidersHorizontal,
   ChevronRight,
   Sparkles,
   Dumbbell,
@@ -34,20 +32,12 @@ import {
   IceCream,
 } from "lucide-react";
 import { useEstabelecimentos } from "@/hooks/useEstabelecimentos";
-import { useUserLocation } from "@/hooks/useUserLocation";
-import { calcularDistancia } from "@/lib/geoUtils";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
-import { getSubcategoriesForCategory } from "@/constants/categorySubcategories";
 import { getEstabelecimentoUrl } from "@/lib/slugUtils";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-// UI Components
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Footer } from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
 
@@ -55,8 +45,39 @@ import BottomNav from "@/components/BottomNav";
 // CONSTANTS
 // =============================================================================
 
+const HEADER_COLOR = "#240046";
 const DEFAULT_CITY = "São Paulo";
 const DEFAULT_STATE = "SP";
+
+const STATE_CAPITALS: Record<string, string> = {
+  AC: "Rio Branco",
+  AL: "Maceió",
+  AP: "Macapá",
+  AM: "Manaus",
+  BA: "Salvador",
+  CE: "Fortaleza",
+  DF: "Brasília",
+  ES: "Vitória",
+  GO: "Goiânia",
+  MA: "São Luís",
+  MT: "Cuiabá",
+  MS: "Campo Grande",
+  MG: "Belo Horizonte",
+  PA: "Belém",
+  PB: "João Pessoa",
+  PR: "Curitiba",
+  PE: "Recife",
+  PI: "Teresina",
+  RJ: "Rio de Janeiro",
+  RN: "Natal",
+  RS: "Porto Alegre",
+  RO: "Porto Velho",
+  RR: "Boa Vista",
+  SC: "Florianópolis",
+  SP: "São Paulo",
+  SE: "Aracaju",
+  TO: "Palmas",
+};
 
 const CATEGORY_ICONS: Record<string, any> = {
   all: Sparkles,
@@ -79,12 +100,11 @@ const CATEGORY_LABELS_SHORT: Record<string, string> = {
   cafeteria: "Cafés",
   entretenimento: "Lazer",
   hospedagem: "Hotéis",
-  sorveteria: "Sorvetes",
+  sorveteria: "Sorveterias",
   salao: "Beleza",
   salão: "Beleza",
 };
 
-// Todas as categorias para os carrosséis
 const ALL_CATEGORIES = [
   { id: "restaurante", label: "Restaurantes", subtitle: "Jante com vantagens" },
   { id: "bar", label: "Bares", subtitle: "Celebre seu dia" },
@@ -105,43 +125,76 @@ const ALL_CATEGORIES = [
 
 const useAuth = () => {
   const [user, setUser] = useState<any>(null);
-
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
+    supabase.auth.getSession().then(({ data: { session } }) => setUser(session?.user ?? null));
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
-    });
+    } = supabase.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
     return () => subscription.unsubscribe();
   }, []);
-
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     toast.success("Logout realizado");
   }, []);
-
   return { user, signOut };
 };
 
-const useLocation = () => {
+const useAvailableCities = (estabelecimentos: any[]) => {
+  return useMemo(() => {
+    if (!estabelecimentos?.length) return [];
+    const cityMap = new Map<string, { cidade: string; estado: string }>();
+    estabelecimentos.forEach((est) => {
+      if (est.cidade && est.estado) {
+        const key = `${est.cidade.toLowerCase()}-${est.estado.toLowerCase()}`;
+        if (!cityMap.has(key)) cityMap.set(key, { cidade: est.cidade, estado: est.estado.toUpperCase() });
+      }
+    });
+    return Array.from(cityMap.values()).sort((a, b) => a.cidade.localeCompare(b.cidade));
+  }, [estabelecimentos]);
+};
+
+const useSmartLocation = (availableCities: { cidade: string; estado: string }[]) => {
   const [city, setCity] = useState(DEFAULT_CITY);
   const [state, setState] = useState(DEFAULT_STATE);
   const [loading, setLoading] = useState(true);
 
+  const findBestCity = useCallback(
+    (userCity: string, userState: string) => {
+      const exact = availableCities.find(
+        (c) => c.cidade.toLowerCase() === userCity.toLowerCase() && c.estado.toLowerCase() === userState.toLowerCase(),
+      );
+      if (exact) return exact;
+      const capital = STATE_CAPITALS[userState.toUpperCase()];
+      if (capital) {
+        const capitalCity = availableCities.find(
+          (c) => c.cidade.toLowerCase() === capital.toLowerCase() && c.estado.toLowerCase() === userState.toLowerCase(),
+        );
+        if (capitalCity) return capitalCity;
+      }
+      const sameState = availableCities.find((c) => c.estado.toLowerCase() === userState.toLowerCase());
+      if (sameState) return sameState;
+      const sp = availableCities.find((c) => c.cidade.toLowerCase() === "são paulo" && c.estado.toLowerCase() === "sp");
+      if (sp) return sp;
+      return availableCities[0] || { cidade: DEFAULT_CITY, estado: DEFAULT_STATE };
+    },
+    [availableCities],
+  );
+
   useEffect(() => {
+    if (!availableCities.length) return;
     const saved = localStorage.getItem("aniversariantevip_city");
     const savedState = localStorage.getItem("aniversariantevip_state");
-
     if (saved && savedState) {
-      setCity(saved);
-      setState(savedState);
-      setLoading(false);
-      return;
+      const exists = availableCities.find(
+        (c) => c.cidade.toLowerCase() === saved.toLowerCase() && c.estado.toLowerCase() === savedState.toLowerCase(),
+      );
+      if (exists) {
+        setCity(exists.cidade);
+        setState(exists.estado);
+        setLoading(false);
+        return;
+      }
     }
-
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
@@ -152,22 +205,35 @@ const useLocation = () => {
             );
             const data = await res.json();
             const addr = data.address;
-            const c = addr.city || addr.town || addr.municipality || DEFAULT_CITY;
-            const s = addr["ISO3166-2-lvl4"]?.split("-")[1] || DEFAULT_STATE;
-            setCity(c);
-            setState(s);
-            localStorage.setItem("aniversariantevip_city", c);
-            localStorage.setItem("aniversariantevip_state", s);
-          } catch {}
+            const userCity = addr.city || addr.town || addr.municipality || "";
+            const userState = addr["ISO3166-2-lvl4"]?.split("-")[1] || "";
+            const best = findBestCity(userCity, userState);
+            setCity(best.cidade);
+            setState(best.estado);
+            localStorage.setItem("aniversariantevip_city", best.cidade);
+            localStorage.setItem("aniversariantevip_state", best.estado);
+          } catch {
+            const best = findBestCity("", "SP");
+            setCity(best.cidade);
+            setState(best.estado);
+          }
           setLoading(false);
         },
-        () => setLoading(false),
+        () => {
+          const best = findBestCity("São Paulo", "SP");
+          setCity(best.cidade);
+          setState(best.estado);
+          setLoading(false);
+        },
         { timeout: 8000 },
       );
     } else {
+      const best = findBestCity("São Paulo", "SP");
+      setCity(best.cidade);
+      setState(best.estado);
       setLoading(false);
     }
-  }, []);
+  }, [availableCities, findBestCity]);
 
   const update = useCallback((c: string, s: string) => {
     setCity(c);
@@ -179,30 +245,41 @@ const useLocation = () => {
   return { city, state, loading, update };
 };
 
-// Hook para rotação de categorias
 const useRotatingCategories = () => {
   const [rotation, setRotation] = useState(0);
-
   useEffect(() => {
-    // Rotação baseada no minuto atual (muda a cada 5 minutos)
     const now = new Date();
-    const minuteRotation = Math.floor(now.getMinutes() / 5);
-    setRotation(minuteRotation);
-
-    // Atualizar a cada 5 minutos
-    const interval = setInterval(() => {
-      const newNow = new Date();
-      setRotation(Math.floor(newNow.getMinutes() / 5));
-    }, 60000); // Checa a cada minuto
-
+    setRotation(Math.floor(now.getMinutes() / 5));
+    const interval = setInterval(() => setRotation(Math.floor(new Date().getMinutes() / 5)), 60000);
     return () => clearInterval(interval);
   }, []);
-
   return rotation;
 };
 
 // =============================================================================
-// HEADER - TOPO ROXO
+// LOGO
+// =============================================================================
+
+const Logo = memo(() => (
+  <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
+    <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+      <Gift className="w-5 h-5 text-white" />
+    </div>
+    <span
+      className="text-base font-bold tracking-tight hidden sm:block"
+      style={{
+        background: "linear-gradient(90deg, #9D4EDD 0%, #00D4FF 100%)",
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+      }}
+    >
+      ANIVERSARIANTE VIP
+    </span>
+  </Link>
+));
+
+// =============================================================================
+// HEADER
 // =============================================================================
 
 const Header = memo(({ children }: { children?: React.ReactNode }) => {
@@ -212,50 +289,31 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-violet-600">
+      <header className="sticky top-0 z-40" style={{ backgroundColor: HEADER_COLOR }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          {/* Desktop */}
-          <div className="hidden sm:flex items-center justify-between h-14 gap-4">
-            <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
-                <Gift className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="text-sm font-bold text-white">
-                Aniversariante<span className="text-white/80">VIP</span>
-              </span>
-            </Link>
-
+          <div className="hidden sm:flex items-center justify-between h-16 gap-6">
+            <Logo />
             <div className="flex-1 max-w-xl">{children}</div>
-
             <button
               onClick={() => setMenuOpen(true)}
-              className="flex items-center gap-1.5 h-9 pl-2.5 pr-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-              aria-label="Abrir menu"
+              className="flex items-center gap-1.5 h-10 pl-3 pr-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              aria-label="Menu"
             >
-              <Menu className="w-3.5 h-3.5 text-white" />
-              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-                <User className="w-3.5 h-3.5 text-white" />
+              <Menu className="w-4 h-4 text-white" />
+              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
               </div>
             </button>
           </div>
-
-          {/* Mobile */}
           <div className="sm:hidden">
-            <div className="flex items-center justify-between h-12">
-              <Link to="/" className="flex items-center gap-1.5">
-                <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
-                  <Gift className="w-3.5 h-3.5 text-white" />
-                </div>
-                <span className="text-sm font-bold text-white">
-                  Aniversariante<span className="text-white/80">VIP</span>
-                </span>
-              </Link>
+            <div className="flex items-center justify-between h-14">
+              <Logo />
               <button
                 onClick={() => setMenuOpen(true)}
-                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20"
-                aria-label="Abrir menu"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20"
+                aria-label="Menu"
               >
-                <Menu className="w-4 h-4 text-white" />
+                <Menu className="w-5 h-5 text-white" />
               </button>
             </div>
             {children && <div className="pb-3">{children}</div>}
@@ -263,7 +321,6 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
         </div>
       </header>
 
-      {/* Menu Lateral */}
       {menuOpen && (
         <>
           <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setMenuOpen(false)} />
@@ -273,7 +330,6 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
               <button
                 onClick={() => setMenuOpen(false)}
                 className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center"
-                aria-label="Fechar menu"
               >
                 <X className="w-4 h-4 text-zinc-500" />
               </button>
@@ -380,187 +436,192 @@ const MenuBtn = ({ icon, label, sub, onClick, danger }: any) => (
 );
 
 // =============================================================================
-// SEARCH PILL
+// SEARCH PILL - INLINE DROPDOWN
 // =============================================================================
 
-const SearchPill = memo(({ city, state, isLoading, onCityClick, onFilterClick, filterCount }: any) => (
-  <>
-    {/* Desktop */}
-    <div className="hidden sm:flex items-center gap-2">
-      <button
-        onClick={onCityClick}
-        className="flex items-center gap-2 h-11 pl-4 pr-3 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow flex-1"
-        aria-label="Selecionar cidade"
-      >
-        <MapPin className="w-4 h-4 text-violet-600 flex-shrink-0" />
-        <div className="text-left flex-1 min-w-0">
-          <p className="text-[10px] text-zinc-500 uppercase font-medium leading-none">Onde</p>
-          <p className="text-sm font-medium text-zinc-900 truncate">{isLoading ? "..." : `${city}, ${state}`}</p>
-        </div>
-        <div className="w-px h-5 bg-zinc-200 mx-1" />
-        <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0">
-          <Search className="w-4 h-4 text-white" />
-        </div>
-      </button>
-
-      <button
-        onClick={onFilterClick}
-        className="w-11 h-11 rounded-full bg-white shadow-sm hover:shadow-md flex items-center justify-center relative"
-        aria-label="Abrir filtros"
-      >
-        <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
-        {filterCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
-            {filterCount}
-          </span>
-        )}
-      </button>
-    </div>
-
-    {/* Mobile */}
-    <div className="sm:hidden flex items-center gap-2">
-      <button
-        onClick={onCityClick}
-        className="flex-1 flex items-center gap-2.5 h-11 px-3.5 bg-white rounded-full shadow-sm"
-        aria-label="Selecionar cidade"
-      >
-        <Search className="w-4 h-4 text-zinc-400 flex-shrink-0" />
-        <div className="text-left flex-1 min-w-0">
-          <p className="text-sm font-medium text-zinc-900 truncate">Onde você quer aproveitar os benefícios?</p>
-          <p className="text-xs text-zinc-500 truncate">{isLoading ? "Detectando..." : `${city}, ${state}`}</p>
-        </div>
-      </button>
-      <button
-        onClick={onFilterClick}
-        className="w-11 h-11 rounded-full bg-white shadow-sm flex items-center justify-center relative flex-shrink-0"
-        aria-label="Abrir filtros"
-      >
-        <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
-        {filterCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
-            {filterCount}
-          </span>
-        )}
-      </button>
-    </div>
-  </>
-));
-
-// =============================================================================
-// CITY MODAL
-// =============================================================================
-
-const CityModal = memo(({ isOpen, onClose, city, state, onSelect }: any) => {
+const SearchPill = memo(({ city, state, isLoading, onSelect, availableCities }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
-  const [searching, setSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen) setTimeout(() => inputRef.current?.focus(), 100);
-    else {
-      setQuery("");
-      setResults([]);
-    }
-  }, [isOpen]);
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  useEffect(() => {
-    if (query.length < 2) {
-      setResults([]);
-      return;
-    }
-    const t = setTimeout(async () => {
-      setSearching(true);
-      try {
-        const res = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome`);
-        const data = await res.json();
-        setResults(
-          data
-            .filter((m: any) => m.nome.toLowerCase().includes(query.toLowerCase()))
-            .slice(0, 8)
-            .map((m: any) => ({ cidade: m.nome, estado: m.microrregiao.mesorregiao.UF.sigla })),
-        );
-      } catch {}
-      setSearching(false);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [query]);
+  const filteredCities = useMemo(() => {
+    if (!query.trim()) return availableCities.slice(0, 8);
+    const q = query.toLowerCase();
+    return availableCities
+      .filter((c: any) => c.cidade.toLowerCase().includes(q) || c.estado.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [query, availableCities]);
 
-  if (!isOpen) return null;
+  const handleSelect = (c: { cidade: string; estado: string }) => {
+    onSelect(c.cidade, c.estado);
+    setIsOpen(false);
+    setQuery("");
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+    if (!isOpen) setIsOpen(true);
+  };
+
+  const handleFocus = () => {
+    setIsOpen(true);
+    setQuery("");
+  };
+
+  const displayText = isLoading ? "Carregando..." : `${city}, ${state}`;
 
   return (
-    <div className="fixed inset-0 z-50 bg-white">
-      <div className="flex items-center gap-3 px-4 h-12 border-b border-zinc-100">
-        <button
-          onClick={onClose}
-          className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center"
-          aria-label="Fechar"
-        >
-          <X className="w-4 h-4 text-zinc-500" />
-        </button>
-        <span className="font-semibold text-zinc-900 text-sm">Alterar cidade</span>
-      </div>
-      <div className="p-3">
-        <div className="flex items-center gap-2.5 bg-zinc-100 rounded-xl px-3.5 h-11">
-          <Search className="w-4 h-4 text-zinc-400" />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar cidade..."
-            className="flex-1 bg-transparent outline-none text-sm"
-          />
-          {searching && (
-            <div className="w-4 h-4 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
+    <div ref={containerRef} className="relative w-full">
+      {/* Desktop */}
+      <div className="hidden sm:block">
+        <div
+          className={cn(
+            "flex items-center h-11 bg-white rounded-full shadow-sm transition-all",
+            isOpen ? "shadow-md ring-2 ring-violet-300" : "hover:shadow-md",
           )}
-        </div>
-      </div>
-      {query.length < 2 && (
-        <div className="px-3">
-          <p className="text-[10px] text-zinc-500 uppercase mb-1.5 px-1 font-medium">Cidade atual</p>
+        >
+          <div className="flex items-center gap-2 pl-4 pr-2 flex-1">
+            <MapPin className="w-4 h-4 text-violet-600 flex-shrink-0" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={handleInputChange}
+              onFocus={handleFocus}
+              placeholder={displayText}
+              className="w-full text-sm font-medium text-zinc-900 bg-transparent outline-none placeholder:text-zinc-700"
+            />
+          </div>
           <button
-            onClick={onClose}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-violet-50 text-left"
+            className="w-8 h-8 m-1.5 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0"
+            aria-label="Buscar"
           >
-            <div className="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center">
-              <MapPin className="w-4 h-4 text-violet-600" />
-            </div>
-            <div>
-              <p className="font-medium text-zinc-900 text-sm">{city}</p>
-              <p className="text-xs text-zinc-500">{state}</p>
-            </div>
+            <Search className="w-4 h-4 text-white" />
           </button>
         </div>
-      )}
-      {results.length > 0 && (
-        <div className="px-3 mt-2">
-          <p className="text-[10px] text-zinc-500 uppercase mb-1.5 px-1 font-medium">Resultados</p>
-          {results.map((r, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                onSelect(r.cidade, r.estado);
-                onClose();
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-50 text-left"
-            >
-              <div className="w-9 h-9 rounded-xl bg-zinc-100 flex items-center justify-center">
-                <MapPin className="w-4 h-4 text-zinc-500" />
-              </div>
-              <div>
-                <p className="font-medium text-zinc-900 text-sm">{r.cidade}</p>
-                <p className="text-xs text-zinc-500">{r.estado}</p>
-              </div>
-            </button>
-          ))}
+        {isOpen && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-zinc-200 overflow-hidden z-50">
+            <div className="p-2 max-h-[300px] overflow-y-auto">
+              {filteredCities.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-zinc-500 text-sm">Nenhuma cidade encontrada</p>
+                </div>
+              ) : (
+                filteredCities.map((c: any, i: number) => (
+                  <button
+                    key={i}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSelect(c)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors",
+                      c.cidade === city && c.estado === state ? "bg-violet-50" : "hover:bg-zinc-50",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "w-9 h-9 rounded-lg flex items-center justify-center",
+                        c.cidade === city && c.estado === state ? "bg-violet-100" : "bg-zinc-100",
+                      )}
+                    >
+                      <MapPin
+                        className={cn(
+                          "w-4 h-4",
+                          c.cidade === city && c.estado === state ? "text-violet-600" : "text-zinc-500",
+                        )}
+                      />
+                    </div>
+                    <div>
+                      <p className="font-medium text-zinc-900 text-sm">{c.cidade}</p>
+                      <p className="text-xs text-zinc-500">{c.estado}</p>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile */}
+      <div className="sm:hidden">
+        <div
+          className={cn(
+            "flex items-center h-12 bg-white rounded-full shadow-sm transition-all",
+            isOpen ? "shadow-md ring-2 ring-violet-300" : "",
+          )}
+        >
+          <div className="flex items-center gap-2.5 px-4 flex-1">
+            <Search className="w-5 h-5 text-zinc-400 flex-shrink-0" />
+            <input
+              type="text"
+              value={query}
+              onChange={handleInputChange}
+              onFocus={handleFocus}
+              placeholder={isOpen ? "Buscar cidade..." : displayText}
+              className="w-full text-sm font-medium text-zinc-900 bg-transparent outline-none placeholder:text-zinc-600"
+            />
+          </div>
         </div>
-      )}
+        {isOpen && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-zinc-200 overflow-hidden z-50">
+            <div className="p-2 max-h-[250px] overflow-y-auto">
+              {filteredCities.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-zinc-500 text-sm">Nenhuma cidade encontrada</p>
+                </div>
+              ) : (
+                filteredCities.map((c: any, i: number) => (
+                  <button
+                    key={i}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSelect(c)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors",
+                      c.cidade === city && c.estado === state ? "bg-violet-50" : "hover:bg-zinc-50",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "w-9 h-9 rounded-lg flex items-center justify-center",
+                        c.cidade === city && c.estado === state ? "bg-violet-100" : "bg-zinc-100",
+                      )}
+                    >
+                      <MapPin
+                        className={cn(
+                          "w-4 h-4",
+                          c.cidade === city && c.estado === state ? "text-violet-600" : "text-zinc-500",
+                        )}
+                      />
+                    </div>
+                    <div>
+                      <p className="font-medium text-zinc-900 text-sm">{c.cidade}</p>
+                      <p className="text-xs text-zinc-500">{c.estado}</p>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 });
 
 // =============================================================================
-// CATEGORIES - Fundo roxo
+// CATEGORIES
 // =============================================================================
 
 const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) => {
@@ -570,26 +631,32 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
   ];
 
   return (
-    <div className="sticky top-[48px] sm:top-[56px] z-30 bg-violet-600">
+    <div className="sticky top-[56px] sm:top-[64px] z-30" style={{ backgroundColor: HEADER_COLOR }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
+        <div className="flex items-center overflow-x-auto scrollbar-hide py-1" style={{ scrollbarWidth: "none" }}>
           {cats.map((cat) => {
             const Icon = CATEGORY_ICONS[cat.id.toLowerCase()] || Sparkles;
             const isActive = selected === cat.id;
             const shortLabel = CATEGORY_LABELS_SHORT[cat.id.toLowerCase()] || cat.label;
-
             return (
               <button
                 key={cat.id}
                 onClick={() => onSelect(cat.id)}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 min-w-[60px] sm:min-w-[68px] px-2 py-2 relative transition-colors",
-                  isActive ? "text-white" : "text-white/70 hover:text-white/90",
+                  "flex flex-col items-center gap-1 min-w-[64px] sm:min-w-[72px] px-3 py-2 relative transition-colors",
+                  isActive ? "text-white" : "text-white/60 hover:text-white/80",
                 )}
               >
-                <Icon className="w-5 h-5" />
-                <span className="text-[11px] font-medium whitespace-nowrap">{shortLabel}</span>
-                {isActive && <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-white rounded-full" />}
+                <Icon className={cn("w-5 h-5", isActive ? "text-white" : "text-white/60")} />
+                <span
+                  className={cn(
+                    "text-[11px] font-semibold whitespace-nowrap",
+                    isActive ? "text-white" : "text-white/60",
+                  )}
+                >
+                  {shortLabel}
+                </span>
+                {isActive && <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-white rounded-full" />}
               </button>
             );
           })}
@@ -600,75 +667,34 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
 });
 
 // =============================================================================
-// EMPTY BANNER
-// =============================================================================
-
-const EmptyBanner = memo(({ cidade, onNotify, onDismiss }: any) => (
-  <div className="flex items-center gap-2.5 p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl mb-3">
-    <div className="w-9 h-9 rounded-full bg-zinc-200 flex items-center justify-center flex-shrink-0">
-      <MapPin className="w-4 h-4 text-zinc-500" />
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-sm font-medium text-zinc-900 truncate">Ainda não chegamos em {cidade}</p>
-      <p className="text-xs text-zinc-500">Mostrando outros lugares</p>
-    </div>
-    <button
-      onClick={onNotify}
-      className="h-8 px-3 bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium rounded-full flex items-center gap-1.5 flex-shrink-0"
-      aria-label="Avise-me quando chegar"
-    >
-      <Bell className="w-3.5 h-3.5" />
-      Avise-me
-    </button>
-    <button
-      onClick={onDismiss}
-      className="w-8 h-8 rounded-full hover:bg-zinc-200 flex items-center justify-center flex-shrink-0"
-      aria-label="Fechar aviso"
-    >
-      <X className="w-3.5 h-3.5 text-zinc-400" />
-    </button>
-  </div>
-));
-
-// =============================================================================
-// BENEFIT CHIP
+// CARD
 // =============================================================================
 
 const getBenefitChipText = (beneficio?: string): string => {
   if (!beneficio || beneficio.length < 3) return "🎂 Benefício";
-
   const descontoMatch = beneficio.match(/(\d+)\s*%/);
   if (descontoMatch) return `🎁 ${descontoMatch[1]}% OFF`;
-
   if (beneficio.toLowerCase().includes("grátis") || beneficio.toLowerCase().includes("gratis")) {
     if (beneficio.toLowerCase().includes("drink")) return "🥂 Drink grátis";
     if (beneficio.toLowerCase().includes("sobremesa")) return "🍰 Sobremesa";
-    if (beneficio.toLowerCase().includes("entrada")) return "🎟️ Entrada";
     return "🎁 Grátis";
   }
-
   if (beneficio.length <= 12) return `🎁 ${beneficio}`;
   return "🎂 Benefício";
 };
 
-// =============================================================================
-// CARD
-// =============================================================================
-
 const Card = memo(({ data, onClick }: any) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
-
   const nome = data.nome_fantasia || data.name || "Estabelecimento";
   const cat = Array.isArray(data.categoria) ? data.categoria[0] : data.categoria || data.category;
   const img = data.imagem_url || data.logo_url || data.photo_url;
-  const beneficio = data.descricao_beneficio || data.benefit_description;
-  const chipText = getBenefitChipText(beneficio);
+  const chipText = getBenefitChipText(data.descricao_beneficio || data.benefit_description);
 
   return (
     <article onClick={onClick} className="cursor-pointer group">
       <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-zinc-100 mb-2">
-        {img && !error ? (
+        {img && !error && (
           <img
             src={img}
             alt={nome}
@@ -680,18 +706,15 @@ const Card = memo(({ data, onClick }: any) => {
             onLoad={() => setLoaded(true)}
             onError={() => setError(true)}
           />
-        ) : null}
-
+        )}
         {(!img || error || !loaded) && (
           <div className="absolute inset-0 bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:200%_100%] animate-[shimmer_1.5s_infinite]" />
         )}
-
         <div className="absolute top-2.5 left-2.5">
           <span className="inline-flex items-center px-2 py-1 bg-white/95 backdrop-blur-sm text-[11px] font-medium text-zinc-800 rounded-full shadow-sm border border-zinc-100">
             {chipText}
           </span>
         </div>
-
         <button
           onClick={(e) => e.stopPropagation()}
           className="absolute top-2.5 right-2.5 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm border border-zinc-200 shadow-sm flex items-center justify-center hover:scale-110 transition-transform"
@@ -700,7 +723,6 @@ const Card = memo(({ data, onClick }: any) => {
           <Heart className="w-4 h-4 text-zinc-600 hover:text-red-500 hover:fill-red-500 transition-colors" />
         </button>
       </div>
-
       <div className="px-0.5">
         <h3 className="font-semibold text-zinc-900 text-sm leading-tight line-clamp-1">{nome}</h3>
         <p className="text-zinc-500 text-sm line-clamp-1">
@@ -714,13 +736,12 @@ const Card = memo(({ data, onClick }: any) => {
 });
 
 // =============================================================================
-// CAROUSEL - Com título clicável
+// CAROUSEL & GRID
 // =============================================================================
 
-const Carousel = memo(({ title, subtitle, items, categoryId, onSeeAll }: any) => {
+const Carousel = memo(({ title, subtitle, items, onSeeAll }: any) => {
   const navigate = useNavigate();
   if (!items?.length) return null;
-
   return (
     <section className="mb-5">
       <button onClick={onSeeAll} className="flex items-center gap-1 mb-2 px-4 sm:px-0 group">
@@ -756,14 +777,9 @@ const Carousel = memo(({ title, subtitle, items, categoryId, onSeeAll }: any) =>
   );
 });
 
-// =============================================================================
-// GRID
-// =============================================================================
-
 const Grid = memo(({ items, isLoading }: any) => {
   const navigate = useNavigate();
-
-  if (isLoading) {
+  if (isLoading)
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
         {Array.from({ length: 10 }).map((_, i) => (
@@ -775,20 +791,16 @@ const Grid = memo(({ items, isLoading }: any) => {
         ))}
       </div>
     );
-  }
-
-  if (!items?.length) {
+  if (!items?.length)
     return (
       <div className="text-center py-12">
         <div className="w-14 h-14 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-3">
           <Gift className="w-7 h-7 text-zinc-400" />
         </div>
         <p className="text-zinc-900 font-medium text-sm">Nenhum resultado</p>
-        <p className="text-zinc-500 text-sm">Tente ajustar os filtros</p>
+        <p className="text-zinc-500 text-sm">Tente outra categoria</p>
       </div>
     );
-  }
-
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
       {items.map((est: any) => (
@@ -818,144 +830,90 @@ const Grid = memo(({ items, isLoading }: any) => {
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-
-  const { city, state, loading: locationLoading, update: updateCity } = useLocation();
-  const { location: userLocation, requestLocation, loading: geoLoading } = useUserLocation();
   const rotation = useRotatingCategories();
-
-  const [cityModalOpen, setCityModalOpen] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [subcategories, setSubcategories] = useState<string[]>([]);
-  const [distance, setDistance] = useState<number | null>(null);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
-
   const categoria = searchParams.get("categoria") || "all";
 
   const { data: estabelecimentos, isLoading } = useEstabelecimentos({ showAll: true, enabled: true });
+  const availableCities = useAvailableCities(estabelecimentos || []);
+  const { city, state, loading: locationLoading, update: updateCity } = useSmartLocation(availableCities);
 
-  // Filter por cidade
-  const { cityEstablishments, fallback } = useMemo(() => {
-    if (!estabelecimentos?.length) return { cityEstablishments: [], fallback: false };
-
-    let items = [...estabelecimentos];
-    let usingFallback = false;
-
-    const byCity = items.filter(
+  const cityEstablishments = useMemo(() => {
+    if (!estabelecimentos?.length) return [];
+    return estabelecimentos.filter(
       (e) => e.cidade?.toLowerCase() === city.toLowerCase() && e.estado?.toLowerCase() === state.toLowerCase(),
     );
-    if (byCity.length > 0) items = byCity;
-    else usingFallback = true;
-
-    return { cityEstablishments: items, fallback: usingFallback };
   }, [estabelecimentos, city, state]);
 
-  // Aplicar filtros adicionais
   const filtered = useMemo(() => {
-    let items = [...cityEstablishments];
+    if (categoria === "all") return cityEstablishments;
+    return cityEstablishments.filter((e) => {
+      const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
+      return cats.some((c) => c?.toLowerCase() === categoria.toLowerCase());
+    });
+  }, [cityEstablishments, categoria]);
 
-    if (categoria && categoria !== "all") {
-      items = items.filter((e) => {
-        const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
-        return cats.some((c) => c?.toLowerCase() === categoria.toLowerCase());
-      });
-    }
-
-    if (subcategories.length > 0) {
-      items = items.filter((e) => subcategories.some((s) => (e.especialidades || []).includes(s)));
-    }
-
-    if (distance && userLocation) {
-      items = items.filter(
-        (e) =>
-          e.latitude &&
-          e.longitude &&
-          calcularDistancia(userLocation.lat, userLocation.lng, e.latitude, e.longitude) <= distance,
-      );
-    }
-
-    return items;
-  }, [cityEstablishments, categoria, subcategories, distance, userLocation]);
-
-  // Gerar 9 carrosséis com rotação
   const carousels = useMemo(() => {
     if (!cityEstablishments.length || categoria !== "all") return [];
-
-    // Função para filtrar por categoria
-    const getByCategory = (catId: string) => {
-      return cityEstablishments.filter((e) => {
+    const getByCategory = (catId: string) =>
+      cityEstablishments.filter((e) => {
         const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
         return cats.some((c) => c?.toLowerCase() === catId.toLowerCase());
       });
-    };
-
-    // Rotacionar array de categorias baseado no rotation
     const rotatedCategories = [...ALL_CATEGORIES];
-    for (let i = 0; i < rotation; i++) {
-      rotatedCategories.push(rotatedCategories.shift()!);
-    }
-
+    for (let i = 0; i < rotation; i++) rotatedCategories.push(rotatedCategories.shift()!);
     const result: any[] = [];
-    const locationName = fallback ? "no Brasil" : `em ${city}`;
 
-    // 1º Carrossel: Destaques (mix de categorias)
-    const highlightCategory = rotatedCategories[0];
-    const highlightItems = getByCategory(highlightCategory.id).slice(0, 12);
-    if (highlightItems.length >= 2) {
+    // 1º: Destaques
+    const hl = rotatedCategories[0];
+    const hlItems = getByCategory(hl.id).slice(0, 12);
+    if (hlItems.length >= 2)
       result.push({
         id: "destaques",
-        title: `${highlightCategory.label} em destaque ${locationName}`,
-        subtitle: highlightCategory.subtitle,
-        categoryId: highlightCategory.id,
-        items: highlightItems,
+        title: `${hl.label} em destaque`,
+        subtitle: hl.subtitle,
+        categoryId: hl.id,
+        items: hlItems,
       });
-    }
 
-    // Carrosséis 2-9: Categorias alternadas
-    let carouselCount = 1;
-    for (let i = 1; i < rotatedCategories.length && carouselCount < 9; i++) {
+    // 2-9: Categorias com nome da cidade
+    let count = 1;
+    for (let i = 1; i < rotatedCategories.length && count < 9; i++) {
       const cat = rotatedCategories[i];
       const items = getByCategory(cat.id).slice(0, 12);
-
       if (items.length >= 2) {
         result.push({
           id: cat.id,
-          title: `${cat.label} ${locationName}`,
+          title: `${cat.label} em ${city}`,
           subtitle: cat.subtitle,
           categoryId: cat.id,
           items,
         });
-        carouselCount++;
+        count++;
       }
     }
 
-    // Se não tiver 9, repetir categorias com mais items
+    // Completar
     if (result.length < 9) {
       for (let i = 0; i < rotatedCategories.length && result.length < 9; i++) {
         const cat = rotatedCategories[i];
         const items = getByCategory(cat.id);
-
-        // Pular se já existe ou não tem items suficientes
         if (result.some((r) => r.categoryId === cat.id) || items.length < 2) continue;
-
-        // Adicionar variação: "Mais [categoria]" ou "Populares"
         result.push({
           id: `${cat.id}-mais`,
-          title: `Mais ${cat.label.toLowerCase()} ${locationName}`,
+          title: `Mais ${cat.label.toLowerCase()} em ${city}`,
           subtitle: "Descubra novos lugares",
           categoryId: cat.id,
           items: items.slice(0, 12),
         });
       }
     }
-
     return result;
-  }, [cityEstablishments, categoria, city, fallback, rotation]);
+  }, [cityEstablishments, categoria, city, rotation]);
 
   const handleCategoria = (id: string) => {
     const params = new URLSearchParams(searchParams);
     id === "all" ? params.delete("categoria") : params.set("categoria", id);
     setSearchParams(params);
-    setSubcategories([]);
   };
 
   const handleSeeAll = (categoryId: string) => {
@@ -963,27 +921,20 @@ const Index = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const filterCount = (subcategories.length > 0 ? 1 : 0) + (distance ? 1 : 0);
   const showGrid = categoria !== "all";
   const showCarousels = categoria === "all" && carousels.length > 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
+      <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
 
       <Header>
         <SearchPill
           city={city}
           state={state}
-          isLoading={locationLoading}
-          onCityClick={() => setCityModalOpen(true)}
-          onFilterClick={() => setShowFilters(true)}
-          filterCount={filterCount}
+          isLoading={locationLoading || isLoading}
+          onSelect={updateCity}
+          availableCities={availableCities}
         />
       </Header>
 
@@ -991,24 +942,13 @@ const Index = () => {
 
       <main className="flex-1 pb-20 sm:pb-6">
         <div className="max-w-7xl mx-auto sm:px-6 py-3 sm:py-4">
-          {!isLoading && fallback && !bannerDismissed && (
-            <div className="px-4 sm:px-0">
-              <EmptyBanner
-                cidade={city}
-                onNotify={() => navigate("/cadastro?interesse=" + encodeURIComponent(city))}
-                onDismiss={() => setBannerDismissed(true)}
-              />
-            </div>
-          )}
-
-          {isLoading && (
+          {(isLoading || locationLoading) && (
             <div className="px-4 sm:px-0">
               <Grid items={[]} isLoading />
             </div>
           )}
-
-          {/* 9 Carrosséis */}
           {!isLoading &&
+            !locationLoading &&
             showCarousels &&
             carousels.map((c) => (
               <Carousel
@@ -1016,29 +956,23 @@ const Index = () => {
                 title={c.title}
                 subtitle={c.subtitle}
                 items={c.items}
-                categoryId={c.categoryId}
                 onSeeAll={() => handleSeeAll(c.categoryId)}
               />
             ))}
-
-          {/* Grid quando categoria selecionada */}
-          {!isLoading && showGrid && (
+          {!isLoading && !locationLoading && showGrid && (
             <div className="px-4 sm:px-0">
               <div className="mb-3">
                 <h2 className="text-base font-semibold text-zinc-900 capitalize">
-                  {fallback ? `${categoria} no Brasil` : `${categoria} em ${city}`}
+                  {categoria} em {city}
                 </h2>
                 <p className="text-sm text-zinc-500">{filtered.length} lugares</p>
               </div>
               <Grid items={filtered} isLoading={false} />
             </div>
           )}
-
-          {/* Fallback se não tiver carrosséis nem grid */}
-          {!isLoading && !showCarousels && !showGrid && filtered.length > 0 && (
+          {!isLoading && !locationLoading && !showCarousels && !showGrid && (
             <div className="px-4 sm:px-0">
-              <h2 className="text-base font-semibold text-zinc-900 mb-3">Em destaque</h2>
-              <Grid items={filtered} isLoading={false} />
+              <Grid items={[]} isLoading={false} />
             </div>
           )}
         </div>
@@ -1046,101 +980,6 @@ const Index = () => {
 
       <Footer />
       <BottomNav />
-
-      <CityModal
-        isOpen={cityModalOpen}
-        onClose={() => setCityModalOpen(false)}
-        city={city}
-        state={state}
-        onSelect={updateCity}
-      />
-
-      <Dialog open={showFilters} onOpenChange={setShowFilters}>
-        <DialogContent className="max-w-md max-h-[80vh] p-0 rounded-2xl">
-          <DialogHeader className="p-4 pb-0">
-            <DialogTitle className="text-base">Filtros</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[55vh] px-4">
-            <div className="space-y-5 py-4">
-              {categoria !== "all" && (
-                <div>
-                  <h3 className="text-sm font-medium text-zinc-900 mb-2">Tipo</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {getSubcategoriesForCategory(categoria).map((s) => (
-                      <Badge
-                        key={s.id}
-                        variant={subcategories.includes(s.label) ? "default" : "outline"}
-                        className={cn(
-                          "cursor-pointer h-8 rounded-full text-xs",
-                          subcategories.includes(s.label) && "bg-violet-600 hover:bg-violet-700",
-                        )}
-                        onClick={() =>
-                          setSubcategories((prev) =>
-                            prev.includes(s.label) ? prev.filter((x) => x !== s.label) : [...prev, s.label],
-                          )
-                        }
-                      >
-                        {s.label}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div>
-                <h3 className="text-sm font-medium text-zinc-900 mb-2">Distância</h3>
-                {!userLocation ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={requestLocation}
-                    disabled={geoLoading}
-                    className="gap-2 h-8 text-xs"
-                  >
-                    <MapPin className="w-3.5 h-3.5" />
-                    {geoLoading ? "Obtendo..." : "Usar localização"}
-                  </Button>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {[1, 3, 5, 10, 20].map((km) => (
-                      <Badge
-                        key={km}
-                        variant={distance === km ? "default" : "outline"}
-                        className={cn(
-                          "cursor-pointer h-8 rounded-full text-xs",
-                          distance === km && "bg-violet-600 hover:bg-violet-700",
-                        )}
-                        onClick={() => setDistance(distance === km ? null : km)}
-                      >
-                        Até {km} km
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </ScrollArea>
-          <div className="flex items-center justify-between p-4 border-t border-zinc-100">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSubcategories([]);
-                setDistance(null);
-              }}
-              className="text-xs h-8"
-            >
-              Limpar
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setShowFilters(false)}
-              className="bg-violet-600 hover:bg-violet-700 rounded-full px-5 h-8 text-xs"
-            >
-              Ver {filtered.length} lugares
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

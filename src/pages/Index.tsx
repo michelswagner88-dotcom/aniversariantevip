@@ -302,7 +302,7 @@ const Index = () => {
       {/* Sentinel para scroll detection - PRIMEIRO ELEMENTO */}
       <div 
         id="scroll-sentinel" 
-        className="absolute top-0 left-0 w-full h-1 pointer-events-none" 
+        className="absolute top-0 left-0 w-full h-8 pointer-events-none z-0" 
         aria-hidden="true" 
       />
       

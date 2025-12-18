@@ -66,10 +66,15 @@ const useScrollDetection = (threshold: number = SCROLL_THRESHOLD) => {
         ([entry]) => {
           setIsScrolled(!entry.isIntersecting);
         },
-        { threshold: 0, rootMargin: `-${threshold}px 0px 0px 0px` },
+        { threshold: 0 }, // Removido rootMargin negativo que causava problema no mobile
       );
 
       observer.observe(sentinel);
+
+      // Check inicial - força verificação da posição atual
+      const rect = sentinel.getBoundingClientRect();
+      setIsScrolled(rect.top < 0);
+
       return () => observer.disconnect();
     }
 
@@ -304,6 +309,9 @@ export const Header = memo(function Header({ showSearch = true, cityName, onSear
   // Lógica de transparência
   const isHomePage = location.pathname === "/";
   const isTransparent = isHomePage && !isScrolled;
+
+  // DEBUG TEMPORÁRIO - remover depois de testar
+  console.log("[HEADER MOBILE]", { isScrolled, isHomePage, isTransparent, pathname: location.pathname });
 
   // SearchPill só aparece quando:
   // - scrollou (em qualquer página) OU

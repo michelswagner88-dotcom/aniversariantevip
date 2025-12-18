@@ -299,13 +299,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col relative">
-      {/* Sentinel para scroll detection - PRIMEIRO ELEMENTO */}
-      <div 
-        id="scroll-sentinel" 
-        className="absolute top-0 left-0 w-full h-8 pointer-events-none z-0" 
-        aria-hidden="true" 
+      {/* Sentinel para scroll detection - FIXED para funcionar no mobile */}
+      <div
+        id="scroll-sentinel"
+        className="fixed top-0 left-0 w-full h-1 pointer-events-none z-[100]"
+        aria-hidden="true"
       />
-      
+
       <Header />
 
       <main className="flex-1">
@@ -313,7 +313,7 @@ const Index = () => {
         {!isFiltered && (
           <HeroSection
             selectedCity={cidadeFinal || undefined}
-            onCityChange={(city) => handleCidadeChange(city, estadoFinal || '')}
+            onCityChange={(city) => handleCidadeChange(city, estadoFinal || "")}
             onSearch={handleHeroBuscar}
           />
         )}
@@ -342,9 +342,9 @@ const Index = () => {
               <div className="flex-1 min-w-0">
                 <CategoriasPills
                   categories={DEFAULT_CATEGORIES}
-                  selectedCategory={categoriaParam || 'all'}
+                  selectedCategory={categoriaParam || "all"}
                   onSelectCategory={(cat) => {
-                    handleCategoriaChange(cat === 'all' ? null : cat);
+                    handleCategoriaChange(cat === "all" ? null : cat);
                     setSelectedSubcategories([]);
                   }}
                 />

@@ -1,9 +1,15 @@
 // =============================================================================
 // HEADER.TSX - ANIVERSARIANTE VIP
-// Design System: Top 1% Mundial - Nível Airbnb/Booking
+// Design System: Top 1% Mundial - Nível Airbnb/Instagram
+// =============================================================================
+// FEATURES:
+// ✅ Hide on scroll DOWN (mais espaço pro conteúdo)
+// ✅ Show on scroll UP (reaparece suavemente)
+// ✅ Transparente no topo da home
+// ✅ Glassmorphism quando scrollado
 // =============================================================================
 
-import { memo, useState, useCallback, useEffect } from "react";
+import { memo, useState, useCallback, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Search, Menu, User, Gift, Building2, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -42,53 +48,69 @@ interface AuthUser {
 // =============================================================================
 
 const SCROLL_THRESHOLD = 10;
+const HIDE_THRESHOLD = 50; // Pixels para começar a esconder
 
 // =============================================================================
 // HOOKS
 // =============================================================================
 
-const useScrollDetection = (threshold: number = SCROLL_THRESHOLD) => {
-  const [isScrolled, setIsScrolled] = useState(false);
+interface ScrollState {
+  isScrolled: boolean;
+  isHidden: boolean;
+}
+
+const useSmartScroll = (threshold: number = SCROLL_THRESHOLD): ScrollState => {
+  const [state, setState] = useState<ScrollState>({
+    isScrolled: false,
+    isHidden: false,
+  });
+
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
 
   useEffect(() => {
-    const sentinel = document.getElementById("scroll-sentinel");
-
-    if (sentinel && "IntersectionObserver" in window) {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          setIsScrolled(!entry.isIntersecting);
-        },
-        { threshold: 0 },
-      );
-
-      observer.observe(sentinel);
-
-      // Check inicial
-      const rect = sentinel.getBoundingClientRect();
-      setIsScrolled(rect.top < 0);
-
-      return () => observer.disconnect();
-    }
-
-    // Fallback: scroll event listener
-    let ticking = false;
     const handleScroll = () => {
-      if (!ticking) {
+      if (!ticking.current) {
         requestAnimationFrame(() => {
-          setIsScrolled(window.scrollY > threshold);
-          ticking = false;
+          const currentScrollY = window.scrollY;
+          const scrollingDown = currentScrollY > lastScrollY.current;
+          const scrollingUp = currentScrollY < lastScrollY.current;
+
+          // Determina se passou do threshold inicial
+          const isScrolled = currentScrollY > threshold;
+
+          // Lógica de hide/show
+          let isHidden = state.isHidden;
+
+          if (scrollingDown && currentScrollY > HIDE_THRESHOLD) {
+            // Scrolling down - esconde
+            isHidden = true;
+          } else if (scrollingUp) {
+            // Scrolling up - mostra
+            isHidden = false;
+          }
+
+          // No topo, sempre mostra
+          if (currentScrollY <= threshold) {
+            isHidden = false;
+          }
+
+          setState({ isScrolled, isHidden });
+          lastScrollY.current = currentScrollY;
+          ticking.current = false;
         });
-        ticking = true;
+        ticking.current = true;
       }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    // Check inicial
     handleScroll();
 
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [threshold]);
+  }, [threshold, state.isHidden]);
 
-  return isScrolled;
+  return state;
 };
 
 const useAuth = () => {
@@ -306,7 +328,7 @@ DesktopNav.displayName = "DesktopNav";
 
 export const Header = memo(function Header({ showSearch = true, cityName, onSearchClick }: HeaderProps) {
   const location = useLocation();
-  const isScrolled = useScrollDetection(SCROLL_THRESHOLD);
+  const { isScrolled, isHidden } = useSmartScroll(SCROLL_THRESHOLD);
   const { user, signOut } = useAuth();
 
   const isHomePage = location.pathname === "/";
@@ -345,9 +367,12 @@ export const Header = memo(function Header({ showSearch = true, cityName, onSear
       <header
         className={cn(
           "fixed top-0 left-0 right-0 z-50",
+          "h-14 lg:h-16",
+          // Transição suave para hide/show
           "transition-all duration-300 ease-out",
-          "h-16",
           isTransparent ? "bg-transparent" : "bg-white/95 backdrop-blur-xl shadow-sm border-b border-gray-100",
+          // Hide on scroll down
+          isHidden && !isTransparent ? "-translate-y-full" : "translate-y-0",
         )}
         style={headerStyle}
         role="banner"
@@ -359,7 +384,8 @@ export const Header = memo(function Header({ showSearch = true, cityName, onSear
         </div>
       </header>
 
-      {!isTransparent && <div className="h-16" aria-hidden="true" />}
+      {/* Spacer - só quando header NÃO é transparente E não está escondido */}
+      {!isTransparent && !isHidden && <div className="h-14 lg:h-16" aria-hidden="true" />}
     </>
   );
 });

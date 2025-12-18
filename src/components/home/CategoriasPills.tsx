@@ -1,13 +1,12 @@
 // =============================================================================
 // CATEGORIASPILLS.TSX - ANIVERSARIANTE VIP
-// Design System: Top 1% Mundial - Nível Airbnb
+// Design System: Top 1% Mundial - Estilo Airbnb
 // =============================================================================
 // FEATURES:
-// ✅ Chips horizontais com scroll lateral
-// ✅ Filtros INTEGRADO como chip (não separado)
-// ✅ Compacto - não ocupa altura excessiva
+// ✅ Estilo Airbnb: ícone + label + underline no selecionado
+// ✅ Sem bolhas pesadas - visual limpo e "quieto"
+// ✅ Filtros integrado com mesmo estilo
 // ✅ Scroll suave com fade nas bordas
-// ✅ Touch-friendly mobile
 // =============================================================================
 
 import { memo, useRef, useState, useCallback, useEffect } from "react";
@@ -107,16 +106,16 @@ const hapticFeedback = (pattern: number | number[] = 10) => {
 };
 
 // =============================================================================
-// CHIP COMPONENT
+// CATEGORY TAB - Estilo Airbnb (ícone + label + underline)
 // =============================================================================
 
-interface ChipProps {
+interface CategoryTabProps {
   category: Category;
   isSelected: boolean;
   onClick: () => void;
 }
 
-const Chip = memo(({ category, isSelected, onClick }: ChipProps) => {
+const CategoryTab = memo(({ category, isSelected, onClick }: CategoryTabProps) => {
   const handleClick = useCallback(() => {
     hapticFeedback(5);
     onClick();
@@ -127,77 +126,125 @@ const Chip = memo(({ category, isSelected, onClick }: ChipProps) => {
       onClick={handleClick}
       className={cn(
         "flex flex-col items-center gap-1",
-        "px-4 py-2.5 min-w-[64px]",
-        "rounded-full",
+        "px-3 sm:px-4 py-2 min-w-[56px] sm:min-w-[64px]",
         "transition-all duration-200 ease-out",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50",
+        "focus-visible:outline-none",
         "flex-shrink-0",
-        isSelected ? "bg-white text-[#240046] shadow-md" : "bg-white/10 text-white/90 hover:bg-white/20",
+        "relative",
+        "group",
+        // Cor do texto
+        isSelected ? "text-white" : "text-white/60 hover:text-white/90",
       )}
       aria-pressed={isSelected}
     >
-      <span className="text-lg leading-none" role="img" aria-hidden="true">
+      {/* Ícone */}
+      <span
+        className={cn(
+          "text-xl sm:text-2xl leading-none",
+          "transition-transform duration-200",
+          "group-hover:scale-110",
+          isSelected && "scale-110",
+        )}
+        role="img"
+        aria-hidden="true"
+      >
         {category.icon}
       </span>
-      <span className="text-[11px] font-medium whitespace-nowrap">{category.label}</span>
+
+      {/* Label */}
+      <span className={cn("text-[10px] sm:text-xs font-medium whitespace-nowrap", "transition-colors duration-200")}>
+        {category.label}
+      </span>
+
+      {/* Underline - só quando selecionado */}
+      <span
+        className={cn(
+          "absolute bottom-0 left-1/2 -translate-x-1/2",
+          "h-0.5 rounded-full",
+          "bg-white",
+          "transition-all duration-200",
+          isSelected ? "w-8 sm:w-10 opacity-100" : "w-0 opacity-0",
+        )}
+        aria-hidden="true"
+      />
     </button>
   );
 });
-Chip.displayName = "Chip";
+CategoryTab.displayName = "CategoryTab";
 
 // =============================================================================
-// FILTER CHIP (Integrado como chip)
+// FILTER TAB - Mesmo estilo das categorias
 // =============================================================================
 
-interface FilterChipProps {
+interface FilterTabProps {
   onClick: () => void;
   activeCount?: number;
 }
 
-const FilterChip = memo(({ onClick, activeCount = 0 }: FilterChipProps) => {
+const FilterTab = memo(({ onClick, activeCount = 0 }: FilterTabProps) => {
   const handleClick = useCallback(() => {
     hapticFeedback(10);
     onClick();
   }, [onClick]);
+
+  const hasFilters = activeCount > 0;
 
   return (
     <button
       onClick={handleClick}
       className={cn(
         "flex flex-col items-center gap-1",
-        "px-4 py-2.5 min-w-[64px]",
-        "rounded-full",
+        "px-3 sm:px-4 py-2 min-w-[56px] sm:min-w-[64px]",
         "transition-all duration-200 ease-out",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50",
+        "focus-visible:outline-none",
         "flex-shrink-0",
         "relative",
-        activeCount > 0 ? "bg-white text-[#240046] shadow-md" : "bg-white/10 text-white/90 hover:bg-white/20",
+        "group",
+        "border-l border-white/20 ml-1",
+        // Cor do texto
+        hasFilters ? "text-white" : "text-white/60 hover:text-white/90",
       )}
     >
-      <span className="text-lg leading-none flex items-center justify-center">
-        <SlidersHorizontal className="w-5 h-5" />
-      </span>
-      <span className="text-[11px] font-medium whitespace-nowrap">Filtros</span>
+      {/* Ícone */}
+      <span className={cn("relative", "transition-transform duration-200", "group-hover:scale-110")}>
+        <SlidersHorizontal className="w-5 h-5 sm:w-6 sm:h-6" />
 
-      {/* Badge de contagem */}
-      {activeCount > 0 && (
-        <span
-          className={cn(
-            "absolute -top-1 -right-1",
-            "w-5 h-5 rounded-full",
-            "bg-gradient-to-r from-[#240046] to-[#5A189A]",
-            "text-white text-[10px] font-bold",
-            "flex items-center justify-center",
-            "shadow-sm",
-          )}
-        >
-          {activeCount}
-        </span>
-      )}
+        {/* Badge de contagem */}
+        {hasFilters && (
+          <span
+            className={cn(
+              "absolute -top-1.5 -right-1.5",
+              "w-4 h-4 rounded-full",
+              "bg-white text-[#240046]",
+              "text-[9px] font-bold",
+              "flex items-center justify-center",
+            )}
+          >
+            {activeCount}
+          </span>
+        )}
+      </span>
+
+      {/* Label */}
+      <span className={cn("text-[10px] sm:text-xs font-medium whitespace-nowrap", "transition-colors duration-200")}>
+        Filtros
+      </span>
+
+      {/* Underline - só quando tem filtros ativos */}
+      <span
+        className={cn(
+          "absolute bottom-0 left-1/2 -translate-x-1/2",
+          "h-0.5 rounded-full",
+          "bg-white",
+          "transition-all duration-200",
+          hasFilters ? "w-8 sm:w-10 opacity-100" : "w-0 opacity-0",
+        )}
+        aria-hidden="true"
+      />
     </button>
   );
 });
-FilterChip.displayName = "FilterChip";
+FilterTab.displayName = "FilterTab";
 
 // =============================================================================
 // SCROLL BUTTON
@@ -219,19 +266,19 @@ const ScrollButton = memo(({ direction, onClick, visible }: ScrollButtonProps) =
       onClick={onClick}
       className={cn(
         "absolute top-1/2 -translate-y-1/2 z-10",
-        "w-8 h-8 rounded-full",
+        "w-7 h-7 rounded-full",
         "bg-white/90 shadow-md backdrop-blur-sm",
         "flex items-center justify-center",
         "text-[#240046] hover:bg-white",
         "transition-all duration-200",
         "hover:scale-110 active:scale-95",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-        "hidden lg:flex", // Só desktop grande
-        direction === "left" ? "left-2" : "right-2",
+        "hidden lg:flex",
+        direction === "left" ? "left-0" : "right-0",
       )}
       aria-label={direction === "left" ? "Anterior" : "Próximo"}
     >
-      <Icon className="w-5 h-5" />
+      <Icon className="w-4 h-4" />
     </button>
   );
 });
@@ -251,48 +298,47 @@ export const CategoriasPills = memo(function CategoriasPills({
 }: CategoriasPillsProps) {
   const { scrollRef, canScrollLeft, canScrollRight, scroll, checkScroll } = useScrollable();
 
-  // Recheck scroll on categories change
   useEffect(() => {
     checkScroll();
   }, [categories, checkScroll]);
 
   return (
-    <div className="relative w-full py-3">
+    <div className="relative w-full py-2">
       {/* Scroll buttons (desktop) */}
       <ScrollButton direction="left" onClick={() => scroll("left")} visible={canScrollLeft} />
 
-      {/* Chips container */}
+      {/* Tabs container */}
       <div
         ref={scrollRef}
         className={cn(
-          "flex gap-2 overflow-x-auto",
+          "flex items-end gap-0 overflow-x-auto",
           "scrollbar-hide",
           "scroll-smooth",
-          "-mx-4 px-4 sm:mx-0 sm:px-0", // Full bleed on mobile
+          "-mx-4 px-4 sm:mx-0 sm:px-0",
         )}
       >
-        {/* Filter chip PRIMEIRO (mais visível) */}
-        {showFilter && onFilterClick && <FilterChip onClick={onFilterClick} activeCount={activeFiltersCount} />}
-
-        {/* Category chips */}
+        {/* Category tabs */}
         {categories.map((category) => (
-          <Chip
+          <CategoryTab
             key={category.id}
             category={category}
             isSelected={selectedCategory === category.id}
             onClick={() => onSelectCategory(category.id)}
           />
         ))}
+
+        {/* Filter tab - no final */}
+        {showFilter && onFilterClick && <FilterTab onClick={onFilterClick} activeCount={activeFiltersCount} />}
       </div>
 
       <ScrollButton direction="right" onClick={() => scroll("right")} visible={canScrollRight} />
 
-      {/* Fade gradients para indicar scroll */}
+      {/* Fade gradients */}
       {canScrollLeft && (
-        <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-[#240046] to-transparent pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#240046] to-transparent pointer-events-none" />
       )}
       {canScrollRight && (
-        <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[#240046] to-transparent pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#240046] to-transparent pointer-events-none" />
       )}
     </div>
   );

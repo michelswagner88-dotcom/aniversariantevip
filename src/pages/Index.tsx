@@ -26,72 +26,12 @@ import { getEstabelecimentoUrl } from "@/lib/slugUtils";
 import { CarouselSkeleton } from "@/components/skeletons";
 import CTABanner from "@/components/home/CTABanner";
 import SubcategoryFilter from "@/components/SubcategoryFilter";
+import EmptyStateBanner from "@/components/EmptyStateBanner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, X, Bell, Sparkles } from "lucide-react";
-
-// =============================================================================
-// EMPTY STATE BANNER - Premium Component
-// =============================================================================
-
-interface EmptyStateBannerProps {
-  cidade: string;
-  onNotifyMe?: () => void;
-  onSuggestPlace?: () => void;
-}
-
-const EmptyStateBanner = ({ cidade, onNotifyMe, onSuggestPlace }: EmptyStateBannerProps) => {
-  const [dismissed, setDismissed] = useState(false);
-
-  if (dismissed) return null;
-
-  return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#240046] to-[#5A189A] p-4 sm:p-5">
-      {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-
-      {/* Close button */}
-      <button
-        onClick={() => setDismissed(true)}
-        className="absolute top-3 right-3 p-1 rounded-full hover:bg-white/10 transition-colors"
-        aria-label="Fechar"
-      >
-        <X className="w-4 h-4 text-white/60" />
-      </button>
-
-      <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
-        {/* Icon */}
-        <div className="hidden sm:flex w-12 h-12 rounded-xl bg-white/10 items-center justify-center shrink-0">
-          <Sparkles className="w-6 h-6 text-violet-300" />
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <p className="text-white font-medium text-sm sm:text-base">Ainda não chegamos em {cidade}</p>
-          <p className="text-white/70 text-xs sm:text-sm mt-0.5">
-            Mostrando lugares de outras cidades. Em breve teremos novidades!
-          </p>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={onNotifyMe}
-            className="bg-white text-[#240046] hover:bg-white/90 font-medium text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
-          >
-            <Bell className="w-3.5 h-3.5 mr-1.5" />
-            Me avise
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-};
+import { MapPin, X } from "lucide-react";
 
 // =============================================================================
 // MAIN COMPONENT
@@ -286,9 +226,19 @@ const Index = () => {
     setSearchParams(new URLSearchParams());
   };
 
-  // Handler para notificacao de cidade
+  // Handlers para EmptyStateBanner
   const handleNotifyMe = () => {
     navigate("/cadastro?interesse=" + encodeURIComponent(cidadeFinal || ""));
+  };
+
+  const handleViewCities = () => {
+    // Limpa cidade e mostra todos
+    limparCidade();
+    setSearchParams(new URLSearchParams());
+  };
+
+  const handleSuggestPlace = () => {
+    navigate("/seja-parceiro");
   };
 
   // Handler para scroll ate o search do hero
@@ -382,7 +332,9 @@ const Index = () => {
 
       <Header />
 
-      <main className="flex-1">
+      <main className="flex-1 pb-20 sm:pb-0">
+        {" "}
+        {/* padding-bottom para BottomNav */}
         {/* Hero Section - Apenas na home sem filtros */}
         {!isFiltered && (
           <HeroSection
@@ -391,7 +343,6 @@ const Index = () => {
             onSearch={handleHeroBuscar}
           />
         )}
-
         {/* Search Bar quando filtrado - com padding ajustado */}
         {isFiltered && (
           <div className="bg-[#240046] pt-20 pb-6">
@@ -408,9 +359,8 @@ const Index = () => {
             </div>
           </div>
         )}
-
         {/* Pills de categorias - COM FILTROS INTEGRADO */}
-        <div className="bg-[#240046] sticky top-14 lg:top-16 z-30">
+        <div className="bg-[#240046] sticky top-0 z-30">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
             <CategoriasPills
               categories={DEFAULT_CATEGORIES}
@@ -425,7 +375,6 @@ const Index = () => {
             />
           </div>
         </div>
-
         {/* Subcategorias */}
         {categoriaParam && (
           <div className="bg-white border-b border-slate-200">
@@ -440,10 +389,22 @@ const Index = () => {
             </div>
           </div>
         )}
-
         {/* Container principal */}
         <div className="bg-white min-h-[50vh]">
-          <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-8 pb-12">
+          <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 pt-4 sm:pt-6 pb-12">
+            {/* EMPTY STATE BANNER - COMPACTO (inline) */}
+            {!isLoadingEstabelecimentos && usandoFallback && cidadeFinal && (
+              <div className="mb-4 sm:mb-6">
+                <EmptyStateBanner
+                  cidade={cidadeFinal}
+                  onNotifyMe={handleNotifyMe}
+                  onViewCities={handleViewCities}
+                  onSuggestPlace={handleSuggestPlace}
+                  variant="inline"
+                />
+              </div>
+            )}
+
             {/* Loading state */}
             {isLoadingEstabelecimentos && (
               <div className="space-y-16 md:space-y-20">
@@ -455,10 +416,7 @@ const Index = () => {
 
             {/* MODO CARROSSEIS */}
             {!isLoadingEstabelecimentos && mostrarCarrosseis && (
-              <div className="space-y-8 md:space-y-12">
-                {/* EMPTY STATE BANNER - Premium */}
-                {usandoFallback && cidadeFinal && <EmptyStateBanner cidade={cidadeFinal} onNotifyMe={handleNotifyMe} />}
-
+              <div className="space-y-6 md:space-y-10">
                 {secoesDinamicas.map((section, index) => {
                   const isFeatured = index === 0 && section.priority === "featured";
 
@@ -480,13 +438,13 @@ const Index = () => {
                       />
 
                       {index === 0 && (
-                        <div className="mt-8">
+                        <div className="mt-6 sm:mt-8">
                           <CTABanner variant="register" />
                         </div>
                       )}
 
                       {index === 2 && (
-                        <div className="mt-8">
+                        <div className="mt-6 sm:mt-8">
                           <CTABanner variant="partner" />
                         </div>
                       )}
@@ -498,16 +456,15 @@ const Index = () => {
 
             {/* MODO GRID SIMPLES */}
             {!isLoadingEstabelecimentos && mostrarGridSimples && dadosParaExibir.length > 0 && (
-              <div className="space-y-8">
-                {/* EMPTY STATE BANNER - Premium */}
-                {usandoFallback && cidadeFinal && <EmptyStateBanner cidade={cidadeFinal} onNotifyMe={handleNotifyMe} />}
-
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl md:text-2xl font-semibold text-[#222222]">{destaquesConfig.titulo}</h2>
-                    <p className="text-sm text-[#717171] mt-0.5">{destaquesConfig.subtitulo}</p>
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-[#222222]">
+                      {destaquesConfig.titulo}
+                    </h2>
+                    <p className="text-xs sm:text-sm text-[#717171] mt-0.5">{destaquesConfig.subtitulo}</p>
                   </div>
-                  <span className="text-sm text-[#717171]">
+                  <span className="text-xs sm:text-sm text-[#717171]">
                     {dadosParaExibir.length} {dadosParaExibir.length === 1 ? "lugar" : "lugares"}
                   </span>
                 </div>
@@ -533,10 +490,10 @@ const Index = () => {
                 }}
                 userLocation={userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : null}
                 listHeader={
-                  <div className="flex flex-col gap-2 mb-6">
+                  <div className="flex flex-col gap-2 mb-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h2 className="text-xl md:text-2xl font-semibold text-[#222222]">
+                        <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-[#222222]">
                           {categoriaParam
                             ? usandoFallback
                               ? `${getCategoryTitle(categoriaParam, undefined)} no Brasil`
@@ -544,21 +501,18 @@ const Index = () => {
                             : destaquesConfig.titulo}
                         </h2>
                         {categoriaParam && getCategorySubtitle(categoriaParam) && (
-                          <p className="text-sm text-[#717171] mt-0.5">{getCategorySubtitle(categoriaParam)}</p>
+                          <p className="text-xs sm:text-sm text-[#717171] mt-0.5">
+                            {getCategorySubtitle(categoriaParam)}
+                          </p>
                         )}
                       </div>
                       {estabelecimentosFiltrados.length > 0 && (
-                        <span className="text-sm text-[#717171]">
+                        <span className="text-xs sm:text-sm text-[#717171]">
                           {estabelecimentosFiltrados.length}{" "}
                           {estabelecimentosFiltrados.length === 1 ? "lugar" : "lugares"}
                         </span>
                       )}
                     </div>
-
-                    {/* EMPTY STATE BANNER - Premium (no modo filtrado) */}
-                    {usandoFallback && cidadeFinal && (
-                      <EmptyStateBanner cidade={cidadeFinal} onNotifyMe={handleNotifyMe} />
-                    )}
                   </div>
                 }
               >

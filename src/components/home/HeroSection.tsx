@@ -3,10 +3,10 @@
 // Design System: Top 1% Mundial - Nível Airbnb
 // =============================================================================
 // FEATURES:
-// ✅ Mobile-first: hero compacto para mostrar conteúdo mais cedo
-// ✅ Desktop: mantém proporções elegantes
-// ✅ Busca estilo Airbnb (pill única)
-// ✅ Sem bordas grossas - sombras suaves
+// ✅ ULTRA COMPACTO no mobile - mostra conteúdo mais cedo
+// ✅ SearchBar inline e minimalista
+// ✅ Headline em 1 linha no mobile
+// ✅ Desktop mantém proporções elegantes
 // =============================================================================
 
 import { memo, useState, useCallback, useRef, useEffect } from "react";
@@ -50,7 +50,7 @@ const hapticFeedback = (pattern: number | number[] = 10) => {
 };
 
 // =============================================================================
-// SEARCH BAR COMPONENT (Airbnb Style - Compacto)
+// COMPACT SEARCH BAR (Mobile-First)
 // =============================================================================
 
 interface SearchBarProps {
@@ -86,14 +86,12 @@ const SearchBar = memo(
         onSubmit={handleSubmit}
         className={cn(
           "w-full max-w-2xl mx-auto",
-          "bg-white rounded-2xl",
+          "bg-white rounded-xl sm:rounded-2xl",
           "shadow-lg shadow-black/10",
-          "transition-shadow duration-300",
-          "hover:shadow-xl hover:shadow-black/15",
           "overflow-hidden",
         )}
       >
-        {/* Cidade */}
+        {/* Cidade - COMPACTO */}
         <button
           type="button"
           onClick={() => {
@@ -101,61 +99,60 @@ const SearchBar = memo(
             onCityClick();
           }}
           className={cn(
-            "w-full px-4 py-3 sm:px-5 sm:py-4 text-left",
+            "w-full px-4 py-2.5 sm:py-3 text-left",
             "border-b border-gray-100",
             "hover:bg-gray-50 transition-colors",
             "focus-visible:outline-none focus-visible:bg-gray-50",
           )}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+              <MapPin className="w-4 h-4 text-gray-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] sm:text-xs text-gray-500 font-medium uppercase tracking-wide">Onde</p>
-              <p className="text-sm sm:text-base font-semibold text-gray-900 truncate">
+              <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wide leading-none">Onde</p>
+              <p className="text-sm sm:text-base font-semibold text-gray-900 truncate mt-0.5">
                 {selectedCity || "Escolha uma cidade"}
               </p>
             </div>
           </div>
         </button>
 
-        {/* Busca */}
-        <div className="px-4 py-3 sm:px-5 sm:py-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <Search className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+        {/* Busca - COMPACTO */}
+        <div className="px-4 py-2.5 sm:py-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+              <Search className="w-4 h-4 text-gray-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] sm:text-xs text-gray-500 font-medium uppercase tracking-wide">O que busca</p>
-              <div className="relative">
+              <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wide leading-none">O que busca</p>
+              <div className="relative mt-0.5">
                 <input
                   ref={inputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => onSearchChange(e.target.value)}
-                  placeholder="Restaurantes, bares, academias..."
+                  placeholder="Restaurantes, bares..."
                   className={cn(
                     "w-full text-sm sm:text-base font-medium text-gray-900",
                     "placeholder:text-gray-400 placeholder:font-normal",
                     "bg-transparent border-none outline-none",
-                    "py-0.5 sm:py-1",
+                    "py-0",
                   )}
                 />
-                {/* Clear button */}
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={handleClear}
                     className="absolute right-0 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full"
                   >
-                    <X className="w-4 h-4 text-gray-400" />
+                    <X className="w-3.5 h-3.5 text-gray-400" />
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Voice Search */}
+            {/* Voice Search - menor */}
             {onVoiceSearch && (
               <button
                 type="button"
@@ -164,7 +161,7 @@ const SearchBar = memo(
                   onVoiceSearch();
                 }}
                 className={cn(
-                  "w-9 h-9 sm:w-10 sm:h-10 rounded-full",
+                  "w-8 h-8 sm:w-9 sm:h-9 rounded-full",
                   "bg-gray-100 hover:bg-gray-200",
                   "flex items-center justify-center",
                   "transition-colors",
@@ -172,26 +169,25 @@ const SearchBar = memo(
                 )}
                 aria-label="Busca por voz"
               >
-                <Mic className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                <Mic className="w-4 h-4 text-gray-600" />
               </button>
             )}
           </div>
         </div>
 
-        {/* Submit Button */}
-        <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+        {/* Submit Button - COMPACTO */}
+        <div className="px-4 pb-3 sm:pb-4">
           <Button
             type="submit"
             className={cn(
-              "w-full h-10 sm:h-12 rounded-xl",
+              "w-full h-9 sm:h-10 rounded-lg sm:rounded-xl",
               "bg-[#240046] hover:bg-[#3C096C]",
-              "text-white font-semibold text-sm sm:text-base",
+              "text-white font-semibold text-sm",
               "transition-all duration-200",
               "shadow-md shadow-[#240046]/30",
-              !reducedMotion && "active:scale-[0.98]",
             )}
           >
-            <Search className="w-4 h-4 mr-2" />
+            <Search className="w-4 h-4 mr-1.5" />
             Buscar
           </Button>
         </div>
@@ -219,7 +215,6 @@ export const HeroSection = memo(function HeroSection({ selectedCity = "", onCity
     if (onSearch) {
       onSearch(searchQuery);
     } else {
-      // Navegar para página de resultados
       const params = new URLSearchParams();
       if (selectedCity) params.set("cidade", selectedCity);
       if (searchQuery) params.set("q", searchQuery);
@@ -228,7 +223,6 @@ export const HeroSection = memo(function HeroSection({ selectedCity = "", onCity
   }, [searchQuery, selectedCity, navigate, onSearch]);
 
   const handleVoiceSearch = useCallback(() => {
-    // TODO: Implementar busca por voz
     console.log("Voice search triggered");
   }, []);
 
@@ -237,51 +231,44 @@ export const HeroSection = memo(function HeroSection({ selectedCity = "", onCity
       id="search-section"
       className={cn(
         "relative w-full",
-        // MOBILE: mais compacto | DESKTOP: mais espaço
-        "min-h-0 sm:min-h-[30vh] lg:min-h-[35vh]",
-        "flex flex-col justify-center",
+        "flex flex-col justify-end", // Alinha conteúdo embaixo
         "px-4 sm:px-6 lg:px-8",
-        // MOBILE: padding reduzido | DESKTOP: padding normal
-        "pt-20 pb-4 sm:pt-20 sm:pb-6 lg:pt-24 lg:pb-8",
+        // MOBILE: ultra compacto | DESKTOP: mais espaço
+        "pt-16 pb-3", // Mobile: 64px top (header) + 12px bottom
+        "sm:pt-20 sm:pb-4",
+        "lg:pt-24 lg:pb-6",
         "bg-gradient-to-br from-[#240046] via-[#3C096C] to-[#5B21B6]",
         "overflow-hidden",
       )}
     >
-      {/* Background decorativo sutil */}
+      {/* Background decorativo sutil - menor no mobile */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/2 -right-1/4 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] rounded-full bg-violet-500/10 blur-3xl" />
-        <div className="absolute -bottom-1/2 -left-1/4 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] rounded-full bg-fuchsia-500/10 blur-3xl" />
+        <div className="absolute -top-1/2 -right-1/4 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] rounded-full bg-violet-500/10 blur-3xl" />
+        <div className="absolute -bottom-1/2 -left-1/4 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] rounded-full bg-fuchsia-500/10 blur-3xl" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 max-w-4xl mx-auto w-full">
-        {/* Headline - COMPACTA no mobile */}
-        <div className="text-center mb-4 sm:mb-6">
+        {/* Headline - ULTRA COMPACTA no mobile */}
+        <div className="text-center mb-3 sm:mb-4 lg:mb-6">
           <h1
             className={cn(
-              // MOBILE: menor | DESKTOP: maior
-              "text-lg sm:text-xl lg:text-3xl",
+              // MOBILE: 1 linha, menor | DESKTOP: maior
+              "text-base sm:text-lg lg:text-2xl xl:text-3xl",
               "font-display font-bold",
               "text-white",
               "leading-tight",
-              "mb-1 sm:mb-2",
             )}
           >
-            Seu aniversário merece{" "}
+            <span className="hidden sm:inline">Seu aniversário merece </span>
+            <span className="sm:hidden">Encontre </span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-300 to-fuchsia-300">
               benefícios exclusivos
             </span>
           </h1>
-          {/* Subtítulo - ESCONDIDO no mobile pequeno, visível no resto */}
-          <p
-            className={cn(
-              "text-xs sm:text-sm lg:text-base",
-              "text-white/70",
-              "max-w-lg mx-auto",
-              "hidden xs:block", // Esconde em telas muito pequenas
-            )}
-          >
-            Descubra restaurantes, bares e muito mais com vantagens especiais
+          {/* Subtítulo - SÓ desktop */}
+          <p className={cn("text-sm lg:text-base", "text-white/70", "max-w-lg mx-auto", "mt-1", "hidden sm:block")}>
+            Restaurantes, bares e muito mais com vantagens especiais
           </p>
         </div>
 

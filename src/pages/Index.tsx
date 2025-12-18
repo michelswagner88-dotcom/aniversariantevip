@@ -397,30 +397,33 @@ const SearchPill = memo(({ city, state, isLoading, onCityClick, onFilterClick, f
       </button>
     </div>
 
-    {/* Mobile - Pill branca */}
+    {/* Mobile - Pill compacta */}
     <div className="sm:hidden flex items-center gap-2">
-      <button
-        onClick={onCityClick}
-        className="flex-1 flex items-center gap-2.5 h-11 px-3.5 bg-white rounded-full shadow-sm"
-        aria-label="Selecionar cidade"
-      >
-        <Search className="w-4 h-4 text-zinc-400 flex-shrink-0" />
-        <div className="text-left flex-1 min-w-0">
-          <p className="text-sm font-medium text-zinc-900 truncate">Onde você quer aproveitar os benefícios?</p>
-          <p className="text-xs text-zinc-500 truncate">{isLoading ? "Detectando..." : `${city}, ${state}`}</p>
-        </div>
-      </button>
+      {/* Botão filtro PRIMEIRO (menor) */}
       <button
         onClick={onFilterClick}
-        className="w-11 h-11 rounded-full bg-white shadow-sm flex items-center justify-center relative flex-shrink-0"
+        className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center relative flex-shrink-0"
         aria-label="Abrir filtros"
       >
-        <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
+        <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-600" />
         {filterCount > 0 && (
           <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
             {filterCount}
           </span>
         )}
+      </button>
+
+      {/* Barra de busca DEPOIS (menor) */}
+      <button
+        onClick={onCityClick}
+        className="flex-1 flex items-center gap-2 h-9 px-3 bg-white rounded-full shadow-sm"
+        aria-label="Selecionar cidade"
+      >
+        <MapPin className="w-3.5 h-3.5 text-violet-600 flex-shrink-0" />
+        <div className="text-left flex-1 min-w-0">
+          <p className="text-[10px] text-zinc-500 uppercase font-medium leading-none">Onde</p>
+          <p className="text-sm font-medium text-zinc-900 truncate">{isLoading ? "..." : `${city}, ${state}`}</p>
+        </div>
       </button>
     </div>
   </>

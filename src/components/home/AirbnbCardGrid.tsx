@@ -1,12 +1,12 @@
 // =============================================================================
-// AIRBNBCARDGRID.TSX - ANIVERSARIANTE VIP
-// Design: Cards compactos estilo Airbnb
+// CARDGRID.TSX - ANIVERSARIANTE VIP
+// Design: Grid responsivo, 2 colunas mobile
 // =============================================================================
 
 import { memo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, MapPin, Gift } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Gift } from "lucide-react";
+import { EstablishmentCard } from "@/components/cards/EstablishmentCard";
 import { getEstabelecimentoUrl } from "@/lib/slugUtils";
 
 // =============================================================================
@@ -24,116 +24,47 @@ interface Estabelecimento {
   imagem_url?: string;
   descricao_beneficio?: string;
   slug?: string;
-  latitude?: number;
-  longitude?: number;
 }
 
-interface AirbnbCardGridProps {
-  estabelecimentos: Estabelecimento[];
+interface CardGridProps {
+  items: Estabelecimento[];
   isLoading?: boolean;
-  userLocation?: { lat: number; lng: number } | null;
-  variant?: "grid" | "carousel";
 }
-
-interface AirbnbCardProps {
-  estabelecimento: Estabelecimento;
-  onClick?: () => void;
-}
-
-// =============================================================================
-// CARD COMPONENT - Tamanho compacto igual Airbnb
-// =============================================================================
-
-const AirbnbCard = memo(({ estabelecimento, onClick }: AirbnbCardProps) => {
-  const categoria = Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria;
-
-  const imageUrl = estabelecimento.imagem_url || estabelecimento.logo_url;
-
-  return (
-    <article onClick={onClick} className="cursor-pointer group">
-      {/* Imagem - Proporção 1:1 (quadrada) igual Airbnb */}
-      <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 mb-2">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={estabelecimento.nome_fantasia || "Estabelecimento"}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-100 to-fuchsia-100">
-            <Gift className="w-10 h-10 text-violet-300" />
-          </div>
-        )}
-
-        {/* Favorito */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            // TODO: implementar favorito
-          }}
-          className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center"
-          aria-label="Adicionar aos favoritos"
-        >
-          <Heart className="w-6 h-6 text-white drop-shadow-md hover:scale-110 transition-transform" />
-        </button>
-      </div>
-
-      {/* Info - Compacta */}
-      <div className="space-y-0.5">
-        {/* Nome */}
-        <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-1">
-          {estabelecimento.nome_fantasia || "Estabelecimento"}
-        </h3>
-
-        {/* Categoria + Bairro */}
-        <p className="text-gray-500 text-xs line-clamp-1">
-          {categoria && <span className="capitalize">{categoria}</span>}
-          {categoria && estabelecimento.bairro && <span> · </span>}
-          {estabelecimento.bairro && <span>{estabelecimento.bairro}</span>}
-        </p>
-
-        {/* Benefício */}
-        {estabelecimento.descricao_beneficio && (
-          <p className="text-xs text-violet-600 font-medium line-clamp-1 flex items-center gap-1">
-            <Gift className="w-3 h-3 flex-shrink-0" />
-            <span className="truncate">{estabelecimento.descricao_beneficio}</span>
-          </p>
-        )}
-      </div>
-    </article>
-  );
-});
-AirbnbCard.displayName = "AirbnbCard";
 
 // =============================================================================
 // SKELETON
 // =============================================================================
 
-const CardSkeleton = () => (
+const Skeleton = () => (
   <div className="animate-pulse">
-    <div className="aspect-square rounded-xl bg-gray-200 mb-2" />
-    <div className="space-y-1.5">
-      <div className="h-4 bg-gray-200 rounded w-3/4" />
-      <div className="h-3 bg-gray-200 rounded w-1/2" />
-      <div className="h-3 bg-gray-200 rounded w-2/3" />
-    </div>
+    <div className="aspect-[4/5] rounded-xl bg-gray-200 mb-2" />
+    <div className="h-4 bg-gray-200 rounded w-3/4 mb-1" />
+    <div className="h-3 bg-gray-200 rounded w-1/2" />
   </div>
 );
 
 // =============================================================================
-// MAIN COMPONENT
+// EMPTY
 // =============================================================================
 
-export const AirbnbCardGrid = memo(function AirbnbCardGrid({
-  estabelecimentos,
-  isLoading = false,
-  userLocation,
-  variant = "grid",
-}: AirbnbCardGridProps) {
+const Empty = () => (
+  <div className="text-center py-16 col-span-full">
+    <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+      <Gift className="w-8 h-8 text-gray-400" />
+    </div>
+    <p className="text-gray-900 font-medium">Nenhum resultado</p>
+    <p className="text-gray-500 text-sm mt-1">Tente ajustar os filtros</p>
+  </div>
+);
+
+// =============================================================================
+// MAIN
+// =============================================================================
+
+export const CardGrid = memo(function CardGrid({ items, isLoading = false }: CardGridProps) {
   const navigate = useNavigate();
 
-  const handleCardClick = (est: Estabelecimento) => {
+  const handleClick = (est: Estabelecimento) => {
     const url = getEstabelecimentoUrl({
       estado: est.estado || "",
       cidade: est.cidade || "",
@@ -145,30 +76,25 @@ export const AirbnbCardGrid = memo(function AirbnbCardGrid({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-4 sm:gap-6">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <CardSkeleton key={i} />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} />
         ))}
       </div>
     );
   }
 
-  if (!estabelecimentos || estabelecimentos.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <Gift className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <p className="text-gray-500">Nenhum estabelecimento encontrado</p>
-      </div>
-    );
+  if (!items || items.length === 0) {
+    return <Empty />;
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
-      {estabelecimentos.map((est) => (
-        <AirbnbCard key={est.id} estabelecimento={est} onClick={() => handleCardClick(est)} />
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {items.map((est) => (
+        <EstablishmentCard key={est.id} data={est} onClick={() => handleClick(est)} />
       ))}
     </div>
   );
 });
 
-export default AirbnbCardGrid;
+export default CardGrid;

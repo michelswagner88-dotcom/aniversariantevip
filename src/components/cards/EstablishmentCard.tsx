@@ -1,6 +1,6 @@
 // =============================================================================
-// ESTABELECIMENTOCARD.TSX - ANIVERSARIANTE VIP
-// Design: Compacto, aspect-ratio 4:5, info completa visível
+// ESTABLISHMENTCARD.TSX - ANIVERSARIANTE VIP
+// Re-export com nome correto para compatibilidade
 // =============================================================================
 
 import { memo, useState } from "react";
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 // TYPES
 // =============================================================================
 
-interface Estabelecimento {
+export interface EstablishmentData {
   id: string;
   nome_fantasia?: string;
   categoria?: string | string[];
@@ -24,23 +24,23 @@ interface Estabelecimento {
   slug?: string;
 }
 
-interface EstabelecimentoCardProps {
-  data: Estabelecimento;
+export interface EstablishmentCardProps {
+  data: EstablishmentData;
   onClick?: () => void;
   onFavorite?: (id: string) => void;
   isFavorite?: boolean;
 }
 
 // =============================================================================
-// MAIN
+// COMPONENT
 // =============================================================================
 
-export const EstabelecimentoCard = memo(function EstabelecimentoCard({
+export const EstablishmentCard = memo(function EstablishmentCard({
   data,
   onClick,
   onFavorite,
   isFavorite = false,
-}: EstabelecimentoCardProps) {
+}: EstablishmentCardProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
 
@@ -118,4 +118,7 @@ export const EstabelecimentoCard = memo(function EstabelecimentoCard({
   );
 });
 
-export default EstabelecimentoCard;
+// Alias para compatibilidade
+export const EstabelecimentoCard = EstablishmentCard;
+
+export default EstablishmentCard;

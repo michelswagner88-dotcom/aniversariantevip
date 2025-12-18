@@ -1,2 +1,10 @@
-export { EstablishmentCard, type EstablishmentCardProps, type EstablishmentData } from "./EstablishmentCard";
-export { EstablishmentCardSkeleton } from "./EstablishmentCardSkeleton";
+// =============================================================================
+// CARDS INDEX - ANIVERSARIANTE VIP
+// =============================================================================
+
+export {
+  EstablishmentCard,
+  EstabelecimentoCard,
+  type EstablishmentCardProps,
+  type EstablishmentData,
+} from "./EstablishmentCard";

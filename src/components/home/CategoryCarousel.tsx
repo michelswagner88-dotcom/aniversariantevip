@@ -6,7 +6,7 @@
 import { memo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import { EstabelecimentoCard } from "./EstabelecimentoCard";
+import { EstablishmentCard } from "@/components/cards/EstablishmentCard";
 import { getEstabelecimentoUrl } from "@/lib/slugUtils";
 import { cn } from "@/lib/utils";
 
@@ -86,7 +86,7 @@ export const CardCarousel = memo(function CardCarousel({ title, subtitle, items,
             className="snap-start flex-shrink-0"
             style={{ width: "calc(50% - 6px)" }} // ~2 cards visíveis
           >
-            <EstabelecimentoCard data={est} onClick={() => handleClick(est)} />
+            <EstablishmentCard data={est} onClick={() => handleClick(est)} />
           </div>
         ))}
       </div>

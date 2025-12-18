@@ -13,7 +13,7 @@ import { getSubcategoriesForCategory } from "@/constants/categorySubcategories";
 
 // Components
 import { Header } from "@/components/Header";
-import { SearchBar } from "@/components/SearchBar";
+import { SearchBar } from "@/components/home/SearchBar";
 import { CategoriasPills } from "@/components/home/CategoriasPills";
 import { EmptyStateBanner } from "@/components/home/EmptyStateBanner";
 import { CardGrid } from "@/components/home/CardGrid";

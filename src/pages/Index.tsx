@@ -18,6 +18,7 @@ import {
   HelpCircle,
   Heart,
   ChevronRight,
+  ChevronLeft,
   Sparkles,
   Dumbbell,
   Beer,
@@ -30,6 +31,9 @@ import {
   Utensils,
   Paintbrush,
   IceCream,
+  Crosshair,
+  Navigation,
+  Loader2,
 } from "lucide-react";
 import { useEstabelecimentos } from "@/hooks/useEstabelecimentos";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
@@ -279,10 +283,83 @@ const Logo = memo(() => (
 ));
 
 // =============================================================================
+// LOCATION BUTTON
+// =============================================================================
+
+const LocationButton = memo(({ onUseCurrentLocation }: { onUseCurrentLocation: () => void }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleUseLocation = async () => {
+    setLoading(true);
+    try {
+      await onUseCurrentLocation();
+      setIsOpen(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-10 h-10 sm:w-9 sm:h-9 rounded-full bg-white shadow-sm border border-zinc-200 flex items-center justify-center hover:shadow-md hover:border-violet-300 transition-all flex-shrink-0"
+        aria-label="Localização"
+      >
+        <Navigation className="w-4 h-4 text-violet-600" />
+      </button>
+
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40 sm:hidden" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-zinc-200 z-50 overflow-hidden animate-fade-in">
+            <div className="p-3 border-b border-zinc-100 bg-gradient-to-r from-violet-50 to-fuchsia-50">
+              <p className="text-sm font-medium text-zinc-900">📍 Localização</p>
+              <p className="text-xs text-zinc-500 mt-0.5">Encontre benefícios perto de você</p>
+            </div>
+            <button
+              onClick={handleUseLocation}
+              disabled={loading}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-50 transition-colors disabled:opacity-60"
+            >
+              <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
+                {loading ? (
+                  <Loader2 className="w-5 h-5 text-violet-600 animate-spin" />
+                ) : (
+                  <Crosshair className="w-5 h-5 text-violet-600" />
+                )}
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-medium text-zinc-900">
+                  {loading ? "Detectando..." : "Usar minha localização"}
+                </p>
+                <p className="text-xs text-zinc-500">Ativar GPS automático</p>
+              </div>
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+});
+
+// =============================================================================
 // HEADER
 // =============================================================================
 
-const Header = memo(({ children }: { children?: React.ReactNode }) => {
+const Header = memo(({ children, onUseCurrentLocation }: { children?: React.ReactNode; onUseCurrentLocation?: () => void }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -293,7 +370,10 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="hidden sm:flex items-center justify-between h-16 gap-6">
             <Logo />
-            <div className="flex-1 max-w-xl">{children}</div>
+            <div className="flex-1 max-w-xl flex items-center gap-2">
+              {onUseCurrentLocation && <LocationButton onUseCurrentLocation={onUseCurrentLocation} />}
+              <div className="flex-1">{children}</div>
+            </div>
             <button
               onClick={() => setMenuOpen(true)}
               className="flex items-center gap-1.5 h-10 pl-3 pr-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
@@ -316,7 +396,12 @@ const Header = memo(({ children }: { children?: React.ReactNode }) => {
                 <Menu className="w-5 h-5 text-white" />
               </button>
             </div>
-            {children && <div className="pb-3">{children}</div>}
+            {children && (
+              <div className="pb-3 flex items-center gap-2">
+                {onUseCurrentLocation && <LocationButton onUseCurrentLocation={onUseCurrentLocation} />}
+                <div className="flex-1">{children}</div>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -644,14 +729,14 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
                 onClick={() => onSelect(cat.id)}
                 className={cn(
                   "flex flex-col items-center gap-1 min-w-[64px] sm:min-w-[72px] px-3 py-2 relative transition-colors",
-                  isActive ? "text-white" : "text-white/60 hover:text-white/80",
+                  isActive ? "text-white" : "text-white/90 hover:text-white",
                 )}
               >
-                <Icon className={cn("w-5 h-5", isActive ? "text-white" : "text-white/60")} />
+                <Icon className={cn("w-5 h-5", isActive ? "text-white" : "text-white/85")} />
                 <span
                   className={cn(
                     "text-[11px] font-semibold whitespace-nowrap",
-                    isActive ? "text-white" : "text-white/60",
+                    isActive ? "text-white" : "text-white/90",
                   )}
                 >
                   {shortLabel}
@@ -741,17 +826,71 @@ const Card = memo(({ data, onClick }: any) => {
 
 const Carousel = memo(({ title, subtitle, items, onSeeAll }: any) => {
   const navigate = useNavigate();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const updateScrollState = useCallback(() => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  }, []);
+
+  useEffect(() => {
+    updateScrollState();
+    const el = scrollRef.current;
+    if (el) {
+      el.addEventListener("scroll", updateScrollState);
+      return () => el.removeEventListener("scroll", updateScrollState);
+    }
+  }, [updateScrollState, items]);
+
+  const scroll = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      const scrollAmount = 400;
+      scrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
   if (!items?.length) return null;
+
   return (
     <section className="mb-5">
-      <button onClick={onSeeAll} className="flex items-center gap-1 mb-2 px-4 sm:px-0 group">
-        <div>
-          <h2 className="text-base font-semibold text-zinc-900 group-hover:underline">{title}</h2>
-          {subtitle && <p className="text-sm text-zinc-500">{subtitle}</p>}
+      <div className="flex items-center justify-between mb-2 px-4 sm:px-0">
+        <button onClick={onSeeAll} className="flex items-center gap-1 group">
+          <div>
+            <h2 className="text-base font-semibold text-zinc-900 group-hover:underline">{title}</h2>
+            {subtitle && <p className="text-sm text-zinc-500">{subtitle}</p>}
+          </div>
+          <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:text-zinc-600 mt-0.5" />
+        </button>
+        {/* Setas de navegação - apenas desktop */}
+        <div className="hidden sm:flex items-center gap-2">
+          <button
+            onClick={() => scroll("left")}
+            disabled={!canScrollLeft}
+            className="w-8 h-8 rounded-full border border-zinc-300 bg-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:shadow-md hover:border-zinc-400 transition-all"
+            aria-label="Anterior"
+          >
+            <ChevronLeft className="w-4 h-4 text-zinc-700" />
+          </button>
+          <button
+            onClick={() => scroll("right")}
+            disabled={!canScrollRight}
+            className="w-8 h-8 rounded-full border border-zinc-300 bg-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:shadow-md hover:border-zinc-400 transition-all"
+            aria-label="Próximo"
+          >
+            <ChevronRight className="w-4 h-4 text-zinc-700" />
+          </button>
         </div>
-        <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:text-zinc-600 mt-0.5" />
-      </button>
+      </div>
       <div
+        ref={scrollRef}
         className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-4 sm:px-0 scroll-pl-4 scroll-pr-4"
         style={{ scrollbarWidth: "none" }}
       >
@@ -921,6 +1060,61 @@ const Index = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleUseCurrentLocation = useCallback(async () => {
+    return new Promise<void>((resolve, reject) => {
+      if (!("geolocation" in navigator)) {
+        toast.error("Geolocalização não disponível");
+        reject();
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&addressdetails=1`,
+              { headers: { "Accept-Language": "pt-BR" } },
+            );
+            const data = await res.json();
+            const addr = data.address;
+            const userCity = addr.city || addr.town || addr.municipality || "";
+            const userState = addr["ISO3166-2-lvl4"]?.split("-")[1] || "";
+            
+            // Verificar se a cidade existe na lista
+            const exact = availableCities.find(
+              (c) => c.cidade.toLowerCase() === userCity.toLowerCase() && c.estado.toLowerCase() === userState.toLowerCase(),
+            );
+            
+            if (exact) {
+              updateCity(exact.cidade, exact.estado);
+              toast.success(`Localização atualizada para ${exact.cidade}`);
+            } else {
+              // Tentar capital do estado ou cidade mais próxima
+              const capital = STATE_CAPITALS[userState.toUpperCase()];
+              const capitalCity = availableCities.find(
+                (c) => c.cidade.toLowerCase() === capital?.toLowerCase() && c.estado.toLowerCase() === userState.toLowerCase(),
+              );
+              if (capitalCity) {
+                updateCity(capitalCity.cidade, capitalCity.estado);
+                toast.success(`Localização: ${capitalCity.cidade} (capital)`);
+              } else {
+                toast.info(`Não há parceiros em ${userCity || "sua região"} ainda`);
+              }
+            }
+            resolve();
+          } catch {
+            toast.error("Erro ao detectar localização");
+            reject();
+          }
+        },
+        () => {
+          toast.error("Permissão de localização negada");
+          reject();
+        },
+        { timeout: 10000 },
+      );
+    });
+  }, [availableCities, updateCity]);
+
   const showGrid = categoria !== "all";
   const showCarousels = categoria === "all" && carousels.length > 0;
 
@@ -928,7 +1122,7 @@ const Index = () => {
     <div className="min-h-screen flex flex-col bg-white">
       <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
 
-      <Header>
+      <Header onUseCurrentLocation={handleUseCurrentLocation}>
         <SearchPill
           city={city}
           state={state}

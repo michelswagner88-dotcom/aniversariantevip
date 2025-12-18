@@ -168,10 +168,12 @@ const Logo = memo(({ variant }: LogoProps) => {
       aria-label="AniversarianteVIP - Ir para página inicial"
     >
       {/* Gradiente roxo → azul → ciano */}
-      <span className="bg-gradient-to-r from-violet-500 via-blue-500 to-cyan-400 bg-clip-text text-transparent font-bold">
+      <span className="bg-gradient-to-r from-violet-500 via-blue-500 to-cyan-400 bg-clip-text text-transparent font-bold uppercase">
         Aniversariante
       </span>
-      <span className="bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent font-bold">VIP</span>
+      <span className="bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent font-bold uppercase">
+        VIP
+      </span>
     </Link>
   );
 });

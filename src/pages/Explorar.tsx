@@ -670,18 +670,29 @@ const Explorar = () => {
       });
     }
 
-    // Filtro por subcategoria
+    // Filtro por subcategoria - usa mesma lógica do filteredPlaces
     if (selectedSubcategories.length > 0) {
       filtered = filtered.filter((est) => {
         const specs = est.especialidades || [];
-        return selectedSubcategories.some((sub) =>
-          specs.some(
-            (s: string) =>
-              normalizeText(s).includes(normalizeText(sub)) || normalizeText(sub).includes(normalizeText(s)),
-          ),
-        );
+        const hasMatch = selectedSubcategories.some((sub) => {
+          const subNorm = normalizeText(sub);
+          return specs.some((s: string) => {
+            const specNorm = normalizeText(s);
+            // Match exato OU parcial
+            return specNorm === subNorm || specNorm.includes(subNorm) || subNorm.includes(specNorm);
+          });
+        });
+        return hasMatch;
       });
     }
+
+    // DEBUG - remover depois
+    console.log("[Mapa] Filtros:", {
+      categoria: selectedCategory,
+      subcategorias: selectedSubcategories,
+      totalFiltrado: filtered.length,
+      comCoordenadas: filtered.filter((e) => e.latitude && e.longitude).length,
+    });
 
     // Agora formata para o mapa (só os que têm coordenadas)
     return filtered
@@ -709,12 +720,17 @@ const Explorar = () => {
         return false;
       }
 
-      // Subcategory filter
+      // Subcategory filter - mesma lógica do mapa
       if (selectedSubcategories.length > 0) {
         const placeSubcats = place.especialidades || [];
-        const hasMatch = selectedSubcategories.some((sub) =>
-          placeSubcats.some((ps) => normalizeText(ps) === normalizeText(sub)),
-        );
+        const hasMatch = selectedSubcategories.some((sub) => {
+          const subNorm = normalizeText(sub);
+          return placeSubcats.some((ps: string) => {
+            const specNorm = normalizeText(ps);
+            // Match exato OU parcial
+            return specNorm === subNorm || specNorm.includes(subNorm) || subNorm.includes(specNorm);
+          });
+        });
         if (!hasMatch) return false;
       }
 

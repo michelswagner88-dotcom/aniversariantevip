@@ -1,10 +1,26 @@
 // src/pages/EstabelecimentoDetalhePremium.tsx
+// V2 - Layout 2 Colunas + Sidebar Sticky (Padrão Airbnb)
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
-import { Gift, X, Copy, MessageCircle, Send, Facebook, Instagram, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Gift,
+  X,
+  Copy,
+  MessageCircle,
+  Send,
+  Facebook,
+  Instagram,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  Clock,
+  Phone,
+  ExternalLink,
+  CheckCircle,
+} from "lucide-react";
 import { useSEO } from "@/hooks/useSEO";
 import { getEstabelecimentoSEO } from "@/constants/seo";
 import { useFavoritos } from "@/hooks/useFavoritos";
@@ -28,16 +44,77 @@ import LocationSection from "@/components/estabelecimento/LocationSection";
 import PartnerCTA from "@/components/estabelecimento/PartnerCTA";
 import BottomNav from "@/components/BottomNav";
 
-// ===== GALERIA DE FOTOS INLINE =====
-interface GaleriaFotosInlineProps {
+// ===== GALERIA DE FOTOS - DESKTOP GRID =====
+interface GaleriaFotosGridProps {
   photos: string[];
   establishmentName: string;
+  onOpenLightbox: (index: number) => void;
 }
 
-const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlineProps) => {
+const GaleriaFotosGrid = ({ photos, establishmentName, onOpenLightbox }: GaleriaFotosGridProps) => {
+  const displayPhotos = photos.slice(0, 5);
+  const remainingCount = photos.length - 5;
+
+  if (displayPhotos.length === 0) return null;
+
+  // Grid estilo Airbnb: 1 grande + 4 pequenas
+  if (displayPhotos.length >= 5) {
+    return (
+      <div className="hidden lg:grid grid-cols-4 grid-rows-2 gap-2 h-[400px] rounded-2xl overflow-hidden">
+        <button onClick={() => onOpenLightbox(0)} className="col-span-2 row-span-2 relative overflow-hidden group">
+          <img
+            src={displayPhotos[0]}
+            alt={`${establishmentName} - Foto principal`}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        </button>
+        {displayPhotos.slice(1, 5).map((photo, index) => (
+          <button key={index} onClick={() => onOpenLightbox(index + 1)} className="relative overflow-hidden group">
+            <img
+              src={photo}
+              alt={`${establishmentName} - Foto ${index + 2}`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            {index === 3 && remainingCount > 0 && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <span className="text-white font-semibold text-lg">+{remainingCount} fotos</span>
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  // Menos de 5 fotos: grid simples
+  return (
+    <div className="hidden lg:grid grid-cols-3 gap-2 h-[300px] rounded-2xl overflow-hidden">
+      {displayPhotos.map((photo, index) => (
+        <button
+          key={index}
+          onClick={() => onOpenLightbox(index)}
+          className={`relative overflow-hidden group ${index === 0 && displayPhotos.length <= 2 ? "col-span-2" : ""}`}
+        >
+          <img
+            src={photo}
+            alt={`${establishmentName} - Foto ${index + 1}`}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        </button>
+      ))}
+    </div>
+  );
+};
+
+// ===== GALERIA DE FOTOS - MOBILE CAROUSEL =====
+interface GaleriaFotosMobileProps {
+  photos: string[];
+  establishmentName: string;
+  onOpenLightbox: (index: number) => void;
+}
+
+const GaleriaFotosMobile = ({ photos, establishmentName, onOpenLightbox }: GaleriaFotosMobileProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
@@ -64,154 +141,295 @@ const GaleriaFotosInline = ({ photos, establishmentName }: GaleriaFotosInlinePro
     }
   };
 
-  const openLightbox = (index: number) => {
-    setCurrentIndex(index);
-    setLightboxOpen(true);
-  };
+  return (
+    <div className="lg:hidden relative mt-4">
+      <div className="flex items-center justify-between mb-3 px-4">
+        <h2 className="text-base font-semibold text-[#240046]">Fotos</h2>
+        <span className="text-xs text-[#3C096C]">
+          {displayPhotos.length} {displayPhotos.length === 1 ? "foto" : "fotos"}
+        </span>
+      </div>
 
-  const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev === 0 ? displayPhotos.length - 1 : prev - 1));
-  };
+      <div className="relative">
+        {displayPhotos.length > 2 && (
+          <button
+            onClick={() => scroll("left")}
+            aria-label="Fotos anteriores"
+            className={`absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center transition-all ${canScrollLeft ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          >
+            <ChevronLeft className="w-5 h-5 text-[#240046]" />
+          </button>
+        )}
 
-  const goToNext = () => {
-    setCurrentIndex((prev) => (prev === displayPhotos.length - 1 ? 0 : prev + 1));
+        <div
+          ref={scrollRef}
+          onScroll={checkScroll}
+          className="flex gap-2 overflow-x-auto scroll-smooth snap-x snap-mandatory px-4 pb-2"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {displayPhotos.map((photo, index) => (
+            <button
+              key={index}
+              onClick={() => onOpenLightbox(index)}
+              aria-label={`Ver foto ${index + 1}`}
+              className={`flex-shrink-0 snap-start overflow-hidden rounded-xl active:scale-[0.98] transition-transform ${displayPhotos.length === 1 ? "w-full aspect-video" : "w-[65vw] aspect-[4/3]"}`}
+            >
+              <img
+                src={photo}
+                alt={`${establishmentName} - Foto ${index + 1}`}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </button>
+          ))}
+          {/* Spacer final */}
+          <div className="flex-shrink-0 w-4" aria-hidden="true" />
+        </div>
+
+        {displayPhotos.length > 2 && (
+          <button
+            onClick={() => scroll("right")}
+            aria-label="Próximas fotos"
+            className={`absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center transition-all ${canScrollRight ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          >
+            <ChevronRight className="w-5 h-5 text-[#240046]" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ===== LIGHTBOX =====
+interface LightboxProps {
+  photos: string[];
+  currentIndex: number;
+  establishmentName: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onPrevious: () => void;
+  onNext: () => void;
+  onIndexChange: (index: number) => void;
+}
+
+const Lightbox = ({
+  photos,
+  currentIndex,
+  establishmentName,
+  isOpen,
+  onClose,
+  onPrevious,
+  onNext,
+  onIndexChange,
+}: LightboxProps) => {
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+        onClick={onClose}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Fechar galeria"
+          className="absolute top-4 right-4 z-10 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all"
+        >
+          <X className="w-6 h-6 text-white" />
+        </button>
+
+        <div className="absolute top-4 left-4 text-white/70 text-sm">
+          {currentIndex + 1} / {photos.length}
+        </div>
+
+        {photos.length > 1 && (
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPrevious();
+              }}
+              aria-label="Foto anterior"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all"
+            >
+              <ChevronLeft className="w-6 h-6 text-white" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onNext();
+              }}
+              aria-label="Próxima foto"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all"
+            >
+              <ChevronRight className="w-6 h-6 text-white" />
+            </button>
+          </>
+        )}
+
+        <motion.img
+          key={currentIndex}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          src={photos[currentIndex]}
+          alt={`${establishmentName} - Foto ${currentIndex + 1}`}
+          className="max-w-[90vw] max-h-[80vh] object-contain rounded-lg"
+          onClick={(e) => e.stopPropagation()}
+        />
+
+        {photos.length > 1 && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+            {photos.slice(0, 10).map((_, index) => (
+              <button
+                key={index}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onIndexChange(index);
+                }}
+                className={`w-2 h-2 rounded-full transition-all ${index === currentIndex ? "w-6 bg-white" : "bg-white/40"}`}
+              />
+            ))}
+          </div>
+        )}
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+// ===== SIDEBAR BENEFIT CARD (DESKTOP) =====
+interface SidebarBenefitCardProps {
+  beneficio: string;
+  validade: string;
+  regras?: string;
+  onResgatar: () => void;
+  whatsapp?: string;
+  instagram?: string;
+  phone?: string;
+  onWhatsApp: () => void;
+  onInstagram: () => void;
+  onPhone: () => void;
+}
+
+const SidebarBenefitCard = ({
+  beneficio,
+  validade,
+  onResgatar,
+  whatsapp,
+  instagram,
+  phone,
+  onWhatsApp,
+  onInstagram,
+  onPhone,
+}: SidebarBenefitCardProps) => {
+  const getValidadeTexto = () => {
+    switch (validade) {
+      case "mes_aniversario":
+        return "Válido durante o mês do seu aniversário";
+      case "semana_aniversario":
+        return "Válido na semana do seu aniversário";
+      case "dia_aniversario":
+      default:
+        return "Válido no dia do seu aniversário";
+    }
   };
 
   return (
-    <>
-      <div className="relative mx-4 sm:mx-6 mt-4 sm:mt-6">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base sm:text-lg font-semibold text-[#240046]">Fotos</h2>
-            <span className="text-xs sm:text-sm text-[#3C096C]">
-              {displayPhotos.length} {displayPhotos.length === 1 ? "foto" : "fotos"}
-            </span>
-          </div>
-
-          <div className="relative group">
-            {displayPhotos.length > 2 && (
-              <button
-                onClick={() => scroll("left")}
-                aria-label="Fotos anteriores"
-                className={`absolute left-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/90 shadow-lg flex items-center justify-center transition-all active:scale-95 ${canScrollLeft ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-              >
-                <ChevronLeft className="w-5 h-5 text-[#240046]" />
-              </button>
-            )}
-
-            <div
-              ref={scrollRef}
-              onScroll={checkScroll}
-              className="flex gap-2 sm:gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 pb-2"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            >
-              {displayPhotos.map((photo, index) => (
-                <button
-                  key={index}
-                  onClick={() => openLightbox(index)}
-                  aria-label={`Ver foto ${index + 1}`}
-                  className={`flex-shrink-0 snap-start overflow-hidden rounded-xl active:scale-[0.98] transition-transform ${displayPhotos.length === 1 ? "w-full aspect-video" : "w-[65vw] sm:w-[260px] aspect-[4/3]"}`}
-                >
-                  <img
-                    src={photo}
-                    alt={`${establishmentName} - Foto ${index + 1}`}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                </button>
-              ))}
-            </div>
-
-            {displayPhotos.length > 2 && (
-              <button
-                onClick={() => scroll("right")}
-                aria-label="Proximas fotos"
-                className={`absolute right-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/90 shadow-lg flex items-center justify-center transition-all active:scale-95 ${canScrollRight ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-              >
-                <ChevronRight className="w-5 h-5 text-[#240046]" />
-              </button>
-            )}
-          </div>
+    <div className="bg-gradient-to-br from-[#240046] to-[#3C096C] text-white p-6 rounded-2xl shadow-xl">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+          <Gift className="w-5 h-5" />
         </div>
+        <span className="text-sm uppercase tracking-wide text-white/80">Benefício Exclusivo</span>
       </div>
 
-      <AnimatePresence>
-        {lightboxOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
-            onClick={() => setLightboxOpen(false)}
+      {/* Benefício */}
+      <h3 className="text-xl font-bold mb-2">{beneficio}</h3>
+      <p className="text-sm text-white/80 mb-6">{getValidadeTexto()}</p>
+
+      {/* CTA Principal */}
+      <button
+        onClick={onResgatar}
+        className="w-full h-12 bg-white text-[#240046] hover:bg-gray-100 font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors mb-4"
+      >
+        <Gift className="w-5 h-5" />
+        Resgatar benefício
+      </button>
+
+      {/* Divider */}
+      <div className="border-t border-white/20 my-4" />
+
+      {/* Contatos */}
+      <p className="text-xs text-white/60 uppercase tracking-wide mb-3">Entrar em contato</p>
+      <div className="space-y-2">
+        {whatsapp && (
+          <button
+            onClick={onWhatsApp}
+            className="w-full h-10 bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors"
           >
-            <button
-              onClick={() => setLightboxOpen(false)}
-              aria-label="Fechar galeria"
-              className="absolute top-4 right-4 z-10 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
-            >
-              <X className="w-6 h-6 text-white" />
-            </button>
-
-            <div className="absolute top-4 left-4 text-white/70 text-sm">
-              {currentIndex + 1} / {displayPhotos.length}
-            </div>
-
-            {displayPhotos.length > 1 && (
-              <>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    goToPrevious();
-                  }}
-                  aria-label="Foto anterior"
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
-                >
-                  <ChevronLeft className="w-6 h-6 text-white" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    goToNext();
-                  }}
-                  aria-label="Proxima foto"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
-                >
-                  <ChevronRight className="w-6 h-6 text-white" />
-                </button>
-              </>
-            )}
-
-            <motion.img
-              key={currentIndex}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              src={displayPhotos[currentIndex]}
-              alt={`${establishmentName} - Foto ${currentIndex + 1}`}
-              className="max-w-[90vw] max-h-[80vh] object-contain rounded-lg"
-              onClick={(e) => e.stopPropagation()}
-            />
-
-            {displayPhotos.length > 1 && (
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-                {displayPhotos.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentIndex(index);
-                    }}
-                    className={`w-2 h-2 rounded-full transition-all ${index === currentIndex ? "w-6 bg-white" : "bg-white/40"}`}
-                  />
-                ))}
-              </div>
-            )}
-          </motion.div>
+            <MessageCircle className="w-4 h-4" />
+            WhatsApp
+          </button>
         )}
-      </AnimatePresence>
-    </>
+        <div className="flex gap-2">
+          {instagram && (
+            <button
+              onClick={onInstagram}
+              className="flex-1 h-10 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors"
+            >
+              <Instagram className="w-4 h-4" />
+              Instagram
+            </button>
+          )}
+          {phone && (
+            <button
+              onClick={onPhone}
+              className="flex-1 h-10 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors"
+            >
+              <Phone className="w-4 h-4" />
+              Ligar
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
+
+// ===== BREADCRUMBS =====
+interface BreadcrumbsProps {
+  estado: string;
+  cidade: string;
+  bairro?: string;
+  nome: string;
+}
+
+const Breadcrumbs = ({ estado, cidade, bairro, nome }: BreadcrumbsProps) => (
+  <nav className="hidden lg:flex items-center gap-2 text-sm text-gray-500 mb-4">
+    <a href={`/${estado?.toLowerCase()}`} className="hover:text-[#240046] transition-colors">
+      {estado}
+    </a>
+    <ChevronRight className="w-4 h-4" />
+    <a
+      href={`/${estado?.toLowerCase()}/${cidade?.toLowerCase().replace(/\s+/g, "-")}`}
+      className="hover:text-[#240046] transition-colors"
+    >
+      {cidade}
+    </a>
+    {bairro && (
+      <>
+        <ChevronRight className="w-4 h-4" />
+        <span className="text-gray-400">{bairro}</span>
+      </>
+    )}
+    <ChevronRight className="w-4 h-4" />
+    <span className="text-gray-900 font-medium truncate max-w-[200px]">{nome}</span>
+  </nav>
+);
 
 // ===== COMPONENTE PRINCIPAL =====
 
@@ -230,6 +448,10 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const { isFavorito, toggleFavorito } = useFavoritos(userId);
   const hasTrackedView = useRef(false);
@@ -308,6 +530,24 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
     fetchEstabelecimento();
   }, [id, navigate, trackPageView]);
 
+  // === LIGHTBOX HANDLERS ===
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => setLightboxOpen(false);
+
+  const goToPrevious = () => {
+    const photos = estabelecimento?.galeria_fotos || [];
+    setLightboxIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
+  };
+
+  const goToNext = () => {
+    const photos = estabelecimento?.galeria_fotos || [];
+    setLightboxIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
+  };
+
   // === HANDLERS ===
 
   const handleBack = () => navigate(-1);
@@ -326,7 +566,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
     setShowShareModal(true);
   };
 
-  const handleVerBeneficioMobile = async () => {
+  const handleVerBeneficio = async () => {
     if (id) await trackEvent(id, "benefit_click");
     if (!userId) {
       sessionStorage.setItem("redirectAfterLogin", window.location.pathname);
@@ -473,11 +713,35 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <div className="w-full aspect-[4/3] sm:aspect-[16/10] max-h-[50vh] bg-gray-200 animate-pulse" />
-        <div className="p-4 space-y-4">
-          <div className="h-8 w-3/4 bg-gray-200 rounded animate-pulse" />
-          <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
-          <div className="h-32 bg-gray-200 rounded-2xl animate-pulse mt-6" />
+        {/* Mobile skeleton */}
+        <div className="lg:hidden">
+          <div className="w-full aspect-[4/3] bg-gray-200 animate-pulse" />
+          <div className="p-4 space-y-4">
+            <div className="h-8 w-3/4 bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
+            <div className="h-32 bg-gray-200 rounded-2xl animate-pulse mt-6" />
+          </div>
+        </div>
+        {/* Desktop skeleton */}
+        <div className="hidden lg:block max-w-7xl mx-auto px-6 lg:px-8 py-6">
+          <div className="h-4 w-1/3 bg-gray-200 rounded animate-pulse mb-4" />
+          <div className="grid grid-cols-4 grid-rows-2 gap-2 h-[400px] rounded-2xl overflow-hidden mb-8">
+            <div className="col-span-2 row-span-2 bg-gray-200 animate-pulse" />
+            <div className="bg-gray-200 animate-pulse" />
+            <div className="bg-gray-200 animate-pulse" />
+            <div className="bg-gray-200 animate-pulse" />
+            <div className="bg-gray-200 animate-pulse" />
+          </div>
+          <div className="grid grid-cols-3 gap-8">
+            <div className="col-span-2 space-y-4">
+              <div className="h-8 w-2/3 bg-gray-200 rounded animate-pulse" />
+              <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
+              <div className="h-32 bg-gray-200 rounded-xl animate-pulse" />
+            </div>
+            <div className="col-span-1">
+              <div className="h-64 bg-gray-200 rounded-2xl animate-pulse" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -507,100 +771,259 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
   // === RENDER ===
 
   return (
-    <div className="min-h-screen bg-white pb-24 md:pb-8">
-      {/* Hero */}
-      <EstablishmentHero
-        establishment={{
-          nome_fantasia: estabelecimento.nome_fantasia,
-          photo_url: fotoAvatar,
-          categoria: estabelecimento.categoria,
-          bairro: estabelecimento.bairro,
-          cidade: estabelecimento.cidade,
-          especialidades: estabelecimento.especialidades,
-          is_verified: true,
-        }}
-        onBack={handleBack}
-        onFavorite={handleFavorite}
-        onShare={handleShare}
-        isFavorited={id ? isFavorito(id) : false}
-      />
+    <div className="min-h-screen bg-white pb-24 lg:pb-8">
+      {/* ========== MOBILE LAYOUT ========== */}
+      <div className="lg:hidden">
+        {/* Hero Mobile */}
+        <EstablishmentHero
+          establishment={{
+            nome_fantasia: estabelecimento.nome_fantasia,
+            photo_url: fotoAvatar,
+            categoria: estabelecimento.categoria,
+            bairro: estabelecimento.bairro,
+            cidade: estabelecimento.cidade,
+            especialidades: estabelecimento.especialidades,
+            is_verified: true,
+          }}
+          onBack={handleBack}
+          onFavorite={handleFavorite}
+          onShare={handleShare}
+          isFavorited={id ? isFavorito(id) : false}
+        />
 
-      {/* Galeria */}
-      {galeriaFotos.length > 1 && (
-        <GaleriaFotosInline photos={galeriaFotos} establishmentName={estabelecimento.nome_fantasia} />
-      )}
+        {/* Galeria Mobile */}
+        {galeriaFotos.length > 1 && (
+          <GaleriaFotosMobile
+            photos={galeriaFotos}
+            establishmentName={estabelecimento.nome_fantasia}
+            onOpenLightbox={openLightbox}
+          />
+        )}
 
-      {/* Beneficio */}
-      <BenefitCard
-        beneficio={beneficioData.titulo}
-        validadeTexto={beneficioData.validade}
-        regras={beneficioData.regras}
-        estabelecimentoId={id!}
-        userId={userId}
-        isModalOpen={showBenefitModal}
-        onModalOpenChange={setShowBenefitModal}
-      />
+        {/* Beneficio Mobile */}
+        <BenefitCard
+          beneficio={beneficioData.titulo}
+          validadeTexto={beneficioData.validade}
+          regras={beneficioData.regras}
+          estabelecimentoId={id!}
+          userId={userId}
+          isModalOpen={showBenefitModal}
+          onModalOpenChange={setShowBenefitModal}
+        />
 
-      {/* Sobre */}
-      {estabelecimento.bio && (
-        <AboutSection bio={estabelecimento.bio} tags={estabelecimento.especialidades?.slice(0, 3)} />
-      )}
+        {/* Sobre */}
+        {estabelecimento.bio && (
+          <AboutSection bio={estabelecimento.bio} tags={estabelecimento.especialidades?.slice(0, 3)} />
+        )}
 
-      {/* Contatos */}
-      <ContactButtons
-        whatsapp={estabelecimento.whatsapp || estabelecimento.telefone}
-        instagram={estabelecimento.instagram}
-        phone={estabelecimento.telefone}
-        site={estabelecimento.site}
-        cardapio={estabelecimento.link_cardapio}
-        onWhatsApp={handleWhatsApp}
-        onInstagram={handleInstagram}
-        onPhone={handlePhone}
-        onSite={handleSite}
-        onCardapio={handleCardapio}
-      />
+        {/* Contatos */}
+        <ContactButtons
+          whatsapp={estabelecimento.whatsapp || estabelecimento.telefone}
+          instagram={estabelecimento.instagram}
+          phone={estabelecimento.telefone}
+          site={estabelecimento.site}
+          cardapio={estabelecimento.link_cardapio}
+          onWhatsApp={handleWhatsApp}
+          onInstagram={handleInstagram}
+          onPhone={handlePhone}
+          onSite={handleSite}
+          onCardapio={handleCardapio}
+        />
 
-      {/* Horario */}
-      {estabelecimento.horario_funcionamento && <BusinessHours hours={estabelecimento.horario_funcionamento} />}
+        {/* Horario */}
+        {estabelecimento.horario_funcionamento && <BusinessHours hours={estabelecimento.horario_funcionamento} />}
 
-      {/* Localizacao */}
-      <LocationSection
-        establishment={{
-          logradouro: estabelecimento.logradouro,
-          numero: estabelecimento.numero,
-          bairro: estabelecimento.bairro,
-          cidade: estabelecimento.cidade,
-          estado: estabelecimento.estado,
-          cep: estabelecimento.cep,
-          latitude: estabelecimento.latitude,
-          longitude: estabelecimento.longitude,
-        }}
-        onOpenMaps={handleOpenMaps}
-        onOpenWaze={handleOpenWaze}
-        onOpenUber={handleOpenUber}
-        onOpen99={handleOpen99}
-      />
+        {/* Localizacao */}
+        <LocationSection
+          establishment={{
+            logradouro: estabelecimento.logradouro,
+            numero: estabelecimento.numero,
+            bairro: estabelecimento.bairro,
+            cidade: estabelecimento.cidade,
+            estado: estabelecimento.estado,
+            cep: estabelecimento.cep,
+            latitude: estabelecimento.latitude,
+            longitude: estabelecimento.longitude,
+          }}
+          onOpenMaps={handleOpenMaps}
+          onOpenWaze={handleOpenWaze}
+          onOpenUber={handleOpenUber}
+          onOpen99={handleOpen99}
+        />
 
-      {/* CTA Parceiro */}
-      <PartnerCTA />
+        {/* CTA Parceiro */}
+        <PartnerCTA />
+      </div>
 
-      {/* BOTAO FIXO MOBILE - Ver Beneficio */}
+      {/* ========== DESKTOP LAYOUT (2 COLUNAS) ========== */}
+      <div className="hidden lg:block">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-6">
+          {/* Breadcrumbs */}
+          <Breadcrumbs
+            estado={estabelecimento.estado}
+            cidade={estabelecimento.cidade}
+            bairro={estabelecimento.bairro}
+            nome={estabelecimento.nome_fantasia}
+          />
+
+          {/* Galeria Grid Desktop */}
+          {galeriaFotos.length > 0 && (
+            <div className="mb-8">
+              <GaleriaFotosGrid
+                photos={galeriaFotos}
+                establishmentName={estabelecimento.nome_fantasia}
+                onOpenLightbox={openLightbox}
+              />
+            </div>
+          )}
+
+          {/* Se não tem galeria, mostra hero simples */}
+          {galeriaFotos.length === 0 && fotoAvatar && (
+            <div className="mb-8 rounded-2xl overflow-hidden h-[400px]">
+              <img src={fotoAvatar} alt={estabelecimento.nome_fantasia} className="w-full h-full object-cover" />
+            </div>
+          )}
+
+          {/* Grid 2 Colunas: Conteúdo + Sidebar */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+            {/* Main Content - 2 cols */}
+            <main className="lg:col-span-2 space-y-8">
+              {/* Header Info */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  {estabelecimento.categoria?.map((cat: string, i: number) => (
+                    <span key={i} className="text-sm text-[#3C096C] bg-[#240046]/5 px-3 py-1 rounded-full capitalize">
+                      {cat}
+                    </span>
+                  ))}
+                  <div className="flex items-center gap-1 text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Verificado</span>
+                  </div>
+                </div>
+                <h1 className="text-3xl font-bold text-[#240046] mb-2">{estabelecimento.nome_fantasia}</h1>
+                <p className="text-gray-600 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  {estabelecimento.bairro}, {estabelecimento.cidade} - {estabelecimento.estado}
+                </p>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-gray-200" />
+
+              {/* Sobre */}
+              {estabelecimento.bio && (
+                <div>
+                  <h2 className="text-xl font-semibold text-[#240046] mb-3">Sobre</h2>
+                  <p className="text-gray-600 leading-relaxed">{estabelecimento.bio}</p>
+                  {estabelecimento.especialidades?.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {estabelecimento.especialidades.slice(0, 5).map((tag: string, i: number) => (
+                        <span key={i} className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Divider */}
+              <div className="border-t border-gray-200" />
+
+              {/* Horário */}
+              {estabelecimento.horario_funcionamento && (
+                <div>
+                  <h2 className="text-xl font-semibold text-[#240046] mb-3 flex items-center gap-2">
+                    <Clock className="w-5 h-5" />
+                    Horário de Funcionamento
+                  </h2>
+                  <BusinessHours hours={estabelecimento.horario_funcionamento} inline />
+                </div>
+              )}
+
+              {/* Divider */}
+              <div className="border-t border-gray-200" />
+
+              {/* Localização */}
+              <div>
+                <h2 className="text-xl font-semibold text-[#240046] mb-3 flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  Localização
+                </h2>
+                <LocationSection
+                  establishment={{
+                    logradouro: estabelecimento.logradouro,
+                    numero: estabelecimento.numero,
+                    bairro: estabelecimento.bairro,
+                    cidade: estabelecimento.cidade,
+                    estado: estabelecimento.estado,
+                    cep: estabelecimento.cep,
+                    latitude: estabelecimento.latitude,
+                    longitude: estabelecimento.longitude,
+                  }}
+                  onOpenMaps={handleOpenMaps}
+                  onOpenWaze={handleOpenWaze}
+                  onOpenUber={handleOpenUber}
+                  onOpen99={handleOpen99}
+                  inline
+                />
+              </div>
+
+              {/* CTA Parceiro */}
+              <PartnerCTA />
+            </main>
+
+            {/* Sidebar Sticky - 1 col */}
+            <aside className="lg:col-span-1">
+              <div className="sticky top-24 space-y-4">
+                <SidebarBenefitCard
+                  beneficio={beneficioData.titulo}
+                  validade={beneficioData.validade}
+                  regras={beneficioData.regras}
+                  onResgatar={handleVerBeneficio}
+                  whatsapp={estabelecimento.whatsapp || estabelecimento.telefone}
+                  instagram={estabelecimento.instagram}
+                  phone={estabelecimento.telefone}
+                  onWhatsApp={handleWhatsApp}
+                  onInstagram={handleInstagram}
+                  onPhone={handlePhone}
+                />
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+
+      {/* ========== MOBILE STICKY CTA ========== */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 md:hidden"
+        className="fixed bottom-16 left-0 right-0 z-40 bg-white border-t border-gray-200 lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="p-4">
           <button
-            onClick={handleVerBeneficioMobile}
-            className="w-full py-4 bg-gradient-to-r from-[#240046] to-[#3C096C] text-white font-semibold rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            onClick={handleVerBeneficio}
+            className="w-full py-4 bg-gradient-to-r from-[#240046] to-[#3C096C] text-white font-semibold rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg"
           >
             <Gift className="w-5 h-5" />
-            Ver Beneficio de Aniversario
+            🎁 Resgatar meu benefício
           </button>
         </div>
       </div>
 
-      {/* MODALS */}
+      {/* ========== LIGHTBOX ========== */}
+      <Lightbox
+        photos={galeriaFotos}
+        currentIndex={lightboxIndex}
+        establishmentName={estabelecimento.nome_fantasia}
+        isOpen={lightboxOpen}
+        onClose={closeLightbox}
+        onPrevious={goToPrevious}
+        onNext={goToNext}
+        onIndexChange={setLightboxIndex}
+      />
+
+      {/* ========== MODALS ========== */}
       <LoginRequiredModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}

@@ -279,7 +279,7 @@ const Header = ({ city, state, onBack }: { city: string; state: string; onBack: 
 );
 
 // =============================================================================
-// CATEGORIES BAR - STICKY COM FUNDO ROXO
+// CATEGORIES BAR - STICKY COM FUNDO ROXO E SUBCATEGORIAS FILTRADAS
 // =============================================================================
 
 const CategoriesBar = ({
@@ -290,6 +290,7 @@ const CategoriesBar = ({
   onSubcategoriesChange,
   cidade,
   estado,
+  estabelecimentos, // Recebe estabelecimentos pra filtrar subcategorias
 }: {
   selected: string | null;
   onSelect: (id: string | null) => void;
@@ -298,6 +299,7 @@ const CategoriesBar = ({
   onSubcategoriesChange: (subs: string[]) => void;
   cidade: string | null;
   estado: string | null;
+  estabelecimentos: any[];
 }) => {
   const cats = [
     { id: null, label: "Todos", icon: Sparkles },
@@ -323,7 +325,36 @@ const CategoriesBar = ({
     sorveteria: ["Artesanal", "Açaí", "Frozen", "Picolé", "Milk Shake"],
   };
 
-  const subcats = selected ? SUBCATEGORIAS[selected.toLowerCase()] || [] : [];
+  // Filtra subcategorias baseado no que existe nos estabelecimentos da categoria
+  const subcatsDisponiveis = useMemo(() => {
+    if (!selected) return [];
+
+    const todasSubs = SUBCATEGORIAS[selected.toLowerCase()] || [];
+    if (todasSubs.length === 0) return [];
+
+    // Pega estabelecimentos da categoria selecionada
+    const estabsDaCategoria = estabelecimentos.filter((e) => {
+      const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
+      return cats.some((c) => c?.toLowerCase() === selected.toLowerCase());
+    });
+
+    if (estabsDaCategoria.length === 0) return [];
+
+    // Coleta todas as especialidades dos estabelecimentos dessa categoria
+    const especialidadesExistentes = new Set<string>();
+    estabsDaCategoria.forEach((est) => {
+      const specs = est.especialidades || [];
+      specs.forEach((s: string) => especialidadesExistentes.add(s.toLowerCase()));
+    });
+
+    // Filtra subcategorias que existem nos estabelecimentos
+    return todasSubs.filter((sub) => {
+      const subLower = sub.toLowerCase();
+      return Array.from(especialidadesExistentes).some(
+        (esp) => esp.includes(subLower) || subLower.includes(esp) || esp === subLower,
+      );
+    });
+  }, [selected, estabelecimentos]);
 
   return (
     <div className="sticky top-[56px] z-40" style={{ backgroundColor: HEADER_COLOR }}>
@@ -341,10 +372,17 @@ const CategoriesBar = ({
                 <button
                   key={cat.id || "all"}
                   onClick={() => onSelect(cat.id)}
-                  className="flex flex-col items-center gap-1 min-w-[72px] px-3 py-2 relative transition-all flex-shrink-0"
+                  className={cn(
+                    "flex flex-col items-center gap-1 min-w-[72px] px-3 py-2 relative transition-all flex-shrink-0",
+                    isActive ? "text-white" : "text-white/70 hover:text-white",
+                  )}
                 >
-                  <Icon className="w-5 h-5 text-white" />
-                  <span className="text-[11px] font-semibold whitespace-nowrap text-white"
+                  <Icon className={cn("w-5 h-5", isActive ? "text-white" : "text-white/70")} />
+                  <span
+                    className={cn(
+                      "text-[11px] font-semibold whitespace-nowrap",
+                      isActive ? "text-white" : "text-white/70",
+                    )}
                   >
                     {cat.label}
                   </span>
@@ -355,8 +393,8 @@ const CategoriesBar = ({
           </div>
         </div>
 
-        {/* Subcategories - Pills brancos no fundo roxo */}
-        {showSubcategories && selected && subcats.length > 0 && (
+        {/* Subcategories - Só aparece se tiver subcategorias disponíveis */}
+        {showSubcategories && selected && subcatsDisponiveis.length > 0 && (
           <div
             className="flex items-center overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-8 py-2 bg-[#3C096C]/50"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -377,8 +415,8 @@ const CategoriesBar = ({
 
               <div className="w-px h-5 bg-white/30 mx-1" />
 
-              {/* Subcategorias */}
-              {subcats.map((sub) => {
+              {/* Subcategorias filtradas */}
+              {subcatsDisponiveis.map((sub) => {
                 const isSubActive = selectedSubcategories.includes(sub);
                 return (
                   <button
@@ -619,26 +657,49 @@ const Explorar = () => {
     [estabelecimentosComDistancia],
   );
 
-  // Format for map component
-  const estabelecimentosFormatados = useMemo(
-    () =>
-      estabelecimentosComDistancia
-        .filter((est) => est.latitude && est.longitude)
-        .map((est) => ({
-          id: est.id,
-          nome_fantasia: est.nome_fantasia || est.razao_social || "Estabelecimento",
-          categoria: est.categoria || [],
-          endereco: `${est.logradouro || ""}, ${est.numero || ""} - ${est.bairro || ""}, ${est.cidade || ""}`,
-          latitude: Number(est.latitude),
-          longitude: Number(est.longitude),
-          logo_url: est.logo_url || null,
-          descricao_beneficio: est.descricao_beneficio || "",
-          cidade: est.cidade || "",
-          estado: est.estado || "",
-          slug: est.slug || null,
-        })),
-    [estabelecimentosComDistancia],
-  );
+  // Format for map component - FILTRADO pela categoria e subcategoria
+  const estabelecimentosFormatados = useMemo(() => {
+    // Primeiro filtra pelos mesmos critérios do filteredPlaces
+    let filtered = estabelecimentosComDistancia;
+
+    // Filtro por categoria
+    if (selectedCategory) {
+      filtered = filtered.filter((est) => {
+        const cats = Array.isArray(est.categoria) ? est.categoria : [est.categoria];
+        return cats.some((c) => c?.toLowerCase() === selectedCategory.toLowerCase());
+      });
+    }
+
+    // Filtro por subcategoria
+    if (selectedSubcategories.length > 0) {
+      filtered = filtered.filter((est) => {
+        const specs = est.especialidades || [];
+        return selectedSubcategories.some((sub) =>
+          specs.some(
+            (s: string) =>
+              normalizeText(s).includes(normalizeText(sub)) || normalizeText(sub).includes(normalizeText(s)),
+          ),
+        );
+      });
+    }
+
+    // Agora formata para o mapa (só os que têm coordenadas)
+    return filtered
+      .filter((est) => est.latitude && est.longitude)
+      .map((est) => ({
+        id: est.id,
+        nome_fantasia: est.nome_fantasia || est.razao_social || "Estabelecimento",
+        categoria: est.categoria || [],
+        endereco: `${est.logradouro || ""}, ${est.numero || ""} - ${est.bairro || ""}, ${est.cidade || ""}`,
+        latitude: Number(est.latitude),
+        longitude: Number(est.longitude),
+        logo_url: est.logo_url || null,
+        descricao_beneficio: est.descricao_beneficio || "",
+        cidade: est.cidade || "",
+        estado: est.estado || "",
+        slug: est.slug || null,
+      }));
+  }, [estabelecimentosComDistancia, selectedCategory, selectedSubcategories]);
 
   // Filter places
   const filteredPlaces = useMemo(() => {
@@ -711,6 +772,7 @@ const Explorar = () => {
         onSubcategoriesChange={setSelectedSubcategories}
         cidade={cidadeParam || null}
         estado={estadoParam || null}
+        estabelecimentos={estabelecimentos}
       />
 
       {/* Main Content */}

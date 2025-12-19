@@ -341,17 +341,10 @@ const CategoriesBar = ({
                 <button
                   key={cat.id || "all"}
                   onClick={() => onSelect(cat.id)}
-                  className={cn(
-                    "flex flex-col items-center gap-1 min-w-[72px] px-3 py-2 relative transition-all flex-shrink-0",
-                    isActive ? "text-white" : "text-white/70 hover:text-white",
-                  )}
+                  className="flex flex-col items-center gap-1 min-w-[72px] px-3 py-2 relative transition-all flex-shrink-0"
                 >
-                  <Icon className={cn("w-5 h-5", isActive ? "text-white" : "text-white/70")} />
-                  <span
-                    className={cn(
-                      "text-[11px] font-semibold whitespace-nowrap",
-                      isActive ? "text-white" : "text-white/70",
-                    )}
+                  <Icon className="w-5 h-5 text-white" />
+                  <span className="text-[11px] font-semibold whitespace-nowrap text-white"
                   >
                     {cat.label}
                   </span>

@@ -43,8 +43,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 // =============================================================================
 // TYPES
@@ -76,7 +76,7 @@ interface Estabelecimento {
   whatsapp?: string;
   instagram?: string;
   website?: string;
-  horario_funcionamento?: Record<string, string>;
+  horario_funcionamento?: Record<string, string> | string;
   verificado?: boolean;
   resgates_mes?: number;
   slug?: string;
@@ -130,15 +130,29 @@ const getInstagramLink = (instagram?: string) => {
   return `https://instagram.com/${handle}`;
 };
 
-const isOpenNow = (horarios?: Record<string, string>): { open: boolean; text: string } => {
-  if (!horarios) return { open: false, text: "Horário não informado" };
+// Parse horario_funcionamento que pode vir como string ou objeto do banco
+const parseHorarioFuncionamento = (horario?: Record<string, string> | string): Record<string, string> | undefined => {
+  if (!horario) return undefined;
+  if (typeof horario === "string") {
+    try {
+      return JSON.parse(horario);
+    } catch {
+      return undefined;
+    }
+  }
+  return horario;
+};
+
+const isOpenNow = (horarios?: Record<string, string> | string): { open: boolean; text: string } => {
+  const parsed = parseHorarioFuncionamento(horarios);
+  if (!parsed) return { open: false, text: "Horário não informado" };
 
   const now = new Date();
   const dayIndex = now.getDay();
   const dayName = DIAS_SEMANA[dayIndex];
   const currentTime = now.getHours() * 60 + now.getMinutes();
 
-  const todayHours = horarios[dayName];
+  const todayHours = parsed[dayName];
   if (!todayHours || todayHours.toLowerCase() === "fechado") {
     return { open: false, text: "Fechado hoje" };
   }
@@ -843,6 +857,11 @@ const InfoSection = memo(({ estabelecimento }: { estabelecimento: Estabeleciment
     [estabelecimento.horario_funcionamento],
   );
 
+  const horariosParsed = useMemo(
+    () => parseHorarioFuncionamento(estabelecimento.horario_funcionamento),
+    [estabelecimento.horario_funcionamento],
+  );
+
   const copyAddress = useCallback(() => {
     navigator.clipboard.writeText(endereco);
     setCopiedAddress(true);
@@ -855,7 +874,9 @@ const InfoSection = memo(({ estabelecimento }: { estabelecimento: Estabeleciment
     if (!estabelecimento.latitude || !estabelecimento.longitude) return null;
     const lat = estabelecimento.latitude;
     const lng = estabelecimento.longitude;
-    return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=16&size=640x300&scale=2&markers=color:purple%7C${lat},${lng}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""}`;
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
+    if (!apiKey) return null;
+    return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=16&size=640x300&scale=2&markers=color:purple%7C${lat},${lng}&key=${apiKey}`;
   }, [estabelecimento.latitude, estabelecimento.longitude]);
 
   return (
@@ -899,9 +920,9 @@ const InfoSection = memo(({ estabelecimento }: { estabelecimento: Estabeleciment
         </div>
 
         {/* Horários por dia */}
-        {estabelecimento.horario_funcionamento && (
+        {horariosParsed && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {Object.entries(estabelecimento.horario_funcionamento).map(([dia, horario]) => (
+            {Object.entries(horariosParsed).map(([dia, horario]) => (
               <div key={dia} className="flex justify-between py-2 px-3 rounded-lg bg-zinc-50">
                 <span className="text-zinc-600 capitalize">{dia}</span>
                 <span className="font-medium text-zinc-900">{horario}</span>
@@ -1054,10 +1075,12 @@ const PartnerCTA = memo(() => (
 // MAIN PAGE COMPONENT
 // =============================================================================
 
-const EstabelecimentoPage = () => {
+const EstabelecimentoDetalhePremium = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+
+  // Auth state - usando Supabase diretamente (sem useAuth)
+  const [user, setUser] = useState<User | null>(null);
 
   // States
   const [estabelecimento, setEstabelecimento] = useState<Estabelecimento | null>(null);
@@ -1068,6 +1091,23 @@ const EstabelecimentoPage = () => {
 
   // Refs
   const heroRef = useRef<HTMLDivElement>(null);
+
+  // Auth listener - usando Supabase diretamente
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Fetch estabelecimento
   useEffect(() => {
@@ -1084,7 +1124,10 @@ const EstabelecimentoPage = () => {
           .single();
 
         if (error) throw error;
-        setEstabelecimento(data);
+
+        // Converter dados do banco para o tipo Estabelecimento
+        // horario_funcionamento pode vir como string do banco
+        setEstabelecimento(data as Estabelecimento);
       } catch (err) {
         console.error("Erro ao buscar estabelecimento:", err);
         toast.error("Estabelecimento não encontrado");
@@ -1241,4 +1284,4 @@ const EstabelecimentoPage = () => {
   );
 };
 
-export default EstabelecimentoPage;
+export default EstabelecimentoDetalhePremium;

@@ -1,1273 +1,1071 @@
-// =============================================================================
-// ESTABELECIMENTO PAGE - TOP 1 MUNDIAL
-// Versão definitiva com todas as melhorias dos relatórios Manus/ChatGPT/Claude
-// =============================================================================
-
-import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import {
-  Gift,
+  ArrowLeft,
   MapPin,
-  Clock,
   Phone,
+  Globe,
   Instagram,
-  MessageCircle,
-  Star,
-  ChevronLeft,
-  ChevronRight,
+  Clock,
   Share2,
   Heart,
+  Gift,
+  MessageCircle,
+  UtensilsCrossed,
   Copy,
-  Check,
+  Send,
+  Linkedin,
+  Facebook,
   X,
-  Navigation,
-  Car,
-  Users,
-  TrendingUp,
+  ChevronLeft,
+  ChevronRight,
+  Check,
   Sparkles,
-  AlertCircle,
-  Calendar,
-  UserCheck,
-  FileText,
-  ChevronUp,
-  ExternalLink,
-  Loader2,
-  ImageIcon,
-  CheckCircle2,
-  Info,
-  Shield,
+  ZoomIn,
+  Store,
+  ArrowRight,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import {
+  getValidatedContacts,
+  formatWhatsApp,
+  formatInstagram,
+  formatPhoneLink,
+  formatWebsite,
+  getWhatsAppMessage,
+} from "@/lib/contactUtils";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import { useSession } from "@supabase/auth-helpers-react";
+import { toast } from "sonner";
+import CupomModal from "@/components/CupomModal";
+import LazyMap from "@/components/LazyMap";
+import LoginRequiredModal from "@/components/LoginRequiredModal";
+import { useFavoritos } from "@/hooks/useFavoritos";
+import { useEstablishmentMetrics } from "@/hooks/useEstablishmentMetrics";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import Confetti from "react-confetti";
+import { useWindowSize } from "@/hooks/useWindowSize";
+import { useSEO } from "@/hooks/useSEO";
+import { getEstabelecimentoSEO } from "@/constants/seo";
+import { SkeletonEstablishmentPage } from "@/components/skeletons";
+import CardBeneficio from "@/components/estabelecimento/CardBeneficio";
+import { gerarBioAutomatica, separarBeneficio, getValidadeTexto } from "@/lib/bioUtils";
 
-// =============================================================================
-// TYPES
-// =============================================================================
-
-interface Estabelecimento {
-  id: string;
-  nome_fantasia: string;
-  razao_social?: string;
-  categoria: string[];
-  especialidades?: string[];
-  descricao?: string;
-  descricao_beneficio: string;
-  regras_beneficio?: string;
-  valor_beneficio?: number;
-  validade_beneficio?: string;
-  logo_url?: string;
-  imagem_url?: string;
-  fotos?: string[];
-  logradouro?: string;
-  numero?: string;
-  bairro?: string;
-  cidade: string;
-  estado: string;
-  cep?: string;
-  latitude?: number;
-  longitude?: number;
-  telefone?: string;
-  whatsapp?: string;
-  instagram?: string;
-  website?: string;
-  horario_funcionamento?: Record<string, string> | string;
-  verificado?: boolean;
-  resgates_mes?: number;
-  slug?: string;
+interface EstabelecimentoDetalheProps {
+  estabelecimentoIdProp?: string | null;
 }
 
-// =============================================================================
-// CONSTANTS
-// =============================================================================
+const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalheProps = {}) => {
+  const { id: idFromParams } = useParams();
+  const id = estabelecimentoIdProp || idFromParams;
+  const navigate = useNavigate();
+  const [estabelecimento, setEstabelecimento] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-const BRAND_COLORS = {
-  primary: "#240046",
-  secondary: "#3C096C",
-  accent: "#5A189A",
-  light: "#7B2CBF",
-  gradient: "linear-gradient(135deg, #240046 0%, #5A189A 100%)",
-};
+  // SEO dinâmico do estabelecimento
+  useSEO(
+    estabelecimento
+      ? getEstabelecimentoSEO(estabelecimento)
+      : { title: "Carregando...", description: "Carregando informações do estabelecimento..." },
+  );
+  const [showCupomModal, setShowCupomModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showBenefitModal, setShowBenefitModal] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
 
-const DIAS_SEMANA = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [showLogoExpanded, setShowLogoExpanded] = useState(false);
 
-const REGRAS_GERAIS = [
-  "Apresente documento oficial com foto e data de nascimento",
-  "Confirme disponibilidade do benefício antes de ir ao estabelecimento",
-  "Benefício válido apenas 1x por ano por pessoa",
-  "Sujeito a alterações sem aviso prévio",
-  "Não acumulativo com outras promoções",
-];
+  const { width, height } = useWindowSize();
 
-// =============================================================================
-// UTILS
-// =============================================================================
+  // Hook de favoritos
+  const { isFavorito, toggleFavorito } = useFavoritos(userId);
 
-const formatPhone = (phone?: string) => {
-  if (!phone) return null;
-  const cleaned = phone.replace(/\D/g, "");
-  if (cleaned.length === 11) {
-    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
-  }
-  return phone;
-};
+  // Hook de métricas
+  const {
+    trackPageView,
+    trackBenefitClick,
+    trackWhatsAppClick,
+    trackPhoneClick,
+    trackInstagramClick,
+    trackSiteClick,
+    trackDirectionsClick,
+    trackShare,
+    trackFavorite,
+  } = useEstablishmentMetrics();
+  const hasTrackedView = useRef(false);
 
-const getWhatsAppLink = (phone?: string, message?: string) => {
-  if (!phone) return "#";
-  const cleaned = phone.replace(/\D/g, "");
-  const msg = encodeURIComponent(message || "Olá! Vi no AniversarianteVIP e gostaria de mais informações.");
-  return `https://wa.me/55${cleaned}?text=${msg}`;
-};
+  // Parallax effect para o header
+  const { scrollY } = useScroll();
+  const headerY = useTransform(scrollY, [0, 500], [0, 150]);
+  const headerOpacity = useTransform(scrollY, [0, 300], [1, 0.3]);
 
-const getInstagramLink = (instagram?: string) => {
-  if (!instagram) return "#";
-  const handle = instagram.replace("@", "").replace("https://instagram.com/", "");
-  return `https://instagram.com/${handle}`;
-};
+  // Verificar autenticação
+  useEffect(() => {
+    const checkAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setUserId(session?.user?.id || null);
+    };
+    checkAuth();
 
-// Parse horario_funcionamento que pode vir como string ou objeto
-const parseHorarioFuncionamento = (horario?: Record<string, string> | string): Record<string, string> | undefined => {
-  if (!horario) return undefined;
-  if (typeof horario === "string") {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setUserId(session?.user?.id || null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Buscar fotos do Google Places como fallback (COM CACHE)
+  const fetchGooglePlacesPhotos = async (establishmentId: string, establishmentName: string, address: string) => {
     try {
-      return JSON.parse(horario);
-    } catch {
-      return undefined;
+      setLoadingPhotos(true);
+      const { data, error } = await supabase.functions.invoke("fetch-google-photos", {
+        body: { establishmentId, establishmentName, address },
+      });
+
+      if (error) {
+        console.error("Erro ao chamar edge function:", error);
+        return;
+      }
+
+      if (data?.photos && data.photos.length > 0) {
+        setEstabelecimento((prev: any) => ({
+          ...prev,
+          galeria_fotos: data.photos,
+        }));
+      }
+    } catch (error) {
+      console.error("Erro ao buscar fotos do Google Places:", error);
+    } finally {
+      setLoadingPhotos(false);
     }
-  }
-  return horario;
-};
+  };
 
-const isOpenNow = (horarios?: Record<string, string> | string): { open: boolean; text: string } => {
-  const parsed = parseHorarioFuncionamento(horarios);
-  if (!parsed) return { open: false, text: "Horário não informado" };
+  // Buscar estabelecimento
+  useEffect(() => {
+    const fetchEstabelecimento = async () => {
+      if (!id) return;
 
-  const now = new Date();
-  const dayIndex = now.getDay();
-  const dayName = DIAS_SEMANA[dayIndex];
-  const currentTime = now.getHours() * 60 + now.getMinutes();
+      const { data, error } = await supabase
+        .from("public_estabelecimentos")
+        .select("*")
+        .eq("id", id)
+        .eq("ativo", true)
+        .maybeSingle();
 
-  const todayHours = parsed[dayName];
-  if (!todayHours || todayHours.toLowerCase() === "fechado") {
-    return { open: false, text: "Fechado hoje" };
-  }
+      if (error || !data) {
+        toast.error("Estabelecimento não encontrado");
+        navigate("/explorar");
+        return;
+      }
 
-  // Parse "12:00 - 23:00" format
-  const match = todayHours.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
-  if (match) {
-    const openTime = parseInt(match[1]) * 60 + parseInt(match[2]);
-    const closeTime = parseInt(match[3]) * 60 + parseInt(match[4]);
+      setEstabelecimento(data);
+      setLoading(false);
 
-    if (currentTime >= openTime && currentTime <= closeTime) {
-      const closeHour = match[3].padStart(2, "0");
-      const closeMin = match[4];
-      return { open: true, text: `Aberto · Fecha às ${closeHour}:${closeMin}` };
-    } else if (currentTime < openTime) {
-      const openHour = match[1].padStart(2, "0");
-      const openMin = match[2];
-      return { open: false, text: `Fechado · Abre às ${openHour}:${openMin}` };
+      // Rastrear visualização da página (apenas uma vez)
+      if (!hasTrackedView.current && data.id) {
+        trackPageView(data.id);
+        hasTrackedView.current = true;
+      }
+
+      if (!data.galeria_fotos || data.galeria_fotos.length === 0) {
+        const endereco = [data.logradouro, data.numero, data.bairro, data.cidade, data.estado]
+          .filter(Boolean)
+          .join(", ");
+        await fetchGooglePlacesPhotos(data.id, data.nome_fantasia, endereco);
+      }
+
+      document.title = `${data.nome_fantasia} - Aniversariante VIP`;
+    };
+    fetchEstabelecimento();
+  }, [id, navigate]);
+
+  // Handlers
+  const handleVerBeneficio = () => {
+    if (!userId) {
+      setShowLoginModal(true);
+      return;
     }
-  }
+    // Rastrear clique no benefício
+    if (id) trackBenefitClick(id);
+    setShowBenefitModal(true);
+  };
 
-  return { open: false, text: "Fechado agora" };
-};
+  const handleEmitirCupom = () => {
+    setShowBenefitModal(false);
+    setShowCupomModal(true);
+  };
 
-// =============================================================================
-// SKELETON LOADING
-// =============================================================================
+  const handleFavorito = async () => {
+    if (!userId || !id) {
+      setShowLoginModal(true);
+      return;
+    }
+    const button = document.getElementById("favorito-btn");
+    if (button) {
+      button.classList.add("animate-heartbeat");
+      setTimeout(() => button.classList.remove("animate-heartbeat"), 1200);
+    }
+    // Rastrear favorito
+    trackFavorite(id);
+    await toggleFavorito(id);
+  };
 
-const PageSkeleton = memo(() => (
-  <div className="min-h-screen bg-white">
-    {/* Hero Skeleton */}
-    <div className="relative h-[50vh] md:h-[60vh]">
-      <Skeleton className="w-full h-full" />
-    </div>
+  const handleShare = () => {
+    // Rastrear compartilhamento
+    if (id) trackShare(id);
+    setShowShareSheet(true);
+  };
 
-    {/* Content Skeleton */}
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <Skeleton className="h-10 w-3/4" />
-          <Skeleton className="h-6 w-1/2" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-48 w-full" />
-        </div>
-        <div className="space-y-4">
-          <Skeleton className="h-64 w-full rounded-2xl" />
-          <Skeleton className="h-32 w-full rounded-xl" />
-        </div>
-      </div>
-    </div>
-  </div>
-));
+  const getShareText = () =>
+    `🎂 Confira ${estabelecimento.nome_fantasia} no Aniversariante VIP!\n\n📍 ${estabelecimento.bairro}, ${estabelecimento.cidade}`;
+  const getShareUrl = () => window.location.href;
 
-// =============================================================================
-// HERO GALLERY
-// =============================================================================
+  const handleShareWhatsApp = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(getShareText() + "\n\n" + getShareUrl())}`, "_blank");
+    setShowShareSheet(false);
+  };
 
-const HeroGallery = memo(
-  ({
-    images,
-    nome,
-    beneficio,
-    onShowGallery,
-  }: {
-    images: string[];
-    nome: string;
-    beneficio: string;
-    onShowGallery: () => void;
-  }) => {
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [loaded, setLoaded] = useState(false);
+  const handleShareInstagram = () => {
+    navigator.clipboard.writeText(getShareUrl());
+    toast.success("Link copiado! Cole no seu Stories ou Direct do Instagram 📸");
+    setShowShareSheet(false);
+  };
 
-    const hasMultipleImages = images.length > 1;
+  const handleShareFacebook = () => {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getShareUrl())}`, "_blank");
+    setShowShareSheet(false);
+  };
 
-    const next = useCallback(() => {
-      setCurrentIndex((i) => (i + 1) % images.length);
-    }, [images.length]);
-
-    const prev = useCallback(() => {
-      setCurrentIndex((i) => (i - 1 + images.length) % images.length);
-    }, [images.length]);
-
-    return (
-      <div className="relative h-[50vh] md:h-[60vh] overflow-hidden bg-zinc-900">
-        {/* Main Image */}
-        <AnimatePresence mode="wait">
-          <motion.img
-            key={currentIndex}
-            src={images[currentIndex] || "/placeholder-estabelecimento.jpg"}
-            alt={nome}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="w-full h-full object-cover"
-            onLoad={() => setLoaded(true)}
-          />
-        </AnimatePresence>
-
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-        {/* Navigation Arrows */}
-        {hasMultipleImages && (
-          <>
-            <button
-              onClick={prev}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full 
-                      bg-white/90 hover:bg-white flex items-center justify-center
-                      shadow-lg transition-all hover:scale-105 z-10"
-            >
-              <ChevronLeft className="w-6 h-6 text-zinc-800" />
-            </button>
-            <button
-              onClick={next}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full 
-                      bg-white/90 hover:bg-white flex items-center justify-center
-                      shadow-lg transition-all hover:scale-105 z-10"
-            >
-              <ChevronRight className="w-6 h-6 text-zinc-800" />
-            </button>
-          </>
-        )}
-
-        {/* Dots Indicator */}
-        {hasMultipleImages && (
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-            {images.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentIndex(i)}
-                className={cn(
-                  "w-2 h-2 rounded-full transition-all",
-                  i === currentIndex ? "bg-white w-6" : "bg-white/50 hover:bg-white/70",
-                )}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Floating Benefit Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="absolute bottom-4 left-4 right-4 md:left-6 md:right-auto md:max-w-md z-10"
-        >
-          <div
-            className="bg-gradient-to-r from-[#240046] to-[#5A189A] 
-                      text-white px-4 py-3 rounded-xl shadow-2xl
-                      border border-white/20 backdrop-blur-sm"
-          >
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Gift className="w-5 h-5 text-yellow-400" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              </div>
-              <span className="font-bold text-sm md:text-base">{beneficio}</span>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Gallery Button */}
-        {images.length > 1 && (
-          <button
-            onClick={onShowGallery}
-            className="absolute bottom-4 right-4 md:bottom-6 md:right-6 
-                    bg-white/90 hover:bg-white px-4 py-2 rounded-lg 
-                    flex items-center gap-2 shadow-lg transition-all
-                    hover:scale-105 z-10"
-          >
-            <ImageIcon className="w-4 h-4" />
-            <span className="font-medium text-sm">Ver {images.length} fotos</span>
-          </button>
-        )}
-
-        {/* Back Button */}
-        <Link
-          to="/"
-          className="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/90 
-                  hover:bg-white flex items-center justify-center shadow-lg
-                  transition-all hover:scale-105 z-10"
-        >
-          <ChevronLeft className="w-6 h-6 text-zinc-800" />
-        </Link>
-
-        {/* Share & Favorite */}
-        <div className="absolute top-4 right-4 flex gap-2 z-10">
-          <button
-            onClick={() => {
-              navigator
-                .share?.({
-                  title: nome,
-                  url: window.location.href,
-                })
-                .catch(() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  toast.success("Link copiado!");
-                });
-            }}
-            className="w-10 h-10 rounded-full bg-white/90 hover:bg-white 
-                    flex items-center justify-center shadow-lg transition-all hover:scale-105"
-          >
-            <Share2 className="w-5 h-5 text-zinc-800" />
-          </button>
-          <button
-            onClick={() => toast.info("Faça login para favoritar")}
-            className="w-10 h-10 rounded-full bg-white/90 hover:bg-white 
-                    flex items-center justify-center shadow-lg transition-all hover:scale-105"
-          >
-            <Heart className="w-5 h-5 text-zinc-800" />
-          </button>
-        </div>
-      </div>
+  const handleShareX = () => {
+    window.open(
+      `https://x.com/intent/tweet?text=${encodeURIComponent(getShareText())}&url=${encodeURIComponent(getShareUrl())}`,
+      "_blank",
     );
-  },
-);
+    setShowShareSheet(false);
+  };
 
-// =============================================================================
-// BENEFIT CARD (Desktop Sidebar)
-// =============================================================================
-
-const BenefitCard = memo(
-  ({
-    estabelecimento,
-    onResgate,
-    onVerComoUsar,
-  }: {
-    estabelecimento: Estabelecimento;
-    onResgate: () => void;
-    onVerComoUsar: () => void;
-  }) => {
-    const valorEconomizado = estabelecimento.valor_beneficio || 50;
-    const resgatesMes = estabelecimento.resgates_mes || Math.floor(Math.random() * 50) + 10;
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-gradient-to-br from-[#240046] via-[#3C096C] to-[#5A189A]
-                rounded-2xl p-6 text-white shadow-2xl sticky top-24
-                border border-purple-400/20 overflow-hidden"
-      >
-        {/* Shimmer Effect */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div
-            className="absolute -inset-[100%] animate-[spin_20s_linear_infinite]
-                      bg-gradient-to-r from-transparent via-white/5 to-transparent"
-          />
-        </div>
-
-        <div className="relative z-10">
-          {/* Badge */}
-          <div className="flex items-center gap-2 mb-4">
-            <div className="relative">
-              <Gift className="w-6 h-6 text-yellow-400" />
-              <motion.span
-                animate={{ scale: [1, 1.3, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full"
-              />
-            </div>
-            <span className="text-sm font-semibold text-purple-200 uppercase tracking-wider">Benefício Exclusivo</span>
-            <Sparkles className="w-4 h-4 text-yellow-400" />
-          </div>
-
-          {/* Título do Benefício */}
-          <h2 className="text-xl font-bold mb-4 leading-tight">{estabelecimento.descricao_beneficio}</h2>
-
-          {/* Valor Economizado */}
-          <div className="bg-white/10 backdrop-blur rounded-xl p-4 mb-4">
-            <div className="flex items-center justify-between">
-              <span className="text-purple-200 text-sm">Você economiza:</span>
-              <span className="text-2xl font-bold text-green-400">R$ {valorEconomizado}</span>
-            </div>
-          </div>
-
-          {/* Validade */}
-          <div className="flex items-center gap-2 text-yellow-300 mb-4">
-            <Clock className="w-4 h-4" />
-            <span className="text-sm font-medium">
-              {estabelecimento.validade_beneficio || "Válido no dia do seu aniversário"}
-            </span>
-          </div>
-
-          {/* Social Proof */}
-          <div className="flex items-center gap-4 mb-6 text-sm">
-            <div className="flex items-center gap-1.5 text-purple-200">
-              <Users className="w-4 h-4" />
-              <span>{resgatesMes} resgates este mês</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-green-400">
-              <TrendingUp className="w-4 h-4" />
-              <span>Popular!</span>
-            </div>
-          </div>
-
-          {/* CTA Principal */}
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onResgate}
-            className="w-full bg-white text-[#240046] font-bold py-4 rounded-xl
-                    text-lg shadow-lg hover:shadow-xl transition-all
-                    flex items-center justify-center gap-2 mb-3"
-          >
-            <Gift className="w-5 h-5" />
-            Resgatar Meu Benefício
-          </motion.button>
-
-          {/* Botão Ver Como Usar */}
-          <button
-            onClick={onVerComoUsar}
-            className="w-full py-3 rounded-xl border-2 border-white/30 
-                    text-white font-medium hover:bg-white/10 transition-all
-                    flex items-center justify-center gap-2"
-          >
-            <Info className="w-4 h-4" />
-            Ver como usar
-          </button>
-
-          {/* Garantias */}
-          <div className="mt-4 pt-4 border-t border-white/20">
-            <div className="flex items-center justify-center gap-4 text-xs text-purple-200">
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> 100% grátis
-              </span>
-              <span className="flex items-center gap-1">
-                <Shield className="w-3 h-3" /> Verificado
-              </span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+  const handleShareTelegram = () => {
+    window.open(
+      `https://t.me/share/url?url=${encodeURIComponent(getShareUrl())}&text=${encodeURIComponent(getShareText())}`,
+      "_blank",
     );
-  },
-);
+    setShowShareSheet(false);
+  };
 
-// =============================================================================
-// STICKY MOBILE CTA
-// =============================================================================
+  const handleShareLinkedin = () => {
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(getShareUrl())}`, "_blank");
+    setShowShareSheet(false);
+  };
 
-const StickyMobileCTA = memo(
-  ({
-    estabelecimento,
-    isVisible,
-    onResgate,
-    onVerComoUsar,
-  }: {
-    estabelecimento: Estabelecimento;
-    isVisible: boolean;
-    onResgate: () => void;
-    onVerComoUsar: () => void;
-  }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const valorEconomizado = estabelecimento.valor_beneficio || 50;
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(getShareUrl());
+    toast.success("Link copiado!");
+    setShowShareSheet(false);
+  };
 
-    return (
-      <AnimatePresence>
-        {isVisible && (
-          <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
-          >
-            <div className="bg-white border-t border-zinc-200 shadow-2xl">
-              {/* Aba Expansível */}
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex items-center justify-center py-2 bg-zinc-50 border-b"
-              >
-                <ChevronUp className={cn("w-5 h-5 text-zinc-400 transition-transform", isExpanded && "rotate-180")} />
-              </button>
+  const handleWhatsApp = () => {
+    const numero = estabelecimento.whatsapp || estabelecimento.telefone;
+    const formattedNumber = formatWhatsApp(numero);
+    if (!formattedNumber) {
+      toast.error("WhatsApp não disponível");
+      return;
+    }
+    // Rastrear clique no WhatsApp
+    if (id) trackWhatsAppClick(id);
+    const message = getWhatsAppMessage(estabelecimento.nome_fantasia, estabelecimento.categoria);
+    window.open(`https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`, "_blank");
+  };
 
-              {/* Conteúdo Expandido */}
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden bg-purple-50 px-4 py-3"
-                  >
-                    <div className="flex items-center gap-2 text-[#240046]">
-                      <Gift className="w-5 h-5" />
-                      <span className="font-semibold text-sm">{estabelecimento.descricao_beneficio}</span>
-                    </div>
-                    <p className="text-sm text-purple-700 mt-1">
-                      {estabelecimento.validade_beneficio || "Válido no dia do seu aniversário"}
-                    </p>
-                    <button onClick={onVerComoUsar} className="mt-2 text-sm text-[#240046] font-medium underline">
-                      Ver como usar →
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+  const handleInstagram = () => {
+    const instagramUrl = formatInstagram(estabelecimento.instagram);
+    if (!instagramUrl) {
+      toast.error("Instagram não disponível");
+      return;
+    }
+    // Rastrear clique no Instagram
+    if (id) trackInstagramClick(id);
+    window.open(instagramUrl, "_blank");
+  };
 
-              {/* CTA Principal */}
-              <div className="p-4 pb-safe">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="text-xs text-zinc-500 uppercase tracking-wide">Benefício Exclusivo</p>
-                    <p className="font-semibold text-zinc-900 text-sm line-clamp-1">
-                      {estabelecimento.descricao_beneficio?.slice(0, 30)}...
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-zinc-500">Economia</p>
-                    <p className="text-lg font-bold text-green-600">R$ {valorEconomizado}</p>
-                  </div>
-                </div>
+  const handleLigar = () => {
+    const phoneLink = formatPhoneLink(estabelecimento.telefone);
+    if (!phoneLink) {
+      toast.error("Telefone não disponível");
+      return;
+    }
+    // Rastrear clique no telefone
+    if (id) trackPhoneClick(id);
+    window.location.href = phoneLink;
+  };
 
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={onResgate}
-                  className="w-full bg-gradient-to-r from-[#240046] to-[#5A189A]
-                          text-white font-bold py-4 rounded-xl
-                          flex items-center justify-center gap-2
-                          shadow-lg shadow-purple-500/30"
-                >
-                  <Gift className="w-5 h-5" />
-                  Resgatar Benefício Grátis
-                </motion.button>
+  const handleSite = () => {
+    const siteUrl = formatWebsite(estabelecimento.site);
+    if (!siteUrl) {
+      toast.error("Site não disponível");
+      return;
+    }
+    // Rastrear clique no site
+    if (id) trackSiteClick(id);
+    window.open(siteUrl, "_blank");
+  };
 
-                <p className="text-center text-xs text-zinc-500 mt-2">✓ 100% grátis • Cadastro em 30 segundos</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    );
-  },
-);
+  const handleCardapio = () => {
+    if (!estabelecimento.link_cardapio) {
+      toast.error("Cardápio não disponível");
+      return;
+    }
+    window.open(estabelecimento.link_cardapio, "_blank");
+  };
 
-// =============================================================================
-// MODAL VER COMO USAR
-// =============================================================================
+  // Helper para montar endereço sem valores null/undefined
+  const formatarEndereco = (...partes: (string | null | undefined)[]) => partes.filter(Boolean).join(", ");
 
-const ModalComoUsar = memo(
-  ({
-    isOpen,
-    onClose,
-    estabelecimento,
-    isLoggedIn,
-    onLogin,
-    onResgate,
-  }: {
-    isOpen: boolean;
-    onClose: () => void;
-    estabelecimento: Estabelecimento;
-    isLoggedIn: boolean;
-    onLogin: () => void;
-    onResgate: () => void;
-  }) => {
-    // Parse regras do estabelecimento
-    const regrasEstabelecimento = useMemo(() => {
-      if (!estabelecimento.regras_beneficio) return [];
-      return estabelecimento.regras_beneficio.split("\n").filter((r) => r.trim());
-    }, [estabelecimento.regras_beneficio]);
-
-    return (
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
-          >
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={onClose}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-
-            {/* Modal Content */}
-            <motion.div
-              initial={{ y: "100%", opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "100%", opacity: 0 }}
-              transition={{ type: "spring", damping: 25 }}
-              className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-2xl 
-                      max-h-[90vh] overflow-hidden shadow-2xl"
-            >
-              {/* Header */}
-              <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-zinc-900">Como usar seu benefício</h2>
-                <button
-                  onClick={onClose}
-                  className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 
-                          flex items-center justify-center transition-colors"
-                >
-                  <X className="w-5 h-5 text-zinc-600" />
-                </button>
-              </div>
-
-              <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-                {!isLoggedIn ? (
-                  // Tela de Login
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-4">
-                      <UserCheck className="w-8 h-8 text-[#240046]" />
-                    </div>
-                    <h3 className="text-xl font-bold text-zinc-900 mb-2">Faça login para continuar</h3>
-                    <p className="text-zinc-600 mb-6">
-                      Para ver as regras e resgatar seu benefício, você precisa estar logado.
-                    </p>
-                    <Button
-                      onClick={onLogin}
-                      className="bg-[#240046] hover:bg-[#3C096C] text-white px-8 py-3 rounded-xl"
-                    >
-                      Fazer login ou criar conta
-                    </Button>
-                  </div>
-                ) : (
-                  // Conteúdo das Regras
-                  <div className="space-y-6">
-                    {/* Passos */}
-                    <div>
-                      <h3 className="font-semibold text-zinc-900 mb-4 flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-[#240046]" />
-                        Passo a passo
-                      </h3>
-                      <div className="space-y-3">
-                        {[
-                          {
-                            step: 1,
-                            title: "Confirme a disponibilidade",
-                            desc: "Entre em contato com o estabelecimento antes de ir",
-                          },
-                          {
-                            step: 2,
-                            title: "Vá no dia do seu aniversário",
-                            desc: "Ou dentro do período de validade informado",
-                          },
-                          {
-                            step: 3,
-                            title: "Apresente seu documento",
-                            desc: "Documento oficial com foto e data de nascimento",
-                          },
-                        ].map((item) => (
-                          <div key={item.step} className="flex gap-3">
-                            <div
-                              className="w-8 h-8 rounded-full bg-[#240046] text-white 
-                                        flex items-center justify-center font-bold text-sm flex-shrink-0"
-                            >
-                              {item.step}
-                            </div>
-                            <div>
-                              <p className="font-medium text-zinc-900">{item.title}</p>
-                              <p className="text-sm text-zinc-600">{item.desc}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Regras do Estabelecimento */}
-                    {regrasEstabelecimento.length > 0 && (
-                      <div className="bg-purple-50 rounded-xl p-4">
-                        <h3 className="font-semibold text-[#240046] mb-3 flex items-center gap-2">
-                          <FileText className="w-5 h-5" />
-                          Regras deste estabelecimento
-                        </h3>
-                        <ul className="space-y-2">
-                          {regrasEstabelecimento.map((regra, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-zinc-700">
-                              <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                              <span>{regra}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Regras Gerais */}
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                      <h3 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
-                        <AlertCircle className="w-5 h-5" />
-                        Importante saber
-                      </h3>
-                      <ul className="space-y-2">
-                        {REGRAS_GERAIS.map((regra, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-amber-700">
-                            <span className="text-amber-600">•</span>
-                            <span>{regra}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Footer CTA */}
-              {isLoggedIn && (
-                <div className="sticky bottom-0 bg-white border-t p-4">
-                  <Button
-                    onClick={() => {
-                      onResgate();
-                      onClose();
-                    }}
-                    className="w-full bg-[#240046] hover:bg-[#3C096C] text-white py-4 rounded-xl font-bold"
-                  >
-                    <Gift className="w-5 h-5 mr-2" />
-                    Entendi, quero resgatar!
-                  </Button>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    );
-  },
-);
-
-// =============================================================================
-// COMO FUNCIONA SECTION
-// =============================================================================
-
-const ComoFuncionaSection = memo(() => (
-  <section className="py-8 border-t border-zinc-200">
-    <h2 className="text-xl font-bold text-zinc-900 mb-6 flex items-center gap-2">
-      <Gift className="w-5 h-5 text-[#240046]" />
-      Como funciona
-    </h2>
-
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {[
-        {
-          step: 1,
-          icon: <UserCheck className="w-7 h-7" />,
-          title: "Cadastre-se grátis",
-          desc: "Crie sua conta e informe a data do seu aniversário",
-        },
-        {
-          step: 2,
-          icon: <Calendar className="w-7 h-7" />,
-          title: "Visite o estabelecimento",
-          desc: "No dia ou semana do seu aniversário (confira a validade)",
-        },
-        {
-          step: 3,
-          icon: <Gift className="w-7 h-7" />,
-          title: "Resgate seu benefício",
-          desc: "Apresente documento com foto e aproveite!",
-        },
-      ].map((item) => (
-        <motion.div
-          key={item.step}
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: item.step * 0.1 }}
-          className="relative bg-purple-50 rounded-2xl p-6 text-center"
-        >
-          {/* Step Number */}
-          <div
-            className="absolute -top-3 left-1/2 -translate-x-1/2
-                        w-8 h-8 bg-[#240046] text-white rounded-full
-                        flex items-center justify-center font-bold text-sm shadow-lg"
-          >
-            {item.step}
-          </div>
-
-          <div className="text-[#240046] mt-2 mb-3 flex justify-center">{item.icon}</div>
-          <h3 className="font-semibold text-zinc-900 mb-1">{item.title}</h3>
-          <p className="text-sm text-zinc-600">{item.desc}</p>
-        </motion.div>
-      ))}
-    </div>
-  </section>
-));
-
-// =============================================================================
-// INFO SECTION (Sobre, Horário, Localização)
-// =============================================================================
-
-const InfoSection = memo(({ estabelecimento }: { estabelecimento: Estabelecimento }) => {
-  const [copiedAddress, setCopiedAddress] = useState(false);
-
-  const endereco = useMemo(() => {
-    const parts = [
+  const getEnderecoCompleto = () =>
+    formatarEndereco(
       estabelecimento.logradouro,
       estabelecimento.numero,
       estabelecimento.bairro,
       estabelecimento.cidade,
       estabelecimento.estado,
-    ].filter(Boolean);
-    return parts.join(", ");
-  }, [estabelecimento]);
+    );
 
-  const openStatus = useMemo(
-    () => isOpenNow(estabelecimento.horario_funcionamento),
-    [estabelecimento.horario_funcionamento],
-  );
+  const handleGoogleMaps = () => {
+    if (id) trackDirectionsClick(id, "google_maps");
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(getEnderecoCompleto())}`,
+      "_blank",
+    );
+  };
 
-  const horariosParsed = useMemo(
-    () => parseHorarioFuncionamento(estabelecimento.horario_funcionamento),
-    [estabelecimento.horario_funcionamento],
-  );
+  const handleWaze = () => {
+    if (id) trackDirectionsClick(id, "waze");
+    if (estabelecimento.latitude && estabelecimento.longitude) {
+      window.open(
+        `https://waze.com/ul?ll=${estabelecimento.latitude},${estabelecimento.longitude}&navigate=yes`,
+        "_blank",
+      );
+    } else {
+      window.open(`https://waze.com/ul?q=${encodeURIComponent(getEnderecoCompleto())}`, "_blank");
+    }
+  };
 
-  const copyAddress = useCallback(() => {
-    navigator.clipboard.writeText(endereco);
-    setCopiedAddress(true);
-    toast.success("Endereço copiado!");
-    setTimeout(() => setCopiedAddress(false), 2000);
-  }, [endereco]);
+  const handleUber = () => {
+    if (id) trackDirectionsClick(id, "uber");
+    if (estabelecimento.latitude && estabelecimento.longitude) {
+      window.open(
+        `https://m.uber.com/ul/?action=setPickup&dropoff[latitude]=${estabelecimento.latitude}&dropoff[longitude]=${estabelecimento.longitude}&dropoff[nickname]=${encodeURIComponent(estabelecimento.nome_fantasia)}`,
+        "_blank",
+      );
+    } else {
+      window.open(`https://m.uber.com/`, "_blank");
+    }
+  };
 
-  // Google Static Map URL
-  const staticMapUrl = useMemo(() => {
-    if (!estabelecimento.latitude || !estabelecimento.longitude) return null;
-    const lat = estabelecimento.latitude;
-    const lng = estabelecimento.longitude;
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
-    if (!apiKey) return null;
-    return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=16&size=640x300&scale=2&markers=color:purple%7C${lat},${lng}&key=${apiKey}`;
-  }, [estabelecimento.latitude, estabelecimento.longitude]);
+  const handle99 = () => {
+    if (id) trackDirectionsClick(id, "99");
+    if (estabelecimento.latitude && estabelecimento.longitude) {
+      window.open(
+        `https://99app.com/app/ride?destination_latitude=${estabelecimento.latitude}&destination_longitude=${estabelecimento.longitude}&destination_title=${encodeURIComponent(estabelecimento.nome_fantasia)}`,
+        "_blank",
+      );
+    } else {
+      window.open(`https://99app.com/`, "_blank");
+    }
+  };
 
-  return (
-    <div className="space-y-8">
-      {/* Sobre */}
-      <section>
-        <h2 className="text-xl font-bold text-zinc-900 mb-4">Sobre</h2>
-        <p className="text-zinc-700 leading-relaxed">
-          {estabelecimento.descricao ||
-            `${estabelecimento.nome_fantasia} é referência em ${estabelecimento.categoria?.[0] || "experiências"} em ${estabelecimento.bairro || estabelecimento.cidade}. Celebre seu aniversário com benefícios exclusivos e viva momentos inesquecíveis.`}
-        </p>
-
-        {/* Tags */}
-        {estabelecimento.especialidades && estabelecimento.especialidades.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-4">
-            {estabelecimento.especialidades.map((esp) => (
-              <Badge key={esp} variant="secondary" className="bg-purple-100 text-[#240046] hover:bg-purple-200">
-                {esp}
-              </Badge>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Horário */}
-      <section className="border-t border-zinc-200 pt-8">
-        <h2 className="text-xl font-bold text-zinc-900 mb-4 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-[#240046]" />
-          Horário de funcionamento
-        </h2>
-
-        {/* Status Aberto/Fechado */}
-        <div
-          className={cn(
-            "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium mb-4",
-            openStatus.open ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700",
-          )}
-        >
-          <span className={cn("w-2 h-2 rounded-full", openStatus.open ? "bg-green-500" : "bg-red-500")} />
-          {openStatus.text}
-        </div>
-
-        {/* Horários por dia */}
-        {horariosParsed && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {Object.entries(horariosParsed).map(([dia, horario]) => (
-              <div key={dia} className="flex justify-between py-2 px-3 rounded-lg bg-zinc-50">
-                <span className="text-zinc-600 capitalize">{dia}</span>
-                <span className="font-medium text-zinc-900">{horario}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Localização */}
-      <section className="border-t border-zinc-200 pt-8">
-        <h2 className="text-xl font-bold text-zinc-900 mb-4 flex items-center gap-2">
-          <MapPin className="w-5 h-5 text-[#240046]" />
-          Localização
-        </h2>
-
-        {/* Endereço */}
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <p className="text-zinc-700">{endereco}</p>
-          <button
-            onClick={copyAddress}
-            className="flex items-center gap-1.5 text-sm text-[#240046] hover:underline flex-shrink-0"
-          >
-            {copiedAddress ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            {copiedAddress ? "Copiado!" : "Copiar"}
-          </button>
-        </div>
-
-        {/* Mapa Estático */}
-        {staticMapUrl && (
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block rounded-xl overflow-hidden mb-4 hover:opacity-95 transition-opacity"
-          >
-            <img src={staticMapUrl} alt="Mapa" className="w-full h-48 object-cover" />
-          </a>
-        )}
-
-        {/* Botões de Rota */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {[
-            {
-              label: "Google Maps",
-              icon: Navigation,
-              href: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(endereco)}`,
-            },
-            { label: "Waze", icon: Navigation, href: `https://waze.com/ul?q=${encodeURIComponent(endereco)}` },
-            {
-              label: "Uber",
-              icon: Car,
-              href: `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${encodeURIComponent(endereco)}`,
-            },
-            { label: "99", icon: Car, href: `https://99app.com/` },
-          ].map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-3 px-4 
-                        rounded-xl border border-zinc-200 hover:border-[#240046]
-                        hover:bg-purple-50 transition-all text-sm font-medium"
-            >
-              <item.icon className="w-4 h-4" />
-              {item.label}
-            </a>
-          ))}
-        </div>
-      </section>
-
-      {/* Contato */}
-      <section className="border-t border-zinc-200 pt-8">
-        <h2 className="text-xl font-bold text-zinc-900 mb-4">Contato</h2>
-
-        <div className="flex flex-wrap gap-3">
-          {estabelecimento.whatsapp && (
-            <a
-              href={getWhatsAppLink(estabelecimento.whatsapp)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-3 rounded-xl
-                        bg-green-500 hover:bg-green-600 text-white font-medium transition-colors"
-            >
-              <MessageCircle className="w-5 h-5" />
-              WhatsApp
-            </a>
-          )}
-
-          {estabelecimento.instagram && (
-            <a
-              href={getInstagramLink(estabelecimento.instagram)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-3 rounded-xl
-                        bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium"
-            >
-              <Instagram className="w-5 h-5" />
-              Instagram
-            </a>
-          )}
-
-          {estabelecimento.telefone && (
-            <a
-              href={`tel:${estabelecimento.telefone}`}
-              className="flex items-center gap-2 px-4 py-3 rounded-xl
-                        border border-zinc-200 hover:border-[#240046] hover:bg-purple-50
-                        font-medium transition-all"
-            >
-              <Phone className="w-5 h-5" />
-              {formatPhone(estabelecimento.telefone)}
-            </a>
-          )}
-        </div>
-      </section>
-    </div>
-  );
-});
-
-// =============================================================================
-// CTA PARA PARCEIROS
-// =============================================================================
-
-const PartnerCTA = memo(() => (
-  <section className="mt-12 py-8 px-6 rounded-2xl bg-gradient-to-r from-purple-50 to-fuchsia-50 border border-purple-200">
-    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-[#240046] flex items-center justify-center">
-          <Gift className="w-6 h-6 text-white" />
-        </div>
-        <div>
-          <h3 className="font-bold text-zinc-900">Quer sua página assim?</h3>
-          <p className="text-sm text-zinc-600">Cadastre seu estabelecimento e atraia aniversariantes</p>
-        </div>
-      </div>
-      <Link
-        to="/seja-parceiro"
-        className="px-6 py-3 bg-[#240046] hover:bg-[#3C096C] text-white font-semibold
-                  rounded-xl transition-colors flex items-center gap-2"
-      >
-        Cadastrar grátis
-        <ExternalLink className="w-4 h-4" />
-      </Link>
-    </div>
-  </section>
-));
-
-// =============================================================================
-// MAIN PAGE COMPONENT
-// =============================================================================
-
-const EstabelecimentoDetalhePremium = () => {
-  const { slug } = useParams();
-  const navigate = useNavigate();
-  const session = useSession();
-  const user = session?.user;
-
-  // States
-  const [estabelecimento, setEstabelecimento] = useState<Estabelecimento | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showGallery, setShowGallery] = useState(false);
-  const [showComoUsarModal, setShowComoUsarModal] = useState(false);
-  const [showStickyCta, setShowStickyCta] = useState(false);
-
-  // Refs
-  const heroRef = useRef<HTMLDivElement>(null);
-
-  // Fetch estabelecimento
-  useEffect(() => {
-    const fetchEstabelecimento = async () => {
-      if (!slug) return;
-
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("estabelecimentos")
-          .select("*")
-          .eq("slug", slug)
-          .eq("ativo", true)
-          .single();
-
-        if (error) throw error;
-
-        // Parse horario_funcionamento se vier como string
-        const parsed: Estabelecimento = {
-          ...data,
-          horario_funcionamento: parseHorarioFuncionamento(data.horario_funcionamento),
-        };
-
-        setEstabelecimento(parsed);
-      } catch (err) {
-        console.error("Erro ao buscar estabelecimento:", err);
-        toast.error("Estabelecimento não encontrado");
-        navigate("/");
-      } finally {
-        setLoading(false);
-      }
+  const getCategoriaIcon = (categoria: string) => {
+    const icons: Record<string, string> = {
+      Restaurante: "🍽️",
+      Bar: "🍺",
+      Academia: "💪",
+      "Salão de Beleza": "💇",
+      Barbearia: "✂️",
+      Cafeteria: "☕",
+      "Casa Noturna": "🎉",
+      Confeitaria: "🍰",
+      Entretenimento: "🎬",
+      Hospedagem: "🏨",
+      Loja: "🛍️",
+      Serviços: "🔧",
+      "Outros Comércios": "🏪",
     };
+    return icons[categoria] || "📍";
+  };
 
-    fetchEstabelecimento();
-  }, [slug, navigate]);
-
-  // Intersection Observer para Sticky CTA
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setShowStickyCta(!entry.isIntersecting);
-      },
-      { threshold: 0 },
-    );
-
-    if (heroRef.current) {
-      observer.observe(heroRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  // Handlers
-  const handleResgate = useCallback(() => {
-    if (!user) {
-      toast.info("Faça login para resgatar seu benefício");
-      navigate("/login");
-      return;
-    }
-    // TODO: Implementar fluxo de resgate
-    toast.success("Benefício marcado! Apresente este app no estabelecimento.");
-  }, [user, navigate]);
-
-  const handleVerComoUsar = useCallback(() => {
-    setShowComoUsarModal(true);
-  }, []);
-
-  const handleLogin = useCallback(() => {
-    setShowComoUsarModal(false);
-    navigate("/login");
-  }, [navigate]);
-
-  // Prepare images
-  const images = useMemo(() => {
-    const imgs: string[] = [];
-    if (estabelecimento?.logo_url) imgs.push(estabelecimento.logo_url);
-    if (estabelecimento?.imagem_url) imgs.push(estabelecimento.imagem_url);
-    if (estabelecimento?.fotos) imgs.push(...estabelecimento.fotos);
-    return imgs.length > 0 ? imgs : ["/placeholder-estabelecimento.jpg"];
-  }, [estabelecimento]);
-
-  // Loading state
   if (loading) {
-    return <PageSkeleton />;
-  }
-
-  // Not found
-  if (!estabelecimento) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-zinc-900 mb-2">Estabelecimento não encontrado</h1>
-          <Link to="/" className="text-[#240046] hover:underline">
-            Voltar para a home
-          </Link>
-        </div>
+      <div className="min-h-screen bg-background">
+        <SkeletonEstablishmentPage />
       </div>
     );
   }
+
+  if (!estabelecimento) return null;
+
+  const categoria = estabelecimento.categoria?.[0] || "Estabelecimento";
+  const mostraCardapio = ["Bar", "Restaurante"].includes(categoria);
+
+  // Montar array de fotos: APENAS galeria manual (sem fallback para logo_url errado)
+  const galeriaFotos = estabelecimento?.galeria_fotos || [];
+  const temFotosGaleria = galeriaFotos.length > 0;
+
+  // Foto do avatar: galeria[0] > inicial do nome com gradient
+  const fotoAvatar = temFotosGaleria ? galeriaFotos[0] : null;
+  const inicialNome = (estabelecimento.nome_fantasia || "E").charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-white pb-24 lg:pb-8">
-      {/* Hero Gallery */}
-      <div ref={heroRef}>
-        <HeroGallery
-          images={images}
-          nome={estabelecimento.nome_fantasia}
-          beneficio={estabelecimento.descricao_beneficio}
-          onShowGallery={() => setShowGallery(true)}
-        />
+    <div className="min-h-screen bg-slate-950 pb-24 md:pb-8 animate-in fade-in duration-500">
+      {/* ========== HERO IMAGE COM FOTO DE CAPA ========== */}
+      <div className="relative">
+        {/* Foto de capa - largura total */}
+        <div className="w-full h-52 sm:h-72 overflow-hidden">
+          {fotoAvatar ? (
+            <img src={fotoAvatar} alt={estabelecimento.nome_fantasia} className="w-full h-full object-cover" />
+          ) : (
+            /* Fallback: gradient abstrato se não tiver foto */
+            <div className="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative">
+              <motion.div
+                className="absolute top-0 left-1/4 w-80 h-80 rounded-full blur-[100px] opacity-40"
+                style={{ background: "radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)" }}
+                animate={{
+                  x: [0, 30, 0],
+                  y: [0, -20, 0],
+                  scale: [1, 1.1, 1],
+                }}
+                transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+              />
+              <motion.div
+                className="absolute -bottom-20 right-1/4 w-96 h-96 rounded-full blur-[120px] opacity-30"
+                style={{ background: "radial-gradient(circle, hsl(280, 80%, 60%) 0%, transparent 70%)" }}
+                animate={{
+                  x: [0, -40, 0],
+                  y: [0, 30, 0],
+                  scale: [1, 1.15, 1],
+                }}
+                transition={{ repeat: Infinity, duration: 10, ease: "easeInOut", delay: 1 }}
+              />
+            </div>
+          )}
+          {/* Overlay gradiente para legibilidade */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-slate-950" />
+        </div>
+
+        {/* Botões sobre a capa */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10"
+        >
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate(-1)}
+            className="p-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg hover:bg-white/20 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-white" />
+          </motion.button>
+
+          <div className="flex gap-3">
+            <motion.button
+              id="favorito-btn"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleFavorito}
+              className="p-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg hover:bg-white/20 transition-colors"
+            >
+              <Heart
+                className={`w-5 h-5 transition-colors ${id && isFavorito(id) ? "fill-red-500 text-red-500" : "text-white"}`}
+              />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleShare}
+              className="p-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg hover:bg-white/20 transition-colors"
+            >
+              <Share2 className="w-5 h-5 text-white" />
+            </motion.button>
+          </div>
+        </motion.div>
+
+        {/* Foto de perfil sobrepondo a capa */}
+        <div className="absolute -bottom-14 left-1/2 transform -translate-x-1/2 z-10">
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+            className="relative"
+          >
+            {/* Glow ring */}
+            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 opacity-60 blur-lg animate-pulse" />
+
+            {/* Container do avatar */}
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              onClick={() => fotoAvatar && setShowLogoExpanded(true)}
+              className={`relative w-28 h-28 rounded-2xl border-4 border-slate-950 overflow-hidden shadow-xl ${fotoAvatar ? "cursor-pointer" : ""}`}
+            >
+              {fotoAvatar ? (
+                <img src={fotoAvatar} alt={estabelecimento.nome_fantasia} className="w-full h-full object-cover" />
+              ) : (
+                /* Inicial do nome com gradient premium */
+                <div className="w-full h-full bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 flex items-center justify-center">
+                  <span className="text-5xl font-black text-white drop-shadow-lg">{inicialNome}</span>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Badge verificado */}
+            <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1.5 border-2 border-slate-950">
+              <Check className="w-4 h-4 text-white" />
+            </div>
+          </motion.div>
+        </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header Info */}
-        <div className="mb-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-zinc-900 mb-2">{estabelecimento.nome_fantasia}</h1>
-              <div className="flex flex-wrap items-center gap-2 text-sm text-zinc-600">
-                <span className="capitalize">{estabelecimento.categoria?.[0]}</span>
-                <span>•</span>
-                <span>
-                  {estabelecimento.bairro}, {estabelecimento.cidade}
-                </span>
-                {estabelecimento.verificado && (
-                  <>
-                    <span>•</span>
-                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                      <Shield className="w-3 h-3 mr-1" />
-                      Verificado
-                    </Badge>
-                  </>
+      {/* ========== ESPAÇO + INFO CENTRALIZADO ========== */}
+      <div className="pt-[72px] pb-4 text-center px-4">
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="text-2xl font-bold text-white"
+        >
+          {estabelecimento.nome_fantasia || estabelecimento.razao_social}
+        </motion.h1>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="flex flex-wrap items-center justify-center gap-2 mt-2"
+        >
+          <span className="flex items-center gap-1 bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm">
+            <span>{getCategoriaIcon(categoria)}</span>
+            {categoria}
+          </span>
+
+          {(estabelecimento.bairro || estabelecimento.cidade) && (
+            <span className="flex items-center gap-1 text-sm text-gray-400">
+              <MapPin className="w-4 h-4" />
+              {estabelecimento.bairro || estabelecimento.cidade}
+            </span>
+          )}
+        </motion.div>
+
+        {/* Especialidades/Subcategorias */}
+        {estabelecimento.especialidades?.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="flex flex-wrap justify-center gap-1.5 mt-2"
+          >
+            {estabelecimento.especialidades.slice(0, 3).map((spec: string) => (
+              <span
+                key={spec}
+                className="px-3 py-1 rounded-full bg-purple-500/15 text-xs text-purple-300 border border-purple-500/25"
+              >
+                {spec}
+              </span>
+            ))}
+          </motion.div>
+        )}
+      </div>
+
+      {/* ========== CONTEÚDO PRINCIPAL COM ESPAÇAMENTO ========== */}
+      <div className="px-4 space-y-6 pb-24">
+        {/* 1. CARD DE BENEFÍCIO */}
+        {(() => {
+          const beneficioData = estabelecimento.beneficio_titulo
+            ? {
+                titulo: estabelecimento.beneficio_titulo,
+                validade: estabelecimento.beneficio_validade || "dia_aniversario",
+                detalhes: estabelecimento.beneficio_regras || estabelecimento.regras_utilizacao,
+              }
+            : separarBeneficio(estabelecimento.descricao_beneficio);
+
+          return (
+            <CardBeneficio
+              beneficio={beneficioData.titulo}
+              validadeTexto={beneficioData.validade}
+              regras={beneficioData.detalhes}
+              estabelecimentoId={id!}
+              userId={userId}
+              onEmitirCupom={() => setShowCupomModal(true)}
+            />
+          );
+        })()}
+
+        {/* 2. SEÇÃO SOBRE (BIO) */}
+        {estabelecimento.bio && estabelecimento.bio.trim() !== "" && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="p-4 rounded-2xl bg-card/50 border border-white/10"
+          >
+            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2 text-white">
+              <div className="p-2 rounded-lg bg-purple-500/20">
+                <Store className="w-4 h-4 text-purple-400" />
+              </div>
+              Sobre
+            </h2>
+            <p className="text-gray-300 leading-relaxed text-sm">{estabelecimento.bio}</p>
+          </motion.div>
+        )}
+
+        {/* 3. BOTÕES DE CONTATO */}
+        {(() => {
+          const hasWhatsApp = !!formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone);
+          const hasInstagram = !!formatInstagram(estabelecimento.instagram);
+          const hasPhone = !!formatPhoneLink(estabelecimento.telefone);
+          const hasCardapio = mostraCardapio && !!estabelecimento.link_cardapio;
+          const hasSite = !!formatWebsite(estabelecimento.site);
+
+          const validButtonsCount = [hasWhatsApp, hasInstagram, hasPhone, hasCardapio, hasSite].filter(Boolean).length;
+
+          if (validButtonsCount === 0) return null;
+
+          const gridCols =
+            validButtonsCount <= 2
+              ? "grid-cols-2"
+              : validButtonsCount === 3
+                ? "grid-cols-3"
+                : validButtonsCount === 4
+                  ? "grid-cols-4"
+                  : "grid-cols-5";
+
+          return (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
+              <div className={`grid ${gridCols} gap-3`}>
+                {formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone) && (
+                  <motion.button
+                    onClick={handleWhatsApp}
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-green-500/15 to-green-600/25 border-green-500/30 hover:border-green-400/50 hover:shadow-lg hover:shadow-green-500/10"
+                  >
+                    <MessageCircle className="w-6 h-6 text-green-400" />
+                    <span className="text-xs font-medium text-gray-200">WhatsApp</span>
+                  </motion.button>
+                )}
+
+                {formatInstagram(estabelecimento.instagram) && (
+                  <motion.button
+                    onClick={handleInstagram}
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-pink-500/15 to-pink-600/25 border-pink-500/30 hover:border-pink-400/50 hover:shadow-lg hover:shadow-pink-500/10"
+                  >
+                    <Instagram className="w-6 h-6 text-pink-400" />
+                    <span className="text-xs font-medium text-gray-200">Instagram</span>
+                  </motion.button>
+                )}
+
+                {formatPhoneLink(estabelecimento.telefone) && (
+                  <motion.button
+                    onClick={handleLigar}
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-blue-500/15 to-blue-600/25 border-blue-500/30 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/10"
+                  >
+                    <Phone className="w-6 h-6 text-blue-400" />
+                    <span className="text-xs font-medium text-gray-200">Ligar</span>
+                  </motion.button>
+                )}
+
+                {mostraCardapio && estabelecimento.link_cardapio && (
+                  <motion.button
+                    onClick={handleCardapio}
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-orange-500/15 to-orange-600/25 border-orange-500/30 hover:border-orange-400/50 hover:shadow-lg hover:shadow-orange-500/10"
+                  >
+                    <UtensilsCrossed className="w-6 h-6 text-orange-400" />
+                    <span className="text-xs font-medium text-gray-200">Cardápio</span>
+                  </motion.button>
+                )}
+
+                {formatWebsite(estabelecimento.site) && (
+                  <motion.button
+                    onClick={handleSite}
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all bg-gradient-to-b from-violet-500/15 to-violet-600/25 border-violet-500/30 hover:border-violet-400/50 hover:shadow-lg hover:shadow-violet-500/10"
+                  >
+                    <Globe className="w-6 h-6 text-violet-400" />
+                    <span className="text-xs font-medium text-gray-200">Site</span>
+                  </motion.button>
                 )}
               </div>
+            </motion.div>
+          );
+        })()}
+
+        {/* 4. HORÁRIO DE FUNCIONAMENTO */}
+        {estabelecimento.horario_funcionamento && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
+            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-purple-500/20 border border-purple-500/30">
+                  <Clock className="w-5 h-5 text-purple-400" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-white">Horário de Funcionamento</h4>
+                  <p className="text-white/80 text-sm mt-1">{estabelecimento.horario_funcionamento}</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* 5. COMO CHEGAR (LOCALIZAÇÃO) */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
+          <LazyMap
+            endereco={[estabelecimento.logradouro, estabelecimento.numero, estabelecimento.complemento]
+              .filter(Boolean)
+              .join(", ")}
+            latitude={estabelecimento.latitude}
+            longitude={estabelecimento.longitude}
+            nomeEstabelecimento={estabelecimento.nome_fantasia}
+            bairro={estabelecimento.bairro}
+            cep={estabelecimento.cep}
+            cidade={estabelecimento.cidade}
+            estado={estabelecimento.estado}
+          />
+        </motion.div>
+
+        {/* 6. CTA PARA ESTABELECIMENTOS */}
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/80 via-pink-900/60 to-purple-900/80 p-6 text-center">
+            <div className="absolute top-0 left-1/4 w-32 h-32 bg-purple-500/30 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-pink-500/30 rounded-full blur-3xl" />
+
+            <div className="relative">
+              <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 3 }}>
+                <Store className="w-12 h-12 text-purple-300 mx-auto mb-4" />
+              </motion.div>
+
+              <h3 className="text-xl font-bold text-white mb-2">Quer sua página assim?</h3>
+              <p className="text-purple-200 text-sm mb-5 max-w-xs mx-auto">
+                Cadastre seu estabelecimento e atraia aniversariantes todos os meses!
+              </p>
+
+              <motion.button
+                onClick={() => navigate("/seja-parceiro")}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#240046] to-[#3C096C] text-white font-bold text-sm shadow-lg shadow-purple-500/25"
+              >
+                Cadastrar meu negócio
+                <ArrowRight className="w-4 h-4" />
+              </motion.button>
             </div>
           </div>
-        </div>
-
-        {/* Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            <InfoSection estabelecimento={estabelecimento} />
-            <ComoFuncionaSection />
-            <PartnerCTA />
-          </div>
-
-          {/* Sidebar - Desktop Only */}
-          <div className="hidden lg:block">
-            <BenefitCard
-              estabelecimento={estabelecimento}
-              onResgate={handleResgate}
-              onVerComoUsar={handleVerComoUsar}
-            />
-          </div>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Sticky Mobile CTA */}
-      <StickyMobileCTA
-        estabelecimento={estabelecimento}
-        isVisible={showStickyCta}
-        onResgate={handleResgate}
-        onVerComoUsar={handleVerComoUsar}
+      {/* ========== BOTÃO FLUTUANTE MOBILE ========== */}
+      <motion.div
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.8, type: "spring" }}
+        className="fixed bottom-0 left-0 right-0 z-40 p-4 md:hidden"
+      >
+        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-xl border-t border-slate-800" />
+
+        <motion.button
+          onClick={handleVerBeneficio}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="relative w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-[length:200%_200%] animate-gradient-x text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30"
+        >
+          <Gift className="w-5 h-5" />
+          Ver Benefício de Aniversário
+          <Sparkles className="w-4 h-4" />
+        </motion.button>
+      </motion.div>
+
+      <AnimatePresence>
+        {lightboxOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <motion.button
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute top-4 right-4 p-3 rounded-full bg-white/10 backdrop-blur-sm z-10"
+              onClick={() => setLightboxOpen(false)}
+            >
+              <X className="w-6 h-6 text-white" />
+            </motion.button>
+
+            {galeriaFotos.length > 1 && (
+              <>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="absolute left-4 p-3 rounded-full bg-white/10 backdrop-blur-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentPhotoIndex((prev) => (prev === 0 ? galeriaFotos.length - 1 : prev - 1));
+                  }}
+                >
+                  <ChevronLeft className="w-6 h-6 text-white" />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="absolute right-4 p-3 rounded-full bg-white/10 backdrop-blur-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentPhotoIndex((prev) => (prev === galeriaFotos.length - 1 ? 0 : prev + 1));
+                  }}
+                >
+                  <ChevronRight className="w-6 h-6 text-white" />
+                </motion.button>
+              </>
+            )}
+
+            <motion.img
+              key={currentPhotoIndex}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              src={galeriaFotos[currentPhotoIndex]}
+              className="max-w-[90vw] max-h-[80vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2">
+              {galeriaFotos.map((_: string, index: number) => (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentPhotoIndex(index);
+                  }}
+                  className={`h-2 rounded-full transition-all ${
+                    index === currentPhotoIndex ? "bg-white w-6" : "bg-white/40 w-2"
+                  }`}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ========== MODAL DE BENEFÍCIO REVELADO ========== */}
+      <AnimatePresence>
+        {showBenefitModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              onClick={() => setShowBenefitModal(false)}
+            />
+
+            <Confetti
+              width={width}
+              height={height}
+              recycle={false}
+              numberOfPieces={200}
+              gravity={0.3}
+              colors={["#8B5CF6", "#D946EF", "#F472B6", "#FFD700", "#FFF"]}
+            />
+
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0, y: 50 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: 50 }}
+              transition={{ type: "spring", damping: 20 }}
+              className="relative w-full max-w-md bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 rounded-3xl border border-purple-500/30 overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-purple-600/20 to-transparent" />
+
+              <div className="relative p-6 text-center">
+                <motion.div
+                  animate={{
+                    y: [0, -10, 0],
+                    rotate: [0, 5, -5, 0],
+                  }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30"
+                >
+                  <Gift className="w-10 h-10 text-white" />
+                </motion.div>
+
+                <h2 className="text-2xl font-bold text-white mb-1">🎉 Parabéns!</h2>
+                <p className="text-purple-300 mb-6">Você desbloqueou um benefício exclusivo</p>
+
+                <div className="bg-black/40 backdrop-blur-sm rounded-xl p-5 border border-purple-500/20 mb-6">
+                  <p className="text-lg text-white leading-relaxed">
+                    {estabelecimento.descricao_beneficio || "Benefício exclusivo para aniversariantes!"}
+                  </p>
+                </div>
+
+                {estabelecimento.regras_utilizacao && (
+                  <div className="bg-slate-800/50 rounded-xl p-4 mb-6 text-left">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                      Regras de Utilização
+                    </h4>
+                    <p className="text-sm text-gray-300">{estabelecimento.regras_utilizacao}</p>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <motion.button
+                    onClick={handleEmitirCupom}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold transition-colors"
+                  >
+                    <Gift className="w-5 h-5" />
+                    Emitir Meu Cupom
+                  </motion.button>
+
+                  {(estabelecimento.whatsapp || estabelecimento.telefone) && (
+                    <motion.button
+                      onClick={handleWhatsApp}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold transition-colors"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      Falar no WhatsApp
+                    </motion.button>
+                  )}
+
+                  <button
+                    onClick={() => setShowBenefitModal(false)}
+                    className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-gray-300 font-medium transition-colors"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modais */}
+      <CupomModal isOpen={showCupomModal} onClose={() => setShowCupomModal(false)} estabelecimento={estabelecimento} />
+
+      <LoginRequiredModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        returnUrl={window.location.pathname}
       />
 
-      {/* Modal Como Usar */}
-      <ModalComoUsar
-        isOpen={showComoUsarModal}
-        onClose={() => setShowComoUsarModal(false)}
-        estabelecimento={estabelecimento}
-        isLoggedIn={!!user}
-        onLogin={handleLogin}
-        onResgate={handleResgate}
-      />
+      {/* Share Sheet */}
+      <Sheet open={showShareSheet} onOpenChange={setShowShareSheet}>
+        <SheetContent side="bottom" className="bg-slate-900 border-slate-800">
+          <SheetHeader>
+            <SheetTitle className="text-white text-center">Compartilhar</SheetTitle>
+          </SheetHeader>
+
+          <div className="grid grid-cols-3 gap-4 mt-6 mb-4">
+            <button
+              onClick={handleShareWhatsApp}
+              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-green-500/20">
+                <MessageCircle className="w-6 h-6 text-green-500" />
+              </div>
+              <span className="text-xs text-gray-300">WhatsApp</span>
+            </button>
+
+            <button
+              onClick={handleShareInstagram}
+              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
+            >
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center"
+                style={{
+                  background: "linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)",
+                }}
+              >
+                <Instagram className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-xs text-gray-300">Instagram</span>
+            </button>
+
+            <button
+              onClick={handleShareFacebook}
+              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-600/20">
+                <Facebook className="w-6 h-6 text-blue-500" />
+              </div>
+              <span className="text-xs text-gray-300">Facebook</span>
+            </button>
+
+            <button
+              onClick={handleShareX}
+              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </div>
+              <span className="text-xs text-gray-300">X</span>
+            </button>
+
+            <button
+              onClick={handleShareTelegram}
+              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-sky-500/20">
+                <Send className="w-6 h-6 text-sky-500" />
+              </div>
+              <span className="text-xs text-gray-300">Telegram</span>
+            </button>
+
+            <button
+              onClick={handleShareLinkedin}
+              className="flex flex-col items-center gap-2 p-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-700/20">
+                <Linkedin className="w-6 h-6 text-blue-600" />
+              </div>
+              <span className="text-xs text-gray-300">LinkedIn</span>
+            </button>
+          </div>
+
+          <button
+            onClick={handleCopyLink}
+            className="w-full flex items-center justify-center gap-2 p-4 bg-violet-500/20 rounded-xl hover:bg-violet-500/30 transition-colors mt-2"
+          >
+            <Copy className="w-5 h-5 text-violet-400" />
+            <span className="text-white font-medium">Copiar Link</span>
+          </button>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
 
-export default EstabelecimentoDetalhePremium;
+export default EstabelecimentoDetalhe;

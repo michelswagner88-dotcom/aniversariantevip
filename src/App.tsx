@@ -120,8 +120,15 @@ const App = () => (
                       }
                     />
 
-                    {/* /explorar agora redireciona para / */}
-                    <Route path="/explorar" element={<Navigate to="/" replace />} />
+                    {/* Página Explorar com mapa Airbnb */}
+                    <Route
+                      path="/explorar"
+                      element={
+                        <LazyRoute>
+                          <Explorar />
+                        </LazyRoute>
+                      }
+                    />
 
                     {/* Relâmpago - ofertas por tempo limitado */}
                     <Route

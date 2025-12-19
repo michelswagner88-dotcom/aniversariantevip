@@ -21,9 +21,10 @@ interface LocationSectionProps {
   onOpenWaze: () => void;
   onOpenUber: () => void;
   onOpen99: () => void;
+  inline?: boolean;
 }
 
-const LocationSection = ({ establishment, onOpenMaps, onOpenWaze, onOpenUber, onOpen99 }: LocationSectionProps) => {
+const LocationSection = ({ establishment, onOpenMaps, onOpenWaze, onOpenUber, onOpen99, inline }: LocationSectionProps) => {
   const [showMap, setShowMap] = useState(false);
   const [copied, setCopied] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);

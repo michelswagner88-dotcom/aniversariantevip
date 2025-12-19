@@ -6,10 +6,16 @@ import { cn } from "@/lib/utils";
 
 interface BusinessHoursProps {
   hours: string;
+  inline?: boolean;
 }
 
-const BusinessHours = ({ hours }: BusinessHoursProps) => {
+const BusinessHours = ({ hours, inline }: BusinessHoursProps) => {
   if (!hours) return null;
+
+  // Modo inline - apenas o conteúdo sem wrapper
+  if (inline) {
+    return <p className="text-gray-600 whitespace-pre-line">{hours}</p>;
+  }
 
   return (
     <section className="mx-4 sm:mx-6 mt-6" aria-labelledby="hours-heading">

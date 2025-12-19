@@ -88,12 +88,8 @@ export const CategoriasPills = memo(function CategoriasPills({
                     "transition-colors",
                   )}
                 >
-                  <Icon className={cn("w-5 h-5 transition-colors", isActive ? "text-white" : "text-white/60")} />
-                  <span
-                    className={cn(
-                      "text-[11px] font-medium whitespace-nowrap transition-colors",
-                      isActive ? "text-white" : "text-white/60",
-                    )}
+                  <Icon className="w-5 h-5 text-white" />
+                  <span className="text-[11px] font-medium whitespace-nowrap text-white"
                   >
                     {cat.label}
                   </span>

@@ -218,7 +218,7 @@ const CitySearchBar = memo(({ city, state, isLoading, onCityChange }: CitySearch
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Onde</p>
-          <p className="text-sm font-semibold text-gray-900 truncate">
+          <p className="text-sm font-bold text-gray-900 truncate">
             {isLoading ? "Detectando..." : `${city}, ${state}`}
           </p>
         </div>

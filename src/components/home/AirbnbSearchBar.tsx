@@ -202,7 +202,7 @@ export const SearchBar = memo(function SearchBar({ city, state, isLoading, onCit
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs text-gray-500 leading-none mb-0.5">ONDE</p>
-          <p className="text-sm font-medium text-gray-900 truncate">
+          <p className="text-sm font-bold text-gray-900 truncate">
             {isLoading ? "Detectando..." : `${city}, ${state}`}
           </p>
         </div>

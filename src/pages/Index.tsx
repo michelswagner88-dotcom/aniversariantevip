@@ -589,7 +589,7 @@ const SearchPill = memo(({ city, state, isLoading, onSelect, availableCities }: 
               onChange={handleInputChange}
               onFocus={handleFocus}
               placeholder={displayText}
-              className="w-full text-sm font-medium text-zinc-900 bg-transparent outline-none placeholder:text-zinc-700"
+              className="w-full text-sm font-bold text-zinc-900 bg-transparent outline-none placeholder:text-zinc-900 placeholder:font-bold"
             />
           </div>
           <button

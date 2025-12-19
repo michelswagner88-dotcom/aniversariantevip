@@ -82,47 +82,37 @@ const normalizeText = (text: string): string => {
 };
 
 // =============================================================================
-// BENEFIT CHIP - COM CORES DIFERENCIADAS
+// BENEFIT CHIP - BRANCO COM TEXTO ROXO
 // =============================================================================
 
-type BenefitType = "discount" | "free" | "gift" | "drink" | "food" | "entry" | "default";
+// Badge único: branco com texto roxo do site
+const BADGE_STYLE = "bg-white text-[#240046] font-bold shadow-md border border-violet-100";
 
-const BADGE_STYLES: Record<BenefitType, string> = {
-  discount: "bg-gradient-to-r from-orange-500 to-red-500 text-white",
-  free: "bg-gradient-to-r from-emerald-500 to-green-600 text-white",
-  gift: "bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white",
-  drink: "bg-gradient-to-r from-blue-500 to-cyan-500 text-white",
-  food: "bg-gradient-to-r from-amber-500 to-orange-500 text-white",
-  entry: "bg-gradient-to-r from-violet-500 to-purple-600 text-white",
-  default: "bg-white/95 text-zinc-800 border border-zinc-200/80",
-};
-
-const getBenefitChip = (beneficio?: string): { emoji: string; text: string; type: BenefitType } => {
-  if (!beneficio || beneficio.length < 3) return { emoji: "🎂", text: "Benefício", type: "default" };
+const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => {
+  if (!beneficio || beneficio.length < 3) return { emoji: "🎂", text: "Benefício" };
 
   const b = beneficio.toLowerCase();
 
   const descontoMatch = beneficio.match(/(\d+)\s*%/);
-  if (descontoMatch) return { emoji: "🏷️", text: `${descontoMatch[1]}% OFF`, type: "discount" };
+  if (descontoMatch) return { emoji: "🏷️", text: `${descontoMatch[1]}% OFF` };
 
   if (b.includes("grátis") || b.includes("gratis") || b.includes("free") || b.includes("cortesia")) {
     if (b.includes("drink") || b.includes("bebida") || b.includes("chopp"))
-      return { emoji: "🍺", text: "Drink grátis", type: "drink" };
+      return { emoji: "🍺", text: "Drink grátis" };
     if (b.includes("sobremesa") || b.includes("doce") || b.includes("bolo"))
-      return { emoji: "🍰", text: "Sobremesa", type: "food" };
-    if (b.includes("entrada") || b.includes("ingresso")) return { emoji: "🎟️", text: "Entrada", type: "entry" };
-    if (b.includes("corte") || b.includes("cabelo")) return { emoji: "✂️", text: "Corte grátis", type: "free" };
-    if (b.includes("café") || b.includes("coffee")) return { emoji: "☕", text: "Café grátis", type: "drink" };
-    if (b.includes("pizza")) return { emoji: "🍕", text: "Pizza grátis", type: "food" };
-    if (b.includes("sorvete") || b.includes("açaí")) return { emoji: "🍦", text: "Sorvete", type: "food" };
-    return { emoji: "🎁", text: "Grátis", type: "free" };
+      return { emoji: "🍰", text: "Sobremesa grátis" };
+    if (b.includes("entrada") || b.includes("ingresso")) return { emoji: "🎟️", text: "Entrada grátis" };
+    if (b.includes("corte") || b.includes("cabelo")) return { emoji: "✂️", text: "Corte grátis" };
+    if (b.includes("café") || b.includes("coffee")) return { emoji: "☕", text: "Café grátis" };
+    if (b.includes("pizza")) return { emoji: "🍕", text: "Pizza grátis" };
+    if (b.includes("sorvete") || b.includes("açaí")) return { emoji: "🍦", text: "Sorvete grátis" };
+    return { emoji: "🎁", text: "Grátis" };
   }
 
-  if (b.includes("brinde") || b.includes("presente") || b.includes("mimo"))
-    return { emoji: "🎁", text: "Brinde", type: "gift" };
-  if (beneficio.length <= 12) return { emoji: "🎁", text: beneficio, type: "default" };
+  if (b.includes("brinde") || b.includes("presente") || b.includes("mimo")) return { emoji: "🎁", text: "Brinde" };
+  if (beneficio.length <= 15) return { emoji: "🎁", text: beneficio };
 
-  return { emoji: "🎂", text: "Benefício", type: "default" };
+  return { emoji: "🎂", text: "Benefício" };
 };
 
 // =============================================================================
@@ -201,12 +191,7 @@ const PlaceCard = ({ place }: PlaceCardProps) => {
 
         {/* Badge */}
         <div className="absolute top-2.5 left-2.5">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-full shadow-sm",
-              BADGE_STYLES[chip.type],
-            )}
-          >
+          <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-full", BADGE_STYLE)}>
             <span>{chip.emoji}</span>
             <span>{chip.text}</span>
           </span>
@@ -374,14 +359,14 @@ const CategoriesBar = ({
                   onClick={() => onSelect(cat.id)}
                   className={cn(
                     "flex flex-col items-center gap-1 min-w-[72px] px-3 py-2 relative transition-all flex-shrink-0",
-                    isActive ? "text-white" : "text-white/70 hover:text-white",
+                    "text-white", // Sempre branco forte
                   )}
                 >
-                  <Icon className={cn("w-5 h-5", isActive ? "text-white" : "text-white/70")} />
+                  <Icon className="w-5 h-5 text-white" />
                   <span
                     className={cn(
-                      "text-[11px] font-semibold whitespace-nowrap",
-                      isActive ? "text-white" : "text-white/70",
+                      "text-[11px] font-semibold whitespace-nowrap text-white",
+                      isActive ? "opacity-100" : "opacity-80",
                     )}
                   >
                     {cat.label}

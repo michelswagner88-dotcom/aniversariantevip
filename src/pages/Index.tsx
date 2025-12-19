@@ -724,7 +724,7 @@ const SUBCATEGORIAS: Record<string, string[]> = {
 };
 
 // =============================================================================
-// CATEGORIES - STICKY COM SUBCATEGORIAS EXPANSÍVEIS
+// CATEGORIES - STICKY COM SUBCATEGORIAS FILTRADAS POR DISPONIBILIDADE
 // =============================================================================
 
 const Categories = memo(
@@ -734,18 +734,51 @@ const Categories = memo(
     selectedSubcategory,
     onSubcategorySelect,
     onViewAll,
+    estabelecimentos, // Recebe estabelecimentos pra filtrar subcategorias
   }: {
     selected: string;
     onSelect: (id: string) => void;
     selectedSubcategory: string | null;
     onSubcategorySelect: (sub: string | null) => void;
     onViewAll: (categoryId: string) => void;
+    estabelecimentos: any[];
   }) => {
     const cats = [
       { id: "all", label: "Todos" },
       ...CATEGORIAS_ESTABELECIMENTO.map((c) => ({ id: c.value, label: c.label })),
     ];
-    const subcats = selected !== "all" ? SUBCATEGORIAS[selected.toLowerCase()] || [] : [];
+
+    // Filtra subcategorias baseado no que existe nos estabelecimentos da categoria
+    const subcatsDisponiveis = useMemo(() => {
+      if (selected === "all") return [];
+
+      const todasSubs = SUBCATEGORIAS[selected.toLowerCase()] || [];
+      if (todasSubs.length === 0) return [];
+
+      // Pega estabelecimentos da categoria selecionada
+      const estabsDaCategoria = estabelecimentos.filter((e) => {
+        const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
+        return cats.some((c) => c?.toLowerCase() === selected.toLowerCase());
+      });
+
+      if (estabsDaCategoria.length === 0) return [];
+
+      // Coleta todas as especialidades dos estabelecimentos dessa categoria
+      const especialidadesExistentes = new Set<string>();
+      estabsDaCategoria.forEach((est) => {
+        const specs = est.especialidades || [];
+        specs.forEach((s: string) => especialidadesExistentes.add(s.toLowerCase()));
+      });
+
+      // Filtra subcategorias que existem nos estabelecimentos
+      return todasSubs.filter((sub) => {
+        const subLower = sub.toLowerCase();
+        // Verifica se alguma especialidade contém ou é igual à subcategoria
+        return Array.from(especialidadesExistentes).some(
+          (esp) => esp.includes(subLower) || subLower.includes(esp) || esp === subLower,
+        );
+      });
+    }, [selected, estabelecimentos]);
 
     return (
       <div className="sticky top-[48px] sm:top-[64px] z-40 bg-[#240046]">
@@ -769,14 +802,14 @@ const Categories = memo(
                     }}
                     className={cn(
                       "flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[72px] px-2 sm:px-3 py-2 relative transition-all flex-shrink-0",
-                      isActive ? "text-white" : "text-white/70 hover:text-white",
+                      "text-white", // Sempre branco forte
                     )}
                   >
-                    <Icon className={cn("w-5 h-5 transition-colors", isActive ? "text-white" : "text-white/70")} />
+                    <Icon className="w-5 h-5 text-white" />
                     <span
                       className={cn(
-                        "text-[10px] sm:text-[11px] font-semibold whitespace-nowrap transition-colors",
-                        isActive ? "text-white" : "text-white/70",
+                        "text-[10px] sm:text-[11px] font-semibold whitespace-nowrap text-white",
+                        isActive ? "opacity-100" : "opacity-80",
                       )}
                     >
                       {shortLabel}
@@ -788,8 +821,8 @@ const Categories = memo(
             </div>
           </div>
 
-          {/* Subcategories - Expande quando categoria selecionada */}
-          {selected !== "all" && subcats.length > 0 && (
+          {/* Subcategories - Só aparece se tiver subcategorias disponíveis */}
+          {selected !== "all" && subcatsDisponiveis.length > 0 && (
             <div
               className="flex items-center overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-8 py-2 bg-[#3C096C]/50"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -806,8 +839,8 @@ const Categories = memo(
 
                 <div className="w-px h-5 bg-white/30 mx-1" />
 
-                {/* Subcategorias */}
-                {subcats.map((sub) => {
+                {/* Subcategorias filtradas */}
+                {subcatsDisponiveis.map((sub) => {
                   const isSubActive = selectedSubcategory === sub;
                   return (
                     <button
@@ -832,81 +865,66 @@ const Categories = memo(
 );
 
 // =============================================================================
-// BENEFIT CHIP - COM CORES DIFERENCIADAS
+// BENEFIT CHIP - BRANCO COM TEXTO ROXO
 // =============================================================================
 
-type BenefitType = "discount" | "free" | "gift" | "drink" | "food" | "entry" | "default";
+// Badge único: branco com texto roxo do site
+const BADGE_STYLE = "bg-white text-[#240046] font-bold shadow-md border border-violet-100";
 
-interface BenefitChip {
-  emoji: string;
-  text: string;
-  type: BenefitType;
-}
-
-const BADGE_STYLES: Record<BenefitType, string> = {
-  discount: "bg-gradient-to-r from-orange-500 to-red-500 text-white", // % OFF
-  free: "bg-gradient-to-r from-emerald-500 to-green-600 text-white", // Grátis genérico
-  gift: "bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white", // Brinde/Presente
-  drink: "bg-gradient-to-r from-blue-500 to-cyan-500 text-white", // Drink grátis
-  food: "bg-gradient-to-r from-amber-500 to-orange-500 text-white", // Comida grátis
-  entry: "bg-gradient-to-r from-violet-500 to-purple-600 text-white", // Entrada grátis
-  default: "bg-white/95 text-zinc-800 border border-zinc-200/80", // Benefício genérico
-};
-
-const getBenefitChip = (beneficio?: string): BenefitChip => {
-  if (!beneficio || beneficio.length < 3) return { emoji: "🎂", text: "Benefício", type: "default" };
+const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => {
+  if (!beneficio || beneficio.length < 3) return { emoji: "🎂", text: "Benefício" };
 
   const b = beneficio.toLowerCase();
 
   // Desconto percentual
   const descontoMatch = beneficio.match(/(\d+)\s*%/);
   if (descontoMatch) {
-    return { emoji: "🏷️", text: `${descontoMatch[1]}% OFF`, type: "discount" };
+    return { emoji: "🏷️", text: `${descontoMatch[1]}% OFF` };
   }
 
   // Grátis
   if (b.includes("grátis") || b.includes("gratis") || b.includes("free") || b.includes("cortesia")) {
     if (b.includes("drink") || b.includes("bebida") || b.includes("chopp") || b.includes("cerveja")) {
-      return { emoji: "🍺", text: "Drink grátis", type: "drink" };
+      return { emoji: "🍺", text: "Drink grátis" };
     }
     if (b.includes("sobremesa") || b.includes("doce") || b.includes("bolo")) {
-      return { emoji: "🍰", text: "Sobremesa", type: "food" };
+      return { emoji: "🍰", text: "Sobremesa grátis" };
     }
     if (b.includes("entrada") || b.includes("ingresso") || b.includes("acesso")) {
-      return { emoji: "🎟️", text: "Entrada", type: "entry" };
+      return { emoji: "🎟️", text: "Entrada grátis" };
     }
     if (b.includes("corte") || b.includes("cabelo")) {
-      return { emoji: "✂️", text: "Corte grátis", type: "free" };
+      return { emoji: "✂️", text: "Corte grátis" };
     }
     if (b.includes("café") || b.includes("coffee") || b.includes("capuccino")) {
-      return { emoji: "☕", text: "Café grátis", type: "drink" };
+      return { emoji: "☕", text: "Café grátis" };
     }
     if (b.includes("pizza")) {
-      return { emoji: "🍕", text: "Pizza grátis", type: "food" };
+      return { emoji: "🍕", text: "Pizza grátis" };
     }
     if (b.includes("hambur") || b.includes("burger") || b.includes("lanche")) {
-      return { emoji: "🍔", text: "Burger grátis", type: "food" };
+      return { emoji: "🍔", text: "Burger grátis" };
     }
     if (b.includes("sorvete") || b.includes("gelato") || b.includes("açaí")) {
-      return { emoji: "🍦", text: "Sorvete", type: "food" };
+      return { emoji: "🍦", text: "Sorvete grátis" };
     }
     if (b.includes("prato") || b.includes("refeição") || b.includes("almoço") || b.includes("jantar")) {
-      return { emoji: "🍽️", text: "Refeição", type: "food" };
+      return { emoji: "🍽️", text: "Refeição grátis" };
     }
-    return { emoji: "🎁", text: "Grátis", type: "free" };
+    return { emoji: "🎁", text: "Grátis" };
   }
 
   // Brinde
   if (b.includes("brinde") || b.includes("presente") || b.includes("mimo") || b.includes("surpresa")) {
-    return { emoji: "🎁", text: "Brinde", type: "gift" };
+    return { emoji: "🎁", text: "Brinde" };
   }
 
   // Texto curto - usa como está
-  if (beneficio.length <= 12) {
-    return { emoji: "🎁", text: beneficio, type: "default" };
+  if (beneficio.length <= 15) {
+    return { emoji: "🎁", text: beneficio };
   }
 
-  return { emoji: "🎂", text: "Benefício", type: "default" };
+  return { emoji: "🎂", text: "Benefício" };
 };
 
 // =============================================================================
@@ -1023,14 +1041,9 @@ const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
           <div className="absolute inset-0 bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 bg-[length:400%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
         )}
 
-        {/* Badge com cor diferenciada */}
+        {/* Badge branco com texto roxo */}
         <div className="absolute top-2.5 left-2.5">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-full shadow-sm",
-              BADGE_STYLES[chip.type],
-            )}
-          >
+          <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-full", BADGE_STYLE)}>
             <span>{chip.emoji}</span>
             <span>{chip.text}</span>
           </span>
@@ -1110,9 +1123,9 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll, isLoggedIn, onLoginRe
 
         <button
           onClick={onSeeAll}
-          className="flex items-center gap-1.5 text-violet-600 hover:text-violet-700 text-sm font-medium ml-4 flex-shrink-0"
+          className="flex items-center gap-1.5 text-[#240046] hover:text-[#3C096C] text-sm font-medium ml-4 flex-shrink-0"
         >
-          <span>Ver todas ({items.length}+)</span>
+          <span>Ver todos ({items.length}+)</span>
           <ChevronRight className="w-4 h-4" />
         </button>
 
@@ -1436,6 +1449,7 @@ const Index = () => {
         selectedSubcategory={selectedSubcategory}
         onSubcategorySelect={setSelectedSubcategory}
         onViewAll={handleViewAll}
+        estabelecimentos={cityEstablishments}
       />
 
       <main className="flex-1 pb-20 sm:pb-6">
@@ -1469,7 +1483,32 @@ const Index = () => {
                 </h2>
                 <p className="text-sm text-zinc-600">{filtered.length} lugares encontrados</p>
               </div>
-              <Grid items={filtered} isLoading={false} isLoggedIn={isLoggedIn} onLoginRequired={handleLoginRequired} />
+
+              {/* Feedback quando subcategoria não tem resultados */}
+              {filtered.length === 0 && selectedSubcategory && (
+                <div className="text-center py-12 bg-zinc-50 rounded-2xl">
+                  <div className="w-16 h-16 rounded-full bg-violet-100 flex items-center justify-center mx-auto mb-4">
+                    <Search className="w-8 h-8 text-violet-400" />
+                  </div>
+                  <p className="text-zinc-900 font-medium mb-1">Nenhum resultado para "{selectedSubcategory}"</p>
+                  <p className="text-zinc-500 text-sm mb-4">Tente outra subcategoria ou veja todos</p>
+                  <button
+                    onClick={() => setSelectedSubcategory(null)}
+                    className="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors"
+                  >
+                    Ver todos de {categoria}
+                  </button>
+                </div>
+              )}
+
+              {filtered.length > 0 && (
+                <Grid
+                  items={filtered}
+                  isLoading={false}
+                  isLoggedIn={isLoggedIn}
+                  onLoginRequired={handleLoginRequired}
+                />
+              )}
             </div>
           )}
 

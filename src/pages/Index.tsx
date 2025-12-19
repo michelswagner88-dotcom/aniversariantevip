@@ -798,13 +798,13 @@ const Categories = memo(
                 {/* Ver todos na categoria */}
                 <button
                   onClick={() => onViewAll(selected)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 text-white text-xs font-medium hover:bg-white/30 transition-colors flex-shrink-0"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-[#240046] text-xs font-semibold hover:bg-white/90 transition-colors flex-shrink-0"
                 >
                   <span>Ver todos</span>
                   <ChevronRight className="w-3 h-3" />
                 </button>
 
-                <div className="w-px h-5 bg-white/20 mx-1" />
+                <div className="w-px h-5 bg-white/30 mx-1" />
 
                 {/* Subcategorias */}
                 {subcats.map((sub) => {
@@ -814,10 +814,8 @@ const Categories = memo(
                       key={sub}
                       onClick={() => onSubcategorySelect(isSubActive ? null : sub)}
                       className={cn(
-                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all flex-shrink-0",
-                        isSubActive
-                          ? "bg-white text-[#240046]"
-                          : "bg-white/10 text-white/80 hover:bg-white/20 hover:text-white",
+                        "px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex-shrink-0",
+                        isSubActive ? "bg-white text-[#240046]" : "bg-white/90 text-[#240046] hover:bg-white",
                       )}
                     >
                       {sub}

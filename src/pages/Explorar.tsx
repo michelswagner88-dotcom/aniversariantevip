@@ -42,7 +42,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 import { getEstabelecimentoUrl } from "@/lib/slugUtils";
-import { SubcategoryFilter } from "@/components/SubcategoryFilter";
 import { AirbnbMapLayout } from "@/components/map/AirbnbMapLayout";
 import BottomNav from "@/components/BottomNav";
 import { cn } from "@/lib/utils";
@@ -241,24 +240,25 @@ const PlaceCard = ({ place }: PlaceCardProps) => {
 };
 
 // =============================================================================
-// HEADER
+// HEADER - ROXO IGUAL HOME
 // =============================================================================
 
 const Header = ({ city, state, onBack }: { city: string; state: string; onBack: () => void }) => (
-  <header className="sticky top-0 z-50 bg-white border-b border-zinc-200">
+  <header className="sticky top-0 z-50" style={{ backgroundColor: HEADER_COLOR }}>
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex items-center h-14 gap-4">
         <button
           onClick={onBack}
-          className="w-10 h-10 rounded-full hover:bg-zinc-100 flex items-center justify-center transition-colors"
+          className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
         >
-          <ChevronLeft className="w-5 h-5 text-zinc-700" />
+          <ChevronLeft className="w-5 h-5 text-white" />
         </button>
 
         <div className="flex-1 flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-violet-600" />
-          <span className="font-medium text-zinc-900">
-            {city}, {state}
+          <MapPin className="w-4 h-4 text-violet-300" />
+          <span className="font-medium text-white">
+            {city}
+            {state && `, ${state}`}
           </span>
         </div>
 
@@ -279,7 +279,7 @@ const Header = ({ city, state, onBack }: { city: string; state: string; onBack: 
 );
 
 // =============================================================================
-// CATEGORIES BAR - STICKY
+// CATEGORIES BAR - STICKY COM FUNDO ROXO
 // =============================================================================
 
 const CategoriesBar = ({
@@ -308,12 +308,29 @@ const CategoriesBar = ({
     })),
   ];
 
+  // Subcategorias estáticas (igual Home)
+  const SUBCATEGORIAS: Record<string, string[]> = {
+    academia: ["Musculação", "CrossFit", "Pilates", "Natação", "Funcional", "Spinning", "Yoga", "Artes Marciais"],
+    bar: ["Cervejaria", "Pub", "Rooftop", "Bar de Vinhos", "Coquetelaria", "Boteco", "Sports Bar"],
+    restaurante: ["Italiano", "Japonês", "Brasileiro", "Churrascaria", "Pizzaria", "Fast Food", "Vegano", "Árabe"],
+    cafeteria: ["Café Especial", "Confeitaria", "Padaria", "Brunch", "Doceria"],
+    barbearia: ["Corte Masculino", "Barba", "Tratamento Capilar", "Pigmentação"],
+    salao: ["Cabelo", "Manicure", "Estética", "Maquiagem", "Depilação", "Sobrancelha"],
+    "casa noturna": ["Balada", "Club", "Festa", "Show ao Vivo"],
+    hospedagem: ["Hotel", "Pousada", "Resort", "Hostel", "Flat"],
+    loja: ["Roupas", "Calçados", "Acessórios", "Presentes", "Eletrônicos", "Decoração"],
+    entretenimento: ["Cinema", "Teatro", "Parque", "Escape Room", "Boliche", "Karaokê"],
+    sorveteria: ["Artesanal", "Açaí", "Frozen", "Picolé", "Milk Shake"],
+  };
+
+  const subcats = selected ? SUBCATEGORIAS[selected.toLowerCase()] || [] : [];
+
   return (
-    <div className="sticky top-[56px] z-40 bg-white border-b border-zinc-200">
+    <div className="sticky top-[56px] z-40" style={{ backgroundColor: HEADER_COLOR }}>
       <div className="max-w-7xl mx-auto">
         {/* Categories */}
         <div
-          className="flex items-center overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-8"
+          className="flex items-center overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-8 border-b border-white/10"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           <div className="flex items-center gap-1 py-2">
@@ -325,29 +342,73 @@ const CategoriesBar = ({
                   key={cat.id || "all"}
                   onClick={() => onSelect(cat.id)}
                   className={cn(
-                    "flex flex-col items-center gap-1 min-w-[72px] px-3 py-2 relative transition-all flex-shrink-0 rounded-lg",
-                    isActive ? "bg-violet-50 text-violet-700" : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700",
+                    "flex flex-col items-center gap-1 min-w-[72px] px-3 py-2 relative transition-all flex-shrink-0",
+                    isActive ? "text-white" : "text-white/70 hover:text-white",
                   )}
                 >
-                  <Icon className={cn("w-5 h-5", isActive ? "text-violet-600" : "")} />
-                  <span className="text-[11px] font-medium whitespace-nowrap">{cat.label}</span>
-                  {isActive && <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-violet-600 rounded-full" />}
+                  <Icon className={cn("w-5 h-5", isActive ? "text-white" : "text-white/70")} />
+                  <span
+                    className={cn(
+                      "text-[11px] font-semibold whitespace-nowrap",
+                      isActive ? "text-white" : "text-white/70",
+                    )}
+                  >
+                    {cat.label}
+                  </span>
+                  {isActive && <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-white rounded-full" />}
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Subcategories */}
-        {showSubcategories && selected && (
-          <div className="px-4 sm:px-6 lg:px-8 py-2 border-t border-zinc-100 bg-zinc-50">
-            <SubcategoryFilter
-              category={selected}
-              selectedSubcategories={selectedSubcategories}
-              onSubcategoriesChange={onSubcategoriesChange}
-              cidade={cidade}
-              estado={estado}
-            />
+        {/* Subcategories - Pills brancos no fundo roxo */}
+        {showSubcategories && selected && subcats.length > 0 && (
+          <div
+            className="flex items-center overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-8 py-2 bg-[#3C096C]/50"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            <div className="flex items-center gap-2">
+              {/* Ver todos */}
+              <button
+                onClick={() => onSubcategoriesChange([])}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex-shrink-0",
+                  selectedSubcategories.length === 0
+                    ? "bg-white text-[#240046]"
+                    : "bg-white/90 text-[#240046] hover:bg-white",
+                )}
+              >
+                Ver todos
+              </button>
+
+              <div className="w-px h-5 bg-white/30 mx-1" />
+
+              {/* Subcategorias */}
+              {subcats.map((sub) => {
+                const isSubActive = selectedSubcategories.includes(sub);
+                return (
+                  <button
+                    key={sub}
+                    onClick={() => {
+                      if (isSubActive) {
+                        onSubcategoriesChange(selectedSubcategories.filter((s) => s !== sub));
+                      } else {
+                        onSubcategoriesChange([...selectedSubcategories, sub]);
+                      }
+                    }}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex-shrink-0",
+                      isSubActive
+                        ? "bg-white text-[#240046] ring-2 ring-white ring-offset-2 ring-offset-[#3C096C]"
+                        : "bg-white/90 text-[#240046] hover:bg-white",
+                    )}
+                  >
+                    {sub}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -366,6 +427,7 @@ const FiltersBar = ({
   setOrdenacao,
   totalResults,
   cidade,
+  categoria,
 }: {
   raioKm: string;
   setRaioKm: (v: string) => void;
@@ -373,13 +435,20 @@ const FiltersBar = ({
   setOrdenacao: (v: string) => void;
   totalResults: number;
   cidade: string | null;
+  categoria: string | null;
 }) => (
   <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
     <div>
       <h1 className="text-lg font-semibold text-zinc-900">
-        {totalResults} lugares encontrados
-        {cidade && <span className="text-violet-600"> em {cidade}</span>}
+        {categoria ? (
+          <span className="capitalize">
+            {categoria} em {cidade || "todas as cidades"}
+          </span>
+        ) : (
+          <span>{totalResults} lugares encontrados</span>
+        )}
       </h1>
+      <p className="text-sm text-zinc-500">{totalResults} lugares encontrados</p>
     </div>
 
     <div className="flex gap-2">
@@ -679,6 +748,7 @@ const Explorar = () => {
               setOrdenacao={setOrdenacao}
               totalResults={filteredPlaces.length}
               cidade={cidadeParam || null}
+              categoria={selectedCategory}
             />
 
             {/* Map Layout */}

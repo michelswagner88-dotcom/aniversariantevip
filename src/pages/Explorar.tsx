@@ -372,7 +372,7 @@ const Explorar = () => {
   const categoryToFilter = categoriaParam || selectedCategory;
   
   const filteredPlaces = allPlaces.filter(place => {
-    if (categoryToFilter && place.category !== categoryToFilter) return false;
+    if (categoryToFilter && place.category?.toLowerCase() !== categoryToFilter?.toLowerCase()) return false;
     if (filterDay !== 'any' && !place.validDays.includes(filterDay)) return false;
     if (selectedSubcategories.length > 0) {
       const placeSubcats = place.especialidades || [];

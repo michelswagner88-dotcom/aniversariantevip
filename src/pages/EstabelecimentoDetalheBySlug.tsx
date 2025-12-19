@@ -104,7 +104,6 @@ const EstabelecimentoDetalheBySlug = () => {
     );
   }
 
-  // Usa o EstabelecimentoDetalhe que aceita a prop estabelecimentoIdProp
   return <EstabelecimentoDetalhe estabelecimentoIdProp={estabelecimentoId} />;
 };
 

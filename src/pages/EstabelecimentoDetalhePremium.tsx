@@ -938,7 +938,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
                     <Clock className="w-5 h-5" />
                     Horário de Funcionamento
                   </h2>
-                  <BusinessHours hours={estabelecimento.horario_funcionamento} inline />
+                  <BusinessHours hours={estabelecimento.horario_funcionamento} />
                 </div>
               )}
 
@@ -966,7 +966,6 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
                   onOpenWaze={handleOpenWaze}
                   onOpenUber={handleOpenUber}
                   onOpen99={handleOpen99}
-                  inline
                 />
               </div>
 

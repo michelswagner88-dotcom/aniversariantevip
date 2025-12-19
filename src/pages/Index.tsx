@@ -1,6 +1,6 @@
 // =============================================================================
 // INDEX.TSX - ANIVERSARIANTE VIP
-// V9 - Fix Mobile (Logo Visível + Categorias Sem Corte)
+// V10 - Categorias Sticky + Badges Coloridos
 // =============================================================================
 
 import { useMemo, useState, useEffect, useCallback, useRef, memo } from "react";
@@ -124,7 +124,7 @@ const ALL_CATEGORIES = [
 ];
 
 // =============================================================================
-// HOOKS (sem alteração de lógica)
+// HOOKS
 // =============================================================================
 
 const useAuth = () => {
@@ -261,7 +261,7 @@ const useRotatingCategories = () => {
 };
 
 // =============================================================================
-// LOGO - SEMPRE VISÍVEL
+// LOGO
 // =============================================================================
 
 const Logo = memo(({ showTextOnMobile = false }: { showTextOnMobile?: boolean }) => (
@@ -353,7 +353,7 @@ const LocationButton = memo(({ onUseCurrentLocation }: { onUseCurrentLocation: (
 });
 
 // =============================================================================
-// HEADER - MOBILE COM LOGO SEMPRE VISÍVEL
+// HEADER
 // =============================================================================
 
 const Header = memo(
@@ -364,7 +364,7 @@ const Header = memo(
 
     return (
       <>
-        <header className="sticky top-0 z-40" style={{ backgroundColor: HEADER_COLOR }}>
+        <header className="sticky top-0 z-50" style={{ backgroundColor: HEADER_COLOR }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* DESKTOP */}
             <div className="hidden sm:flex items-center justify-between h-16 gap-6">
@@ -385,9 +385,8 @@ const Header = memo(
               </button>
             </div>
 
-            {/* MOBILE - LOGO SEMPRE VISÍVEL */}
+            {/* MOBILE */}
             <div className="sm:hidden">
-              {/* Linha 1: Logo + Menu */}
               <div className="flex items-center justify-between h-12 py-2">
                 <Logo showTextOnMobile />
                 <button
@@ -398,8 +397,6 @@ const Header = memo(
                   <Menu className="w-5 h-5 text-white" />
                 </button>
               </div>
-
-              {/* Linha 2: Busca */}
               {children && (
                 <div className="pb-3 flex items-center gap-2">
                   {onUseCurrentLocation && <LocationButton onUseCurrentLocation={onUseCurrentLocation} />}
@@ -589,7 +586,7 @@ const SearchPill = memo(({ city, state, isLoading, onSelect, availableCities }: 
               onChange={handleInputChange}
               onFocus={handleFocus}
               placeholder={displayText}
-              className="w-full text-sm font-bold text-zinc-900 bg-transparent outline-none placeholder:text-zinc-900 placeholder:font-bold"
+              className="w-full text-sm font-medium text-zinc-900 bg-transparent outline-none placeholder:text-zinc-700"
             />
           </div>
           <button
@@ -709,7 +706,7 @@ const SearchPill = memo(({ city, state, isLoading, onSelect, availableCities }: 
 });
 
 // =============================================================================
-// CATEGORIES - SEM CORTAR ÚLTIMO ITEM
+// CATEGORIES - STICKY NO MOBILE E DESKTOP
 // =============================================================================
 
 const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) => {
@@ -719,14 +716,12 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
   ];
 
   return (
-    <div className="sticky top-[88px] sm:top-[64px] z-30" style={{ backgroundColor: HEADER_COLOR }}>
+    <div className="sticky top-[48px] sm:top-[64px] z-40 bg-[#240046] border-b border-white/10">
       <div className="max-w-7xl mx-auto">
-        {/* Container com padding e scroll */}
         <div
           className="flex items-center overflow-x-auto scrollbar-hide pl-4 sm:pl-6 lg:pl-8"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {/* Wrapper interno com gap e padding final */}
           <div className="flex items-center gap-1 py-2 pr-6 sm:pr-8">
             {cats.map((cat) => {
               const Icon = CATEGORY_ICONS[cat.id.toLowerCase()] || Sparkles;
@@ -737,15 +732,15 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
                   key={cat.id}
                   onClick={() => onSelect(cat.id)}
                   className={cn(
-                    "flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[72px] px-2 sm:px-3 py-2 relative transition-colors flex-shrink-0",
-                    isActive ? "text-white" : "text-white/80 hover:text-white",
+                    "flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[72px] px-2 sm:px-3 py-2 relative transition-all flex-shrink-0",
+                    isActive ? "text-white" : "text-white/70 hover:text-white",
                   )}
                 >
-                  <Icon className={cn("w-5 h-5 sm:w-5 sm:h-5", isActive ? "text-white" : "text-white/80")} />
+                  <Icon className={cn("w-5 h-5 transition-colors", isActive ? "text-white" : "text-white/70")} />
                   <span
                     className={cn(
-                      "text-[10px] sm:text-[11px] font-semibold whitespace-nowrap",
-                      isActive ? "text-white" : "text-white/80",
+                      "text-[10px] sm:text-[11px] font-semibold whitespace-nowrap transition-colors",
+                      isActive ? "text-white" : "text-white/70",
                     )}
                   >
                     {shortLabel}
@@ -762,31 +757,81 @@ const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (
 });
 
 // =============================================================================
-// BENEFIT CHIP
+// BENEFIT CHIP - COM CORES DIFERENCIADAS
 // =============================================================================
 
-const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => {
-  if (!beneficio || beneficio.length < 3) return { emoji: "🎂", text: "Benefício" };
+type BenefitType = "discount" | "free" | "gift" | "drink" | "food" | "entry" | "default";
+
+interface BenefitChip {
+  emoji: string;
+  text: string;
+  type: BenefitType;
+}
+
+const BADGE_STYLES: Record<BenefitType, string> = {
+  discount: "bg-gradient-to-r from-orange-500 to-red-500 text-white", // % OFF
+  free: "bg-gradient-to-r from-emerald-500 to-green-600 text-white", // Grátis genérico
+  gift: "bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white", // Brinde/Presente
+  drink: "bg-gradient-to-r from-blue-500 to-cyan-500 text-white", // Drink grátis
+  food: "bg-gradient-to-r from-amber-500 to-orange-500 text-white", // Comida grátis
+  entry: "bg-gradient-to-r from-violet-500 to-purple-600 text-white", // Entrada grátis
+  default: "bg-white/95 text-zinc-800 border border-zinc-200/80", // Benefício genérico
+};
+
+const getBenefitChip = (beneficio?: string): BenefitChip => {
+  if (!beneficio || beneficio.length < 3) return { emoji: "🎂", text: "Benefício", type: "default" };
 
   const b = beneficio.toLowerCase();
-  const descontoMatch = beneficio.match(/(\d+)\s*%/);
-  if (descontoMatch) return { emoji: "🎁", text: `${descontoMatch[1]}% OFF` };
 
-  if (b.includes("grátis") || b.includes("gratis") || b.includes("free")) {
-    if (b.includes("drink") || b.includes("bebida")) return { emoji: "🥂", text: "Drink grátis" };
-    if (b.includes("sobremesa") || b.includes("doce")) return { emoji: "🍰", text: "Sobremesa" };
-    if (b.includes("entrada") || b.includes("ingresso")) return { emoji: "🎟️", text: "Entrada" };
-    if (b.includes("corte") || b.includes("cabelo")) return { emoji: "✂️", text: "Corte grátis" };
-    if (b.includes("café") || b.includes("coffee")) return { emoji: "☕", text: "Café grátis" };
-    if (b.includes("pizza")) return { emoji: "🍕", text: "Pizza grátis" };
-    if (b.includes("hambur") || b.includes("burger")) return { emoji: "🍔", text: "Burger grátis" };
-    if (b.includes("sorvete") || b.includes("gelato")) return { emoji: "🍦", text: "Sorvete" };
-    return { emoji: "🎁", text: "Grátis" };
+  // Desconto percentual
+  const descontoMatch = beneficio.match(/(\d+)\s*%/);
+  if (descontoMatch) {
+    return { emoji: "🏷️", text: `${descontoMatch[1]}% OFF`, type: "discount" };
   }
 
-  if (b.includes("brinde") || b.includes("presente") || b.includes("mimo")) return { emoji: "🎁", text: "Brinde" };
-  if (beneficio.length <= 10) return { emoji: "🎁", text: beneficio };
-  return { emoji: "🎂", text: "Benefício" };
+  // Grátis
+  if (b.includes("grátis") || b.includes("gratis") || b.includes("free") || b.includes("cortesia")) {
+    if (b.includes("drink") || b.includes("bebida") || b.includes("chopp") || b.includes("cerveja")) {
+      return { emoji: "🍺", text: "Drink grátis", type: "drink" };
+    }
+    if (b.includes("sobremesa") || b.includes("doce") || b.includes("bolo")) {
+      return { emoji: "🍰", text: "Sobremesa", type: "food" };
+    }
+    if (b.includes("entrada") || b.includes("ingresso") || b.includes("acesso")) {
+      return { emoji: "🎟️", text: "Entrada", type: "entry" };
+    }
+    if (b.includes("corte") || b.includes("cabelo")) {
+      return { emoji: "✂️", text: "Corte grátis", type: "free" };
+    }
+    if (b.includes("café") || b.includes("coffee") || b.includes("capuccino")) {
+      return { emoji: "☕", text: "Café grátis", type: "drink" };
+    }
+    if (b.includes("pizza")) {
+      return { emoji: "🍕", text: "Pizza grátis", type: "food" };
+    }
+    if (b.includes("hambur") || b.includes("burger") || b.includes("lanche")) {
+      return { emoji: "🍔", text: "Burger grátis", type: "food" };
+    }
+    if (b.includes("sorvete") || b.includes("gelato") || b.includes("açaí")) {
+      return { emoji: "🍦", text: "Sorvete", type: "food" };
+    }
+    if (b.includes("prato") || b.includes("refeição") || b.includes("almoço") || b.includes("jantar")) {
+      return { emoji: "🍽️", text: "Refeição", type: "food" };
+    }
+    return { emoji: "🎁", text: "Grátis", type: "free" };
+  }
+
+  // Brinde
+  if (b.includes("brinde") || b.includes("presente") || b.includes("mimo") || b.includes("surpresa")) {
+    return { emoji: "🎁", text: "Brinde", type: "gift" };
+  }
+
+  // Texto curto - usa como está
+  if (beneficio.length <= 12) {
+    return { emoji: "🎁", text: beneficio, type: "default" };
+  }
+
+  return { emoji: "🎂", text: "Benefício", type: "default" };
 };
 
 // =============================================================================
@@ -795,16 +840,16 @@ const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => 
 
 const CardSkeleton = memo(() => (
   <div className="animate-pulse">
-    <div className="aspect-[4/5] rounded-2xl bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:400%_100%] animate-[shimmer_2s_ease-in-out_infinite] mb-2.5" />
+    <div className="aspect-[4/5] rounded-2xl bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 bg-[length:400%_100%] animate-[shimmer_1.5s_ease-in-out_infinite] mb-2.5" />
     <div className="space-y-1.5 px-0.5">
-      <div className="h-4 bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:400%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded-md w-4/5" />
-      <div className="h-3.5 bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:400%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded-md w-3/5" />
+      <div className="h-4 bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 bg-[length:400%_100%] animate-[shimmer_1.5s_ease-in-out_infinite] rounded-md w-4/5" />
+      <div className="h-3.5 bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 bg-[length:400%_100%] animate-[shimmer_1.5s_ease-in-out_infinite] rounded-md w-3/5" />
     </div>
   </div>
 ));
 
 // =============================================================================
-// FAVORITE BUTTON - ESTILO AIRBNB
+// FAVORITE BUTTON
 // =============================================================================
 
 const FavoriteButton = memo(
@@ -870,7 +915,7 @@ const FavoriteButton = memo(
 );
 
 // =============================================================================
-// CARD
+// CARD - COM BADGES COLORIDOS
 // =============================================================================
 
 const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
@@ -900,11 +945,17 @@ const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
         )}
 
         {(!img || error || !loaded) && (
-          <div className="absolute inset-0 bg-gradient-to-r from-zinc-100 via-zinc-200 to-zinc-100 bg-[length:400%_100%] animate-[shimmer_2s_ease-in-out_infinite]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 bg-[length:400%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
         )}
 
+        {/* Badge com cor diferenciada */}
         <div className="absolute top-2.5 left-2.5">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/95 backdrop-blur-sm text-[11px] font-semibold text-zinc-800 rounded-full shadow-sm border border-zinc-200/80">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-full shadow-sm",
+              BADGE_STYLES[chip.type],
+            )}
+          >
             <span>{chip.emoji}</span>
             <span>{chip.text}</span>
           </span>
@@ -919,7 +970,9 @@ const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
       </div>
 
       <div className="px-0.5">
-        <h3 className="font-semibold text-zinc-900 text-sm leading-tight line-clamp-1">{nome}</h3>
+        <h3 className="font-semibold text-zinc-900 text-sm leading-tight line-clamp-1 group-hover:text-violet-700 transition-colors">
+          {nome}
+        </h3>
         <p className="text-zinc-500 text-sm line-clamp-1 mt-0.5">
           {cat && <span className="capitalize">{cat}</span>}
           {cat && data.bairro && " · "}
@@ -975,30 +1028,36 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll, isLoggedIn, onLoginRe
   return (
     <section className="mb-6">
       <div className="flex items-center justify-between mb-3 px-4 sm:px-6 lg:px-8">
-        <button onClick={onSeeAll} className="flex items-center gap-1 group text-left">
-          <div>
-            <h2 className="text-base font-semibold text-zinc-900 group-hover:underline">{title}</h2>
-            {subtitle && <p className="text-sm text-zinc-600">{subtitle}</p>}
-          </div>
-          <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:text-zinc-600 mt-0.5 flex-shrink-0" />
+        <div className="flex-1">
+          <h2 className="text-base font-semibold text-zinc-900">{title}</h2>
+          {subtitle && <p className="text-sm text-zinc-600">{subtitle}</p>}
+        </div>
+
+        <button
+          onClick={onSeeAll}
+          className="flex items-center gap-1.5 text-violet-600 hover:text-violet-700 text-sm font-medium ml-4 flex-shrink-0"
+        >
+          <span>Ver todas ({items.length}+)</span>
+          <ChevronRight className="w-4 h-4" />
         </button>
 
-        <div className="hidden sm:flex items-center gap-2">
+        {/* Setas mais visíveis */}
+        <div className="hidden sm:flex items-center gap-2 ml-4">
           <button
             onClick={() => scroll("left")}
             disabled={!canScrollLeft}
-            className="w-8 h-8 rounded-full border border-zinc-300 bg-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:shadow-md hover:border-zinc-400 transition-all"
+            className="w-9 h-9 rounded-full border border-zinc-300 bg-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:shadow-md hover:border-zinc-400 hover:scale-105 transition-all"
             aria-label="Anterior"
           >
-            <ChevronLeft className="w-4 h-4 text-zinc-700" />
+            <ChevronLeft className="w-5 h-5 text-zinc-700" />
           </button>
           <button
             onClick={() => scroll("right")}
             disabled={!canScrollRight}
-            className="w-8 h-8 rounded-full border border-zinc-300 bg-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:shadow-md hover:border-zinc-400 transition-all"
+            className="w-9 h-9 rounded-full border border-zinc-300 bg-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:shadow-md hover:border-zinc-400 hover:scale-105 transition-all"
             aria-label="Próximo"
           >
-            <ChevronRight className="w-4 h-4 text-zinc-700" />
+            <ChevronRight className="w-5 h-5 text-zinc-700" />
           </button>
         </div>
       </div>
@@ -1198,8 +1257,7 @@ const Index = () => {
   };
 
   const handleSeeAll = (categoryId: string) => {
-    handleCategoria(categoryId);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    navigate(`/explorar?categoria=${categoryId}&cidade=${encodeURIComponent(city)}&estado=${state}`);
   };
 
   const handleUseCurrentLocation = useCallback(async () => {

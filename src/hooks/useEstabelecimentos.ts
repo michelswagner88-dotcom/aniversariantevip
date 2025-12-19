@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { queryKeys } from "@/lib/queryClient";
 import { Tables } from "@/integrations/supabase/types";
 import { sanitizarInput } from "@/lib/sanitize";
+import { normalizarCidade } from "@/lib/utils";
 
 type Estabelecimento = Tables<"estabelecimentos">;
 
@@ -38,7 +39,9 @@ export const useEstabelecimentos = (filters: EstabelecimentoFilters = {}) => {
         .order("created_at", { ascending: false });
 
       if (filters.cidade && filters.estado && !filters.showAll) {
-        const cidadeSanitizada = sanitizarInput(filters.cidade, 100);
+        // Normalizar cidade para garantir acentos corretos (ex: "Brasilia" → "Brasília")
+        const cidadeNormalizada = normalizarCidade(filters.cidade);
+        const cidadeSanitizada = sanitizarInput(cidadeNormalizada, 100);
         const estadoSanitizado = sanitizarInput(filters.estado, 2);
         q = q.ilike("cidade", `%${cidadeSanitizada}%`);
         q = q.ilike("estado", estadoSanitizado);

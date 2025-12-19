@@ -706,55 +706,132 @@ const SearchPill = memo(({ city, state, isLoading, onSelect, availableCities }: 
 });
 
 // =============================================================================
-// CATEGORIES - STICKY NO MOBILE E DESKTOP
+// SUBCATEGORIES DATA
 // =============================================================================
 
-const Categories = memo(({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) => {
-  const cats = [
-    { id: "all", label: "Todos" },
-    ...CATEGORIAS_ESTABELECIMENTO.map((c) => ({ id: c.value, label: c.label })),
-  ];
+const SUBCATEGORIAS: Record<string, string[]> = {
+  academia: ["Musculação", "CrossFit", "Pilates", "Natação", "Funcional", "Spinning", "Yoga", "Artes Marciais"],
+  bar: ["Cervejaria", "Pub", "Rooftop", "Bar de Vinhos", "Coquetelaria", "Boteco", "Sports Bar"],
+  restaurante: ["Italiano", "Japonês", "Brasileiro", "Churrascaria", "Pizzaria", "Fast Food", "Vegano", "Árabe"],
+  cafeteria: ["Café Especial", "Confeitaria", "Padaria", "Brunch", "Doceria"],
+  barbearia: ["Corte Masculino", "Barba", "Tratamento Capilar", "Pigmentação"],
+  salao: ["Cabelo", "Manicure", "Estética", "Maquiagem", "Depilação", "Sobrancelha"],
+  "casa noturna": ["Balada", "Club", "Festa", "Show ao Vivo"],
+  hospedagem: ["Hotel", "Pousada", "Resort", "Hostel", "Flat"],
+  loja: ["Roupas", "Calçados", "Acessórios", "Presentes", "Eletrônicos", "Decoração"],
+  entretenimento: ["Cinema", "Teatro", "Parque", "Escape Room", "Boliche", "Karaokê"],
+  sorveteria: ["Artesanal", "Açaí", "Frozen", "Picolé", "Milk Shake"],
+};
 
-  return (
-    <div className="sticky top-[48px] sm:top-[64px] z-40 bg-[#240046] border-b border-white/10">
-      <div className="max-w-7xl mx-auto">
-        <div
-          className="flex items-center overflow-x-auto scrollbar-hide pl-4 sm:pl-6 lg:pl-8"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
-          <div className="flex items-center gap-1 py-2 pr-6 sm:pr-8">
-            {cats.map((cat) => {
-              const Icon = CATEGORY_ICONS[cat.id.toLowerCase()] || Sparkles;
-              const isActive = selected === cat.id;
-              const shortLabel = CATEGORY_LABELS_SHORT[cat.id.toLowerCase()] || cat.label;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => onSelect(cat.id)}
-                  className={cn(
-                    "flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[72px] px-2 sm:px-3 py-2 relative transition-all flex-shrink-0",
-                    isActive ? "text-white" : "text-white/70 hover:text-white",
-                  )}
-                >
-                  <Icon className={cn("w-5 h-5 transition-colors", isActive ? "text-white" : "text-white/70")} />
-                  <span
+// =============================================================================
+// CATEGORIES - STICKY COM SUBCATEGORIAS EXPANSÍVEIS
+// =============================================================================
+
+const Categories = memo(
+  ({
+    selected,
+    onSelect,
+    selectedSubcategory,
+    onSubcategorySelect,
+    onViewAll,
+  }: {
+    selected: string;
+    onSelect: (id: string) => void;
+    selectedSubcategory: string | null;
+    onSubcategorySelect: (sub: string | null) => void;
+    onViewAll: (categoryId: string) => void;
+  }) => {
+    const cats = [
+      { id: "all", label: "Todos" },
+      ...CATEGORIAS_ESTABELECIMENTO.map((c) => ({ id: c.value, label: c.label })),
+    ];
+    const subcats = selected !== "all" ? SUBCATEGORIAS[selected.toLowerCase()] || [] : [];
+
+    return (
+      <div className="sticky top-[48px] sm:top-[64px] z-40 bg-[#240046]">
+        <div className="max-w-7xl mx-auto">
+          {/* Main Categories */}
+          <div
+            className="flex items-center overflow-x-auto scrollbar-hide pl-4 sm:pl-6 lg:pl-8 border-b border-white/10"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            <div className="flex items-center gap-1 py-2 pr-6 sm:pr-8">
+              {cats.map((cat) => {
+                const Icon = CATEGORY_ICONS[cat.id.toLowerCase()] || Sparkles;
+                const isActive = selected === cat.id;
+                const shortLabel = CATEGORY_LABELS_SHORT[cat.id.toLowerCase()] || cat.label;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      onSelect(cat.id);
+                      onSubcategorySelect(null);
+                    }}
                     className={cn(
-                      "text-[10px] sm:text-[11px] font-semibold whitespace-nowrap transition-colors",
-                      isActive ? "text-white" : "text-white/70",
+                      "flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[72px] px-2 sm:px-3 py-2 relative transition-all flex-shrink-0",
+                      isActive ? "text-white" : "text-white/70 hover:text-white",
                     )}
                   >
-                    {shortLabel}
-                  </span>
-                  {isActive && <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-white rounded-full" />}
-                </button>
-              );
-            })}
+                    <Icon className={cn("w-5 h-5 transition-colors", isActive ? "text-white" : "text-white/70")} />
+                    <span
+                      className={cn(
+                        "text-[10px] sm:text-[11px] font-semibold whitespace-nowrap transition-colors",
+                        isActive ? "text-white" : "text-white/70",
+                      )}
+                    >
+                      {shortLabel}
+                    </span>
+                    {isActive && <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-white rounded-full" />}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
+          {/* Subcategories - Expande quando categoria selecionada */}
+          {selected !== "all" && subcats.length > 0 && (
+            <div
+              className="flex items-center overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-8 py-2 bg-[#3C096C]/50"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              <div className="flex items-center gap-2">
+                {/* Ver todos na categoria */}
+                <button
+                  onClick={() => onViewAll(selected)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 text-white text-xs font-medium hover:bg-white/30 transition-colors flex-shrink-0"
+                >
+                  <span>Ver todos</span>
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+
+                <div className="w-px h-5 bg-white/20 mx-1" />
+
+                {/* Subcategorias */}
+                {subcats.map((sub) => {
+                  const isSubActive = selectedSubcategory === sub;
+                  return (
+                    <button
+                      key={sub}
+                      onClick={() => onSubcategorySelect(isSubActive ? null : sub)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all flex-shrink-0",
+                        isSubActive
+                          ? "bg-white text-[#240046]"
+                          : "bg-white/10 text-white/80 hover:bg-white/20 hover:text-white",
+                      )}
+                    >
+                      {sub}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  },
+);
 
 // =============================================================================
 // BENEFIT CHIP - COM CORES DIFERENCIADAS
@@ -1160,6 +1237,7 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const rotation = useRotatingCategories();
   const categoria = searchParams.get("categoria") || "all";
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
 
   const { user } = useAuth();
   const isLoggedIn = !!user;
@@ -1186,12 +1264,26 @@ const Index = () => {
   }, [estabelecimentos, city, state]);
 
   const filtered = useMemo(() => {
-    if (categoria === "all") return cityEstablishments;
-    return cityEstablishments.filter((e) => {
-      const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
-      return cats.some((c) => c?.toLowerCase() === categoria.toLowerCase());
-    });
-  }, [cityEstablishments, categoria]);
+    let result = cityEstablishments;
+
+    // Filtro por categoria
+    if (categoria !== "all") {
+      result = result.filter((e) => {
+        const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
+        return cats.some((c) => c?.toLowerCase() === categoria.toLowerCase());
+      });
+    }
+
+    // Filtro por subcategoria (especialidades)
+    if (selectedSubcategory) {
+      result = result.filter((e) => {
+        const specs = e.especialidades || [];
+        return specs.some((s: string) => s.toLowerCase().includes(selectedSubcategory.toLowerCase()));
+      });
+    }
+
+    return result;
+  }, [cityEstablishments, categoria, selectedSubcategory]);
 
   const carousels = useMemo(() => {
     if (!cityEstablishments.length || categoria !== "all") return [];
@@ -1254,6 +1346,11 @@ const Index = () => {
     const params = new URLSearchParams(searchParams);
     id === "all" ? params.delete("categoria") : params.set("categoria", id);
     setSearchParams(params);
+    setSelectedSubcategory(null); // Reset subcategoria quando muda categoria
+  };
+
+  const handleViewAll = (categoryId: string) => {
+    navigate(`/explorar?categoria=${categoryId}&cidade=${encodeURIComponent(city)}&estado=${state}`);
   };
 
   const handleSeeAll = (categoryId: string) => {
@@ -1312,8 +1409,8 @@ const Index = () => {
     });
   }, [availableCities, updateCity]);
 
-  const showGrid = categoria !== "all";
-  const showCarousels = categoria === "all" && carousels.length > 0;
+  const showGrid = categoria !== "all" || selectedSubcategory !== null;
+  const showCarousels = categoria === "all" && selectedSubcategory === null && carousels.length > 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -1335,7 +1432,13 @@ const Index = () => {
         />
       </Header>
 
-      <Categories selected={categoria} onSelect={handleCategoria} />
+      <Categories
+        selected={categoria}
+        onSelect={handleCategoria}
+        selectedSubcategory={selectedSubcategory}
+        onSubcategorySelect={setSelectedSubcategory}
+        onViewAll={handleViewAll}
+      />
 
       <main className="flex-1 pb-20 sm:pb-6">
         <div className="max-w-7xl mx-auto py-4 sm:py-5">
@@ -1364,7 +1467,7 @@ const Index = () => {
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="mb-4">
                 <h2 className="text-lg font-semibold text-zinc-900 capitalize">
-                  {categoria} em {city}
+                  {selectedSubcategory ? `${selectedSubcategory} em ${city}` : `${categoria} em ${city}`}
                 </h2>
                 <p className="text-sm text-zinc-600">{filtered.length} lugares encontrados</p>
               </div>

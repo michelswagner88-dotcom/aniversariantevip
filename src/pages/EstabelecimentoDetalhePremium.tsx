@@ -85,12 +85,12 @@ const getValidadeTexto = (validade?: string): string => {
 const PageSkeleton = () => (
   <div className="min-h-screen bg-white">
     <Skeleton className="w-full h-[44vh] min-h-[260px] max-h-[380px] lg:hidden rounded-none" />
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Skeleton galeria desktop */}
       <div className="hidden lg:block mb-6">
         <Skeleton className="w-full aspect-[16/10] max-h-[480px] rounded-xl" />
       </div>
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="lg:px-8 space-y-6">
         <div className="space-y-3">
           <Skeleton className="h-8 w-3/4" />
           <Skeleton className="h-5 w-1/2" />
@@ -1309,8 +1309,9 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
         isFavorited={id ? isFavorito(id) : false}
       />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Galeria desktop - contida no container */}
+      {/* Container desktop - tudo centralizado */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Galeria desktop */}
         <div className="pt-6">
           <GalleryDesktop
             fotos={fotos}
@@ -1322,7 +1323,8 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
           />
         </div>
 
-        <div className="max-w-3xl mx-auto pb-12">
+        {/* Conteúdo - mesma largura, com padding interno */}
+        <div className="lg:px-8 pb-12">
           {/* Título e info */}
           <div className="py-6 border-b border-zinc-100">
             <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 leading-tight">

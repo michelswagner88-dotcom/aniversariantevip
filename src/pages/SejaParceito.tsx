@@ -19,7 +19,7 @@ import { Footer } from "@/components/Footer";
 import { BackButton } from "@/components/BackButton";
 import { useSEO } from "@/hooks/useSEO";
 import { SEO_CONTENT } from "@/constants/seo";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function SejaParceiro() {
   const navigate = useNavigate();

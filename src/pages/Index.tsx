@@ -1,6 +1,6 @@
 // =============================================================================
 // INDEX.TSX - ANIVERSARIANTE VIP
-// V10 - Categorias Sticky + Badges Coloridos
+// V10 - Categorias Sticky + Badges Coloridos + Menu Dark
 // =============================================================================
 
 import { useMemo, useState, useEffect, useCallback, useRef, memo } from "react";
@@ -353,6 +353,42 @@ const LocationButton = memo(({ onUseCurrentLocation }: { onUseCurrentLocation: (
 });
 
 // =============================================================================
+// MENU BUTTONS
+// =============================================================================
+
+const MenuBtn = ({ icon, label, sub, onClick, danger }: any) => (
+  <button
+    onClick={onClick}
+    className={cn(
+      "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left",
+      danger ? "hover:bg-red-50" : "hover:bg-zinc-50",
+    )}
+  >
+    {icon}
+    <div>
+      <span className={cn("text-sm font-medium block", danger ? "text-red-600" : "text-zinc-900")}>{label}</span>
+      {sub && <span className="text-xs text-zinc-500">{sub}</span>}
+    </div>
+  </button>
+);
+
+const MenuBtnDark = ({ icon, label, sub, onClick, danger }: any) => (
+  <button
+    onClick={onClick}
+    className={cn(
+      "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all",
+      danger ? "hover:bg-red-500/20" : "hover:bg-white/10",
+    )}
+  >
+    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">{icon}</div>
+    <div className="flex-1 min-w-0">
+      <span className={cn("text-sm font-semibold block", danger ? "text-red-400" : "text-white")}>{label}</span>
+      {sub && <span className="text-xs text-white/50">{sub}</span>}
+    </div>
+  </button>
+);
+
+// =============================================================================
 // HEADER
 // =============================================================================
 
@@ -407,48 +443,67 @@ const Header = memo(
           </div>
         </header>
 
-        {/* MENU LATERAL */}
+        {/* ========== MENU LATERAL PREMIUM ========== */}
         {menuOpen && (
           <>
-            <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setMenuOpen(false)} />
-            <div className="fixed top-0 right-0 bottom-0 w-[280px] bg-white z-50 shadow-2xl overflow-y-auto">
-              <div className="flex items-center justify-between p-4 border-b border-zinc-100">
-                <span className="font-semibold text-zinc-900">Menu</span>
+            <div className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
+            <div
+              className="fixed top-0 right-0 bottom-0 w-[300px] z-50 shadow-2xl overflow-y-auto"
+              style={{ backgroundColor: "#240046" }}
+            >
+              {/* Header do Menu */}
+              <div className="flex items-center justify-between p-5 border-b border-white/10">
+                <span className="font-bold text-white text-lg">Menu</span>
                 <button
                   onClick={() => setMenuOpen(false)}
-                  className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center"
+                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
                 >
-                  <X className="w-4 h-4 text-zinc-500" />
+                  <X className="w-5 h-5 text-white" />
                 </button>
               </div>
-              <div className="p-3">
+
+              <div className="p-4">
                 {user ? (
                   <>
-                    <div className="px-3 py-2.5 mb-2 bg-violet-50 rounded-xl">
-                      <p className="text-sm font-semibold text-zinc-900 truncate">
+                    {/* Usuário Logado */}
+                    <div className="px-4 py-3 mb-3 bg-white/10 rounded-xl border border-white/20">
+                      <p className="text-sm font-semibold text-white truncate">
                         {user.user_metadata?.full_name || "Usuário"}
                       </p>
-                      <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+                      <p className="text-xs text-white/60 truncate">{user.email}</p>
                     </div>
-                    <MenuBtn
-                      icon={<Gift className="w-4 h-4 text-violet-600" />}
+
+                    <MenuBtnDark
+                      icon={<Gift className="w-5 h-5 text-fuchsia-400" />}
                       label="Minha Área"
+                      sub="Gerencie seu perfil"
                       onClick={() => {
                         navigate("/area-aniversariante");
                         setMenuOpen(false);
                       }}
                     />
-                    <MenuBtn
-                      icon={<Settings className="w-4 h-4 text-zinc-400" />}
+                    <MenuBtnDark
+                      icon={<Heart className="w-5 h-5 text-pink-400" />}
+                      label="Meus Favoritos"
+                      sub="Lugares salvos"
+                      onClick={() => {
+                        navigate("/meus-favoritos");
+                        setMenuOpen(false);
+                      }}
+                    />
+                    <MenuBtnDark
+                      icon={<Settings className="w-5 h-5 text-white/70" />}
                       label="Configurações"
                       onClick={() => {
                         navigate("/configuracoes");
                         setMenuOpen(false);
                       }}
                     />
-                    <div className="my-2 mx-3 border-t border-zinc-100" />
-                    <MenuBtn
-                      icon={<LogOut className="w-4 h-4 text-red-500" />}
+
+                    <div className="my-3 mx-2 border-t border-white/10" />
+
+                    <MenuBtnDark
+                      icon={<LogOut className="w-5 h-5 text-red-400" />}
                       label="Sair"
                       onClick={() => {
                         signOut();
@@ -459,17 +514,24 @@ const Header = memo(
                   </>
                 ) : (
                   <>
-                    <MenuBtn
-                      icon={<User className="w-4 h-4 text-violet-600" />}
+                    {/* ===== SEÇÃO ANIVERSARIANTE ===== */}
+                    <div className="mb-2 px-2">
+                      <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                        Aniversariante
+                      </span>
+                    </div>
+
+                    <MenuBtnDark
+                      icon={<User className="w-5 h-5 text-violet-400" />}
                       label="Entrar"
-                      sub="Aniversariante"
+                      sub="Acessar minha conta"
                       onClick={() => {
                         navigate("/login");
                         setMenuOpen(false);
                       }}
                     />
-                    <MenuBtn
-                      icon={<Gift className="w-4 h-4 text-fuchsia-600" />}
+                    <MenuBtnDark
+                      icon={<Gift className="w-5 h-5 text-fuchsia-400" />}
                       label="Cadastrar"
                       sub="É grátis"
                       onClick={() => {
@@ -477,20 +539,42 @@ const Header = memo(
                         setMenuOpen(false);
                       }}
                     />
-                    <div className="my-2 mx-3 border-t border-zinc-100" />
-                    <MenuBtn
-                      icon={<Building2 className="w-4 h-4 text-blue-600" />}
-                      label="Para Empresas"
-                      sub="Cadastre seu estabelecimento"
+
+                    <div className="my-4 mx-2 border-t border-white/10" />
+
+                    {/* ===== SEÇÃO EMPRESAS ===== */}
+                    <div className="mb-2 px-2">
+                      <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                        Para Empresas
+                      </span>
+                    </div>
+
+                    <MenuBtnDark
+                      icon={<Building2 className="w-5 h-5 text-blue-400" />}
+                      label="Entrar"
+                      sub="Acesso do parceiro"
+                      onClick={() => {
+                        navigate("/login-parceiro");
+                        setMenuOpen(false);
+                      }}
+                    />
+                    <MenuBtnDark
+                      icon={<Store className="w-5 h-5 text-emerald-400" />}
+                      label="Cadastrar Empresa"
+                      sub="Seja um parceiro VIP"
                       onClick={() => {
                         navigate("/seja-parceiro");
                         setMenuOpen(false);
                       }}
                     />
-                    <div className="my-2 mx-3 border-t border-zinc-100" />
-                    <MenuBtn
-                      icon={<HelpCircle className="w-4 h-4 text-zinc-400" />}
+
+                    <div className="my-4 mx-2 border-t border-white/10" />
+
+                    {/* ===== AJUDA ===== */}
+                    <MenuBtnDark
+                      icon={<HelpCircle className="w-5 h-5 text-white/70" />}
                       label="Como Funciona"
+                      sub="Tire suas dúvidas"
                       onClick={() => {
                         navigate("/como-funciona");
                         setMenuOpen(false);
@@ -505,22 +589,6 @@ const Header = memo(
       </>
     );
   },
-);
-
-const MenuBtn = ({ icon, label, sub, onClick, danger }: any) => (
-  <button
-    onClick={onClick}
-    className={cn(
-      "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left",
-      danger ? "hover:bg-red-50" : "hover:bg-zinc-50",
-    )}
-  >
-    {icon}
-    <div>
-      <span className={cn("text-sm font-medium block", danger ? "text-red-600" : "text-zinc-900")}>{label}</span>
-      {sub && <span className="text-xs text-zinc-500">{sub}</span>}
-    </div>
-  </button>
 );
 
 // =============================================================================
@@ -724,7 +792,7 @@ const SUBCATEGORIAS: Record<string, string[]> = {
 };
 
 // =============================================================================
-// CATEGORIES - STICKY COM SUBCATEGORIAS FILTRADAS POR DISPONIBILIDADE
+// CATEGORIES
 // =============================================================================
 
 const Categories = memo(
@@ -734,7 +802,7 @@ const Categories = memo(
     selectedSubcategory,
     onSubcategorySelect,
     onViewAll,
-    estabelecimentos, // Recebe estabelecimentos pra filtrar subcategorias
+    estabelecimentos,
   }: {
     selected: string;
     onSelect: (id: string) => void;
@@ -748,32 +816,22 @@ const Categories = memo(
       ...CATEGORIAS_ESTABELECIMENTO.map((c) => ({ id: c.value, label: c.label })),
     ];
 
-    // Filtra subcategorias baseado no que existe nos estabelecimentos da categoria
     const subcatsDisponiveis = useMemo(() => {
       if (selected === "all") return [];
-
       const todasSubs = SUBCATEGORIAS[selected.toLowerCase()] || [];
       if (todasSubs.length === 0) return [];
-
-      // Pega estabelecimentos da categoria selecionada
       const estabsDaCategoria = estabelecimentos.filter((e) => {
         const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
         return cats.some((c) => c?.toLowerCase() === selected.toLowerCase());
       });
-
       if (estabsDaCategoria.length === 0) return [];
-
-      // Coleta todas as especialidades dos estabelecimentos dessa categoria
       const especialidadesExistentes = new Set<string>();
       estabsDaCategoria.forEach((est) => {
         const specs = est.especialidades || [];
         specs.forEach((s: string) => especialidadesExistentes.add(s.toLowerCase()));
       });
-
-      // Filtra subcategorias que existem nos estabelecimentos
       return todasSubs.filter((sub) => {
         const subLower = sub.toLowerCase();
-        // Verifica se alguma especialidade contém ou é igual à subcategoria
         return Array.from(especialidadesExistentes).some(
           (esp) => esp.includes(subLower) || subLower.includes(esp) || esp === subLower,
         );
@@ -783,7 +841,6 @@ const Categories = memo(
     return (
       <div className="sticky top-[48px] sm:top-[64px] z-40 bg-[#240046]">
         <div className="max-w-7xl mx-auto">
-          {/* Main Categories */}
           <div
             className="flex items-center overflow-x-auto scrollbar-hide pl-4 sm:pl-6 lg:pl-8 border-b border-white/10"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -802,7 +859,7 @@ const Categories = memo(
                     }}
                     className={cn(
                       "flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[72px] px-2 sm:px-3 py-2 relative transition-all flex-shrink-0",
-                      "text-white", // Sempre branco forte
+                      "text-white",
                     )}
                   >
                     <Icon className="w-5 h-5 text-white" />
@@ -821,14 +878,12 @@ const Categories = memo(
             </div>
           </div>
 
-          {/* Subcategories - Só aparece se tiver subcategorias disponíveis */}
           {selected !== "all" && subcatsDisponiveis.length > 0 && (
             <div
               className="flex items-center overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-8 py-2 bg-[#3C096C]/50"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
               <div className="flex items-center gap-2">
-                {/* Ver todos na categoria */}
                 <button
                   onClick={() => onViewAll(selected)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-[#240046] text-xs font-semibold hover:bg-white/90 transition-colors flex-shrink-0"
@@ -836,10 +891,7 @@ const Categories = memo(
                   <span>Ver todos</span>
                   <ChevronRight className="w-3 h-3" />
                 </button>
-
                 <div className="w-px h-5 bg-white/30 mx-1" />
-
-                {/* Subcategorias filtradas */}
                 {subcatsDisponiveis.map((sub) => {
                   const isSubActive = selectedSubcategory === sub;
                   return (
@@ -865,65 +917,38 @@ const Categories = memo(
 );
 
 // =============================================================================
-// BENEFIT CHIP - BRANCO COM TEXTO ROXO
+// BENEFIT CHIP
 // =============================================================================
 
-// Badge único: branco com texto roxo do site
 const BADGE_STYLE = "bg-white text-[#240046] font-bold shadow-md border border-violet-100";
 
 const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => {
   if (!beneficio || beneficio.length < 3) return { emoji: "🎂", text: "Benefício" };
-
   const b = beneficio.toLowerCase();
-
-  // Desconto percentual
   const descontoMatch = beneficio.match(/(\d+)\s*%/);
-  if (descontoMatch) {
-    return { emoji: "🏷️", text: `${descontoMatch[1]}% OFF` };
-  }
-
-  // Grátis
+  if (descontoMatch) return { emoji: "🏷️", text: `${descontoMatch[1]}% OFF` };
   if (b.includes("grátis") || b.includes("gratis") || b.includes("free") || b.includes("cortesia")) {
-    if (b.includes("drink") || b.includes("bebida") || b.includes("chopp") || b.includes("cerveja")) {
+    if (b.includes("drink") || b.includes("bebida") || b.includes("chopp") || b.includes("cerveja"))
       return { emoji: "🍺", text: "Drink grátis" };
-    }
-    if (b.includes("sobremesa") || b.includes("doce") || b.includes("bolo")) {
+    if (b.includes("sobremesa") || b.includes("doce") || b.includes("bolo"))
       return { emoji: "🍰", text: "Sobremesa grátis" };
-    }
-    if (b.includes("entrada") || b.includes("ingresso") || b.includes("acesso")) {
+    if (b.includes("entrada") || b.includes("ingresso") || b.includes("acesso"))
       return { emoji: "🎟️", text: "Entrada grátis" };
-    }
-    if (b.includes("corte") || b.includes("cabelo")) {
-      return { emoji: "✂️", text: "Corte grátis" };
-    }
-    if (b.includes("café") || b.includes("coffee") || b.includes("capuccino")) {
+    if (b.includes("corte") || b.includes("cabelo")) return { emoji: "✂️", text: "Corte grátis" };
+    if (b.includes("café") || b.includes("coffee") || b.includes("capuccino"))
       return { emoji: "☕", text: "Café grátis" };
-    }
-    if (b.includes("pizza")) {
-      return { emoji: "🍕", text: "Pizza grátis" };
-    }
-    if (b.includes("hambur") || b.includes("burger") || b.includes("lanche")) {
+    if (b.includes("pizza")) return { emoji: "🍕", text: "Pizza grátis" };
+    if (b.includes("hambur") || b.includes("burger") || b.includes("lanche"))
       return { emoji: "🍔", text: "Burger grátis" };
-    }
-    if (b.includes("sorvete") || b.includes("gelato") || b.includes("açaí")) {
+    if (b.includes("sorvete") || b.includes("gelato") || b.includes("açaí"))
       return { emoji: "🍦", text: "Sorvete grátis" };
-    }
-    if (b.includes("prato") || b.includes("refeição") || b.includes("almoço") || b.includes("jantar")) {
+    if (b.includes("prato") || b.includes("refeição") || b.includes("almoço") || b.includes("jantar"))
       return { emoji: "🍽️", text: "Refeição grátis" };
-    }
     return { emoji: "🎁", text: "Grátis" };
   }
-
-  // Brinde
-  if (b.includes("brinde") || b.includes("presente") || b.includes("mimo") || b.includes("surpresa")) {
+  if (b.includes("brinde") || b.includes("presente") || b.includes("mimo") || b.includes("surpresa"))
     return { emoji: "🎁", text: "Brinde" };
-  }
-
-  // Texto curto - usa como está
-  if (beneficio.length <= 15) {
-    return { emoji: "🎁", text: beneficio };
-  }
-
+  if (beneficio.length <= 15) return { emoji: "🎁", text: beneficio };
   return { emoji: "🎂", text: "Benefício" };
 };
 
@@ -963,12 +988,10 @@ const FavoriteButton = memo(
     const handleClick = (e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
-
       if (!isLoggedIn) {
         onLoginRequired();
         return;
       }
-
       setIsAnimating(true);
       setIsFavorited((prev) => !prev);
       setTimeout(() => setIsAnimating(false), 300);
@@ -1008,13 +1031,12 @@ const FavoriteButton = memo(
 );
 
 // =============================================================================
-// CARD - COM BADGES COLORIDOS
+// CARD
 // =============================================================================
 
 const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
-
   const nome = data.nome_fantasia || data.name || "Estabelecimento";
   const cat = Array.isArray(data.categoria) ? data.categoria[0] : data.categoria || data.category;
   const img = data.imagem_url || data.logo_url || data.photo_url;
@@ -1036,19 +1058,15 @@ const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
             onError={() => setError(true)}
           />
         )}
-
         {(!img || error || !loaded) && (
           <div className="absolute inset-0 bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 bg-[length:400%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
         )}
-
-        {/* Badge branco com texto roxo */}
         <div className="absolute top-2.5 left-2.5">
           <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-full", BADGE_STYLE)}>
             <span>{chip.emoji}</span>
             <span>{chip.text}</span>
           </span>
         </div>
-
         <FavoriteButton
           estabelecimentoId={data.id}
           estabelecimentoNome={nome}
@@ -1056,7 +1074,6 @@ const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
           onLoginRequired={onLoginRequired}
         />
       </div>
-
       <div className="px-0.5">
         <h3 className="font-semibold text-zinc-900 text-sm leading-tight line-clamp-1 group-hover:text-violet-700 transition-colors">
           {nome}
@@ -1120,7 +1137,6 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll, isLoggedIn, onLoginRe
           <h2 className="text-base font-semibold text-zinc-900">{title}</h2>
           {subtitle && <p className="text-sm text-zinc-600">{subtitle}</p>}
         </div>
-
         <button
           onClick={onSeeAll}
           className="flex items-center gap-1.5 text-[#240046] hover:text-[#3C096C] text-sm font-medium ml-4 flex-shrink-0"
@@ -1128,8 +1144,6 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll, isLoggedIn, onLoginRe
           <span>Ver todos ({items.length}+)</span>
           <ChevronRight className="w-4 h-4" />
         </button>
-
-        {/* Setas mais visíveis */}
         <div className="hidden sm:flex items-center gap-2 ml-4">
           <button
             onClick={() => scroll("left")}
@@ -1149,7 +1163,6 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll, isLoggedIn, onLoginRe
           </button>
         </div>
       </div>
-
       <div
         ref={scrollRef}
         className={cn(
@@ -1192,8 +1205,7 @@ const Carousel = memo(({ title, subtitle, items, onSeeAll, isLoggedIn, onLoginRe
 
 const Grid = memo(({ items, isLoading, isLoggedIn, onLoginRequired }: any) => {
   const navigate = useNavigate();
-
-  if (isLoading) {
+  if (isLoading)
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
         {Array.from({ length: 10 }).map((_, i) => (
@@ -1201,9 +1213,7 @@ const Grid = memo(({ items, isLoading, isLoggedIn, onLoginRequired }: any) => {
         ))}
       </div>
     );
-  }
-
-  if (!items?.length) {
+  if (!items?.length)
     return (
       <div className="text-center py-16">
         <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
@@ -1213,8 +1223,6 @@ const Grid = memo(({ items, isLoading, isLoggedIn, onLoginRequired }: any) => {
         <p className="text-zinc-500 text-sm mt-1">Tente outra categoria</p>
       </div>
     );
-  }
-
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
       {items.map((est: any) => (
@@ -1249,17 +1257,13 @@ const Index = () => {
   const rotation = useRotatingCategories();
   const categoria = searchParams.get("categoria") || "all";
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-
   const { user } = useAuth();
   const isLoggedIn = !!user;
 
   const handleLoginRequired = useCallback(() => {
     toast("Faça login para favoritar", {
       description: "Crie uma conta gratuita para salvar seus favoritos",
-      action: {
-        label: "Entrar",
-        onClick: () => navigate("/login"),
-      },
+      action: { label: "Entrar", onClick: () => navigate("/login") },
     });
   }, [navigate]);
 
@@ -1276,23 +1280,16 @@ const Index = () => {
 
   const filtered = useMemo(() => {
     let result = cityEstablishments;
-
-    // Filtro por categoria
-    if (categoria !== "all") {
+    if (categoria !== "all")
       result = result.filter((e) => {
         const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
         return cats.some((c) => c?.toLowerCase() === categoria.toLowerCase());
       });
-    }
-
-    // Filtro por subcategoria (especialidades)
-    if (selectedSubcategory) {
+    if (selectedSubcategory)
       result = result.filter((e) => {
         const specs = e.especialidades || [];
         return specs.some((s: string) => s.toLowerCase().includes(selectedSubcategory.toLowerCase()));
       });
-    }
-
     return result;
   }, [cityEstablishments, categoria, selectedSubcategory]);
 
@@ -1303,12 +1300,9 @@ const Index = () => {
         const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
         return cats.some((c) => c?.toLowerCase() === catId.toLowerCase());
       });
-
     const rotatedCategories = [...ALL_CATEGORIES];
     for (let i = 0; i < rotation; i++) rotatedCategories.push(rotatedCategories.shift()!);
-
     const result: any[] = [];
-
     const hl = rotatedCategories[0];
     const hlItems = getByCategory(hl.id).slice(0, 12);
     if (hlItems.length >= 2)
@@ -1319,7 +1313,6 @@ const Index = () => {
         categoryId: hl.id,
         items: hlItems,
       });
-
     let count = 1;
     for (let i = 1; i < rotatedCategories.length && count < 9; i++) {
       const cat = rotatedCategories[i];
@@ -1335,7 +1328,6 @@ const Index = () => {
         count++;
       }
     }
-
     if (result.length < 9) {
       for (let i = 0; i < rotatedCategories.length && result.length < 9; i++) {
         const cat = rotatedCategories[i];
@@ -1357,13 +1349,11 @@ const Index = () => {
     const params = new URLSearchParams(searchParams);
     id === "all" ? params.delete("categoria") : params.set("categoria", id);
     setSearchParams(params);
-    setSelectedSubcategory(null); // Reset subcategoria quando muda categoria
+    setSelectedSubcategory(null);
   };
-
   const handleViewAll = (categoryId: string) => {
     navigate(`/explorar?categoria=${categoryId}&cidade=${encodeURIComponent(city)}&estado=${state}`);
   };
-
   const handleSeeAll = (categoryId: string) => {
     navigate(`/explorar?categoria=${categoryId}&cidade=${encodeURIComponent(city)}&estado=${state}`);
   };
@@ -1425,14 +1415,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-      `}</style>
-
+      <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } } .scrollbar-hide::-webkit-scrollbar { display: none; }`}</style>
       <Header onUseCurrentLocation={handleUseCurrentLocation}>
         <SearchPill
           city={city}
@@ -1442,7 +1425,6 @@ const Index = () => {
           availableCities={availableCities}
         />
       </Header>
-
       <Categories
         selected={categoria}
         onSelect={handleCategoria}
@@ -1451,7 +1433,6 @@ const Index = () => {
         onViewAll={handleViewAll}
         estabelecimentos={cityEstablishments}
       />
-
       <main className="flex-1 pb-20 sm:pb-6">
         <div className="max-w-7xl mx-auto py-4 sm:py-5">
           {(isLoading || locationLoading) && (
@@ -1459,7 +1440,6 @@ const Index = () => {
               <Grid items={[]} isLoading isLoggedIn={isLoggedIn} onLoginRequired={handleLoginRequired} />
             </div>
           )}
-
           {!isLoading &&
             !locationLoading &&
             showCarousels &&
@@ -1474,7 +1454,6 @@ const Index = () => {
                 onLoginRequired={handleLoginRequired}
               />
             ))}
-
           {!isLoading && !locationLoading && showGrid && (
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="mb-4">
@@ -1483,8 +1462,6 @@ const Index = () => {
                 </h2>
                 <p className="text-sm text-zinc-600">{filtered.length} lugares encontrados</p>
               </div>
-
-              {/* Feedback quando subcategoria não tem resultados */}
               {filtered.length === 0 && selectedSubcategory && (
                 <div className="text-center py-12 bg-zinc-50 rounded-2xl">
                   <div className="w-16 h-16 rounded-full bg-violet-100 flex items-center justify-center mx-auto mb-4">
@@ -1500,7 +1477,6 @@ const Index = () => {
                   </button>
                 </div>
               )}
-
               {filtered.length > 0 && (
                 <Grid
                   items={filtered}
@@ -1511,7 +1487,6 @@ const Index = () => {
               )}
             </div>
           )}
-
           {!isLoading && !locationLoading && !showCarousels && !showGrid && (
             <div className="px-4 sm:px-6 lg:px-8">
               <Grid items={[]} isLoading={false} isLoggedIn={isLoggedIn} onLoginRequired={handleLoginRequired} />
@@ -1519,7 +1494,6 @@ const Index = () => {
           )}
         </div>
       </main>
-
       <Footer />
       <BottomNav />
     </div>

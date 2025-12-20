@@ -76,6 +76,11 @@ export const SEO_CONTENT: SEOContent = {
     title: "Minha Área",
     description: "Gerencie seu perfil, cupons e benefícios no Aniversariante VIP.",
   },
+  sobre: {
+    title: "Sobre Nós",
+    description:
+      "Conheça o Aniversariante VIP, a plataforma que conecta aniversariantes a benefícios exclusivos em todo o Brasil.",
+  },
 };
 
 // Gerar SEO dinâmico para cidade

@@ -599,29 +599,66 @@ const LocationSection = ({
 
   const hasCoordinates = latitude && longitude;
 
-  // Apps de navegação com ícones reais
+  // Apps de navegação com ícones SVG inline para garantir funcionamento
   const navigationApps = [
     {
       id: "google_maps",
       label: "Maps",
-      icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Google_Maps_icon_%282020%29.svg/32px-Google_Maps_icon_%282020%29.svg.png",
+      svg: (
+        <svg viewBox="0 0 92.3 132.3" className="w-6 h-6">
+          <path fill="#1a73e8" d="M60.2 2.2C55.8.8 51 0 46.1 0 32 0 19.3 6.4 10.8 16.5l21.8 18.3L60.2 2.2z" />
+          <path fill="#ea4335" d="M10.8 16.5C4.1 24.5 0 34.9 0 46.1c0 8.7 1.7 15.7 4.6 22l28-33.3-21.8-18.3z" />
+          <path
+            fill="#4285f4"
+            d="M46.2 28.5c9.8 0 17.7 7.9 17.7 17.7 0 4.3-1.6 8.3-4.2 11.4 0 0 13.9-16.6 27.5-32.7-5.6-10.8-15.3-19-27-22.7L32.6 34.8c3.3-3.8 8.1-6.3 13.6-6.3"
+          />
+          <path
+            fill="#fbbc04"
+            d="M46.2 63.8c-9.8 0-17.7-7.9-17.7-17.7 0-4.3 1.5-8.3 4.1-11.3l-28 33.3c4.8 10.6 12.8 19.2 21 29.9l34.1-40.5c-3.3 3.9-8.1 6.3-13.5 6.3"
+          />
+          <path
+            fill="#34a853"
+            d="M59.1 109.2c15.4-24.1 33.3-35 33.3-63 0-7.7-1.9-14.9-5.2-21.3L25.6 98c2.6 3.4 5.3 7.3 7.9 11.3 9.4 14.5 6.8 23.1 12.8 23.1s3.4-8.7 12.8-23.2"
+          />
+        </svg>
+      ),
     },
     {
       id: "waze",
       label: "Waze",
-      icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Waze_icon.svg/32px-Waze_icon.svg.png",
+      svg: (
+        <svg viewBox="0 0 24 24" className="w-6 h-6">
+          <path
+            fill="#33ccff"
+            d="M12 2C6.48 2 2 6.48 2 12c0 4.54 3.03 8.36 7.15 9.58.16-.45.35-.87.58-1.25C6.08 19.32 4 16.02 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8c0 4.02-2.08 7.32-5.73 8.33.23.38.42.8.58 1.25C18.97 20.36 22 16.54 22 12c0-5.52-4.48-10-10-10z"
+          />
+          <circle fill="#33ccff" cx="8.5" cy="11" r="1.5" />
+          <circle fill="#33ccff" cx="15.5" cy="11" r="1.5" />
+          <path
+            fill="#33ccff"
+            d="M12 17c-2.21 0-4-1.79-4-4h1.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5H16c0 2.21-1.79 4-4 4z"
+          />
+        </svg>
+      ),
     },
     {
       id: "uber",
       label: "Uber",
-      icon: null,
-      fallback: "🚗",
+      svg: (
+        <svg viewBox="0 0 24 24" className="w-5 h-5">
+          <path
+            fill="#000000"
+            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"
+          />
+        </svg>
+      ),
+      customIcon: true,
     },
     {
       id: "99",
       label: "99",
-      icon: null,
-      fallback: "99",
+      svg: null,
+      customIcon: true,
     },
   ];
 
@@ -661,11 +698,50 @@ const LocationSection = ({
             onClick={() => onDirections(app.id)}
             className="flex flex-col items-center gap-2 p-3 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 active:scale-95 transition-all"
           >
-            {app.icon ? (
-              <img src={app.icon} alt={app.label} className="w-8 h-8 object-contain" />
-            ) : (
-              <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center">
-                <span className="text-xs font-bold text-white">{app.fallback}</span>
+            {app.id === "google_maps" && (
+              <div className="w-8 h-8 flex items-center justify-center">
+                <svg viewBox="0 0 92.3 132.3" className="w-7 h-7">
+                  <path fill="#1a73e8" d="M60.2 2.2C55.8.8 51 0 46.1 0 32 0 19.3 6.4 10.8 16.5l21.8 18.3L60.2 2.2z" />
+                  <path fill="#ea4335" d="M10.8 16.5C4.1 24.5 0 34.9 0 46.1c0 8.7 1.7 15.7 4.6 22l28-33.3-21.8-18.3z" />
+                  <path
+                    fill="#4285f4"
+                    d="M46.2 28.5c9.8 0 17.7 7.9 17.7 17.7 0 4.3-1.6 8.3-4.2 11.4 0 0 13.9-16.6 27.5-32.7-5.6-10.8-15.3-19-27-22.7L32.6 34.8c3.3-3.8 8.1-6.3 13.6-6.3"
+                  />
+                  <path
+                    fill="#fbbc04"
+                    d="M46.2 63.8c-9.8 0-17.7-7.9-17.7-17.7 0-4.3 1.5-8.3 4.1-11.3l-28 33.3c4.8 10.6 12.8 19.2 21 29.9l34.1-40.5c-3.3 3.9-8.1 6.3-13.5 6.3"
+                  />
+                  <path
+                    fill="#34a853"
+                    d="M59.1 109.2c15.4-24.1 33.3-35 33.3-63 0-7.7-1.9-14.9-5.2-21.3L25.6 98c2.6 3.4 5.3 7.3 7.9 11.3 9.4 14.5 6.8 23.1 12.8 23.1s3.4-8.7 12.8-23.2"
+                  />
+                </svg>
+              </div>
+            )}
+            {app.id === "waze" && (
+              <div className="w-8 h-8 flex items-center justify-center">
+                <svg viewBox="0 0 48 48" className="w-7 h-7">
+                  <path
+                    fill="#4dd0e1"
+                    d="M24 4C12.95 4 4 12.95 4 24c0 6.62 3.23 12.48 8.19 16.12-.27-1.52-.19-3.52.71-5.22C9.08 32.11 6 28.36 6 24c0-9.93 8.07-18 18-18s18 8.07 18 18c0 4.36-3.08 8.11-6.9 10.9.9 1.7.98 3.7.71 5.22C40.77 36.48 44 30.62 44 24c0-11.05-8.95-20-20-20z"
+                  />
+                  <circle fill="#263238" cx="17" cy="22" r="3" />
+                  <circle fill="#263238" cx="31" cy="22" r="3" />
+                  <path
+                    fill="#263238"
+                    d="M24 36c-4.41 0-8-3.59-8-8h3c0 2.76 2.24 5 5 5s5-2.24 5-5h3c0 4.41-3.59 8-8 8z"
+                  />
+                </svg>
+              </div>
+            )}
+            {app.id === "uber" && (
+              <div className="w-8 h-8 rounded-md bg-black flex items-center justify-center">
+                <span className="text-white text-xs font-bold">Uber</span>
+              </div>
+            )}
+            {app.id === "99" && (
+              <div className="w-8 h-8 rounded-md bg-yellow-400 flex items-center justify-center">
+                <span className="text-black text-sm font-black">99</span>
               </div>
             )}
             <span className="text-xs font-medium text-zinc-700">{app.label}</span>

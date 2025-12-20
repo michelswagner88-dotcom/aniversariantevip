@@ -1,10 +1,11 @@
 // =============================================================================
-// ESTABELECIMENTO PAGE - ESTILO AIRBNB
+// ESTABELECIMENTO DETALHE PREMIUM - ESTILO AIRBNB
 // Aniversariante VIP - Mobile First - Fundo Branco
+// Compatível com EstabelecimentoDetalheBySlug (recebe ID como prop)
 // =============================================================================
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Heart,
@@ -18,85 +19,43 @@ import {
   Instagram,
   ChevronRight,
   ChevronLeft,
-  Navigation,
   Calendar,
   Sparkles,
   CheckCircle2,
   X,
-  ExternalLink,
+  Store,
+  Copy,
+  Send,
+  Linkedin,
+  Facebook,
+  UtensilsCrossed,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import BottomNav from "@/components/BottomNav";
+import { useFavoritos } from "@/hooks/useFavoritos";
+import { useEstablishmentMetrics } from "@/hooks/useEstablishmentMetrics";
+import { useSEO } from "@/hooks/useSEO";
+import { getEstabelecimentoSEO } from "@/constants/seo";
+import { SkeletonEstablishmentPage } from "@/components/skeletons";
+import CupomModal from "@/components/CupomModal";
+import LoginRequiredModal from "@/components/LoginRequiredModal";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  formatWhatsApp,
+  formatInstagram,
+  formatPhoneLink,
+  formatWebsite,
+  getWhatsAppMessage,
+} from "@/lib/contactUtils";
 
 // =============================================================================
 // TYPES
 // =============================================================================
 
-interface Estabelecimento {
-  id: string;
-  nome_fantasia: string;
-  categoria: string | string[];
-  especialidades?: string[];
-  descricao?: string;
-  descricao_beneficio?: string;
-  regras_beneficio?: string;
-  validade_beneficio?: string;
-  imagem_url?: string;
-  logo_url?: string;
-  fotos?: string[];
-  endereco?: string;
-  bairro?: string;
-  cidade?: string;
-  estado?: string;
-  cep?: string;
-  telefone?: string;
-  whatsapp?: string;
-  instagram?: string;
-  website?: string;
-  horario_funcionamento?: string;
-  latitude?: number;
-  longitude?: number;
-  verificado?: boolean;
+interface EstabelecimentoDetalhePremiumProps {
+  estabelecimentoIdProp?: string | null;
 }
-
-// =============================================================================
-// MOCK DATA (para desenvolvimento - remover em produção)
-// =============================================================================
-
-const MOCK_ESTABELECIMENTO: Estabelecimento = {
-  id: "1",
-  nome_fantasia: "Restaurante Exemplo",
-  categoria: "Restaurante",
-  especialidades: ["Italiano", "Contemporâneo"],
-  descricao:
-    "Um lugar especial para celebrar momentos únicos. Nossa cozinha combina tradição italiana com toques contemporâneos, criando experiências gastronômicas memoráveis. Ambiente aconchegante e atendimento personalizado para fazer do seu aniversário um dia inesquecível.",
-  descricao_beneficio: "Sobremesa especial de aniversário + 15% de desconto na conta",
-  regras_beneficio:
-    "Válido apenas no dia do aniversário mediante apresentação de documento com foto. Não acumulativo com outras promoções. Reserva antecipada recomendada.",
-  validade_beneficio: "No dia do aniversário",
-  imagem_url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800",
-  fotos: [
-    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800",
-    "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800",
-    "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800",
-    "https://images.unsplash.com/photo-1544148103-0773bf10d330?w=800",
-  ],
-  endereco: "Rua das Flores, 123",
-  bairro: "Jardins",
-  cidade: "São Paulo",
-  estado: "SP",
-  cep: "01234-567",
-  telefone: "(11) 3456-7890",
-  whatsapp: "5511987654321",
-  instagram: "restauranteexemplo",
-  website: "https://restauranteexemplo.com.br",
-  horario_funcionamento: "Ter-Dom: 12h às 23h",
-  latitude: -23.5505,
-  longitude: -46.6333,
-  verificado: true,
-};
 
 // =============================================================================
 // HERO GALLERY COMPONENT
@@ -120,7 +79,11 @@ const HeroGallery = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [imageLoaded, setImageLoaded] = useState<boolean[]>([]);
+
+  useEffect(() => {
+    setImageLoaded(new Array(fotos.length).fill(false));
+  }, [fotos.length]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientX);
@@ -151,11 +114,18 @@ const HeroGallery = ({
   const goPrev = () => currentIndex > 0 && setCurrentIndex((prev) => prev - 1);
   const goNext = () => currentIndex < fotos.length - 1 && setCurrentIndex((prev) => prev + 1);
 
+  const handleImageLoad = (index: number) => {
+    setImageLoaded((prev) => {
+      const newState = [...prev];
+      newState[index] = true;
+      return newState;
+    });
+  };
+
   return (
-    <div className="relative w-full h-[60vh] sm:h-[50vh] lg:h-[60vh] bg-zinc-100">
+    <div className="relative w-full h-[55vh] sm:h-[50vh] lg:h-[60vh] bg-zinc-100">
       {/* Galeria */}
       <div
-        ref={containerRef}
         className="relative w-full h-full overflow-hidden"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -166,19 +136,27 @@ const HeroGallery = ({
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
           {fotos.map((foto, index) => (
-            <div key={index} className="w-full h-full flex-shrink-0">
+            <div key={index} className="w-full h-full flex-shrink-0 relative">
+              {/* Skeleton enquanto carrega */}
+              {!imageLoaded[index] && (
+                <div className="absolute inset-0 bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 bg-[length:400%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+              )}
               <img
                 src={foto}
                 alt={`${nome} - Foto ${index + 1}`}
-                className="w-full h-full object-cover"
+                className={cn(
+                  "w-full h-full object-cover transition-opacity duration-300",
+                  imageLoaded[index] ? "opacity-100" : "opacity-0",
+                )}
                 loading={index === 0 ? "eager" : "lazy"}
+                onLoad={() => handleImageLoad(index)}
               />
             </div>
           ))}
         </div>
 
         {/* Gradiente superior para contraste dos botões */}
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/40 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
 
         {/* Botões flutuantes - Topo */}
         <div className="absolute top-0 inset-x-0 p-4 flex items-center justify-between z-10">
@@ -213,24 +191,29 @@ const HeroGallery = ({
         </div>
 
         {/* Contador de fotos */}
-        <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/60 text-white text-sm font-medium">
-          {currentIndex + 1} / {fotos.length}
-        </div>
+        {fotos.length > 1 && (
+          <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/60 text-white text-sm font-medium">
+            {currentIndex + 1} / {fotos.length}
+          </div>
+        )}
 
         {/* Dots indicadores */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
-          {fotos.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => goTo(index)}
-              className={cn(
-                "w-2 h-2 rounded-full transition-all",
-                index === currentIndex ? "bg-white w-4" : "bg-white/50",
-              )}
-              aria-label={`Ir para foto ${index + 1}`}
-            />
-          ))}
-        </div>
+        {fotos.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+            {fotos.slice(0, 5).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goTo(index)}
+                className={cn(
+                  "w-2 h-2 rounded-full transition-all",
+                  index === currentIndex ? "bg-white w-4" : "bg-white/50",
+                )}
+                aria-label={`Ir para foto ${index + 1}`}
+              />
+            ))}
+            {fotos.length > 5 && <span className="text-white/50 text-xs ml-1">+{fotos.length - 5}</span>}
+          </div>
+        )}
 
         {/* Setas de navegação - Desktop */}
         {fotos.length > 1 && (
@@ -316,11 +299,25 @@ const QuickActions = ({
   instagram,
   telefone,
   website,
+  cardapio,
+  showCardapio,
+  onWhatsApp,
+  onInstagram,
+  onPhone,
+  onWebsite,
+  onCardapio,
 }: {
   whatsapp?: string;
   instagram?: string;
   telefone?: string;
   website?: string;
+  cardapio?: string;
+  showCardapio?: boolean;
+  onWhatsApp: () => void;
+  onInstagram: () => void;
+  onPhone: () => void;
+  onWebsite: () => void;
+  onCardapio: () => void;
 }) => {
   const actions = [
     {
@@ -329,8 +326,10 @@ const QuickActions = ({
       label: "WhatsApp",
       color: "text-green-600",
       bgColor: "bg-green-50",
+      borderColor: "border-green-200",
+      hoverBorder: "hover:border-green-300",
       available: !!whatsapp,
-      onClick: () => whatsapp && window.open(`https://wa.me/${whatsapp}`, "_blank"),
+      onClick: onWhatsApp,
     },
     {
       id: "instagram",
@@ -338,8 +337,10 @@ const QuickActions = ({
       label: "Instagram",
       color: "text-pink-600",
       bgColor: "bg-pink-50",
+      borderColor: "border-pink-200",
+      hoverBorder: "hover:border-pink-300",
       available: !!instagram,
-      onClick: () => instagram && window.open(`https://instagram.com/${instagram}`, "_blank"),
+      onClick: onInstagram,
     },
     {
       id: "telefone",
@@ -347,8 +348,21 @@ const QuickActions = ({
       label: "Ligar",
       color: "text-blue-600",
       bgColor: "bg-blue-50",
+      borderColor: "border-blue-200",
+      hoverBorder: "hover:border-blue-300",
       available: !!telefone,
-      onClick: () => telefone && (window.location.href = `tel:${telefone}`),
+      onClick: onPhone,
+    },
+    {
+      id: "cardapio",
+      icon: UtensilsCrossed,
+      label: "Cardápio",
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
+      borderColor: "border-orange-200",
+      hoverBorder: "hover:border-orange-300",
+      available: showCardapio && !!cardapio,
+      onClick: onCardapio,
     },
     {
       id: "website",
@@ -356,8 +370,10 @@ const QuickActions = ({
       label: "Site",
       color: "text-violet-600",
       bgColor: "bg-violet-50",
+      borderColor: "border-violet-200",
+      hoverBorder: "hover:border-violet-300",
       available: !!website,
-      onClick: () => website && window.open(website, "_blank"),
+      onClick: onWebsite,
     },
   ];
 
@@ -366,12 +382,25 @@ const QuickActions = ({
   if (availableActions.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-4 gap-3">
-      {availableActions.map((action) => (
+    <div
+      className={cn(
+        "grid gap-3",
+        availableActions.length === 1 && "grid-cols-1",
+        availableActions.length === 2 && "grid-cols-2",
+        availableActions.length === 3 && "grid-cols-3",
+        availableActions.length === 4 && "grid-cols-4",
+        availableActions.length >= 5 && "grid-cols-4",
+      )}
+    >
+      {availableActions.slice(0, 4).map((action) => (
         <button
           key={action.id}
           onClick={action.onClick}
-          className="flex flex-col items-center gap-2 p-3 rounded-xl border border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm active:scale-95 transition-all"
+          className={cn(
+            "flex flex-col items-center gap-2 p-3 rounded-xl border bg-white hover:shadow-sm active:scale-95 transition-all",
+            action.borderColor,
+            action.hoverBorder,
+          )}
         >
           <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", action.bgColor)}>
             <action.icon className={cn("w-5 h-5", action.color)} />
@@ -446,6 +475,8 @@ const LocationSection = ({
   cep,
   latitude,
   longitude,
+  nomeEstabelecimento,
+  onDirections,
 }: {
   endereco?: string;
   bairro?: string;
@@ -454,8 +485,10 @@ const LocationSection = ({
   cep?: string;
   latitude?: number;
   longitude?: number;
+  nomeEstabelecimento: string;
+  onDirections: (app: string) => void;
 }) => {
-  const fullAddress = [endereco, bairro, cidade && estado ? `${cidade} - ${estado}` : cidade || estado, cep]
+  const fullAddress = [endereco, bairro, cidade && estado ? `${cidade} - ${estado}` : cidade || estado]
     .filter(Boolean)
     .join(", ");
 
@@ -463,37 +496,24 @@ const LocationSection = ({
 
   const navigationApps = [
     {
-      id: "maps",
+      id: "google_maps",
       label: "Maps",
       icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Google_Maps_icon_%282020%29.svg/32px-Google_Maps_icon_%282020%29.svg.png",
-      getUrl: () =>
-        hasCoordinates
-          ? `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
-          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`,
     },
     {
       id: "waze",
       label: "Waze",
       icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Waze_icon.svg/32px-Waze_icon.svg.png",
-      getUrl: () =>
-        hasCoordinates
-          ? `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`
-          : `https://waze.com/ul?q=${encodeURIComponent(fullAddress)}`,
     },
     {
       id: "uber",
       label: "Uber",
       icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Uber_logo_2018.png/48px-Uber_logo_2018.png",
-      getUrl: () =>
-        hasCoordinates
-          ? `https://m.uber.com/ul/?action=setPickup&dropoff[latitude]=${latitude}&dropoff[longitude]=${longitude}`
-          : `https://m.uber.com/`,
     },
     {
       id: "99",
       label: "99",
       icon: null,
-      getUrl: () => `https://99app.com/`,
     },
   ];
 
@@ -506,6 +526,7 @@ const LocationSection = ({
         <div>
           <h2 className="text-lg font-semibold text-zinc-900">Como chegar</h2>
           <p className="text-zinc-600 mt-1 text-sm leading-relaxed">{fullAddress}</p>
+          {cep && <p className="text-zinc-500 text-sm">CEP: {cep}</p>}
         </div>
       </div>
 
@@ -527,11 +548,9 @@ const LocationSection = ({
       {/* Botões de navegação */}
       <div className="grid grid-cols-4 gap-2">
         {navigationApps.map((app) => (
-          <a
+          <button
             key={app.id}
-            href={app.getUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
+            onClick={() => onDirections(app.id)}
             className="flex flex-col items-center gap-2 p-3 rounded-xl border border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm active:scale-95 transition-all"
           >
             {app.icon ? (
@@ -542,7 +561,7 @@ const LocationSection = ({
               </div>
             )}
             <span className="text-xs font-medium text-zinc-700">{app.label}</span>
-          </a>
+          </button>
         ))}
       </div>
     </div>
@@ -559,12 +578,18 @@ const RulesModal = ({
   beneficio,
   regras,
   validade,
+  onEmitirCupom,
+  onWhatsApp,
+  hasWhatsApp,
 }: {
   isOpen: boolean;
   onClose: () => void;
   beneficio?: string;
   regras?: string;
   validade?: string;
+  onEmitirCupom: () => void;
+  onWhatsApp: () => void;
+  hasWhatsApp: boolean;
 }) => {
   if (!isOpen) return null;
 
@@ -574,7 +599,7 @@ const RulesModal = ({
       <div className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal - Bottom Sheet no mobile */}
-      <div className="fixed inset-x-0 bottom-0 z-50 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-w-lg sm:w-full">
+      <div className="fixed inset-x-0 bottom-0 z-50 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-w-lg sm:w-full sm:mx-4">
         <div className="bg-white rounded-t-3xl sm:rounded-2xl max-h-[85vh] overflow-y-auto">
           {/* Handle - Mobile */}
           <div className="sm:hidden flex justify-center pt-3 pb-2">
@@ -659,13 +684,23 @@ const RulesModal = ({
           </div>
 
           {/* Footer */}
-          <div className="sticky bottom-0 bg-white p-5 border-t border-zinc-100">
+          <div className="sticky bottom-0 bg-white p-5 border-t border-zinc-100 space-y-3">
             <button
-              onClick={onClose}
-              className="w-full py-3.5 bg-[#240046] text-white font-semibold rounded-xl hover:bg-[#3C096C] transition-colors"
+              onClick={onEmitirCupom}
+              className="w-full py-3.5 bg-[#240046] text-white font-semibold rounded-xl hover:bg-[#3C096C] transition-colors flex items-center justify-center gap-2"
             >
-              Entendi
+              <Gift className="w-5 h-5" />
+              Emitir Meu Cupom
             </button>
+            {hasWhatsApp && (
+              <button
+                onClick={onWhatsApp}
+                className="w-full py-3.5 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <MessageCircle className="w-5 h-5" />
+                Falar no WhatsApp
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -679,7 +714,7 @@ const RulesModal = ({
 
 const StickyCTA = ({ onUseBenefit }: { onUseBenefit: () => void }) => {
   return (
-    <div className="fixed bottom-16 sm:bottom-0 inset-x-0 z-40 bg-white border-t border-zinc-200 p-4 sm:hidden">
+    <div className="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-zinc-200 p-4 sm:hidden">
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-zinc-900 truncate">Benefício de aniversário</p>
@@ -708,7 +743,7 @@ const PartnerBanner = () => {
       <div className="bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-2xl p-5 text-white">
         <div className="flex items-center justify-center mb-3">
           <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-            <Gift className="w-6 h-6 text-white" />
+            <Store className="w-6 h-6 text-white" />
           </div>
         </div>
         <h3 className="text-lg font-semibold text-center mb-1">Quer sua página assim?</h3>
@@ -728,159 +763,321 @@ const PartnerBanner = () => {
 };
 
 // =============================================================================
-// SKELETON LOADING
-// =============================================================================
-
-const PageSkeleton = () => (
-  <div className="min-h-screen bg-white animate-pulse">
-    {/* Hero Skeleton */}
-    <div className="w-full h-[60vh] bg-zinc-200" />
-
-    {/* Content Skeleton */}
-    <div className="px-4 py-6 space-y-6">
-      <div className="space-y-3">
-        <div className="h-8 bg-zinc-200 rounded-lg w-3/4" />
-        <div className="h-5 bg-zinc-200 rounded-lg w-1/2" />
-      </div>
-
-      <div className="h-40 bg-zinc-200 rounded-2xl" />
-
-      <div className="grid grid-cols-4 gap-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-24 bg-zinc-200 rounded-xl" />
-        ))}
-      </div>
-
-      <div className="space-y-3">
-        <div className="h-6 bg-zinc-200 rounded-lg w-1/4" />
-        <div className="h-4 bg-zinc-200 rounded-lg w-full" />
-        <div className="h-4 bg-zinc-200 rounded-lg w-5/6" />
-      </div>
-    </div>
-  </div>
-);
-
-// =============================================================================
 // MAIN PAGE COMPONENT
 // =============================================================================
 
-const EstabelecimentoPage = () => {
-  const { slug } = useParams();
+const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: EstabelecimentoDetalhePremiumProps) => {
   const navigate = useNavigate();
+  const id = estabelecimentoIdProp;
 
-  const [estabelecimento, setEstabelecimento] = useState<Estabelecimento | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isFavorited, setIsFavorited] = useState(false);
+  const [estabelecimento, setEstabelecimento] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [showCupomModal, setShowCupomModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
 
-  // Fetch estabelecimento data
+  // Hooks
+  const { isFavorito, toggleFavorito } = useFavoritos(userId);
+  const {
+    trackPageView,
+    trackBenefitClick,
+    trackWhatsAppClick,
+    trackPhoneClick,
+    trackInstagramClick,
+    trackSiteClick,
+    trackDirectionsClick,
+    trackShare,
+    trackFavorite,
+  } = useEstablishmentMetrics();
+  const hasTrackedView = useRef(false);
+
+  // SEO dinâmico
+  useSEO(
+    estabelecimento
+      ? getEstabelecimentoSEO(estabelecimento)
+      : { title: "Carregando...", description: "Carregando informações do estabelecimento..." },
+  );
+
+  // Check auth
+  useEffect(() => {
+    const checkAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setUserId(session?.user?.id || null);
+    };
+    checkAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setUserId(session?.user?.id || null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Fetch estabelecimento
   useEffect(() => {
     const fetchEstabelecimento = async () => {
-      setIsLoading(true);
-      try {
-        // Tenta buscar por slug primeiro
-        let { data, error } = await supabase
-          .from("estabelecimentos")
-          .select("*")
-          .eq("slug", slug)
-          .eq("ativo", true)
-          .single();
+      if (!id) return;
 
-        // Se não encontrar por slug, tenta por ID
-        if (error || !data) {
-          const { data: dataById, error: errorById } = await supabase
-            .from("estabelecimentos")
-            .select("*")
-            .eq("id", slug)
-            .eq("ativo", true)
-            .single();
+      const { data, error } = await supabase
+        .from("public_estabelecimentos")
+        .select("*")
+        .eq("id", id)
+        .eq("ativo", true)
+        .maybeSingle();
 
-          if (errorById || !dataById) {
-            // Usa mock para desenvolvimento
-            setEstabelecimento(MOCK_ESTABELECIMENTO);
-          } else {
-            setEstabelecimento(dataById);
-          }
-        } else {
-          setEstabelecimento(data);
-        }
-      } catch (err) {
-        console.error("Erro ao buscar estabelecimento:", err);
-        setEstabelecimento(MOCK_ESTABELECIMENTO);
-      } finally {
-        setIsLoading(false);
+      if (error || !data) {
+        toast.error("Estabelecimento não encontrado");
+        navigate("/explorar");
+        return;
       }
+
+      setEstabelecimento(data);
+      setLoading(false);
+
+      // Track page view
+      if (!hasTrackedView.current && data.id) {
+        trackPageView(data.id);
+        hasTrackedView.current = true;
+      }
+
+      document.title = `${data.nome_fantasia} - Aniversariante VIP`;
     };
 
     fetchEstabelecimento();
-  }, [slug]);
+  }, [id, navigate, trackPageView]);
 
-  // Handlers
+  // ========== HANDLERS ==========
+
   const handleBack = () => navigate(-1);
 
-  const handleFavorite = () => {
-    setIsFavorited(!isFavorited);
-    toast.success(isFavorited ? "Removido dos favoritos" : "Adicionado aos favoritos");
+  const handleFavorite = async () => {
+    if (!userId || !id) {
+      setShowLoginModal(true);
+      return;
+    }
+    trackFavorite(id);
+    await toggleFavorito(id);
   };
 
-  const handleShare = async () => {
-    if (navigator.share && estabelecimento) {
-      try {
-        await navigator.share({
-          title: estabelecimento.nome_fantasia,
-          text: `Confira o benefício de aniversário de ${estabelecimento.nome_fantasia} no Aniversariante VIP!`,
-          url: window.location.href,
-        });
-      } catch {
-        // Fallback: copiar link
-        navigator.clipboard.writeText(window.location.href);
-        toast.success("Link copiado!");
-      }
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copiado!");
+  const handleShare = () => {
+    if (id) trackShare(id);
+    setShowShareSheet(true);
+  };
+
+  const handleShowRules = () => {
+    if (!userId) {
+      setShowLoginModal(true);
+      return;
+    }
+    if (id) trackBenefitClick(id);
+    setShowRulesModal(true);
+  };
+
+  const handleEmitirCupom = () => {
+    setShowRulesModal(false);
+    setShowCupomModal(true);
+  };
+
+  // Contact handlers
+  const handleWhatsApp = () => {
+    const numero = estabelecimento?.whatsapp || estabelecimento?.telefone;
+    const formattedNumber = formatWhatsApp(numero);
+    if (!formattedNumber) {
+      toast.error("WhatsApp não disponível");
+      return;
+    }
+    if (id) trackWhatsAppClick(id);
+    const message = getWhatsAppMessage(estabelecimento.nome_fantasia, estabelecimento.categoria?.[0]);
+    window.open(`https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`, "_blank");
+  };
+
+  const handleInstagram = () => {
+    const instagramUrl = formatInstagram(estabelecimento?.instagram);
+    if (!instagramUrl) {
+      toast.error("Instagram não disponível");
+      return;
+    }
+    if (id) trackInstagramClick(id);
+    window.open(instagramUrl, "_blank");
+  };
+
+  const handlePhone = () => {
+    const phoneLink = formatPhoneLink(estabelecimento?.telefone);
+    if (!phoneLink) {
+      toast.error("Telefone não disponível");
+      return;
+    }
+    if (id) trackPhoneClick(id);
+    window.location.href = phoneLink;
+  };
+
+  const handleWebsite = () => {
+    const siteUrl = formatWebsite(estabelecimento?.site);
+    if (!siteUrl) {
+      toast.error("Site não disponível");
+      return;
+    }
+    if (id) trackSiteClick(id);
+    window.open(siteUrl, "_blank");
+  };
+
+  const handleCardapio = () => {
+    if (!estabelecimento?.link_cardapio) {
+      toast.error("Cardápio não disponível");
+      return;
+    }
+    window.open(estabelecimento.link_cardapio, "_blank");
+  };
+
+  // Directions handlers
+  const getEnderecoCompleto = () =>
+    [
+      estabelecimento?.logradouro,
+      estabelecimento?.numero,
+      estabelecimento?.bairro,
+      estabelecimento?.cidade,
+      estabelecimento?.estado,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+  const handleDirections = (app: string) => {
+    if (id) trackDirectionsClick(id, app);
+
+    const endereco = getEnderecoCompleto();
+    const lat = estabelecimento?.latitude;
+    const lng = estabelecimento?.longitude;
+    const nome = estabelecimento?.nome_fantasia;
+
+    switch (app) {
+      case "google_maps":
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`, "_blank");
+        break;
+      case "waze":
+        if (lat && lng) {
+          window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, "_blank");
+        } else {
+          window.open(`https://waze.com/ul?q=${encodeURIComponent(endereco)}`, "_blank");
+        }
+        break;
+      case "uber":
+        if (lat && lng) {
+          window.open(
+            `https://m.uber.com/ul/?action=setPickup&dropoff[latitude]=${lat}&dropoff[longitude]=${lng}&dropoff[nickname]=${encodeURIComponent(nome)}`,
+            "_blank",
+          );
+        } else {
+          window.open(`https://m.uber.com/`, "_blank");
+        }
+        break;
+      case "99":
+        if (lat && lng) {
+          window.open(
+            `https://99app.com/app/ride?destination_latitude=${lat}&destination_longitude=${lng}&destination_title=${encodeURIComponent(nome)}`,
+            "_blank",
+          );
+        } else {
+          window.open(`https://99app.com/`, "_blank");
+        }
+        break;
     }
   };
 
-  const handleShowRules = () => setShowRulesModal(true);
+  // Share handlers
+  const getShareText = () =>
+    `🎂 Confira ${estabelecimento?.nome_fantasia} no Aniversariante VIP!\n\n📍 ${estabelecimento?.bairro}, ${estabelecimento?.cidade}`;
+  const getShareUrl = () => window.location.href;
 
-  // Loading state
-  if (isLoading) return <PageSkeleton />;
+  const handleShareWhatsApp = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(getShareText() + "\n\n" + getShareUrl())}`, "_blank");
+    setShowShareSheet(false);
+  };
 
-  // Not found
-  if (!estabelecimento) {
+  const handleShareInstagram = () => {
+    navigator.clipboard.writeText(getShareUrl());
+    toast.success("Link copiado! Cole no seu Stories ou Direct do Instagram 📸");
+    setShowShareSheet(false);
+  };
+
+  const handleShareFacebook = () => {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getShareUrl())}`, "_blank");
+    setShowShareSheet(false);
+  };
+
+  const handleShareX = () => {
+    window.open(
+      `https://x.com/intent/tweet?text=${encodeURIComponent(getShareText())}&url=${encodeURIComponent(getShareUrl())}`,
+      "_blank",
+    );
+    setShowShareSheet(false);
+  };
+
+  const handleShareTelegram = () => {
+    window.open(
+      `https://t.me/share/url?url=${encodeURIComponent(getShareUrl())}&text=${encodeURIComponent(getShareText())}`,
+      "_blank",
+    );
+    setShowShareSheet(false);
+  };
+
+  const handleShareLinkedin = () => {
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(getShareUrl())}`, "_blank");
+    setShowShareSheet(false);
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(getShareUrl());
+    toast.success("Link copiado!");
+    setShowShareSheet(false);
+  };
+
+  // ========== LOADING STATE ==========
+  if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
-            <MapPin className="w-8 h-8 text-zinc-400" />
-          </div>
-          <h1 className="text-xl font-semibold text-zinc-900 mb-2">Estabelecimento não encontrado</h1>
-          <p className="text-zinc-500 mb-6">O local que você procura não existe ou foi removido.</p>
-          <button
-            onClick={() => navigate("/")}
-            className="px-6 py-3 bg-[#240046] text-white font-semibold rounded-xl hover:bg-[#3C096C] transition-colors"
-          >
-            Voltar ao início
-          </button>
-        </div>
+      <div className="min-h-screen bg-white">
+        <SkeletonEstablishmentPage />
       </div>
     );
   }
 
-  // Dados processados
-  const fotos = estabelecimento.fotos?.length
-    ? estabelecimento.fotos
-    : estabelecimento.imagem_url
-      ? [estabelecimento.imagem_url]
-      : ["https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800"];
+  if (!estabelecimento) return null;
 
-  const categoria = Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria;
+  // ========== DADOS PROCESSADOS ==========
+  const fotos =
+    estabelecimento.galeria_fotos?.length > 0
+      ? estabelecimento.galeria_fotos
+      : estabelecimento.imagem_url
+        ? [estabelecimento.imagem_url]
+        : estabelecimento.logo_url
+          ? [estabelecimento.logo_url]
+          : ["https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800"];
 
+  const categoria = estabelecimento.categoria?.[0] || "Estabelecimento";
   const localizacao = [estabelecimento.bairro, estabelecimento.cidade].filter(Boolean).join(", ");
+  const mostraCardapio = ["Bar", "Restaurante"].includes(categoria);
 
+  const beneficio = estabelecimento.beneficio_titulo || estabelecimento.descricao_beneficio;
+  const validadeBeneficio = estabelecimento.beneficio_validade || "No dia do aniversário";
+  const regrasBeneficio = estabelecimento.beneficio_regras || estabelecimento.regras_utilizacao;
+
+  const hasWhatsApp = !!formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone);
+
+  // ========== RENDER ==========
   return (
-    <div className="min-h-screen bg-white pb-32 sm:pb-6">
+    <div className="min-h-screen bg-white pb-24 sm:pb-6">
+      {/* Shimmer animation style */}
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
+
       {/* ========== HERO GALLERY ========== */}
       <HeroGallery
         fotos={fotos}
@@ -888,7 +1085,7 @@ const EstabelecimentoPage = () => {
         onBack={handleBack}
         onFavorite={handleFavorite}
         onShare={handleShare}
-        isFavorited={isFavorited}
+        isFavorited={id ? isFavorito(id) : false}
       />
 
       {/* ========== CONTENT ========== */}
@@ -912,17 +1109,15 @@ const EstabelecimentoPage = () => {
           </div>
 
           {/* Badge verificado */}
-          {estabelecimento.verificado && (
-            <div className="flex items-center gap-1.5 mt-3">
-              <CheckCircle2 className="w-4 h-4 text-green-500" />
-              <span className="text-sm text-green-600 font-medium">Parceiro verificado</span>
-            </div>
-          )}
+          <div className="flex items-center gap-1.5 mt-3">
+            <CheckCircle2 className="w-4 h-4 text-green-500" />
+            <span className="text-sm text-green-600 font-medium">Parceiro verificado</span>
+          </div>
 
           {/* Especialidades */}
-          {estabelecimento.especialidades && estabelecimento.especialidades.length > 0 && (
+          {estabelecimento.especialidades?.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-4">
-              {estabelecimento.especialidades.map((esp, index) => (
+              {estabelecimento.especialidades.slice(0, 4).map((esp: string, index: number) => (
                 <span key={index} className="px-3 py-1 bg-zinc-100 text-zinc-700 text-sm rounded-full">
                   {esp}
                 </span>
@@ -932,41 +1127,48 @@ const EstabelecimentoPage = () => {
         </div>
 
         {/* BENEFÍCIO EM DESTAQUE */}
-        {estabelecimento.descricao_beneficio && (
+        {beneficio && (
           <div className="pb-6">
-            <BenefitCard
-              beneficio={estabelecimento.descricao_beneficio}
-              validade={estabelecimento.validade_beneficio}
-              onShowRules={handleShowRules}
-            />
+            <BenefitCard beneficio={beneficio} validade={validadeBeneficio} onShowRules={handleShowRules} />
           </div>
         )}
 
         {/* AÇÕES RÁPIDAS */}
         <div className="pb-6">
           <QuickActions
-            whatsapp={estabelecimento.whatsapp}
-            instagram={estabelecimento.instagram}
-            telefone={estabelecimento.telefone}
-            website={estabelecimento.website}
+            whatsapp={formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone)}
+            instagram={formatInstagram(estabelecimento.instagram)}
+            telefone={formatPhoneLink(estabelecimento.telefone)}
+            website={formatWebsite(estabelecimento.site)}
+            cardapio={estabelecimento.link_cardapio}
+            showCardapio={mostraCardapio}
+            onWhatsApp={handleWhatsApp}
+            onInstagram={handleInstagram}
+            onPhone={handlePhone}
+            onWebsite={handleWebsite}
+            onCardapio={handleCardapio}
           />
         </div>
 
         {/* SOBRE */}
-        <AboutSection descricao={estabelecimento.descricao} />
+        <AboutSection descricao={estabelecimento.bio || estabelecimento.descricao} />
 
         {/* HORÁRIO */}
         <HoursSection horario={estabelecimento.horario_funcionamento} />
 
         {/* LOCALIZAÇÃO */}
         <LocationSection
-          endereco={estabelecimento.endereco}
+          endereco={[estabelecimento.logradouro, estabelecimento.numero, estabelecimento.complemento]
+            .filter(Boolean)
+            .join(", ")}
           bairro={estabelecimento.bairro}
           cidade={estabelecimento.cidade}
           estado={estabelecimento.estado}
           cep={estabelecimento.cep}
           latitude={estabelecimento.latitude}
           longitude={estabelecimento.longitude}
+          nomeEstabelecimento={estabelecimento.nome_fantasia}
+          onDirections={handleDirections}
         />
 
         {/* BANNER PARCEIROS */}
@@ -980,15 +1182,110 @@ const EstabelecimentoPage = () => {
       <RulesModal
         isOpen={showRulesModal}
         onClose={() => setShowRulesModal(false)}
-        beneficio={estabelecimento.descricao_beneficio}
-        regras={estabelecimento.regras_beneficio}
-        validade={estabelecimento.validade_beneficio}
+        beneficio={beneficio}
+        regras={regrasBeneficio}
+        validade={validadeBeneficio}
+        onEmitirCupom={handleEmitirCupom}
+        onWhatsApp={handleWhatsApp}
+        hasWhatsApp={hasWhatsApp}
       />
 
-      {/* ========== BOTTOM NAV ========== */}
-      <BottomNav />
+      {/* ========== MODAIS EXISTENTES ========== */}
+      <CupomModal isOpen={showCupomModal} onClose={() => setShowCupomModal(false)} estabelecimento={estabelecimento} />
+
+      <LoginRequiredModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        returnUrl={window.location.pathname}
+      />
+
+      {/* ========== SHARE SHEET ========== */}
+      <Sheet open={showShareSheet} onOpenChange={setShowShareSheet}>
+        <SheetContent side="bottom" className="bg-white border-zinc-200 rounded-t-3xl">
+          <SheetHeader>
+            <SheetTitle className="text-zinc-900 text-center">Compartilhar</SheetTitle>
+          </SheetHeader>
+
+          <div className="grid grid-cols-3 gap-4 mt-6 mb-4">
+            <button
+              onClick={handleShareWhatsApp}
+              className="flex flex-col items-center gap-2 p-4 bg-zinc-50 rounded-xl hover:bg-zinc-100 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-green-100">
+                <MessageCircle className="w-6 h-6 text-green-600" />
+              </div>
+              <span className="text-xs text-zinc-700">WhatsApp</span>
+            </button>
+
+            <button
+              onClick={handleShareInstagram}
+              className="flex flex-col items-center gap-2 p-4 bg-zinc-50 rounded-xl hover:bg-zinc-100 transition-colors"
+            >
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center"
+                style={{
+                  background: "linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)",
+                }}
+              >
+                <Instagram className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-xs text-zinc-700">Instagram</span>
+            </button>
+
+            <button
+              onClick={handleShareFacebook}
+              className="flex flex-col items-center gap-2 p-4 bg-zinc-50 rounded-xl hover:bg-zinc-100 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-100">
+                <Facebook className="w-6 h-6 text-blue-600" />
+              </div>
+              <span className="text-xs text-zinc-700">Facebook</span>
+            </button>
+
+            <button
+              onClick={handleShareX}
+              className="flex flex-col items-center gap-2 p-4 bg-zinc-50 rounded-xl hover:bg-zinc-100 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </div>
+              <span className="text-xs text-zinc-700">X</span>
+            </button>
+
+            <button
+              onClick={handleShareTelegram}
+              className="flex flex-col items-center gap-2 p-4 bg-zinc-50 rounded-xl hover:bg-zinc-100 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-sky-100">
+                <Send className="w-6 h-6 text-sky-600" />
+              </div>
+              <span className="text-xs text-zinc-700">Telegram</span>
+            </button>
+
+            <button
+              onClick={handleShareLinkedin}
+              className="flex flex-col items-center gap-2 p-4 bg-zinc-50 rounded-xl hover:bg-zinc-100 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-100">
+                <Linkedin className="w-6 h-6 text-blue-700" />
+              </div>
+              <span className="text-xs text-zinc-700">LinkedIn</span>
+            </button>
+          </div>
+
+          <button
+            onClick={handleCopyLink}
+            className="w-full flex items-center justify-center gap-2 p-4 bg-violet-50 rounded-xl hover:bg-violet-100 transition-colors mt-2"
+          >
+            <Copy className="w-5 h-5 text-violet-600" />
+            <span className="text-violet-700 font-medium">Copiar Link</span>
+          </button>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
 
-export default EstabelecimentoPage;
+export default EstabelecimentoDetalhePremium;

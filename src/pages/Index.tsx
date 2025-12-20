@@ -53,8 +53,8 @@ const HEADER_COLOR = "#240046";
 const DEFAULT_CITY = "São Paulo";
 const DEFAULT_STATE = "SP";
 
-// Intervalo de rotação dos carousels em milissegundos (1 minuto)
-const ROTATION_INTERVAL_MS = 60000;
+// Intervalo de rotação dos carousels em milissegundos (15 segundos para teste)
+const ROTATION_INTERVAL_MS = 15000;
 
 // Tempo de espera após interação antes de voltar a rotacionar (30 segundos)
 const INTERACTION_COOLDOWN_MS = 30000;
@@ -265,20 +265,12 @@ const useRotatingCategories = (isUserInteracting: boolean) => {
     // Não rotaciona se o usuário estiver interagindo
     if (isUserInteracting) return;
 
-    // Primeira rotação em 10 segundos para feedback visual
-    const initialTimeout = setTimeout(() => {
-      setRotation((prev) => prev + 1);
-    }, 10000);
-
-    // Rotações subsequentes a cada 1 minuto
+    // Rotaciona a cada 1 minuto
     const interval = setInterval(() => {
       setRotation((prev) => prev + 1);
     }, ROTATION_INTERVAL_MS);
 
-    return () => {
-      clearTimeout(initialTimeout);
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [isUserInteracting]);
 
   return rotation;
@@ -1502,31 +1494,6 @@ const Index = () => {
   const showGrid = categoria !== "all" || selectedSubcategory !== null;
   const showCarousels = categoria === "all" && selectedSubcategory === null && carousels.length > 0;
 
-  // Estado para transição suave dos carousels
-  const [carouselsVisible, setCarouselsVisible] = useState(true);
-  const [displayedCarousels, setDisplayedCarousels] = useState(carousels);
-  const prevRotation = useRef(rotation);
-
-  // Efeito para transição suave quando rotação muda
-  useEffect(() => {
-    if (prevRotation.current !== rotation && carousels.length > 0) {
-      // Fade out
-      setCarouselsVisible(false);
-
-      // Após fade out, atualiza conteúdo e fade in
-      const timeout = setTimeout(() => {
-        setDisplayedCarousels(carousels);
-        setCarouselsVisible(true);
-      }, 300);
-
-      prevRotation.current = rotation;
-      return () => clearTimeout(timeout);
-    } else {
-      // Primeira renderização ou sem mudança
-      setDisplayedCarousels(carousels);
-    }
-  }, [rotation, carousels]);
-
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } } .scrollbar-hide::-webkit-scrollbar { display: none; }`}</style>
@@ -1554,28 +1521,22 @@ const Index = () => {
               <Grid items={[]} isLoading isLoggedIn={isLoggedIn} onLoginRequired={handleLoginRequired} />
             </div>
           )}
-          {!isLoading && !locationLoading && showCarousels && (
-            <div
-              className={cn(
-                "transition-opacity duration-300 ease-in-out",
-                carouselsVisible ? "opacity-100" : "opacity-0",
-              )}
-            >
-              {displayedCarousels.map((c, index) => (
-                <Carousel
-                  key={`carousel-${index}`}
-                  title={c.title}
-                  subtitle={c.subtitle}
-                  items={c.items}
-                  onSeeAll={() => handleSeeAll(c.categoryId)}
-                  isLoggedIn={isLoggedIn}
-                  onLoginRequired={handleLoginRequired}
-                  onInteractionStart={handleInteractionStart}
-                  onInteractionEnd={handleInteractionEnd}
-                />
-              ))}
-            </div>
-          )}
+          {!isLoading &&
+            !locationLoading &&
+            showCarousels &&
+            carousels.map((c) => (
+              <Carousel
+                key={c.id}
+                title={c.title}
+                subtitle={c.subtitle}
+                items={c.items}
+                onSeeAll={() => handleSeeAll(c.categoryId)}
+                isLoggedIn={isLoggedIn}
+                onLoginRequired={handleLoginRequired}
+                onInteractionStart={handleInteractionStart}
+                onInteractionEnd={handleInteractionEnd}
+              />
+            ))}
           {!isLoading && !locationLoading && showGrid && (
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="mb-4">

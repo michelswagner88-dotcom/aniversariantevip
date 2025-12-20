@@ -9,6 +9,7 @@ import { Crown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getFriendlyErrorMessage } from "@/lib/errorTranslator";
+import { BackButton } from "@/components/BackButton";
 
 export default function LoginEstabelecimento() {
   const navigate = useNavigate();
@@ -22,14 +23,13 @@ export default function LoginEstabelecimento() {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session) {
-        const { data: roles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id);
+        const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", session.user.id);
 
-        if (roles?.some(r => r.role === "estabelecimento")) {
+        if (roles?.some((r) => r.role === "estabelecimento")) {
           navigate("/area-estabelecimento");
           return;
         }
@@ -51,7 +51,7 @@ export default function LoginEstabelecimento() {
 
       if (error) {
         // Detectar email não confirmado
-        if (error.message.includes('Email not confirmed')) {
+        if (error.message.includes("Email not confirmed")) {
           toast({
             variant: "destructive",
             title: "Email não confirmado",
@@ -63,12 +63,9 @@ export default function LoginEstabelecimento() {
         throw error;
       }
 
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", data.user.id);
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
 
-      if (!roles?.some(r => r.role === "estabelecimento")) {
+      if (!roles?.some((r) => r.role === "estabelecimento")) {
         await supabase.auth.signOut();
         throw new Error("Usuário não é um estabelecimento");
       }
@@ -128,7 +125,12 @@ export default function LoginEstabelecimento() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-4 relative">
+      {/* Botão Voltar */}
+      <div className="absolute top-4 left-4 z-20">
+        <BackButton to="/" variant="light" />
+      </div>
+
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -149,7 +151,7 @@ export default function LoginEstabelecimento() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="senha">Senha</Label>
               <PasswordInput
@@ -165,14 +167,11 @@ export default function LoginEstabelecimento() {
             </Button>
 
             <div className="flex justify-end">
-              <Link
-                to="/forgot-password"
-                className="text-sm text-primary hover:underline"
-              >
+              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                 Esqueci minha senha
               </Link>
             </div>
-            
+
             <p className="text-center text-sm text-muted-foreground mt-4">
               Não tem uma conta?{" "}
               <Link to="/cadastro/estabelecimento" className="text-primary hover:underline">

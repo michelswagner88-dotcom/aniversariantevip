@@ -783,7 +783,7 @@ const SmartAuth = () => {
             {/* Header */}
             <div className="space-y-2 text-center">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-                {step === 1 ? (isLogin ? "Entre para ver o benefício" : "Criar conta VIP") : "Complete seu cadastro"}
+                {step === 1 ? (isLogin ? "Entre para ver os benefícios" : "Criar conta VIP") : "Complete seu cadastro"}
               </h1>
               <p className="text-slate-400 text-sm sm:text-base">
                 {step === 1

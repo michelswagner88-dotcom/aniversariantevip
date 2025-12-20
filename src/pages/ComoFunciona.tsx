@@ -28,8 +28,8 @@ export default function ComoFunciona() {
     {
       numero: "1",
       icon: Search,
-      titulo: "Busque na sua cidade",
-      descricao: "Digite sua cidade e descubra os estabelecimentos que oferecem benefícios para aniversariantes.",
+      titulo: "Busque uma cidade",
+      descricao: "Digite a cidade e descubra os estabelecimentos que oferecem benefícios para aniversariantes.",
     },
     {
       numero: "2",
@@ -60,7 +60,7 @@ export default function ComoFunciona() {
     {
       icon: Heart,
       titulo: "100% grátis",
-      descricao: "Você não paga nada para usar a plataforma. Nunca.",
+      descricao: "Você não paga nada para usar a plataforma.",
     },
     {
       icon: Sparkles,
@@ -119,8 +119,7 @@ export default function ComoFunciona() {
 
             {/* Subtítulo */}
             <p className="mt-5 text-base sm:text-lg text-white/70 leading-relaxed max-w-[720px] mx-auto">
-              Usar o Aniversariante VIP é simples: você busca, escolhe e aproveita. Sem cadastro obrigatório, sem
-              complicação.
+              Usar o Aniversariante VIP é simples: você busca, escolhe e aproveita.
             </p>
 
             {/* Botão */}
@@ -129,7 +128,7 @@ export default function ComoFunciona() {
                 asChild
                 className="h-12 px-6 bg-white text-[#240046] hover:bg-white/95 font-semibold rounded-full shadow-lg shadow-black/20 transition-all duration-200 hover:-translate-y-0.5"
               >
-                <Link to="/explorar">
+                <Link to="/">
                   Encontrar benefícios
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
@@ -302,7 +301,7 @@ export default function ComoFunciona() {
                 asChild
                 className="h-12 px-6 bg-white text-[#240046] hover:bg-white/95 font-semibold rounded-full shadow-lg shadow-black/20 transition-all duration-200 hover:-translate-y-0.5"
               >
-                <Link to="/explorar">
+                <Link to="/">
                   Encontrar benefícios
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>

@@ -262,15 +262,23 @@ const useRotatingCategories = (isUserInteracting: boolean) => {
   const [rotation, setRotation] = useState(0);
 
   useEffect(() => {
-    // Não rotaciona se o usuário estiver interagindo com algum carousel
+    // Não rotaciona se o usuário estiver interagindo
     if (isUserInteracting) return;
 
-    // Rotaciona exatamente a cada 1 minuto (60000ms)
+    // Primeira rotação em 10 segundos para feedback visual
+    const initialTimeout = setTimeout(() => {
+      setRotation((prev) => prev + 1);
+    }, 10000);
+
+    // Rotações subsequentes a cada 1 minuto
     const interval = setInterval(() => {
       setRotation((prev) => prev + 1);
     }, ROTATION_INTERVAL_MS);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
   }, [isUserInteracting]);
 
   return rotation;

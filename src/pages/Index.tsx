@@ -999,7 +999,8 @@ const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => 
   }
   if (b.includes("brinde") || b.includes("presente") || b.includes("mimo") || b.includes("surpresa"))
     return { emoji: "🎁", text: "Brinde" };
-  if (beneficio.length <= 15) return { emoji: "🎁", text: beneficio };
+  // Limita a 12 caracteres para não sobrepor o favorito
+  if (beneficio.length <= 12) return { emoji: "🎁", text: beneficio };
   return { emoji: "🎂", text: "Benefício" };
 };
 
@@ -1112,10 +1113,15 @@ const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
         {(!img || error || !loaded) && (
           <div className="absolute inset-0 bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 bg-[length:400%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
         )}
-        <div className="absolute top-2.5 left-2.5">
-          <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-full", BADGE_STYLE)}>
-            <span>{chip.emoji}</span>
-            <span>{chip.text}</span>
+        <div className="absolute top-2.5 left-2.5 max-w-[calc(100%-60px)]">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-full max-w-full",
+              BADGE_STYLE,
+            )}
+          >
+            <span className="flex-shrink-0">{chip.emoji}</span>
+            <span className="truncate">{chip.text}</span>
           </span>
         </div>
         <FavoriteButton

@@ -409,8 +409,7 @@ const QuickActions = ({
       available: !!whatsapp,
       onClick: onWhatsApp,
       color: "text-green-600",
-      bg: "bg-green-50",
-      hoverBg: "hover:bg-green-100",
+      hoverBg: "hover:bg-green-50",
     },
     {
       id: "instagram",
@@ -419,8 +418,7 @@ const QuickActions = ({
       available: !!instagram,
       onClick: onInstagram,
       color: "text-pink-600",
-      bg: "bg-pink-50",
-      hoverBg: "hover:bg-pink-100",
+      hoverBg: "hover:bg-pink-50",
     },
     {
       id: "telefone",
@@ -429,18 +427,7 @@ const QuickActions = ({
       available: !!telefone,
       onClick: onPhone,
       color: "text-blue-600",
-      bg: "bg-blue-50",
-      hoverBg: "hover:bg-blue-100",
-    },
-    {
-      id: "cardapio",
-      icon: UtensilsCrossed,
-      label: "Cardápio",
-      available: showCardapio && !!cardapio,
-      onClick: onCardapio,
-      color: "text-orange-600",
-      bg: "bg-orange-50",
-      hoverBg: "hover:bg-orange-100",
+      hoverBg: "hover:bg-blue-50",
     },
     {
       id: "website",
@@ -449,33 +436,61 @@ const QuickActions = ({
       available: !!website,
       onClick: onWebsite,
       color: "text-violet-600",
-      bg: "bg-violet-50",
-      hoverBg: "hover:bg-violet-100",
+      hoverBg: "hover:bg-violet-50",
+    },
+    {
+      id: "cardapio",
+      icon: UtensilsCrossed,
+      label: "Cardápio",
+      available: showCardapio && !!cardapio,
+      onClick: onCardapio,
+      color: "text-orange-600",
+      hoverBg: "hover:bg-orange-50",
     },
   ];
 
   const availableActions = actions.filter((a) => a.available);
   if (availableActions.length === 0) return null;
 
+  // Grid fixo de 4 colunas no mobile
   return (
     <div className="py-6 border-t border-zinc-100">
       <h2 className="text-lg font-semibold text-zinc-900 mb-4">Contato</h2>
-      <div className="flex flex-wrap gap-3">
-        {availableActions.map((action) => (
+      <div className="grid grid-cols-4 gap-2">
+        {availableActions.slice(0, 4).map((action) => (
           <button
             key={action.id}
             onClick={action.onClick}
             className={cn(
-              "flex items-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-200 transition-all duration-150",
+              "flex flex-col items-center gap-1.5 p-3 rounded-xl border border-zinc-200 transition-all duration-150",
               "hover:border-zinc-300 hover:shadow-sm active:scale-95",
               action.hoverBg,
             )}
           >
             <action.icon className={cn("w-5 h-5", action.color)} />
-            <span className="text-sm font-medium text-zinc-700">{action.label}</span>
+            <span className="text-[10px] font-medium text-zinc-600 truncate w-full text-center">{action.label}</span>
           </button>
         ))}
       </div>
+      {/* Se tiver mais de 4 ações, mostra em linha extra */}
+      {availableActions.length > 4 && (
+        <div className="grid grid-cols-4 gap-2 mt-2">
+          {availableActions.slice(4).map((action) => (
+            <button
+              key={action.id}
+              onClick={action.onClick}
+              className={cn(
+                "flex flex-col items-center gap-1.5 p-3 rounded-xl border border-zinc-200 transition-all duration-150",
+                "hover:border-zinc-300 hover:shadow-sm active:scale-95",
+                action.hoverBg,
+              )}
+            >
+              <action.icon className={cn("w-5 h-5", action.color)} />
+              <span className="text-[10px] font-medium text-zinc-600 truncate w-full text-center">{action.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -570,7 +585,7 @@ const LocationSection = ({
   const hasCoordinates = latitude && longitude;
 
   return (
-    <div className="py-6 border-t border-zinc-100">
+    <div className="py-6 pb-20 border-t border-zinc-100">
       <h2 className="text-lg font-semibold text-zinc-900 mb-4">Como chegar</h2>
 
       <div className="flex items-start gap-3 mb-4">
@@ -804,30 +819,6 @@ const RulesModal = ({
     </>
   );
 };
-
-// =============================================================================
-// STICKY CTA (MOBILE)
-// =============================================================================
-
-const StickyCTA = ({ onUseBenefit, beneficio }: { onUseBenefit: () => void; beneficio?: string }) => (
-  <div className="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-zinc-200 p-4 lg:hidden">
-    <div className="flex items-center justify-between gap-4 max-w-3xl mx-auto">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-zinc-900 truncate">
-          {beneficio ? beneficio.slice(0, 40) + (beneficio.length > 40 ? "..." : "") : "Benefício de aniversário"}
-        </p>
-        <p className="text-xs text-zinc-500">Disponível no seu dia</p>
-      </div>
-      <button
-        onClick={onUseBenefit}
-        className="px-5 py-3 text-white font-semibold rounded-xl hover:opacity-90 active:scale-95 transition-all flex-shrink-0"
-        style={{ backgroundColor: ACCENT_COLOR }}
-      >
-        Usar benefício
-      </button>
-    </div>
-  </div>
-);
 
 // =============================================================================
 // PARTNER BANNER
@@ -1248,7 +1239,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
       />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="lg:grid lg:grid-cols-3 lg:gap-12 pb-32 lg:pb-12">
+        <div className="lg:grid lg:grid-cols-3 lg:gap-12 pb-12">
           <div className="lg:col-span-2">
             <div className="py-6 border-b border-zinc-100">
               <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 leading-tight">
@@ -1278,11 +1269,15 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
               )}
             </div>
 
+            {/* ORDEM: Benefício -> Sobre -> Contato -> Horário -> Como chegar */}
+
             {beneficio && (
               <div className="py-6 border-b border-zinc-100 lg:hidden">
                 <BenefitCard beneficio={beneficio} validade={validadeBeneficio} onShowRules={handleShowRules} />
               </div>
             )}
+
+            <AboutSection descricao={estabelecimento.bio || estabelecimento.descricao} />
 
             <QuickActions
               whatsapp={formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone)}
@@ -1298,7 +1293,6 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
               onCardapio={handleCardapio}
             />
 
-            <AboutSection descricao={estabelecimento.bio || estabelecimento.descricao} />
             <HoursSection horario={estabelecimento.horario_funcionamento} />
             <LocationSection
               endereco={[estabelecimento.logradouro, estabelecimento.numero, estabelecimento.complemento]
@@ -1330,8 +1324,6 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
           </div>
         </div>
       </div>
-
-      <StickyCTA onUseBenefit={handleShowRules} beneficio={beneficio} />
 
       <RulesModal
         isOpen={showRulesModal}

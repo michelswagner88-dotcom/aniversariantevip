@@ -53,8 +53,8 @@ const HEADER_COLOR = "#240046";
 const DEFAULT_CITY = "São Paulo";
 const DEFAULT_STATE = "SP";
 
-// Intervalo de rotação dos carousels em milissegundos (15 segundos para teste)
-const ROTATION_INTERVAL_MS = 15000;
+// Intervalo de rotação dos carousels em milissegundos (2 minutos)
+const ROTATION_INTERVAL_MS = 120000;
 
 // Tempo de espera após interação antes de voltar a rotacionar (30 segundos)
 const INTERACTION_COOLDOWN_MS = 30000;
@@ -974,34 +974,47 @@ const Categories = memo(
 const BADGE_STYLE = "bg-white text-[#240046] font-bold shadow-md border border-violet-100";
 
 const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => {
-  if (!beneficio || beneficio.length < 3) return { emoji: "🎂", text: "Benefício" };
+  if (!beneficio || beneficio.length < 3) return { emoji: "🎁", text: "Presente" };
   const b = beneficio.toLowerCase();
-  const descontoMatch = beneficio.match(/(\d+)\s*%/);
-  if (descontoMatch) return { emoji: "🏷️", text: `${descontoMatch[1]}% OFF` };
-  if (b.includes("grátis") || b.includes("gratis") || b.includes("free") || b.includes("cortesia")) {
-    if (b.includes("drink") || b.includes("bebida") || b.includes("chopp") || b.includes("cerveja"))
-      return { emoji: "🍺", text: "Drink grátis" };
-    if (b.includes("sobremesa") || b.includes("doce") || b.includes("bolo"))
-      return { emoji: "🍰", text: "Sobremesa grátis" };
-    if (b.includes("entrada") || b.includes("ingresso") || b.includes("acesso"))
-      return { emoji: "🎟️", text: "Entrada grátis" };
-    if (b.includes("corte") || b.includes("cabelo")) return { emoji: "✂️", text: "Corte grátis" };
-    if (b.includes("café") || b.includes("coffee") || b.includes("capuccino"))
-      return { emoji: "☕", text: "Café grátis" };
-    if (b.includes("pizza")) return { emoji: "🍕", text: "Pizza grátis" };
-    if (b.includes("hambur") || b.includes("burger") || b.includes("lanche"))
-      return { emoji: "🍔", text: "Burger grátis" };
-    if (b.includes("sorvete") || b.includes("gelato") || b.includes("açaí"))
-      return { emoji: "🍦", text: "Sorvete grátis" };
-    if (b.includes("prato") || b.includes("refeição") || b.includes("almoço") || b.includes("jantar"))
-      return { emoji: "🍽️", text: "Refeição grátis" };
-    return { emoji: "🎁", text: "Grátis" };
+
+  // Desconto - quando tem porcentagem
+  if (b.includes("%") || b.includes("desconto") || b.includes("off")) {
+    return { emoji: "🎁", text: "Desconto" };
   }
-  if (b.includes("brinde") || b.includes("presente") || b.includes("mimo") || b.includes("surpresa"))
+
+  // Cortesia - quando é algo grátis
+  if (b.includes("grátis") || b.includes("gratis") || b.includes("free") || b.includes("cortesia")) {
+    return { emoji: "🎁", text: "Cortesia" };
+  }
+
+  // Brinde - quando é presente/mimo/surpresa
+  if (
+    b.includes("brinde") ||
+    b.includes("presente") ||
+    b.includes("mimo") ||
+    b.includes("surpresa") ||
+    b.includes("gift")
+  ) {
     return { emoji: "🎁", text: "Brinde" };
-  // Limita a 12 caracteres para não sobrepor o favorito
-  if (beneficio.length <= 12) return { emoji: "🎁", text: beneficio };
-  return { emoji: "🎂", text: "Benefício" };
+  }
+
+  // Dobro - quando é 2x1 ou dobro
+  if (b.includes("2x1") || b.includes("dobro") || b.includes("dois por um") || b.includes("leve 2")) {
+    return { emoji: "🎁", text: "Dobro" };
+  }
+
+  // Bônus - quando é adicional/extra
+  if (b.includes("bônus") || b.includes("bonus") || b.includes("extra") || b.includes("adicional")) {
+    return { emoji: "🎁", text: "Bônus" };
+  }
+
+  // Voucher - quando menciona voucher/cupom
+  if (b.includes("voucher") || b.includes("cupom") || b.includes("vale")) {
+    return { emoji: "🎁", text: "Voucher" };
+  }
+
+  // Padrão - Presente
+  return { emoji: "🎁", text: "Presente" };
 };
 
 // =============================================================================

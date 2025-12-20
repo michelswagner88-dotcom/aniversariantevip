@@ -67,22 +67,17 @@ export default function SejaParceiro() {
 
   // Handlers para o CTA final
   const handleCadastrar = () => {
-    if (user) {
-      // TODO: Verificar se já é parceiro e redirecionar para dashboard
-      // Por enquanto, vai para cadastro de estabelecimento
-      navigate("/cadastro/estabelecimento");
-    } else {
-      // Deslogado: vai para cadastro com contexto de parceiro
-      navigate("/cadastro", { state: { returnUrl: "/cadastro/estabelecimento", isParceiro: true } });
-    }
+    // Vai direto para cadastro de estabelecimento
+    navigate("/cadastro/estabelecimento");
   };
 
   const handleEntrar = () => {
     if (user) {
-      // TODO: Verificar se já é parceiro e redirecionar para dashboard
+      // Logado: vai para painel do parceiro
       navigate("/painel");
     } else {
-      navigate("/entrar", { state: { returnUrl: "/cadastro/estabelecimento" } });
+      // Deslogado: vai para login de estabelecimento
+      navigate("/login/estabelecimento");
     }
   };
 

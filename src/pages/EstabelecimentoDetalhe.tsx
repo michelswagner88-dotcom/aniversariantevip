@@ -21,8 +21,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
-  Sparkles,
-  ZoomIn,
   Store,
   ArrowRight,
 } from "lucide-react";
@@ -42,7 +40,7 @@ import LoginRequiredModal from "@/components/LoginRequiredModal";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import { useEstablishmentMetrics } from "@/hooks/useEstablishmentMetrics";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Confetti from "react-confetti";
 import { useWindowSize } from "@/hooks/useWindowSize";
 import { useSEO } from "@/hooks/useSEO";
@@ -98,11 +96,6 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
     trackFavorite,
   } = useEstablishmentMetrics();
   const hasTrackedView = useRef(false);
-
-  // Parallax effect para o header
-  const { scrollY } = useScroll();
-  const headerY = useTransform(scrollY, [0, 500], [0, 150]);
-  const headerOpacity = useTransform(scrollY, [0, 300], [1, 0.3]);
 
   // Verificar autenticação
   useEffect(() => {
@@ -422,7 +415,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
   const inicialNome = (estabelecimento.nome_fantasia || "E").charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-slate-950 pb-24 md:pb-8 animate-in fade-in duration-500">
+    <div className="min-h-screen bg-slate-950 pb-8 animate-in fade-in duration-500">
       {/* ========== HERO IMAGE COM FOTO DE CAPA ========== */}
       <div className="relative">
         {/* Foto de capa - largura total */}
@@ -583,7 +576,7 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
       </div>
 
       {/* ========== CONTEÚDO PRINCIPAL COM ESPAÇAMENTO ========== */}
-      <div className="px-4 space-y-6 pb-24">
+      <div className="px-4 space-y-6 pb-8">
         {/* 1. CARD DE BENEFÍCIO */}
         {(() => {
           const beneficioData = estabelecimento.beneficio_titulo
@@ -774,27 +767,6 @@ const EstabelecimentoDetalhe = ({ estabelecimentoIdProp }: EstabelecimentoDetalh
           </div>
         </motion.div>
       </div>
-
-      {/* ========== BOTÃO FLUTUANTE MOBILE ========== */}
-      <motion.div
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.8, type: "spring" }}
-        className="fixed bottom-0 left-0 right-0 z-40 p-4 md:hidden"
-      >
-        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-xl border-t border-slate-800" />
-
-        <motion.button
-          onClick={handleVerBeneficio}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="relative w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-[length:200%_200%] animate-gradient-x text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30"
-        >
-          <Gift className="w-5 h-5" />
-          Ver Benefício de Aniversário
-          <Sparkles className="w-4 h-4" />
-        </motion.button>
-      </motion.div>
 
       <AnimatePresence>
         {lightboxOpen && (

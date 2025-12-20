@@ -84,7 +84,7 @@ const getValidadeTexto = (validade?: string): string => {
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-white">
-    <Skeleton className="w-full h-[60vh] rounded-none" />
+    <Skeleton className="w-full h-[44vh] min-h-[260px] max-h-[380px] sm:h-[50vh] sm:max-h-none lg:h-[55vh] rounded-none" />
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="lg:grid lg:grid-cols-3 lg:gap-12">
         <div className="lg:col-span-2 space-y-6">
@@ -92,6 +92,8 @@ const PageSkeleton = () => (
             <Skeleton className="h-8 w-3/4" />
             <Skeleton className="h-5 w-1/2" />
             <Skeleton className="h-4 w-1/3" />
+            {/* Bio skeleton mobile */}
+            <Skeleton className="h-12 w-full md:hidden" />
           </div>
           <Skeleton className="h-40 w-full rounded-2xl" />
           <div className="flex gap-3">
@@ -154,7 +156,7 @@ const HeroGallery = ({
   };
 
   return (
-    <div className="relative w-full h-[60vh] sm:h-[50vh] lg:h-[55vh] bg-zinc-100">
+    <div className="relative w-full h-[44vh] min-h-[260px] max-h-[380px] sm:h-[50vh] sm:max-h-none lg:h-[55vh] bg-zinc-100">
       {/* Galeria com CSS scroll-snap */}
       <div
         ref={scrollRef}
@@ -496,7 +498,35 @@ const QuickActions = ({
 };
 
 // =============================================================================
-// ABOUT SECTION
+// BIO MOBILE - Aparece logo após identidade, estilo Instagram (MOBILE ONLY)
+// =============================================================================
+
+const BioMobile = ({ descricao }: { descricao?: string }) => {
+  const [expanded, setExpanded] = useState(false);
+  const MAX_LENGTH = 120;
+
+  if (!descricao || descricao.trim().length === 0) return null;
+
+  const shouldTruncate = descricao.length > MAX_LENGTH;
+  const displayText = expanded || !shouldTruncate ? descricao : `${descricao.slice(0, MAX_LENGTH).trim()}...`;
+
+  return (
+    <div className="mt-3 md:hidden">
+      <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-line">{displayText}</p>
+      {shouldTruncate && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="mt-1 text-sm font-medium text-zinc-900 underline underline-offset-2"
+        >
+          {expanded ? "Mostrar menos" : "Mostrar mais"}
+        </button>
+      )}
+    </div>
+  );
+};
+
+// =============================================================================
+// ABOUT SECTION - Desktop only
 // =============================================================================
 
 const AboutSection = ({ descricao }: { descricao?: string }) => {
@@ -508,8 +538,9 @@ const AboutSection = ({ descricao }: { descricao?: string }) => {
   const shouldTruncate = descricao.length > MAX_LENGTH;
   const displayText = expanded || !shouldTruncate ? descricao : `${descricao.slice(0, MAX_LENGTH).trim()}...`;
 
+  // DESKTOP ONLY - no mobile o Bio aparece junto da identidade
   return (
-    <div className="py-6 border-t border-zinc-100">
+    <div className="hidden md:block py-6 border-t border-zinc-100">
       <h2 className="text-lg font-semibold text-zinc-900 mb-3">Sobre</h2>
       <p className="text-zinc-600 leading-relaxed whitespace-pre-line">{displayText}</p>
       {shouldTruncate && (
@@ -1267,6 +1298,9 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
                   ))}
                 </div>
               )}
+
+              {/* Bio mobile - aparece logo após identidade, estilo Instagram */}
+              <BioMobile descricao={estabelecimento.bio || estabelecimento.descricao} />
             </div>
 
             {/* ORDEM: Benefício -> Sobre -> Contato -> Horário -> Como chegar */}

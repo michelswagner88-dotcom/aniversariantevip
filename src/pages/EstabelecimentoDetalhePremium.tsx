@@ -32,7 +32,6 @@ import {
   ChevronDown,
   ChevronUp,
   ExternalLink,
-  Star,
   Navigation,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -753,30 +752,6 @@ const LocationSection = ({
 };
 
 // =============================================================================
-// REVIEWS SECTION - Empty State (preparado para o futuro)
-// =============================================================================
-
-const ReviewsSection = () => {
-  return (
-    <div className="py-6 border-t border-zinc-100">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-zinc-900">Avaliações</h2>
-        <span className="text-sm text-zinc-500">Em breve</span>
-      </div>
-
-      {/* Empty state premium */}
-      <div className="bg-zinc-50 rounded-xl p-6 text-center">
-        <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-3">
-          <Star className="w-6 h-6 text-zinc-400" />
-        </div>
-        <p className="text-zinc-600 text-sm">As avaliações estarão disponíveis em breve.</p>
-        <p className="text-zinc-500 text-xs mt-1">Seja o primeiro a visitar e compartilhar sua experiência!</p>
-      </div>
-    </div>
-  );
-};
-
-// =============================================================================
 // RULES MODAL - Bottom sheet mobile, modal centralizado desktop
 // =============================================================================
 
@@ -961,23 +936,21 @@ const PartnerBanner = () => {
   return (
     <div className="py-6 border-t border-zinc-100">
       <div
-        className="rounded-2xl p-6 text-white"
+        className="rounded-2xl p-6 text-center"
         style={{
           background: `linear-gradient(135deg, ${ACCENT_COLOR} 0%, #5A189A 100%)`,
         }}
       >
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-            <Store className="w-5 h-5 text-white" />
-          </div>
-          <h3 className="text-lg font-semibold">Quer sua página assim?</h3>
+        <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mx-auto mb-4">
+          <Store className="w-6 h-6 text-white" />
         </div>
-        <p className="text-white/80 text-sm mb-4">
+        <h3 className="text-xl font-semibold text-white mb-2">Quer sua página assim?</h3>
+        <p className="text-white/80 text-sm mb-5 max-w-sm mx-auto">
           Cadastre seu estabelecimento e atraia aniversariantes todos os meses!
         </p>
         <button
           onClick={() => navigate("/seja-parceiro")}
-          className="w-full sm:w-auto px-6 py-3 bg-white text-zinc-900 font-semibold rounded-xl hover:bg-white/90 transition-colors flex items-center justify-center gap-2"
+          className="px-6 py-3 bg-white text-zinc-900 font-semibold rounded-xl hover:bg-white/90 transition-colors inline-flex items-center gap-2"
         >
           Cadastrar meu negócio
           <ChevronRight className="w-4 h-4" />
@@ -1508,9 +1481,6 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
               nomeEstabelecimento={estabelecimento.nome_fantasia}
               onDirections={handleDirections}
             />
-
-            {/* === AVALIAÇÕES (Empty State) === */}
-            <ReviewsSection />
 
             {/* === CTA PARCEIROS === */}
             <PartnerBanner />

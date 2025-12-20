@@ -8,20 +8,22 @@ import {
   ArrowRight,
   CheckCircle2,
   TrendingUp,
-  Sparkles,
   Gift,
   Clock,
-  BarChart3,
+  Check,
+  Sparkles,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { BackButton } from "@/components/BackButton";
 import { useSEO } from "@/hooks/useSEO";
 import { SEO_CONTENT } from "@/constants/seo";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function SejaParceiro() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useSEO({
     title: SEO_CONTENT.sejaParceiro.title,
@@ -63,6 +65,27 @@ export default function SejaParceiro() {
     "Você define as regras do seu benefício",
   ];
 
+  // Handlers para o CTA final
+  const handleCadastrar = () => {
+    if (user) {
+      // TODO: Verificar se já é parceiro e redirecionar para dashboard
+      // Por enquanto, vai para cadastro de estabelecimento
+      navigate("/cadastro/estabelecimento");
+    } else {
+      // Deslogado: vai para cadastro com contexto de parceiro
+      navigate("/cadastro", { state: { returnUrl: "/cadastro/estabelecimento", isParceiro: true } });
+    }
+  };
+
+  const handleEntrar = () => {
+    if (user) {
+      // TODO: Verificar se já é parceiro e redirecionar para dashboard
+      navigate("/painel");
+    } else {
+      navigate("/entrar", { state: { returnUrl: "/cadastro/estabelecimento" } });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#240046]">
       <Header />
@@ -98,7 +121,7 @@ export default function SejaParceiro() {
             </p>
 
             <Button
-              onClick={() => navigate("/cadastro/estabelecimento")}
+              onClick={handleCadastrar}
               size="lg"
               className="bg-white text-[#240046] hover:bg-white/90 font-semibold px-8 py-6 h-auto text-base rounded-full shadow-xl shadow-black/20 hover:scale-105 transition-all duration-300"
             >
@@ -241,41 +264,129 @@ export default function SejaParceiro() {
         </div>
       </section>
 
-      {/* CTA Final */}
-      <section className="py-20 px-4">
-        <div className="max-w-xl mx-auto">
-          <div className="relative bg-gradient-to-br from-[#3C096C] to-[#240046] border border-[#7C3AED]/30 rounded-3xl p-8 sm:p-10 text-center overflow-hidden">
-            {/* Glow */}
-            <div className="absolute top-0 right-0 w-40 h-40 bg-[#7C3AED]/20 rounded-full blur-[80px] pointer-events-none" />
+      {/* =========================================================================
+          CTA FINAL - Refatorado conforme especificações premium
+          ========================================================================= */}
+      <section className="relative py-14 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Background com radial sutil */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124, 58, 237, 0.15) 0%, transparent 60%)",
+          }}
+        />
 
-            <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#7C3AED] to-[#9D4EDD] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-[#7C3AED]/30">
-                <Building2 className="w-8 h-8 text-white" />
+        <div className="relative max-w-[1120px] mx-auto">
+          {/* Card principal */}
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl shadow-[0_24px_80px_-40px_rgba(0,0,0,0.55)] p-5 sm:p-7 lg:p-8">
+            {/* Grid: 1 coluna mobile, 12 colunas desktop (7+5) */}
+            <div className="grid lg:grid-cols-12 gap-5 lg:gap-8 items-center">
+              {/* Coluna esquerda: Texto + Bullets + Botões */}
+              <div className="lg:col-span-7 text-center lg:text-left">
+                {/* Título */}
+                <h2 className="text-[24px] leading-[30px] sm:text-[28px] sm:leading-[34px] lg:text-[36px] lg:leading-[42px] font-semibold text-white tracking-[-0.02em] lg:tracking-[-0.03em]">
+                  Pronto pra atrair aniversariantes na sua cidade?
+                </h2>
+
+                {/* Subtítulo */}
+                <p className="mt-3 text-[14px] leading-[20px] lg:text-[16px] lg:leading-[24px] text-white/70 max-w-[38ch] lg:max-w-[54ch] mx-auto lg:mx-0">
+                  Crie sua página em minutos e comece a aparecer pra quem está buscando benefício agora.
+                </p>
+
+                {/* Bullets */}
+                <div className="mt-5 space-y-2 inline-flex flex-col items-start mx-auto lg:mx-0">
+                  {[
+                    "Sem taxa por cliente atendido",
+                    "Você define as regras do benefício",
+                    "Página pronta pra compartilhar",
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-start gap-2.5">
+                      <Check
+                        className="w-[18px] h-[18px] text-[#C77DFF] mt-[2px] flex-shrink-0"
+                        strokeWidth={2.5}
+                        aria-hidden="true"
+                      />
+                      <span className="text-[14px] leading-[20px] text-white/90">{item}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Botões */}
+                <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                  {/* Botão primário */}
+                  <Button
+                    onClick={handleCadastrar}
+                    type="button"
+                    className="w-full sm:w-auto sm:min-w-[260px] h-12 lg:h-[52px] px-6 lg:px-7 bg-white text-[#240046] hover:bg-white/95 font-semibold text-[15px] rounded-full shadow-lg shadow-black/20 hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200 group"
+                  >
+                    Cadastrar meu estabelecimento
+                    <ArrowRight
+                      className="w-[18px] h-[18px] ml-2 group-hover:translate-x-0.5 transition-transform"
+                      aria-hidden="true"
+                    />
+                  </Button>
+
+                  {/* Botão secundário */}
+                  <Button
+                    onClick={handleEntrar}
+                    type="button"
+                    variant="outline"
+                    className="w-full sm:w-auto h-12 lg:h-[52px] px-6 lg:px-7 bg-transparent border-white/15 text-white/80 hover:bg-white/5 hover:text-white hover:border-white/25 font-medium text-[15px] rounded-full transition-all duration-200"
+                  >
+                    Já sou parceiro • Entrar
+                  </Button>
+                </div>
+
+                {/* Microcopy */}
+                <p className="mt-3 text-[12px] leading-[16px] text-white/50 text-center sm:text-left">
+                  Leva menos de 2 minutos.
+                </p>
               </div>
 
-              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">Pronto para crescer?</h3>
-              <p className="text-white/70 mb-8 max-w-sm mx-auto">
-                Cadastre seu estabelecimento agora e comece a aparecer para aniversariantes
-              </p>
+              {/* Coluna direita: Preview (hidden no mobile) */}
+              <div className="hidden lg:block lg:col-span-5">
+                <div className="bg-black/20 border border-white/10 rounded-2xl p-5 min-h-[220px]">
+                  {/* Header do preview */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="w-4 h-4 text-[#C77DFF]" aria-hidden="true" />
+                    <span className="text-[12px] font-medium text-white/60 uppercase tracking-wider">
+                      Prévia da sua página
+                    </span>
+                  </div>
 
-              <Button
-                onClick={() => navigate("/cadastro/estabelecimento")}
-                size="lg"
-                className="bg-white text-[#240046] hover:bg-white/90 font-semibold px-8 py-6 h-auto text-base rounded-full shadow-xl shadow-black/20 hover:scale-105 transition-all duration-300"
-              >
-                Quero ser parceiro
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
+                  {/* Mock do card de estabelecimento */}
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                    {/* Nome fake */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-[#7C3AED] to-[#9D4EDD] rounded-lg flex items-center justify-center">
+                        <Building2 className="w-5 h-5 text-white" aria-hidden="true" />
+                      </div>
+                      <div>
+                        <div className="h-3 w-32 bg-white/30 rounded-full mb-1.5" />
+                        <div className="h-2 w-20 bg-white/15 rounded-full" />
+                      </div>
+                    </div>
 
-              <p className="text-white/50 text-sm mt-6">
-                Já tem conta?{" "}
-                <button
-                  onClick={() => navigate("/login")}
-                  className="text-[#C77DFF] hover:text-white transition-colors"
-                >
-                  Entrar
-                </button>
-              </p>
+                    {/* Benefício fake */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="bg-[#7C3AED]/30 text-[#E0AAFF] text-[11px] font-medium px-2.5 py-1 rounded-full">
+                        🎁 Cortesia
+                      </div>
+                    </div>
+
+                    {/* Descrição fake */}
+                    <div className="space-y-1.5 mb-4">
+                      <div className="h-2 w-full bg-white/10 rounded-full" />
+                      <div className="h-2 w-4/5 bg-white/10 rounded-full" />
+                    </div>
+
+                    {/* Botão fake */}
+                    <div className="h-9 w-full bg-[#7C3AED]/40 rounded-lg flex items-center justify-center">
+                      <span className="text-[12px] font-medium text-white/70">Ver benefício</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

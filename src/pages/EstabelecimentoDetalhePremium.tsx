@@ -112,10 +112,10 @@ const PageSkeleton = () => (
 );
 
 // =============================================================================
-// HERO GALLERY - CSS Scroll Snap (sem dependências externas)
+// HERO GALLERY MOBILE - Full bleed (apenas mobile)
 // =============================================================================
 
-const HeroGallery = ({
+const HeroGalleryMobile = ({
   fotos,
   nome,
   onBack,
@@ -148,16 +148,12 @@ const HeroGallery = ({
     scrollRef.current.scrollTo({ left: width * index, behavior: "smooth" });
   };
 
-  const goPrev = () => currentIndex > 0 && scrollTo(currentIndex - 1);
-  const goNext = () => currentIndex < fotos.length - 1 && scrollTo(currentIndex + 1);
-
   const handleImageLoad = (index: number) => {
     setImagesLoaded((prev) => new Set(prev).add(index));
   };
 
   return (
-    <div className="relative w-full h-[44vh] min-h-[260px] max-h-[380px] sm:h-[50vh] sm:max-h-none lg:h-[55vh] bg-zinc-100">
-      {/* Galeria com CSS scroll-snap */}
+    <div className="relative w-full h-[44vh] min-h-[260px] max-h-[380px] bg-zinc-100 lg:hidden">
       <div
         ref={scrollRef}
         onScroll={handleScroll}
@@ -237,50 +233,193 @@ const HeroGallery = ({
           ))}
         </div>
       )}
-
-      {/* Setas desktop */}
-      {fotos.length > 1 && (
-        <>
-          <button
-            onClick={goPrev}
-            className={cn(
-              "hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-lg items-center justify-center hover:bg-white hover:scale-105 transition-all",
-              currentIndex === 0 && "opacity-0 pointer-events-none",
-            )}
-            aria-label="Foto anterior"
-          >
-            <ChevronLeft className="w-5 h-5 text-zinc-800" />
-          </button>
-          <button
-            onClick={goNext}
-            className={cn(
-              "hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-lg items-center justify-center hover:bg-white hover:scale-105 transition-all",
-              currentIndex === fotos.length - 1 && "opacity-0 pointer-events-none",
-            )}
-            aria-label="Próxima foto"
-          >
-            <ChevronRight className="w-5 h-5 text-zinc-800" />
-          </button>
-        </>
-      )}
     </div>
   );
 };
 
 // =============================================================================
-// BENEFIT CARD - Mobile
+// GALLERY DESKTOP - Contida no container, carrossel horizontal
+// =============================================================================
+
+const GalleryDesktop = ({
+  fotos,
+  nome,
+  onBack,
+  onFavorite,
+  onShare,
+  isFavorited,
+}: {
+  fotos: string[];
+  nome: string;
+  onBack: () => void;
+  onFavorite: () => void;
+  onShare: () => void;
+  isFavorited: boolean;
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [imagesLoaded, setImagesLoaded] = useState<Set<number>>(new Set());
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const updateScrollState = useCallback(() => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    setCanScrollLeft(scrollLeft > 10);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+
+    // Calcular índice baseado no scroll
+    const cardWidth = 400; // largura aproximada de cada card
+    const newIndex = Math.round(scrollLeft / cardWidth);
+    setCurrentIndex(Math.min(newIndex, fotos.length - 1));
+  }, [fotos.length]);
+
+  useEffect(() => {
+    updateScrollState();
+    const el = scrollRef.current;
+    if (el) {
+      el.addEventListener("scroll", updateScrollState, { passive: true });
+      return () => el.removeEventListener("scroll", updateScrollState);
+    }
+  }, [updateScrollState]);
+
+  const scroll = (direction: "left" | "right") => {
+    if (!scrollRef.current) return;
+    const cardWidth = 400;
+    scrollRef.current.scrollBy({
+      left: direction === "left" ? -cardWidth : cardWidth,
+      behavior: "smooth",
+    });
+  };
+
+  const handleImageLoad = (index: number) => {
+    setImagesLoaded((prev) => new Set(prev).add(index));
+  };
+
+  return (
+    <div className="hidden lg:block mb-6">
+      {/* Header com navegação e ações */}
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm font-medium">Voltar</span>
+        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onShare}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-200 hover:bg-zinc-50 transition-colors"
+          >
+            <Share2 className="w-4 h-4 text-zinc-600" />
+            <span className="text-sm font-medium text-zinc-700">Compartilhar</span>
+          </button>
+          <button
+            onClick={onFavorite}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-200 hover:bg-zinc-50 transition-colors"
+          >
+            <Heart
+              className={cn("w-4 h-4 transition-colors", isFavorited ? "fill-red-500 text-red-500" : "text-zinc-600")}
+            />
+            <span className="text-sm font-medium text-zinc-700">{isFavorited ? "Salvo" : "Salvar"}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Galeria carrossel */}
+      <div className="relative">
+        <div
+          ref={scrollRef}
+          className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {fotos.map((foto, index) => (
+            <div
+              key={index}
+              className="flex-shrink-0 snap-start first:pl-0"
+              style={{ width: index === 0 ? "60%" : "35%" }}
+            >
+              <div
+                className={cn(
+                  "relative overflow-hidden rounded-2xl bg-zinc-100",
+                  index === 0 ? "aspect-[4/3]" : "aspect-square",
+                )}
+              >
+                {!imagesLoaded.has(index) && <div className="absolute inset-0 bg-zinc-200 animate-pulse" />}
+                <img
+                  src={foto}
+                  alt={`${nome} - Foto ${index + 1}`}
+                  className={cn(
+                    "w-full h-full object-cover transition-all duration-300 hover:scale-105",
+                    imagesLoaded.has(index) ? "opacity-100" : "opacity-0",
+                  )}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  onLoad={() => handleImageLoad(index)}
+                />
+              </div>
+            </div>
+          ))}
+          {/* Espaço final */}
+          <div className="flex-shrink-0 w-4" aria-hidden="true" />
+        </div>
+
+        {/* Setas de navegação */}
+        {fotos.length > 2 && (
+          <>
+            <button
+              onClick={() => scroll("left")}
+              className={cn(
+                "absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 shadow-lg flex items-center justify-center hover:bg-white hover:scale-105 transition-all z-10",
+                !canScrollLeft && "opacity-0 pointer-events-none",
+              )}
+              aria-label="Foto anterior"
+            >
+              <ChevronLeft className="w-5 h-5 text-zinc-700" />
+            </button>
+            <button
+              onClick={() => scroll("right")}
+              className={cn(
+                "absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 shadow-lg flex items-center justify-center hover:bg-white hover:scale-105 transition-all z-10",
+                !canScrollRight && "opacity-0 pointer-events-none",
+              )}
+              aria-label="Próxima foto"
+            >
+              <ChevronRight className="w-5 h-5 text-zinc-700" />
+            </button>
+          </>
+        )}
+
+        {/* Indicador de posição */}
+        {fotos.length > 1 && (
+          <div className="absolute bottom-4 right-4 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-xs font-medium">
+            {currentIndex + 1} / {fotos.length}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// =============================================================================
+// BENEFIT CARD - Reutilizado em mobile e desktop
 // =============================================================================
 
 const BenefitCard = ({
   beneficio,
   validade,
   onShowRules,
+  onEmitirCupom,
   className,
+  isDesktop = false,
 }: {
   beneficio: string;
   validade?: string;
   onShowRules: () => void;
+  onEmitirCupom?: () => void;
   className?: string;
+  isDesktop?: boolean;
 }) => {
   const validadeTexto = getValidadeTexto(validade);
 
@@ -304,72 +443,39 @@ const BenefitCard = ({
         </div>
       </div>
 
-      <button
-        onClick={onShowRules}
-        className="w-full mt-5 py-3.5 px-4 text-white font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-        style={{ backgroundColor: ACCENT_COLOR }}
-      >
-        <Sparkles className="w-5 h-5" />
-        Ver regras e como usar
-      </button>
-    </div>
-  );
-};
-
-// =============================================================================
-// BENEFIT CARD STICKY - Desktop Sidebar
-// =============================================================================
-
-const BenefitCardSticky = ({
-  beneficio,
-  validade,
-  onShowRules,
-  onEmitirCupom,
-}: {
-  beneficio: string;
-  validade?: string;
-  onShowRules: () => void;
-  onEmitirCupom: () => void;
-}) => {
-  const validadeTexto = getValidadeTexto(validade);
-
-  return (
-    <div className="bg-white border border-zinc-200 rounded-2xl p-6 shadow-lg sticky top-24">
-      <div
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold mb-4"
-        style={{ backgroundColor: `${ACCENT_COLOR}10`, color: ACCENT_COLOR }}
-      >
-        <Gift className="w-3.5 h-3.5" />
-        Benefício de Aniversário
+      <div className={cn("mt-5", isDesktop && "space-y-3")}>
+        {isDesktop && onEmitirCupom ? (
+          <>
+            <button
+              onClick={onEmitirCupom}
+              className="w-full py-3.5 px-4 text-white font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              style={{ backgroundColor: ACCENT_COLOR }}
+            >
+              <Gift className="w-5 h-5" />
+              Usar benefício
+            </button>
+            <button
+              onClick={onShowRules}
+              className="w-full py-3 px-4 text-zinc-700 font-medium rounded-xl border border-zinc-200 hover:bg-zinc-50 transition-colors"
+            >
+              Ver regras e condições
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={onShowRules}
+            className="w-full py-3.5 px-4 text-white font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            style={{ backgroundColor: ACCENT_COLOR }}
+          >
+            <Sparkles className="w-5 h-5" />
+            Ver regras e como usar
+          </button>
+        )}
       </div>
 
-      <h3 className="text-xl font-semibold text-zinc-900 leading-snug mb-3">{beneficio}</h3>
-
-      <div className="flex items-center gap-2 text-zinc-600 text-sm mb-6">
-        <Calendar className="w-4 h-4" />
-        <span>{validadeTexto}</span>
-      </div>
-
-      <div className="border-t border-zinc-100 my-4" />
-
-      <div className="space-y-3">
-        <button
-          onClick={onEmitirCupom}
-          className="w-full py-3.5 px-4 text-white font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-          style={{ backgroundColor: ACCENT_COLOR }}
-        >
-          <Gift className="w-5 h-5" />
-          Usar benefício
-        </button>
-        <button
-          onClick={onShowRules}
-          className="w-full py-3 px-4 text-zinc-700 font-medium rounded-xl border border-zinc-200 hover:bg-zinc-50 transition-colors"
-        >
-          Ver regras e condições
-        </button>
-      </div>
-
-      <p className="text-xs text-zinc-500 text-center mt-4">Apresente um documento com foto no estabelecimento</p>
+      {isDesktop && (
+        <p className="text-xs text-zinc-500 text-center mt-4">Apresente um documento com foto no estabelecimento</p>
+      )}
     </div>
   );
 };
@@ -1260,7 +1366,8 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
     <div className="min-h-screen bg-white">
       <style>{`.scrollbar-hide::-webkit-scrollbar { display: none; } .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
 
-      <HeroGallery
+      {/* Galeria mobile - full bleed */}
+      <HeroGalleryMobile
         fotos={fotos}
         nome={estabelecimento.nome_fantasia}
         onBack={handleBack}
@@ -1270,6 +1377,18 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
       />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Galeria desktop - contida no container */}
+        <div className="pt-6">
+          <GalleryDesktop
+            fotos={fotos}
+            nome={estabelecimento.nome_fantasia}
+            onBack={handleBack}
+            onFavorite={handleFavorite}
+            onShare={handleShare}
+            isFavorited={id ? isFavorito(id) : false}
+          />
+        </div>
+
         <div className="lg:grid lg:grid-cols-3 lg:gap-12 pb-12">
           <div className="lg:col-span-2">
             <div className="py-6 border-b border-zinc-100">
@@ -1303,8 +1422,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
               <BioMobile descricao={estabelecimento.bio || estabelecimento.descricao} />
             </div>
 
-            {/* ORDEM: Benefício -> Sobre -> Contato -> Horário -> Como chegar */}
-
+            {/* Benefício - mobile only (lg:hidden) */}
             {beneficio && (
               <div className="py-6 border-b border-zinc-100 lg:hidden">
                 <BenefitCard beneficio={beneficio} validade={validadeBeneficio} onShowRules={handleShowRules} />
@@ -1344,14 +1462,17 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
             <PartnerBanner />
           </div>
 
+          {/* Sidebar desktop - reutiliza BenefitCard com props adicionais */}
           <div className="hidden lg:block">
             <div className="sticky top-24">
               {beneficio && (
-                <BenefitCardSticky
+                <BenefitCard
                   beneficio={beneficio}
                   validade={validadeBeneficio}
                   onShowRules={handleShowRules}
                   onEmitirCupom={handleEmitirCupom}
+                  isDesktop={true}
+                  className="shadow-lg"
                 />
               )}
             </div>

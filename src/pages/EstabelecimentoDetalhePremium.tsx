@@ -84,26 +84,43 @@ const getValidadeTexto = (validade?: string): string => {
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-white">
-    <Skeleton className="w-full h-[44vh] min-h-[260px] max-h-[380px] lg:hidden rounded-none" />
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Skeleton galeria desktop */}
-      <div className="hidden lg:block mb-6">
-        <Skeleton className="w-full aspect-[16/10] max-h-[480px] rounded-xl" />
-      </div>
-      <div className="lg:px-8 space-y-6">
+    {/* Mobile skeleton */}
+    <div className="lg:hidden">
+      <Skeleton className="w-full h-[44vh] min-h-[260px] max-h-[380px] rounded-none" />
+      <div className="px-4 sm:px-6 py-6 space-y-6">
         <div className="space-y-3">
           <Skeleton className="h-8 w-3/4" />
           <Skeleton className="h-5 w-1/2" />
           <Skeleton className="h-4 w-1/3" />
         </div>
-        <Skeleton className="h-24 w-full rounded-2xl" />
         <Skeleton className="h-32 w-full rounded-2xl" />
         <div className="flex gap-3">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-20 w-20 rounded-xl" />
           ))}
         </div>
-        <Skeleton className="h-32 w-full rounded-2xl" />
+      </div>
+    </div>
+    {/* Desktop skeleton */}
+    <div className="hidden lg:block">
+      <div className="max-w-4xl mx-auto px-6 pt-6">
+        <Skeleton className="w-full aspect-[16/10] max-h-[480px] rounded-xl mb-6" />
+      </div>
+      <div className="max-w-4xl mx-auto px-6">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-5 w-1/2" />
+            <Skeleton className="h-4 w-1/3" />
+          </div>
+          <Skeleton className="h-24 w-full rounded-2xl" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+          <div className="flex gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-20 w-20 rounded-xl" />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -265,7 +282,7 @@ const GalleryDesktop = ({
   const goNext = () => currentIndex < fotos.length - 1 && setCurrentIndex(currentIndex + 1);
 
   return (
-    <div className="hidden lg:block mb-6">
+    <div className="mb-6">
       {/* Header com navegação e ações */}
       <div className="flex items-center justify-between mb-4">
         <button
@@ -550,7 +567,7 @@ const BioMobile = ({ descricao }: { descricao?: string }) => {
   const displayText = expanded || !shouldTruncate ? descricao : `${descricao.slice(0, MAX_LENGTH).trim()}...`;
 
   return (
-    <div className="mt-3 md:hidden">
+    <div className="mt-3">
       <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-line">{displayText}</p>
       {shouldTruncate && (
         <button
@@ -577,9 +594,8 @@ const AboutSection = ({ descricao }: { descricao?: string }) => {
   const shouldTruncate = descricao.length > MAX_LENGTH;
   const displayText = expanded || !shouldTruncate ? descricao : `${descricao.slice(0, MAX_LENGTH).trim()}...`;
 
-  // DESKTOP ONLY - no mobile o Bio aparece junto da identidade
   return (
-    <div className="hidden md:block py-6 border-b border-zinc-100">
+    <div className="py-6 border-b border-zinc-100">
       <h2 className="text-lg font-semibold text-zinc-900 mb-3">Sobre</h2>
       <p className="text-zinc-600 leading-relaxed whitespace-pre-line">{displayText}</p>
       {shouldTruncate && (
@@ -1309,10 +1325,10 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
         isFavorited={id ? isFavorito(id) : false}
       />
 
-      {/* Container desktop - tudo centralizado */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Galeria desktop */}
-        <div className="pt-6">
+      {/* Container desktop */}
+      <div className="hidden lg:block">
+        {/* Galeria desktop - container mais largo */}
+        <div className="max-w-4xl mx-auto px-6 pt-6">
           <GalleryDesktop
             fotos={fotos}
             nome={estabelecimento.nome_fantasia}
@@ -1323,80 +1339,149 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
           />
         </div>
 
-        {/* Conteúdo - mesma largura, com padding interno */}
-        <div className="lg:px-8 pb-12">
-          {/* Título e info */}
-          <div className="py-6 border-b border-zinc-100">
-            <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 leading-tight">
-              {estabelecimento.nome_fantasia}
-            </h1>
-            <div className="flex items-center gap-2 mt-2 text-zinc-600">
-              <span className="capitalize">{categoria}</span>
-              {localizacao && (
-                <>
-                  <span className="text-zinc-300">·</span>
-                  <span>{localizacao}</span>
-                </>
+        {/* Conteúdo - container mais estreito (recuado em relação à foto) */}
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="max-w-2xl mx-auto pb-12">
+            {/* Título e info */}
+            <div className="py-6 border-b border-zinc-100">
+              <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 leading-tight">
+                {estabelecimento.nome_fantasia}
+              </h1>
+              <div className="flex items-center gap-2 mt-2 text-zinc-600">
+                <span className="capitalize">{categoria}</span>
+                {localizacao && (
+                  <>
+                    <span className="text-zinc-300">·</span>
+                    <span>{localizacao}</span>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 mt-3">
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <span className="text-sm text-green-600 font-medium">Parceiro verificado</span>
+              </div>
+              {estabelecimento.especialidades?.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {estabelecimento.especialidades.slice(0, 5).map((esp: string, index: number) => (
+                    <span key={index} className="px-3 py-1 bg-zinc-100 text-zinc-700 text-sm rounded-full">
+                      {esp}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
-            <div className="flex items-center gap-1.5 mt-3">
-              <CheckCircle2 className="w-4 h-4 text-green-500" />
-              <span className="text-sm text-green-600 font-medium">Parceiro verificado</span>
-            </div>
-            {estabelecimento.especialidades?.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-4">
-                {estabelecimento.especialidades.slice(0, 5).map((esp: string, index: number) => (
-                  <span key={index} className="px-3 py-1 bg-zinc-100 text-zinc-700 text-sm rounded-full">
-                    {esp}
-                  </span>
-                ))}
+
+            {/* Sobre */}
+            <AboutSection descricao={estabelecimento.bio || estabelecimento.descricao} />
+
+            {/* Benefício */}
+            {beneficio && (
+              <div className="py-6 border-b border-zinc-100">
+                <BenefitCard beneficio={beneficio} validade={validadeBeneficio} onShowRules={handleShowRules} />
               </div>
             )}
 
-            {/* Bio mobile - aparece logo após identidade */}
-            <BioMobile descricao={estabelecimento.bio || estabelecimento.descricao} />
+            <QuickActions
+              whatsapp={formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone)}
+              instagram={formatInstagram(estabelecimento.instagram)}
+              telefone={formatPhoneLink(estabelecimento.telefone)}
+              website={formatWebsite(estabelecimento.site)}
+              cardapio={estabelecimento.link_cardapio}
+              showCardapio={mostraCardapio}
+              onWhatsApp={handleWhatsApp}
+              onInstagram={handleInstagram}
+              onPhone={handlePhone}
+              onWebsite={handleWebsite}
+              onCardapio={handleCardapio}
+            />
+
+            <HoursSection horario={estabelecimento.horario_funcionamento} />
+            <LocationSection
+              endereco={[estabelecimento.logradouro, estabelecimento.numero, estabelecimento.complemento]
+                .filter(Boolean)
+                .join(", ")}
+              bairro={estabelecimento.bairro}
+              cidade={estabelecimento.cidade}
+              estado={estabelecimento.estado}
+              cep={estabelecimento.cep}
+              latitude={estabelecimento.latitude}
+              longitude={estabelecimento.longitude}
+              nomeEstabelecimento={estabelecimento.nome_fantasia}
+              onDirections={handleDirections}
+            />
+            <PartnerBanner />
           </div>
+        </div>
+      </div>
 
-          {/* Sobre - logo após título */}
-          <AboutSection descricao={estabelecimento.bio || estabelecimento.descricao} />
-
-          {/* Benefício */}
-          {beneficio && (
-            <div className="py-6 border-b border-zinc-100">
-              <BenefitCard beneficio={beneficio} validade={validadeBeneficio} onShowRules={handleShowRules} />
+      {/* Container mobile */}
+      <div className="lg:hidden px-4 sm:px-6 pb-12">
+        {/* Título e info */}
+        <div className="py-6 border-b border-zinc-100">
+          <h1 className="text-2xl font-bold text-zinc-900 leading-tight">{estabelecimento.nome_fantasia}</h1>
+          <div className="flex items-center gap-2 mt-2 text-zinc-600">
+            <span className="capitalize">{categoria}</span>
+            {localizacao && (
+              <>
+                <span className="text-zinc-300">·</span>
+                <span>{localizacao}</span>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 mt-3">
+            <CheckCircle2 className="w-4 h-4 text-green-500" />
+            <span className="text-sm text-green-600 font-medium">Parceiro verificado</span>
+          </div>
+          {estabelecimento.especialidades?.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              {estabelecimento.especialidades.slice(0, 5).map((esp: string, index: number) => (
+                <span key={index} className="px-3 py-1 bg-zinc-100 text-zinc-700 text-sm rounded-full">
+                  {esp}
+                </span>
+              ))}
             </div>
           )}
 
-          <QuickActions
-            whatsapp={formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone)}
-            instagram={formatInstagram(estabelecimento.instagram)}
-            telefone={formatPhoneLink(estabelecimento.telefone)}
-            website={formatWebsite(estabelecimento.site)}
-            cardapio={estabelecimento.link_cardapio}
-            showCardapio={mostraCardapio}
-            onWhatsApp={handleWhatsApp}
-            onInstagram={handleInstagram}
-            onPhone={handlePhone}
-            onWebsite={handleWebsite}
-            onCardapio={handleCardapio}
-          />
-
-          <HoursSection horario={estabelecimento.horario_funcionamento} />
-          <LocationSection
-            endereco={[estabelecimento.logradouro, estabelecimento.numero, estabelecimento.complemento]
-              .filter(Boolean)
-              .join(", ")}
-            bairro={estabelecimento.bairro}
-            cidade={estabelecimento.cidade}
-            estado={estabelecimento.estado}
-            cep={estabelecimento.cep}
-            latitude={estabelecimento.latitude}
-            longitude={estabelecimento.longitude}
-            nomeEstabelecimento={estabelecimento.nome_fantasia}
-            onDirections={handleDirections}
-          />
-          <PartnerBanner />
+          {/* Bio mobile */}
+          <BioMobile descricao={estabelecimento.bio || estabelecimento.descricao} />
         </div>
+
+        {/* Benefício */}
+        {beneficio && (
+          <div className="py-6 border-b border-zinc-100">
+            <BenefitCard beneficio={beneficio} validade={validadeBeneficio} onShowRules={handleShowRules} />
+          </div>
+        )}
+
+        <QuickActions
+          whatsapp={formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone)}
+          instagram={formatInstagram(estabelecimento.instagram)}
+          telefone={formatPhoneLink(estabelecimento.telefone)}
+          website={formatWebsite(estabelecimento.site)}
+          cardapio={estabelecimento.link_cardapio}
+          showCardapio={mostraCardapio}
+          onWhatsApp={handleWhatsApp}
+          onInstagram={handleInstagram}
+          onPhone={handlePhone}
+          onWebsite={handleWebsite}
+          onCardapio={handleCardapio}
+        />
+
+        <HoursSection horario={estabelecimento.horario_funcionamento} />
+        <LocationSection
+          endereco={[estabelecimento.logradouro, estabelecimento.numero, estabelecimento.complemento]
+            .filter(Boolean)
+            .join(", ")}
+          bairro={estabelecimento.bairro}
+          cidade={estabelecimento.cidade}
+          estado={estabelecimento.estado}
+          cep={estabelecimento.cep}
+          latitude={estabelecimento.latitude}
+          longitude={estabelecimento.longitude}
+          nomeEstabelecimento={estabelecimento.nome_fantasia}
+          onDirections={handleDirections}
+        />
+        <PartnerBanner />
       </div>
 
       <RulesModal

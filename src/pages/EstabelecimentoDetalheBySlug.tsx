@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import EstabelecimentoDetalhe from "./EstabelecimentoDetalhe";
+import EstabelecimentoDetalhePremium from "./EstabelecimentoDetalhePremium";
 
 const EstabelecimentoDetalheBySlug = () => {
   const { estado, cidade, slug } = useParams();
@@ -19,7 +19,6 @@ const EstabelecimentoDetalheBySlug = () => {
         return;
       }
 
-      // Normalizar estado: decodificar URL e preparar para busca flexível
       const estadoNormalizado = decodeURIComponent(estado).trim();
 
       console.log("🔍 Buscando estabelecimento:", {
@@ -30,7 +29,6 @@ const EstabelecimentoDetalheBySlug = () => {
         url: window.location.pathname,
       });
 
-      // Normalizar cidade: remover hífens e converter para formato do banco
       const cidadeNormalizada = cidade.replace(/-/g, " ");
 
       const { data, error } = await supabase
@@ -56,7 +54,6 @@ const EstabelecimentoDetalheBySlug = () => {
           estado: estado.toUpperCase(),
         });
 
-        // Tentar buscar sem filtro de cidade para debug
         const { data: debugData } = await supabase
           .from("public_estabelecimentos")
           .select("id, nome_fantasia, cidade, estado, slug")
@@ -81,7 +78,7 @@ const EstabelecimentoDetalheBySlug = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -89,10 +86,10 @@ const EstabelecimentoDetalheBySlug = () => {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-2">Estabelecimento não encontrado</h1>
-          <p className="text-gray-400 mb-6">O estabelecimento que você procura não existe ou foi removido.</p>
+          <h1 className="text-2xl font-bold text-zinc-900 mb-2">Estabelecimento não encontrado</h1>
+          <p className="text-zinc-500 mb-6">O estabelecimento que você procura não existe ou foi removido.</p>
           <button
             onClick={() => navigate("/explorar")}
             className="px-6 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-lg hover:opacity-90 transition-opacity"
@@ -104,7 +101,7 @@ const EstabelecimentoDetalheBySlug = () => {
     );
   }
 
-  return <EstabelecimentoDetalhe estabelecimentoIdProp={estabelecimentoId} />;
+  return <EstabelecimentoDetalhePremium estabelecimentoIdProp={estabelecimentoId} />;
 };
 
 export default EstabelecimentoDetalheBySlug;

@@ -53,6 +53,12 @@ const HEADER_COLOR = "#240046";
 const DEFAULT_CITY = "São Paulo";
 const DEFAULT_STATE = "SP";
 
+// Intervalo de rotação dos carousels em milissegundos (1 minuto)
+const ROTATION_INTERVAL_MS = 60000;
+
+// Tempo de espera após interação antes de voltar a rotacionar (30 segundos)
+const INTERACTION_COOLDOWN_MS = 30000;
+
 const STATE_CAPITALS: Record<string, string> = {
   AC: "Rio Branco",
   AL: "Maceió",
@@ -249,15 +255,61 @@ const useSmartLocation = (availableCities: { cidade: string; estado: string }[])
   return { city, state, loading, update };
 };
 
-const useRotatingCategories = () => {
+// =============================================================================
+// ROTATING CATEGORIES HOOK - EXATAMENTE 1 MINUTO + PROTEÇÃO DE INTERAÇÃO
+// =============================================================================
+
+const useRotatingCategories = (isUserInteracting: boolean) => {
   const [rotation, setRotation] = useState(0);
+
   useEffect(() => {
-    const now = new Date();
-    setRotation(Math.floor(now.getMinutes() / 5));
-    const interval = setInterval(() => setRotation(Math.floor(new Date().getMinutes() / 5)), 60000);
+    // Não rotaciona se o usuário estiver interagindo com algum carousel
+    if (isUserInteracting) return;
+
+    // Rotaciona exatamente a cada 1 minuto (60000ms)
+    const interval = setInterval(() => {
+      setRotation((prev) => prev + 1);
+    }, ROTATION_INTERVAL_MS);
+
     return () => clearInterval(interval);
-  }, []);
+  }, [isUserInteracting]);
+
   return rotation;
+};
+
+// Hook para detectar interação do usuário com carousels
+const useCarouselInteraction = () => {
+  const [isInteracting, setIsInteracting] = useState(false);
+  const interactionTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleInteractionStart = useCallback(() => {
+    // Cancela qualquer timeout pendente
+    if (interactionTimeout.current) {
+      clearTimeout(interactionTimeout.current);
+      interactionTimeout.current = null;
+    }
+    setIsInteracting(true);
+  }, []);
+
+  const handleInteractionEnd = useCallback(() => {
+    // Aguarda 30 segundos após a última interação para voltar a rotacionar
+    if (interactionTimeout.current) {
+      clearTimeout(interactionTimeout.current);
+    }
+    interactionTimeout.current = setTimeout(() => {
+      setIsInteracting(false);
+    }, INTERACTION_COOLDOWN_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (interactionTimeout.current) {
+        clearTimeout(interactionTimeout.current);
+      }
+    };
+  }, []);
+
+  return { isInteracting, handleInteractionStart, handleInteractionEnd };
 };
 
 // =============================================================================
@@ -1089,115 +1141,139 @@ const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
 });
 
 // =============================================================================
-// CAROUSEL
+// CAROUSEL - COM PROTEÇÃO DE INTERAÇÃO
 // =============================================================================
 
-const Carousel = memo(({ title, subtitle, items, onSeeAll, isLoggedIn, onLoginRequired }: any) => {
-  const navigate = useNavigate();
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+const Carousel = memo(
+  ({ title, subtitle, items, onSeeAll, isLoggedIn, onLoginRequired, onInteractionStart, onInteractionEnd }: any) => {
+    const navigate = useNavigate();
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const updateScrollState = useCallback(() => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 10);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  }, []);
+    const updateScrollState = useCallback(() => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        setCanScrollLeft(scrollLeft > 10);
+        setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+      }
+    }, []);
 
-  useEffect(() => {
-    updateScrollState();
-    const el = scrollRef.current;
-    if (el) {
-      el.addEventListener("scroll", updateScrollState, { passive: true });
-      window.addEventListener("resize", updateScrollState);
-      return () => {
-        el.removeEventListener("scroll", updateScrollState);
-        window.removeEventListener("resize", updateScrollState);
-      };
-    }
-  }, [updateScrollState, items]);
+    useEffect(() => {
+      updateScrollState();
+      const el = scrollRef.current;
+      if (el) {
+        el.addEventListener("scroll", updateScrollState, { passive: true });
+        window.addEventListener("resize", updateScrollState);
+        return () => {
+          el.removeEventListener("scroll", updateScrollState);
+          window.removeEventListener("resize", updateScrollState);
+        };
+      }
+    }, [updateScrollState, items]);
 
-  const scroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const cardWidth = window.innerWidth < 640 ? 160 : 192;
-      const gap = 16;
-      const scrollAmount = (cardWidth + gap) * 3;
-      scrollRef.current.scrollBy({ left: direction === "left" ? -scrollAmount : scrollAmount, behavior: "smooth" });
-    }
-  };
+    const scroll = (direction: "left" | "right") => {
+      if (scrollRef.current) {
+        const cardWidth = window.innerWidth < 640 ? 160 : 192;
+        const gap = 16;
+        const scrollAmount = (cardWidth + gap) * 3;
+        scrollRef.current.scrollBy({ left: direction === "left" ? -scrollAmount : scrollAmount, behavior: "smooth" });
+      }
+    };
 
-  if (!items?.length) return null;
+    // Handlers para detectar interação do usuário
+    const handleTouchStart = () => {
+      onInteractionStart?.();
+    };
 
-  return (
-    <section className="mb-6">
-      <div className="flex items-center justify-between mb-3 px-4 sm:px-6 lg:px-8">
-        <div className="flex-1">
-          <h2 className="text-base font-semibold text-zinc-900">{title}</h2>
-          {subtitle && <p className="text-sm text-zinc-600">{subtitle}</p>}
-        </div>
-        <button
-          onClick={onSeeAll}
-          className="flex items-center gap-1.5 text-[#240046] hover:text-[#3C096C] text-sm font-medium ml-4 flex-shrink-0"
-        >
-          <span>Ver todos ({items.length}+)</span>
-          <ChevronRight className="w-4 h-4" />
-        </button>
-        <div className="hidden sm:flex items-center gap-2 ml-4">
-          <button
-            onClick={() => scroll("left")}
-            disabled={!canScrollLeft}
-            className="w-9 h-9 rounded-full border border-zinc-300 bg-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:shadow-md hover:border-zinc-400 hover:scale-105 transition-all"
-            aria-label="Anterior"
-          >
-            <ChevronLeft className="w-5 h-5 text-zinc-700" />
-          </button>
-          <button
-            onClick={() => scroll("right")}
-            disabled={!canScrollRight}
-            className="w-9 h-9 rounded-full border border-zinc-300 bg-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:shadow-md hover:border-zinc-400 hover:scale-105 transition-all"
-            aria-label="Próximo"
-          >
-            <ChevronRight className="w-5 h-5 text-zinc-700" />
-          </button>
-        </div>
-      </div>
-      <div
-        ref={scrollRef}
-        className={cn(
-          "flex gap-4 overflow-x-auto snap-x snap-mandatory",
-          "px-4 sm:px-6 lg:px-8",
-          "scroll-pl-4 sm:scroll-pl-6 lg:scroll-pl-8",
-          "scroll-pr-4 sm:scroll-pr-6 lg:scroll-pr-8",
-          "scrollbar-hide",
-        )}
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {items.map((est: any) => (
-          <div key={est.id} className="snap-start flex-shrink-0 w-[160px] sm:w-[180px] lg:w-[192px]">
-            <Card
-              data={est}
-              onClick={() =>
-                navigate(
-                  getEstabelecimentoUrl({
-                    estado: est.estado || "",
-                    cidade: est.cidade || "",
-                    slug: est.slug || null,
-                    id: est.id,
-                  }),
-                )
-              }
-              isLoggedIn={isLoggedIn}
-              onLoginRequired={onLoginRequired}
-            />
+    const handleTouchEnd = () => {
+      onInteractionEnd?.();
+    };
+
+    const handleMouseDown = () => {
+      onInteractionStart?.();
+    };
+
+    const handleMouseUp = () => {
+      onInteractionEnd?.();
+    };
+
+    if (!items?.length) return null;
+
+    return (
+      <section className="mb-6">
+        <div className="flex items-center justify-between mb-3 px-4 sm:px-6 lg:px-8">
+          <div className="flex-1">
+            <h2 className="text-base font-semibold text-zinc-900">{title}</h2>
+            {subtitle && <p className="text-sm text-zinc-600">{subtitle}</p>}
           </div>
-        ))}
-        <div className="flex-shrink-0 w-4 sm:w-6 lg:w-8" aria-hidden="true" />
-      </div>
-    </section>
-  );
-});
+          <button
+            onClick={onSeeAll}
+            className="flex items-center gap-1.5 text-[#240046] hover:text-[#3C096C] text-sm font-medium ml-4 flex-shrink-0"
+          >
+            <span>Ver todos ({items.length}+)</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <div className="hidden sm:flex items-center gap-2 ml-4">
+            <button
+              onClick={() => scroll("left")}
+              disabled={!canScrollLeft}
+              className="w-9 h-9 rounded-full border border-zinc-300 bg-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:shadow-md hover:border-zinc-400 hover:scale-105 transition-all"
+              aria-label="Anterior"
+            >
+              <ChevronLeft className="w-5 h-5 text-zinc-700" />
+            </button>
+            <button
+              onClick={() => scroll("right")}
+              disabled={!canScrollRight}
+              className="w-9 h-9 rounded-full border border-zinc-300 bg-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:shadow-md hover:border-zinc-400 hover:scale-105 transition-all"
+              aria-label="Próximo"
+            >
+              <ChevronRight className="w-5 h-5 text-zinc-700" />
+            </button>
+          </div>
+        </div>
+        <div
+          ref={scrollRef}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          className={cn(
+            "flex gap-4 overflow-x-auto snap-x snap-mandatory",
+            "px-4 sm:px-6 lg:px-8",
+            "scroll-pl-4 sm:scroll-pl-6 lg:scroll-pl-8",
+            "scroll-pr-4 sm:scroll-pr-6 lg:scroll-pr-8",
+            "scrollbar-hide",
+          )}
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {items.map((est: any) => (
+            <div key={est.id} className="snap-start flex-shrink-0 w-[160px] sm:w-[180px] lg:w-[192px]">
+              <Card
+                data={est}
+                onClick={() =>
+                  navigate(
+                    getEstabelecimentoUrl({
+                      estado: est.estado || "",
+                      cidade: est.cidade || "",
+                      slug: est.slug || null,
+                      id: est.id,
+                    }),
+                  )
+                }
+                isLoggedIn={isLoggedIn}
+                onLoginRequired={onLoginRequired}
+              />
+            </div>
+          ))}
+          <div className="flex-shrink-0 w-4 sm:w-6 lg:w-8" aria-hidden="true" />
+        </div>
+      </section>
+    );
+  },
+);
 
 // =============================================================================
 // GRID
@@ -1254,11 +1330,16 @@ const Grid = memo(({ items, isLoading, isLoggedIn, onLoginRequired }: any) => {
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const rotation = useRotatingCategories();
   const categoria = searchParams.get("categoria") || "all";
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const { user } = useAuth();
   const isLoggedIn = !!user;
+
+  // Hook de interação dos carousels
+  const { isInteracting, handleInteractionStart, handleInteractionEnd } = useCarouselInteraction();
+
+  // Rotação dos carousels - pausa quando usuário está interagindo
+  const rotation = useRotatingCategories(isInteracting);
 
   const handleLoginRequired = useCallback(() => {
     toast("Faça login para favoritar", {
@@ -1301,7 +1382,8 @@ const Index = () => {
         return cats.some((c) => c?.toLowerCase() === catId.toLowerCase());
       });
     const rotatedCategories = [...ALL_CATEGORIES];
-    for (let i = 0; i < rotation; i++) rotatedCategories.push(rotatedCategories.shift()!);
+    const rotationIndex = rotation % ALL_CATEGORIES.length;
+    for (let i = 0; i < rotationIndex; i++) rotatedCategories.push(rotatedCategories.shift()!);
     const result: any[] = [];
     const hl = rotatedCategories[0];
     const hlItems = getByCategory(hl.id).slice(0, 12);
@@ -1413,6 +1495,31 @@ const Index = () => {
   const showGrid = categoria !== "all" || selectedSubcategory !== null;
   const showCarousels = categoria === "all" && selectedSubcategory === null && carousels.length > 0;
 
+  // Estado para transição suave dos carousels
+  const [carouselsVisible, setCarouselsVisible] = useState(true);
+  const [displayedCarousels, setDisplayedCarousels] = useState(carousels);
+  const prevRotation = useRef(rotation);
+
+  // Efeito para transição suave quando rotação muda
+  useEffect(() => {
+    if (prevRotation.current !== rotation && carousels.length > 0) {
+      // Fade out
+      setCarouselsVisible(false);
+
+      // Após fade out, atualiza conteúdo e fade in
+      const timeout = setTimeout(() => {
+        setDisplayedCarousels(carousels);
+        setCarouselsVisible(true);
+      }, 300);
+
+      prevRotation.current = rotation;
+      return () => clearTimeout(timeout);
+    } else {
+      // Primeira renderização ou sem mudança
+      setDisplayedCarousels(carousels);
+    }
+  }, [rotation, carousels]);
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } } .scrollbar-hide::-webkit-scrollbar { display: none; }`}</style>
@@ -1440,20 +1547,28 @@ const Index = () => {
               <Grid items={[]} isLoading isLoggedIn={isLoggedIn} onLoginRequired={handleLoginRequired} />
             </div>
           )}
-          {!isLoading &&
-            !locationLoading &&
-            showCarousels &&
-            carousels.map((c) => (
-              <Carousel
-                key={c.id}
-                title={c.title}
-                subtitle={c.subtitle}
-                items={c.items}
-                onSeeAll={() => handleSeeAll(c.categoryId)}
-                isLoggedIn={isLoggedIn}
-                onLoginRequired={handleLoginRequired}
-              />
-            ))}
+          {!isLoading && !locationLoading && showCarousels && (
+            <div
+              className={cn(
+                "transition-opacity duration-300 ease-in-out",
+                carouselsVisible ? "opacity-100" : "opacity-0",
+              )}
+            >
+              {displayedCarousels.map((c, index) => (
+                <Carousel
+                  key={`carousel-${index}`}
+                  title={c.title}
+                  subtitle={c.subtitle}
+                  items={c.items}
+                  onSeeAll={() => handleSeeAll(c.categoryId)}
+                  isLoggedIn={isLoggedIn}
+                  onLoginRequired={handleLoginRequired}
+                  onInteractionStart={handleInteractionStart}
+                  onInteractionEnd={handleInteractionEnd}
+                />
+              ))}
+            </div>
+          )}
           {!isLoading && !locationLoading && showGrid && (
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="mb-4">

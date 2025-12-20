@@ -5,14 +5,7 @@ import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { useSEO } from "@/hooks/useSEO";
 import { SEO_CONTENT } from "@/constants/seo";
-import { 
-  Sparkles, 
-  Calendar, 
-  Handshake, 
-  Zap,
-  ArrowRight,
-  Gift
-} from "lucide-react";
+import { Sparkles, Calendar, Handshake, Zap, ArrowRight, Gift } from "lucide-react";
 
 export default function Sobre() {
   useSEO({
@@ -39,7 +32,7 @@ export default function Sobre() {
     {
       icon: Zap,
       titulo: "Tecnologia a seu favor",
-      texto: "Experiência rápida e intuitiva — do "descobrir" ao "celebrar".",
+      texto: "Experiência rápida e intuitiva — do 'descobrir' ao 'celebrar'.",
     },
   ];
 
@@ -52,10 +45,10 @@ export default function Sobre() {
           ========================================================================= */}
       <section className="relative pt-24 sm:pt-28 lg:pt-32 pb-12 sm:pb-16 lg:pb-20 overflow-hidden">
         {/* Background sutil */}
-        <div 
+        <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(124, 58, 237, 0.15) 0%, transparent 60%)"
+            background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(124, 58, 237, 0.15) 0%, transparent 60%)",
           }}
         />
 
@@ -78,13 +71,12 @@ export default function Sobre() {
 
             {/* Subtítulo */}
             <p className="mt-5 text-base sm:text-lg text-white/70 leading-relaxed max-w-[720px] mx-auto">
-              O Aniversariante VIP existe para transformar o mês do seu aniversário em experiências especiais, com benefícios fáceis de usar e disponíveis nos melhores estabelecimentos de cada cidade.
+              O Aniversariante VIP existe para transformar o mês do seu aniversário em experiências especiais, com
+              benefícios fáceis de usar e disponíveis nos melhores estabelecimentos de cada cidade.
             </p>
 
             {/* Microcopy */}
-            <p className="mt-4 text-sm text-[#C77DFF] font-medium">
-              100% Grátis para aniversariantes.
-            </p>
+            <p className="mt-4 text-sm text-[#C77DFF] font-medium">100% Grátis para aniversariantes.</p>
 
             {/* Botões */}
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
@@ -102,9 +94,7 @@ export default function Sobre() {
                 variant="outline"
                 className="h-12 px-6 bg-transparent border-white/15 text-white/90 hover:bg-white/5 hover:text-white hover:border-white/25 font-medium rounded-full transition-all duration-200"
               >
-                <Link to="/seja-parceiro">
-                  Seja parceiro
-                </Link>
+                <Link to="/seja-parceiro">Seja parceiro</Link>
               </Button>
             </div>
           </div>
@@ -118,9 +108,7 @@ export default function Sobre() {
         <div className="max-w-[1120px] mx-auto px-4 sm:px-6 lg:px-10">
           <div className="max-w-[720px]">
             {/* Eyebrow */}
-            <span className="text-[#C77DFF] text-sm font-semibold uppercase tracking-wider">
-              Nossa missão
-            </span>
+            <span className="text-[#C77DFF] text-sm font-semibold uppercase tracking-wider">Nossa missão</span>
 
             {/* Headline */}
             <h2 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight">
@@ -129,11 +117,14 @@ export default function Sobre() {
 
             {/* Texto */}
             <p className="mt-5 text-base sm:text-lg text-white/70 leading-relaxed">
-              Tornar o acesso a benefícios de aniversário fácil, transparente e realmente útil. A gente acredita que celebrar mais um ano de vida deve vir com vantagens reais — e com a experiência simples do jeito que tem que ser.
+              Tornar o acesso a benefícios de aniversário fácil, transparente e realmente útil. A gente acredita que
+              celebrar mais um ano de vida deve vir com vantagens reais — e com a experiência simples do jeito que tem
+              que ser.
             </p>
 
             <p className="mt-4 text-base sm:text-lg text-white/70 leading-relaxed">
-              Criamos uma plataforma que conecta aniversariantes a estabelecimentos parceiros, mostrando exatamente o que cada lugar oferece e como usar.
+              Criamos uma plataforma que conecta aniversariantes a estabelecimentos parceiros, mostrando exatamente o
+              que cada lugar oferece e como usar.
             </p>
           </div>
         </div>
@@ -146,9 +137,7 @@ export default function Sobre() {
         <div className="max-w-[1120px] mx-auto px-4 sm:px-6 lg:px-10">
           {/* Header */}
           <div className="text-center mb-10 sm:mb-12">
-            <span className="text-[#C77DFF] text-sm font-semibold uppercase tracking-wider">
-              Nossos valores
-            </span>
+            <span className="text-[#C77DFF] text-sm font-semibold uppercase tracking-wider">Nossos valores</span>
             <h2 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight">
               No que acreditamos
             </h2>
@@ -169,12 +158,8 @@ export default function Sobre() {
 
                   {/* Conteúdo */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-white mb-1.5">
-                      {valor.titulo}
-                    </h3>
-                    <p className="text-sm sm:text-base text-white/60 leading-relaxed">
-                      {valor.texto}
-                    </p>
+                    <h3 className="text-lg font-semibold text-white mb-1.5">{valor.titulo}</h3>
+                    <p className="text-sm sm:text-base text-white/60 leading-relaxed">{valor.texto}</p>
                   </div>
                 </div>
               </div>
@@ -190,26 +175,25 @@ export default function Sobre() {
         <div className="max-w-[1120px] mx-auto px-4 sm:px-6 lg:px-10">
           <div className="max-w-[720px]">
             {/* Eyebrow */}
-            <span className="text-[#C77DFF] text-sm font-semibold uppercase tracking-wider">
-              Nossa história
-            </span>
+            <span className="text-[#C77DFF] text-sm font-semibold uppercase tracking-wider">Nossa história</span>
 
             {/* Headline */}
-            <h2 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight">
-              Como surgimos
-            </h2>
+            <h2 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight">Como surgimos</h2>
 
             {/* Textos */}
             <p className="mt-5 text-base sm:text-lg text-white/70 leading-relaxed">
-              A ideia nasceu de uma percepção simples: muitos lugares oferecem benefícios incríveis para aniversariantes — mas quase ninguém sabe onde estão, quais são e como usar.
+              A ideia nasceu de uma percepção simples: muitos lugares oferecem benefícios incríveis para aniversariantes
+              — mas quase ninguém sabe onde estão, quais são e como usar.
             </p>
 
             <p className="mt-4 text-base sm:text-lg text-white/70 leading-relaxed">
-              Então, decidimos resolver isso criando uma plataforma que organiza tudo em um só lugar, com informações objetivas e atualizadas.
+              Então, decidimos resolver isso criando uma plataforma que organiza tudo em um só lugar, com informações
+              objetivas e atualizadas.
             </p>
 
             <p className="mt-4 text-base sm:text-lg text-white/70 leading-relaxed">
-              Hoje, seguimos expandindo nossa rede de parceiros para levar benefícios exclusivos a cada vez mais cidades. Porque todo mundo merece se sentir VIP no próprio aniversário.
+              Hoje, seguimos expandindo nossa rede de parceiros para levar benefícios exclusivos a cada vez mais
+              cidades. Porque todo mundo merece se sentir VIP no próprio aniversário.
             </p>
           </div>
         </div>
@@ -227,13 +211,12 @@ export default function Sobre() {
             </div>
 
             {/* Título */}
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-              Pronto para celebrar com a gente?
-            </h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">Pronto para celebrar com a gente?</h2>
 
             {/* Texto */}
             <p className="text-base sm:text-lg text-white/70 leading-relaxed max-w-[600px] mx-auto mb-8">
-              Encontre benefícios exclusivos na sua cidade — ou cadastre seu estabelecimento para receber aniversariantes todos os meses.
+              Encontre benefícios exclusivos na sua cidade — ou cadastre seu estabelecimento para receber
+              aniversariantes todos os meses.
             </p>
 
             {/* Botões */}
@@ -252,9 +235,7 @@ export default function Sobre() {
                 variant="outline"
                 className="h-12 px-6 bg-transparent border-white/15 text-white/90 hover:bg-white/5 hover:text-white hover:border-white/25 font-medium rounded-full transition-all duration-200"
               >
-                <Link to="/seja-parceiro">
-                  Seja parceiro
-                </Link>
+                <Link to="/seja-parceiro">Seja parceiro</Link>
               </Button>
             </div>
           </div>

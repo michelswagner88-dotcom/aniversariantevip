@@ -101,25 +101,31 @@ const PageSkeleton = () => (
         </div>
       </div>
     </div>
-    {/* Desktop skeleton */}
-    <div className="hidden lg:block">
-      <div className="max-w-4xl mx-auto px-6 pt-6">
-        <Skeleton className="w-full aspect-[16/10] max-h-[480px] rounded-xl mb-6" />
+    {/* Desktop skeleton - wrapper único */}
+    <div className="hidden lg:block max-w-[1120px] mx-auto px-4 md:px-6 lg:px-10 py-6">
+      {/* Barra de ações skeleton */}
+      <div className="flex justify-between items-center mb-4">
+        <Skeleton className="h-5 w-20" />
+        <div className="flex gap-3">
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-5 w-16" />
+        </div>
       </div>
-      <div className="max-w-4xl mx-auto px-6">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div className="space-y-3">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-5 w-1/2" />
-            <Skeleton className="h-4 w-1/3" />
-          </div>
-          <Skeleton className="h-24 w-full rounded-2xl" />
-          <Skeleton className="h-32 w-full rounded-2xl" />
-          <div className="flex gap-3">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-20 w-20 rounded-xl" />
-            ))}
-          </div>
+      {/* Foto skeleton */}
+      <Skeleton className="w-full h-[380px] rounded-3xl mb-6" />
+      {/* Conteúdo skeleton */}
+      <div className="space-y-6">
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-3/4 max-w-[860px]" />
+          <Skeleton className="h-5 w-1/3" />
+          <Skeleton className="h-4 w-1/4" />
+        </div>
+        <Skeleton className="h-24 w-full max-w-[760px] rounded-2xl" />
+        <Skeleton className="h-32 w-full rounded-2xl" />
+        <div className="flex gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-20 w-20 rounded-xl" />
+          ))}
         </div>
       </div>
     </div>
@@ -282,24 +288,24 @@ const GalleryDesktop = ({
   const goNext = () => currentIndex < fotos.length - 1 && setCurrentIndex(currentIndex + 1);
 
   return (
-    <div className="mb-6">
+    <div>
       {/* Header com navegação e ações */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between pt-5 pb-4">
         <button
           onClick={onBack}
           className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm font-medium">Voltar</span>
+          <span className="text-[15px] font-medium">Voltar</span>
         </button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <button
             onClick={onShare}
             className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-zinc-100 transition-colors"
           >
             <Share2 className="w-4 h-4 text-zinc-600" />
-            <span className="text-sm font-medium text-zinc-700 underline">Compartilhar</span>
+            <span className="text-[15px] font-medium text-zinc-700 underline">Compartilhar</span>
           </button>
           <button
             onClick={onFavorite}
@@ -308,13 +314,13 @@ const GalleryDesktop = ({
             <Heart
               className={cn("w-4 h-4 transition-colors", isFavorited ? "fill-red-500 text-red-500" : "text-zinc-600")}
             />
-            <span className="text-sm font-medium text-zinc-700 underline">{isFavorited ? "Salvo" : "Salvar"}</span>
+            <span className="text-[15px] font-medium text-zinc-700 underline">{isFavorited ? "Salvo" : "Salvar"}</span>
           </button>
         </div>
       </div>
 
-      {/* Foto única com navegação */}
-      <div className="relative aspect-[16/10] max-h-[480px] rounded-xl overflow-hidden bg-zinc-100">
+      {/* Foto com altura controlada */}
+      <div className="relative h-[320px] md:h-[360px] lg:h-[380px] xl:h-[420px] rounded-3xl overflow-hidden bg-zinc-100 shadow-sm">
         {!imagesLoaded.has(currentIndex) && <div className="absolute inset-0 bg-zinc-200 animate-pulse" />}
         <img
           src={fotos[currentIndex]}
@@ -333,7 +339,7 @@ const GalleryDesktop = ({
             <button
               onClick={goPrev}
               className={cn(
-                "absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow-md flex items-center justify-center hover:bg-white hover:scale-105 transition-all",
+                "absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center hover:bg-white hover:scale-105 transition-all",
                 currentIndex === 0 && "opacity-0 pointer-events-none",
               )}
               aria-label="Foto anterior"
@@ -343,7 +349,7 @@ const GalleryDesktop = ({
             <button
               onClick={goNext}
               className={cn(
-                "absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow-md flex items-center justify-center hover:bg-white hover:scale-105 transition-all",
+                "absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center hover:bg-white hover:scale-105 transition-all",
                 currentIndex === fotos.length - 1 && "opacity-0 pointer-events-none",
               )}
               aria-label="Próxima foto"
@@ -355,14 +361,14 @@ const GalleryDesktop = ({
 
         {/* Indicador de posição */}
         {fotos.length > 1 && (
-          <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-xs font-medium">
+          <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-sm font-medium">
             {currentIndex + 1} / {fotos.length}
           </div>
         )}
 
         {/* Dots */}
         {fotos.length > 1 && fotos.length <= 8 && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
             {fotos.map((_, index) => (
               <button
                 key={index}
@@ -582,7 +588,7 @@ const BioMobile = ({ descricao }: { descricao?: string }) => {
 };
 
 // =============================================================================
-// ABOUT SECTION - Desktop only
+// ABOUT SECTION - Desktop only (mobile usa BioMobile)
 // =============================================================================
 
 const AboutSection = ({ descricao }: { descricao?: string }) => {
@@ -595,9 +601,9 @@ const AboutSection = ({ descricao }: { descricao?: string }) => {
   const displayText = expanded || !shouldTruncate ? descricao : `${descricao.slice(0, MAX_LENGTH).trim()}...`;
 
   return (
-    <div className="py-6 border-b border-zinc-100">
+    <div className="hidden md:block py-6 border-b border-zinc-100">
       <h2 className="text-lg font-semibold text-zinc-900 mb-3">Sobre</h2>
-      <p className="text-zinc-600 leading-relaxed whitespace-pre-line">{displayText}</p>
+      <p className="text-zinc-600 leading-relaxed whitespace-pre-line max-w-[760px]">{displayText}</p>
       {shouldTruncate && (
         <button
           onClick={() => setExpanded(!expanded)}
@@ -1325,92 +1331,95 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
         isFavorited={id ? isFavorito(id) : false}
       />
 
-      {/* Container desktop */}
-      <div className="hidden lg:block">
-        {/* Galeria desktop - container mais largo */}
-        <div className="max-w-4xl mx-auto px-6 pt-6">
-          <GalleryDesktop
-            fotos={fotos}
-            nome={estabelecimento.nome_fantasia}
-            onBack={handleBack}
-            onFavorite={handleFavorite}
-            onShare={handleShare}
-            isFavorited={id ? isFavorito(id) : false}
-          />
-        </div>
+      {/* =========================================================================
+          DESKTOP: Wrapper único para garantir bordas alinhadas
+          - Barra de ações, foto e conteúdo todos no mesmo container
+          - max-w-[1120px] com px-4 md:px-6 lg:px-10
+          ========================================================================= */}
+      <div className="hidden lg:block max-w-[1120px] mx-auto px-4 md:px-6 lg:px-10 pb-12">
+        {/* Galeria Desktop (inclui barra de ações + foto) */}
+        <GalleryDesktop
+          fotos={fotos}
+          nome={estabelecimento.nome_fantasia}
+          onBack={handleBack}
+          onFavorite={handleFavorite}
+          onShare={handleShare}
+          isFavorited={id ? isFavorito(id) : false}
+        />
 
-        {/* Conteúdo - container mais estreito (recuado em relação à foto) */}
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="max-w-2xl mx-auto pb-12">
-            {/* Título e info */}
-            <div className="py-6 border-b border-zinc-100">
-              <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 leading-tight">
-                {estabelecimento.nome_fantasia}
-              </h1>
-              <div className="flex items-center gap-2 mt-2 text-zinc-600">
-                <span className="capitalize">{categoria}</span>
-                {localizacao && (
-                  <>
-                    <span className="text-zinc-300">·</span>
-                    <span>{localizacao}</span>
-                  </>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5 mt-3">
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-green-600 font-medium">Parceiro verificado</span>
-              </div>
-              {estabelecimento.especialidades?.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {estabelecimento.especialidades.slice(0, 5).map((esp: string, index: number) => (
-                    <span key={index} className="px-3 py-1 bg-zinc-100 text-zinc-700 text-sm rounded-full">
-                      {esp}
-                    </span>
-                  ))}
-                </div>
+        {/* Conteúdo - mesmas bordas, line-length controlado internamente */}
+        <div className="pt-6">
+          {/* Título e info */}
+          <div className="pb-6 border-b border-zinc-100">
+            <h1 className="text-[32px] xl:text-[40px] font-bold text-zinc-900 leading-tight tracking-[-0.02em] max-w-[860px]">
+              {estabelecimento.nome_fantasia}
+            </h1>
+            <div className="flex items-center gap-2 mt-2.5 text-[15px] text-zinc-600">
+              <span className="capitalize">{categoria}</span>
+              {localizacao && (
+                <>
+                  <span className="text-zinc-300">·</span>
+                  <span>{localizacao}</span>
+                </>
               )}
             </div>
-
-            {/* Sobre */}
-            <AboutSection descricao={estabelecimento.bio || estabelecimento.descricao} />
-
-            {/* Benefício */}
-            {beneficio && (
-              <div className="py-6 border-b border-zinc-100">
-                <BenefitCard beneficio={beneficio} validade={validadeBeneficio} onShowRules={handleShowRules} />
+            <div className="flex items-center gap-1.5 mt-3">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              <span className="text-sm text-green-600 font-medium">Parceiro verificado</span>
+            </div>
+            {estabelecimento.especialidades?.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-4">
+                {estabelecimento.especialidades.slice(0, 5).map((esp: string, index: number) => (
+                  <span
+                    key={index}
+                    className="h-8 px-3 inline-flex items-center bg-zinc-100 text-zinc-700 text-sm font-medium rounded-full"
+                  >
+                    {esp}
+                  </span>
+                ))}
               </div>
             )}
-
-            <QuickActions
-              whatsapp={formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone)}
-              instagram={formatInstagram(estabelecimento.instagram)}
-              telefone={formatPhoneLink(estabelecimento.telefone)}
-              website={formatWebsite(estabelecimento.site)}
-              cardapio={estabelecimento.link_cardapio}
-              showCardapio={mostraCardapio}
-              onWhatsApp={handleWhatsApp}
-              onInstagram={handleInstagram}
-              onPhone={handlePhone}
-              onWebsite={handleWebsite}
-              onCardapio={handleCardapio}
-            />
-
-            <HoursSection horario={estabelecimento.horario_funcionamento} />
-            <LocationSection
-              endereco={[estabelecimento.logradouro, estabelecimento.numero, estabelecimento.complemento]
-                .filter(Boolean)
-                .join(", ")}
-              bairro={estabelecimento.bairro}
-              cidade={estabelecimento.cidade}
-              estado={estabelecimento.estado}
-              cep={estabelecimento.cep}
-              latitude={estabelecimento.latitude}
-              longitude={estabelecimento.longitude}
-              nomeEstabelecimento={estabelecimento.nome_fantasia}
-              onDirections={handleDirections}
-            />
-            <PartnerBanner />
           </div>
+
+          {/* Sobre - com max-width para line-length premium */}
+          <AboutSection descricao={estabelecimento.bio || estabelecimento.descricao} />
+
+          {/* Benefício */}
+          {beneficio && (
+            <div className="py-6 border-b border-zinc-100">
+              <BenefitCard beneficio={beneficio} validade={validadeBeneficio} onShowRules={handleShowRules} />
+            </div>
+          )}
+
+          <QuickActions
+            whatsapp={formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone)}
+            instagram={formatInstagram(estabelecimento.instagram)}
+            telefone={formatPhoneLink(estabelecimento.telefone)}
+            website={formatWebsite(estabelecimento.site)}
+            cardapio={estabelecimento.link_cardapio}
+            showCardapio={mostraCardapio}
+            onWhatsApp={handleWhatsApp}
+            onInstagram={handleInstagram}
+            onPhone={handlePhone}
+            onWebsite={handleWebsite}
+            onCardapio={handleCardapio}
+          />
+
+          <HoursSection horario={estabelecimento.horario_funcionamento} />
+          <LocationSection
+            endereco={[estabelecimento.logradouro, estabelecimento.numero, estabelecimento.complemento]
+              .filter(Boolean)
+              .join(", ")}
+            bairro={estabelecimento.bairro}
+            cidade={estabelecimento.cidade}
+            estado={estabelecimento.estado}
+            cep={estabelecimento.cep}
+            latitude={estabelecimento.latitude}
+            longitude={estabelecimento.longitude}
+            nomeEstabelecimento={estabelecimento.nome_fantasia}
+            onDirections={handleDirections}
+          />
+          <PartnerBanner />
         </div>
       </div>
 

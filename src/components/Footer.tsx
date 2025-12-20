@@ -93,7 +93,7 @@ export const Footer = () => {
                 className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors text-left"
               >
                 <MessageCircle size={14} />
-                Fale com a Carol
+                Fale com a Assistente Vip
               </button>
               <Link to="/faq" className="text-sm text-white/70 hover:text-white transition-colors">
                 FAQ

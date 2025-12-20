@@ -1,7 +1,7 @@
-import { useEffect, useCallback } from "react";
-import { X, UserPlus, LogIn, Gift, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Gift, Check, X } from "lucide-react";
 
 interface LoginRequiredModalProps {
   isOpen: boolean;
@@ -12,135 +12,91 @@ interface LoginRequiredModalProps {
 const LoginRequiredModal = ({ isOpen, onClose, returnUrl }: LoginRequiredModalProps) => {
   const navigate = useNavigate();
 
-  // Fechar com Escape
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    },
-    [onClose],
-  );
-
-  useEffect(() => {
-    if (isOpen) {
-      document.addEventListener("keydown", handleKeyDown);
-      // Prevenir scroll do body
-      document.body.style.overflow = "hidden";
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
-    };
-  }, [isOpen, handleKeyDown]);
-
-  if (!isOpen) return null;
-
-  const saveReturnUrl = () => {
-    if (returnUrl) {
-      sessionStorage.setItem("redirectAfterLogin", returnUrl);
-    }
-  };
-
-  const handleCadastrar = () => {
-    saveReturnUrl();
-    navigate("/auth?modo=cadastro");
+  const handleCreateAccount = () => {
     onClose();
+    navigate("/cadastro", { state: { returnUrl } });
   };
 
-  const handleEntrar = () => {
-    saveReturnUrl();
-    navigate("/auth?modo=login");
+  const handleLogin = () => {
     onClose();
+    navigate("/entrar", { state: { returnUrl } });
   };
+
+  const benefits = [
+    "Ver regras e como usar",
+    "Salvar estabelecimentos nos favoritos",
+    "100% grátis para aniversariantes",
+  ];
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="login-modal-title"
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-
-      {/* Modal */}
-      <div className="relative w-full max-w-sm bg-gray-900 rounded-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border border-gray-800">
-        {/* Header com gradiente */}
-        <div className="relative bg-gradient-to-r from-violet-600 to-fuchsia-600 p-6 text-center">
-          <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Gift className="w-8 h-8 text-white" aria-hidden="true" />
-          </div>
-
-          <Sparkles className="absolute top-4 left-4 w-5 h-5 text-white/40" aria-hidden="true" />
-          <Sparkles className="absolute top-6 right-6 w-4 h-4 text-white/30" aria-hidden="true" />
-          <Sparkles className="absolute bottom-4 right-4 w-5 h-5 text-white/40" aria-hidden="true" />
-
-          {/* Botão fechar - 44px touch target */}
-          <button
-            onClick={onClose}
-            aria-label="Fechar modal"
-            className="absolute top-2 right-2 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center hover:bg-white/20 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5 text-white" aria-hidden="true" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[400px] p-0 gap-0 bg-white border border-zinc-200 shadow-xl rounded-2xl overflow-hidden">
+        {/* Botão fechar */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors z-10"
+          aria-label="Fechar modal"
+        >
+          <X className="w-4 h-4" />
+        </button>
 
         {/* Conteúdo */}
-        <div className="p-6 text-center">
-          <h2 id="login-modal-title" className="text-xl font-bold text-white mb-2">
-            Quer ver o benefício?
-          </h2>
+        <div className="px-6 pt-8 pb-6">
+          {/* Badge com ícone */}
+          <div className="flex justify-center mb-5">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center"
+              style={{ backgroundColor: "rgba(139, 92, 246, 0.1)" }}
+            >
+              <Gift className="w-7 h-7 text-violet-600" />
+            </div>
+          </div>
 
-          <p className="text-gray-400 mb-6">
-            Crie sua conta grátis e aproveite vantagens exclusivas no seu aniversário!
+          {/* Título */}
+          <DialogTitle className="text-xl font-semibold text-zinc-900 text-center mb-2">
+            Para ver este benefício
+          </DialogTitle>
+
+          {/* Subtítulo */}
+          <p className="text-sm text-zinc-500 text-center leading-relaxed mb-6">
+            Crie uma conta grátis e desbloqueie benefícios de aniversário na sua cidade.
           </p>
 
           {/* Lista de benefícios */}
-          <div className="bg-gray-800/50 rounded-xl p-4 mb-6 text-left">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Com sua conta você pode:</p>
-            <ul className="space-y-2">
-              {[
-                "Desbloquear benefícios de aniversário",
-                "Salvar estabelecimentos favoritos",
-                "Receber alertas de novos parceiros",
-                "100% grátis, sempre!",
-              ].map((item, index) => (
-                <li key={index} className="flex items-center gap-2 text-sm text-gray-300">
-                  <span className="text-green-400" aria-hidden="true">
-                    ✓
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
+          <div className="space-y-3 mb-6">
+            {benefits.map((benefit, index) => (
+              <div key={index} className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3 h-3 text-violet-600" />
+                </div>
+                <span className="text-sm text-zinc-700">{benefit}</span>
+              </div>
+            ))}
           </div>
 
-          {/* Botões de ação */}
+          {/* Botões */}
           <div className="space-y-3">
             <Button
-              onClick={handleCadastrar}
-              className="w-full min-h-[52px] bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 py-4 text-base h-auto"
+              onClick={handleCreateAccount}
+              className="w-full h-12 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-xl transition-colors"
             >
-              <UserPlus className="w-5 h-5 mr-2" aria-hidden="true" />
-              Criar Conta Grátis
+              Criar conta grátis
             </Button>
 
             <Button
-              onClick={handleEntrar}
+              onClick={handleLogin}
               variant="outline"
-              className="w-full min-h-[48px] py-3.5 h-auto border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
+              className="w-full h-12 border-zinc-200 text-zinc-700 font-medium rounded-xl hover:bg-zinc-50 transition-colors"
             >
-              <LogIn className="w-4 h-4 mr-2" aria-hidden="true" />
-              Já tenho conta
+              Entrar
             </Button>
           </div>
 
-          <p className="text-xs text-gray-500 mt-4">Leva menos de 1 minuto</p>
+          {/* Microcopy */}
+          <p className="text-xs text-zinc-400 text-center mt-4">Leva menos de 1 minuto.</p>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

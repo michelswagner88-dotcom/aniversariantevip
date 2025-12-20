@@ -914,12 +914,9 @@ const Categories = memo(
                     )}
                   >
                     <Icon className="w-5 h-5 text-white" />
-                    <span
-                      className={cn(
-                        "text-[10px] sm:text-[11px] font-semibold whitespace-nowrap text-white",
-                        isActive ? "opacity-100" : "opacity-80",
-                      )}
-                    >
+                  <span
+                    className="text-[10px] sm:text-[11px] font-semibold whitespace-nowrap text-white"
+                  >
                       {shortLabel}
                     </span>
                     {isActive && <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-white rounded-full" />}

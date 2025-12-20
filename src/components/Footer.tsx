@@ -25,8 +25,7 @@ export const Footer = () => {
               </span>
             </Link>
             <p className="text-white/70 text-sm mb-6 max-w-xs leading-relaxed">
-              O maior guia de benefícios para aniversariantes do Brasil. Descubra vantagens exclusivas para o seu dia
-              especial.
+              O maior guia de benefícios para aniversariantes do Brasil. Descubra benefícios para o seu mês especial.
             </p>
 
             {/* Redes Sociais */}
@@ -69,9 +68,6 @@ export const Footer = () => {
               <Link to="/como-funciona" className="text-sm text-white/70 hover:text-white transition-colors">
                 Como Funciona
               </Link>
-              <Link to="/explorar" className="text-sm text-white/70 hover:text-white transition-colors">
-                Explorar
-              </Link>
             </nav>
           </div>
 
@@ -84,9 +80,6 @@ export const Footer = () => {
               </Link>
               <Link to="/login/estabelecimento" className="text-sm text-white/70 hover:text-white transition-colors">
                 Área do Parceiro
-              </Link>
-              <Link to="/afiliado" className="text-sm text-white/70 hover:text-white transition-colors">
-                Indique e Ganhe
               </Link>
             </nav>
           </div>

@@ -14,12 +14,18 @@ const LoginRequiredModal = ({ isOpen, onClose, returnUrl }: LoginRequiredModalPr
 
   const handleCreateAccount = () => {
     onClose();
-    navigate("/cadastro", { state: { returnUrl } });
+    // Pequeno delay para garantir que o modal feche antes de navegar
+    setTimeout(() => {
+      navigate("/cadastro", { state: { returnUrl } });
+    }, 100);
   };
 
   const handleLogin = () => {
     onClose();
-    navigate("/entrar", { state: { returnUrl } });
+    // Pequeno delay para garantir que o modal feche antes de navegar
+    setTimeout(() => {
+      navigate("/entrar", { state: { returnUrl } });
+    }, 100);
   };
 
   const benefits = [
@@ -30,7 +36,13 @@ const LoginRequiredModal = ({ isOpen, onClose, returnUrl }: LoginRequiredModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[400px] p-0 gap-0 bg-white border border-zinc-200 shadow-xl rounded-2xl overflow-hidden">
+      <DialogContent
+        className="sm:max-w-[400px] p-0 gap-0 bg-white border border-zinc-200 shadow-xl rounded-2xl overflow-hidden"
+        onPointerDownOutside={(e) => {
+          // Prevenir fechamento acidental ao clicar fora durante scroll
+          e.preventDefault();
+        }}
+      >
         {/* Botão fechar */}
         <button
           onClick={onClose}
@@ -76,6 +88,7 @@ const LoginRequiredModal = ({ isOpen, onClose, returnUrl }: LoginRequiredModalPr
 
           {/* Botões */}
           <div className="space-y-3">
+            {/* Botão primário - Criar conta */}
             <Button
               onClick={handleCreateAccount}
               className="w-full h-12 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-xl transition-colors"
@@ -83,13 +96,13 @@ const LoginRequiredModal = ({ isOpen, onClose, returnUrl }: LoginRequiredModalPr
               Criar conta grátis
             </Button>
 
-            <Button
+            {/* Botão secundário - Entrar (usando button nativo para evitar herança do tema) */}
+            <button
               onClick={handleLogin}
-              variant="outline"
-              className="w-full h-12 border-zinc-200 text-zinc-700 font-medium rounded-xl hover:bg-zinc-50 transition-colors"
+              className="w-full h-12 bg-transparent border border-zinc-200 text-zinc-600 font-medium rounded-xl hover:bg-zinc-50 hover:border-zinc-300 transition-colors"
             >
               Entrar
-            </Button>
+            </button>
           </div>
 
           {/* Microcopy */}

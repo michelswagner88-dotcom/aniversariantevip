@@ -523,8 +523,18 @@ body,
   display: none; /* Chrome, Safari and Opera */
 }
 
-/* Scroll suave global */
-html {
+/* 
+ * REMOVIDO: scroll-behavior: smooth global
+ * Causa bugs no iOS Safari quando combinado com:
+ * - scrollTo() via JavaScript
+ * - snap-x snap-mandatory em containers horizontais
+ * - Dynamic viewport height (100dvh)
+ * 
+ * Use scroll-behavior: smooth apenas onde necessário via JS ou classe específica.
+ */
+
+/* Classe utilitária para smooth scroll quando necessário */
+.scroll-smooth {
   scroll-behavior: smooth;
 }
 
@@ -1451,7 +1461,9 @@ All colors MUST be HSL.
 
 /* Hover lift - padrão cards */
 .hover-lift {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .hover-lift:hover {
@@ -1463,7 +1475,7 @@ All colors MUST be HSL.
   .hover-lift:hover {
     transform: none;
   }
-  
+
   .animate-shimmer {
     animation: none;
   }
@@ -1471,7 +1483,7 @@ All colors MUST be HSL.
 
 /* Focus visible global */
 *:focus-visible {
-  outline: 2px solid #7C3AED;
+  outline: 2px solid #7c3aed;
   outline-offset: 2px;
 }
 
@@ -1499,7 +1511,7 @@ All colors MUST be HSL.
 
 /* Gradient text */
 .text-gradient {
-  background: linear-gradient(135deg, #240046 0%, #7C3AED 50%, #9D4EDD 100%);
+  background: linear-gradient(135deg, #240046 0%, #7c3aed 50%, #9d4edd 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

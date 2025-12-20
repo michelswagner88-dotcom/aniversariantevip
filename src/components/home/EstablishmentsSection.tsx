@@ -356,13 +356,19 @@ export const EstablishmentsSection = memo(
             />
 
             {/* Scroll Container */}
+            {/*
+             * CORRIGIDO: snap-mandatory → snap-proximity
+             * snap-mandatory pode confundir o iOS Safari quando o scroll
+             * vertical atinge o final da página, causando "pulos" para o topo.
+             * snap-proximity é menos agressivo e mais seguro.
+             */}
             <div
               ref={scrollRef}
               onKeyDown={handleKeyDown}
               tabIndex={0}
               className={cn(
                 "flex gap-4 overflow-x-auto scrollbar-hide pb-4 -mb-4",
-                "snap-x snap-mandatory touch-pan-x",
+                "snap-x snap-proximity touch-pan-x",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2 rounded-lg",
                 reducedMotion ? "scroll-auto" : "scroll-smooth",
               )}

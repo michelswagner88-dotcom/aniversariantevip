@@ -755,7 +755,10 @@ const SmartAuth = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 relative overflow-hidden">
-      <BackButton to="/" />
+      {/* BackButton posicionado corretamente */}
+      <div className="absolute top-4 left-4 z-20">
+        <BackButton to="/" />
+      </div>
 
       {/* Background effects */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
@@ -767,7 +770,7 @@ const SmartAuth = () => {
           {/* Progress bar */}
           <div className="h-1.5 w-full bg-slate-800">
             <div
-              className="h-full bg-gradient-to-r from-violet-500 to-pink-500 transition-all duration-500 ease-out"
+              className="h-full bg-gradient-to-r from-violet-600 to-violet-400 transition-all duration-500 ease-out"
               style={{ width: step === 1 ? "30%" : "100%" }}
               role="progressbar"
               aria-valuenow={step === 1 ? 30 : 100}
@@ -845,7 +848,7 @@ const SmartAuth = () => {
                 <form onSubmit={isLogin ? handleLogin : handleBasicSignup} className="space-y-4">
                   <div className="space-y-2">
                     <label htmlFor="email" className="text-sm font-semibold text-slate-200 flex items-center gap-1">
-                      Email <span className="text-pink-400">*</span>
+                      Email <span className="text-violet-400">*</span>
                     </label>
                     <div className="relative">
                       <Input
@@ -881,7 +884,7 @@ const SmartAuth = () => {
 
                   <div className="space-y-2">
                     <label htmlFor="password" className="text-sm font-semibold text-slate-200 flex items-center gap-1">
-                      Senha <span className="text-pink-400">*</span>
+                      Senha <span className="text-violet-400">*</span>
                     </label>
                     <div className="relative">
                       <Input
@@ -980,7 +983,7 @@ const SmartAuth = () => {
                   <Button
                     type="submit"
                     disabled={isLoading || (!isLogin && (!email || !isPasswordValid()))}
-                    className="w-full min-h-[52px] h-[52px] text-base font-semibold bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg hover:shadow-xl"
+                    className="w-full min-h-[52px] h-[52px] text-base font-semibold bg-[#7C3AED] hover:bg-[#6D28D9] transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg hover:shadow-xl"
                   >
                     {isLoading ? (
                       <>
@@ -1186,7 +1189,7 @@ const SmartAuth = () => {
                 <Button
                   type="submit"
                   disabled={isLoading || !isStep2Valid}
-                  className="w-full min-h-[52px] h-[52px] text-base font-semibold bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg hover:shadow-xl"
+                  className="w-full min-h-[52px] h-[52px] text-base font-semibold bg-[#7C3AED] hover:bg-[#6D28D9] transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg hover:shadow-xl"
                 >
                   {isLoading ? (
                     <>

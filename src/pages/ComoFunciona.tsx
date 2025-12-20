@@ -128,8 +128,8 @@ export default function ComoFunciona() {
                 asChild
                 className="h-12 px-6 bg-white text-[#240046] hover:bg-white/95 font-semibold rounded-full shadow-lg shadow-black/20 transition-all duration-200 hover:-translate-y-0.5"
               >
-                <Link to="/">
-                  Encontrar benefícios
+                <Link to="/cadastro">
+                  Criar conta VIP
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
@@ -301,8 +301,8 @@ export default function ComoFunciona() {
                 asChild
                 className="h-12 px-6 bg-white text-[#240046] hover:bg-white/95 font-semibold rounded-full shadow-lg shadow-black/20 transition-all duration-200 hover:-translate-y-0.5"
               >
-                <Link to="/">
-                  Encontrar benefícios
+                <Link to="/cadastro">
+                  Criar conta VIP
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>

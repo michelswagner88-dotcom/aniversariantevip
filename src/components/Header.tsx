@@ -183,7 +183,7 @@ const MobileMenu = memo(({ isOpen, onClose, user, onSignOut }: MobileMenuProps) 
                 icon={<Gift className="w-5 h-5 text-fuchsia-600" />}
                 label="Cadastrar"
                 sublabel="É grátis"
-                onClick={() => handleNavigate("/cadastro")}
+                onClick={() => handleNavigate("/como-funciona")}
               />
               <div className="my-2 mx-3 border-t border-gray-100" />
               <MenuItem

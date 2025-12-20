@@ -174,7 +174,7 @@ export default function TermosUso() {
       <section className="relative pt-24 sm:pt-28 pb-8 sm:pb-10 bg-white border-b border-zinc-200">
         <div className="max-w-[1120px] mx-auto px-4 sm:px-6 lg:px-10">
           <div className="mb-6">
-            <BackButton />
+            <BackButton variant="light" />
           </div>
 
           <div className="flex items-center gap-3 mb-4">

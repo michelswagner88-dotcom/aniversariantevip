@@ -76,7 +76,7 @@ const AppContent = () => {
 };
 
 const App = () => (
-    <ThemeProvider defaultTheme="dark" storageKey="vip-theme">
+  <ThemeProvider defaultTheme="dark" storageKey="vip-theme">
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -102,373 +102,374 @@ const App = () => (
       >
         <BrowserRouter>
           <PasswordProtection>
-          <ScrollToTop />
-          <CarolProvider>
-            <AnalyticsProvider>
-              <AppContent />
-              <ErrorBoundary>
-                <PageTransition>
-                  <BottomNav />
-                  <ScrollToTopButton showAfter={400} />
-                  <Routes>
-                    <Route
-                      path="/"
-                      element={
-                        <LazyRoute>
-                          <Index />
-                        </LazyRoute>
-                      }
-                    />
-
-                    {/* Página Explorar com mapa Airbnb */}
-                    <Route
-                      path="/explorar"
-                      element={
-                        <LazyRoute>
-                          <Explorar />
-                        </LazyRoute>
-                      }
-                    />
-
-                    {/* Relâmpago - ofertas por tempo limitado */}
-                    <Route
-                      path="/relampago"
-                      element={
-                        <LazyRoute>
-                          <FlashDeals />
-                        </LazyRoute>
-                      }
-                    />
-
-                    {/* Redirects para rotas legadas */}
-                    <Route path="/flash-deals" element={<Navigate to="/relampago" replace />} />
-                    <Route path="/feed" element={<Navigate to="/relampago" replace />} />
-
-                    {/* URLs amigáveis - DEVEM VIR ANTES da rota antiga */}
-                    <Route
-                      path="/:estado/:cidade/:slug"
-                      element={
-                        <LazyRoute>
-                          <EstabelecimentoDetalheBySlug />
-                        </LazyRoute>
-                      }
-                    />
-
-                    {/* Rota antiga com redirect para nova URL */}
-                    <Route
-                      path="/estabelecimento/:id"
-                      element={
-                        <LazyRoute>
-                          <EstabelecimentoRedirect />
-                        </LazyRoute>
-                      }
-                    />
-
-                    {/* Rota premium para testes */}
-                    <Route
-                      path="/premium/:id"
-                      element={
-                        <LazyRoute>
-                          <EstabelecimentoDetalhePremium />
-                        </LazyRoute>
-                      }
-                    />
-
-                    {/* Páginas institucionais */}
-                    <Route
-                      path="/como-funciona"
-                      element={
-                        <LazyRoute>
-                          <ComoFunciona />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route
-                      path="/seja-parceiro"
-                      element={
-                        <LazyRoute>
-                          <SejaParceito />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route
-                      path="/faq"
-                      element={
-                        <LazyRoute>
-                          <FAQ />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route
-                      path="/sobre"
-                      element={
-                        <LazyRoute>
-                          <Sobre />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route
-                      path="/politica-privacidade"
-                      element={
-                        <LazyRoute>
-                          <PoliticaPrivacidade />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route
-                      path="/termos-uso"
-                      element={
-                        <LazyRoute>
-                          <TermosUso />
-                        </LazyRoute>
-                      }
-                    />
-
-                    {/* Favoritos */}
-                    <Route
-                      path="/meus-favoritos"
-                      element={
-                        <ProtectedAniversarianteRoute>
+            <ScrollToTop />
+            <CarolProvider>
+              <AnalyticsProvider>
+                <AppContent />
+                <ErrorBoundary>
+                  <PageTransition>
+                    <BottomNav />
+                    <ScrollToTopButton showAfter={400} />
+                    <Routes>
+                      <Route
+                        path="/"
+                        element={
                           <LazyRoute>
-                            <MeusFavoritos />
+                            <Index />
                           </LazyRoute>
-                        </ProtectedAniversarianteRoute>
-                      }
-                    />
+                        }
+                      />
 
-                    {/* ============================================ */}
-                    {/* ROTAS DE AUTENTICAÇÃO - ANIVERSARIANTE */}
-                    {/* ============================================ */}
-
-                    {/* Rotas principais - SmartAuth detecta o modo pela URL */}
-                    <Route
-                      path="/login"
-                      element={
-                        <LazyRoute>
-                          <SmartAuth />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route
-                      path="/cadastro"
-                      element={
-                        <LazyRoute>
-                          <SmartAuth />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route
-                      path="/auth"
-                      element={
-                        <LazyRoute>
-                          <SmartAuth />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route
-                      path="/auth/callback"
-                      element={
-                        <LazyRoute>
-                          <AuthCallback />
-                        </LazyRoute>
-                      }
-                    />
-
-                    {/* Rotas legadas - redirecionam para as novas */}
-                    <Route path="/entrar" element={<Navigate to="/login" replace />} />
-                    <Route path="/registro" element={<Navigate to="/cadastro" replace />} />
-                    <Route
-                      path="/cadastro/aniversariante"
-                      element={
-                        <LazyRoute>
-                          <SmartAuth />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route
-                      path="/login/aniversariante"
-                      element={
-                        <LazyRoute>
-                          <SmartAuth />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route path="/login-aniversariante" element={<Navigate to="/login" replace />} />
-
-                    {/* Seleção de perfil (para quem quer ver opções) */}
-                    <Route
-                      path="/selecionar-perfil"
-                      element={
-                        <LazyRoute>
-                          <SelecionarPerfil />
-                        </LazyRoute>
-                      }
-                    />
-
-                    {/* Recuperação de senha */}
-                    <Route
-                      path="/forgot-password"
-                      element={
-                        <LazyRoute>
-                          <ForgotPassword />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route
-                      path="/update-password"
-                      element={
-                        <LazyRoute>
-                          <ResetPassword />
-                        </LazyRoute>
-                      }
-                    />
-
-                    {/* Área do aniversariante (logado) */}
-                    <Route
-                      path="/area-aniversariante"
-                      element={
-                        <ProtectedAniversarianteRoute>
+                      {/* Página Explorar com mapa Airbnb */}
+                      <Route
+                        path="/explorar"
+                        element={
                           <LazyRoute>
-                            <AreaAniversariante />
+                            <Explorar />
                           </LazyRoute>
-                        </ProtectedAniversarianteRoute>
-                      }
-                    />
+                        }
+                      />
 
-                    {/* ============================================ */}
-                    {/* ROTAS DE ESTABELECIMENTO */}
-                    {/* ============================================ */}
-                    <Route
-                      path="/cadastro/estabelecimento"
-                      element={
-                        <LazyRoute>
-                          <CadastroEstabelecimento />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route
-                      path="/login/estabelecimento"
-                      element={
-                        <LazyRoute>
-                          <LoginEstabelecimento />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route path="/login-estabelecimento" element={<Navigate to="/login/estabelecimento" replace />} />
-                    <Route
-                      path="/area-estabelecimento"
-                      element={
-                        <ProtectedEstabelecimentoRoute>
+                      {/* Relâmpago - ofertas por tempo limitado */}
+                      <Route
+                        path="/relampago"
+                        element={
                           <LazyRoute>
-                            <AreaEstabelecimento />
+                            <FlashDeals />
                           </LazyRoute>
-                        </ProtectedEstabelecimentoRoute>
-                      }
-                    />
-                    <Route
-                      path="/estabelecimento/dashboard"
-                      element={
-                        <ProtectedEstabelecimentoRoute>
-                          <LazyRoute>
-                            <AreaEstabelecimento />
-                          </LazyRoute>
-                        </ProtectedEstabelecimentoRoute>
-                      }
-                    />
-                    <Route
-                      path="/selecionar-categoria"
-                      element={
-                        <LazyRoute>
-                          <SelecionarCategoria />
-                        </LazyRoute>
-                      }
-                    />
+                        }
+                      />
 
-                    {/* ============================================ */}
-                    {/* ROTAS ADMINISTRATIVAS */}
-                    {/* ============================================ */}
-                    <Route
-                      path="/login/colaborador"
-                      element={
-                        <LazyRoute>
-                          <LoginColaborador />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route path="/area-colaborador" element={<Navigate to="/admin/dashboard" replace />} />
-                    <Route
-                      path="/setup-admin"
-                      element={
-                        <LazyRoute>
-                          <SetupAdmin />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin"
-                      element={
-                        <LazyRoute>
-                          <AdminLogin />
-                        </LazyRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/dashboard"
-                      element={
-                        <ProtectedAdminRoute>
-                          <LazyRoute>
-                            <AdminDashboard />
-                          </LazyRoute>
-                        </ProtectedAdminRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/import"
-                      element={
-                        <ProtectedAdminRoute>
-                          <LazyRoute>
-                            <AdminImport />
-                          </LazyRoute>
-                        </ProtectedAdminRoute>
-                      }
-                    />
+                      {/* Redirects para rotas legadas */}
+                      <Route path="/flash-deals" element={<Navigate to="/relampago" replace />} />
+                      <Route path="/feed" element={<Navigate to="/relampago" replace />} />
 
-                    {/* Afiliado */}
-                    <Route
-                      path="/afiliado"
-                      element={
-                        <ProtectedAniversarianteRoute>
+                      {/* URLs amigáveis - DEVEM VIR ANTES da rota antiga */}
+                      <Route
+                        path="/:estado/:cidade/:slug"
+                        element={
                           <LazyRoute>
-                            <Afiliado />
+                            <EstabelecimentoDetalheBySlug />
                           </LazyRoute>
-                        </ProtectedAniversarianteRoute>
-                      }
-                    />
+                        }
+                      />
 
-                    {/* ============================================ */}
-                    {/* ALIASES - Rotas curtas */}
-                    {/* ============================================ */}
-                    <Route path="/favoritos" element={<Navigate to="/meus-favoritos" replace />} />
-                    <Route path="/perfil" element={<Navigate to="/area-aniversariante" replace />} />
-                    <Route path="/termos" element={<Navigate to="/termos-uso" replace />} />
-                    <Route path="/privacidade" element={<Navigate to="/politica-privacidade" replace />} />
-                    <Route path="/dashboard" element={<Navigate to="/" replace />} />
+                      {/* Rota antiga com redirect para nova URL */}
+                      <Route
+                        path="/estabelecimento/:id"
+                        element={
+                          <LazyRoute>
+                            <EstabelecimentoRedirect />
+                          </LazyRoute>
+                        }
+                      />
 
-                    {/* 404 */}
-                    <Route
-                      path="*"
-                      element={
-                        <LazyRoute>
-                          <NotFound />
-                        </LazyRoute>
-                      }
-                    />
-                  </Routes>
-                </PageTransition>
-                <CookieConsent />
-              </ErrorBoundary>
-            </AnalyticsProvider>
-          </CarolProvider>
+                      {/* Rota premium para testes */}
+                      <Route
+                        path="/premium/:id"
+                        element={
+                          <LazyRoute>
+                            <EstabelecimentoDetalhePremium />
+                          </LazyRoute>
+                        }
+                      />
+
+                      {/* Páginas institucionais */}
+                      <Route
+                        path="/como-funciona"
+                        element={
+                          <LazyRoute>
+                            <ComoFunciona />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/seja-parceiro"
+                        element={
+                          <LazyRoute>
+                            <SejaParceito />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/faq"
+                        element={
+                          <LazyRoute>
+                            <FAQ />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/sobre"
+                        element={
+                          <LazyRoute>
+                            <Sobre />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/politica-privacidade"
+                        element={
+                          <LazyRoute>
+                            <PoliticaPrivacidade />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/termos-uso"
+                        element={
+                          <LazyRoute>
+                            <TermosUso />
+                          </LazyRoute>
+                        }
+                      />
+
+                      {/* Favoritos */}
+                      <Route
+                        path="/meus-favoritos"
+                        element={
+                          <ProtectedAniversarianteRoute>
+                            <LazyRoute>
+                              <MeusFavoritos />
+                            </LazyRoute>
+                          </ProtectedAniversarianteRoute>
+                        }
+                      />
+
+                      {/* ============================================ */}
+                      {/* ROTAS DE AUTENTICAÇÃO - ANIVERSARIANTE */}
+                      {/* ============================================ */}
+
+                      {/* Rotas principais - SmartAuth detecta o modo pela URL */}
+                      <Route
+                        path="/login"
+                        element={
+                          <LazyRoute>
+                            <SmartAuth />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/cadastro"
+                        element={
+                          <LazyRoute>
+                            <SmartAuth />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/auth"
+                        element={
+                          <LazyRoute>
+                            <SmartAuth />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/auth/callback"
+                        element={
+                          <LazyRoute>
+                            <AuthCallback />
+                          </LazyRoute>
+                        }
+                      />
+
+                      {/* Rotas legadas - redirecionam para as novas */}
+                      <Route path="/entrar" element={<Navigate to="/login" replace />} />
+                      <Route path="/registro" element={<Navigate to="/cadastro" replace />} />
+                      <Route
+                        path="/cadastro/aniversariante"
+                        element={
+                          <LazyRoute>
+                            <SmartAuth />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/login/aniversariante"
+                        element={
+                          <LazyRoute>
+                            <SmartAuth />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route path="/login-aniversariante" element={<Navigate to="/login" replace />} />
+
+                      {/* Seleção de perfil (para quem quer ver opções) */}
+                      <Route
+                        path="/selecionar-perfil"
+                        element={
+                          <LazyRoute>
+                            <SelecionarPerfil />
+                          </LazyRoute>
+                        }
+                      />
+
+                      {/* Recuperação de senha */}
+                      <Route
+                        path="/forgot-password"
+                        element={
+                          <LazyRoute>
+                            <ForgotPassword />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/update-password"
+                        element={
+                          <LazyRoute>
+                            <ResetPassword />
+                          </LazyRoute>
+                        }
+                      />
+
+                      {/* Área do aniversariante (logado) */}
+                      <Route
+                        path="/area-aniversariante"
+                        element={
+                          <ProtectedAniversarianteRoute>
+                            <LazyRoute>
+                              <AreaAniversariante />
+                            </LazyRoute>
+                          </ProtectedAniversarianteRoute>
+                        }
+                      />
+
+                      {/* ============================================ */}
+                      {/* ROTAS DE ESTABELECIMENTO */}
+                      {/* ============================================ */}
+                      <Route
+                        path="/cadastro/estabelecimento"
+                        element={
+                          <LazyRoute>
+                            <CadastroEstabelecimento />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/login/estabelecimento"
+                        element={
+                          <LazyRoute>
+                            <LoginEstabelecimento />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route path="/login-estabelecimento" element={<Navigate to="/login/estabelecimento" replace />} />
+                      <Route path="/login-parceiro" element={<Navigate to="/login/estabelecimento" replace />} />
+                      <Route
+                        path="/area-estabelecimento"
+                        element={
+                          <ProtectedEstabelecimentoRoute>
+                            <LazyRoute>
+                              <AreaEstabelecimento />
+                            </LazyRoute>
+                          </ProtectedEstabelecimentoRoute>
+                        }
+                      />
+                      <Route
+                        path="/estabelecimento/dashboard"
+                        element={
+                          <ProtectedEstabelecimentoRoute>
+                            <LazyRoute>
+                              <AreaEstabelecimento />
+                            </LazyRoute>
+                          </ProtectedEstabelecimentoRoute>
+                        }
+                      />
+                      <Route
+                        path="/selecionar-categoria"
+                        element={
+                          <LazyRoute>
+                            <SelecionarCategoria />
+                          </LazyRoute>
+                        }
+                      />
+
+                      {/* ============================================ */}
+                      {/* ROTAS ADMINISTRATIVAS */}
+                      {/* ============================================ */}
+                      <Route
+                        path="/login/colaborador"
+                        element={
+                          <LazyRoute>
+                            <LoginColaborador />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route path="/area-colaborador" element={<Navigate to="/admin/dashboard" replace />} />
+                      <Route
+                        path="/setup-admin"
+                        element={
+                          <LazyRoute>
+                            <SetupAdmin />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin"
+                        element={
+                          <LazyRoute>
+                            <AdminLogin />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/dashboard"
+                        element={
+                          <ProtectedAdminRoute>
+                            <LazyRoute>
+                              <AdminDashboard />
+                            </LazyRoute>
+                          </ProtectedAdminRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/import"
+                        element={
+                          <ProtectedAdminRoute>
+                            <LazyRoute>
+                              <AdminImport />
+                            </LazyRoute>
+                          </ProtectedAdminRoute>
+                        }
+                      />
+
+                      {/* Afiliado */}
+                      <Route
+                        path="/afiliado"
+                        element={
+                          <ProtectedAniversarianteRoute>
+                            <LazyRoute>
+                              <Afiliado />
+                            </LazyRoute>
+                          </ProtectedAniversarianteRoute>
+                        }
+                      />
+
+                      {/* ============================================ */}
+                      {/* ALIASES - Rotas curtas */}
+                      {/* ============================================ */}
+                      <Route path="/favoritos" element={<Navigate to="/meus-favoritos" replace />} />
+                      <Route path="/perfil" element={<Navigate to="/area-aniversariante" replace />} />
+                      <Route path="/termos" element={<Navigate to="/termos-uso" replace />} />
+                      <Route path="/privacidade" element={<Navigate to="/politica-privacidade" replace />} />
+                      <Route path="/dashboard" element={<Navigate to="/" replace />} />
+
+                      {/* 404 */}
+                      <Route
+                        path="*"
+                        element={
+                          <LazyRoute>
+                            <NotFound />
+                          </LazyRoute>
+                        }
+                      />
+                    </Routes>
+                  </PageTransition>
+                  <CookieConsent />
+                </ErrorBoundary>
+              </AnalyticsProvider>
+            </CarolProvider>
           </PasswordProtection>
         </BrowserRouter>
       </Sentry.ErrorBoundary>

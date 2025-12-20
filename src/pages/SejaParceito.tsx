@@ -19,11 +19,11 @@ import { Footer } from "@/components/Footer";
 import { BackButton } from "@/components/BackButton";
 import { useSEO } from "@/hooks/useSEO";
 import { SEO_CONTENT } from "@/constants/seo";
-import { useAuth } from "@/contexts/AuthContext";
+import { useHeaderAuth } from "@/hooks/useHeaderAuth";
 
 export default function SejaParceiro() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useHeaderAuth();
 
   useSEO({
     title: SEO_CONTENT.sejaParceiro.title,

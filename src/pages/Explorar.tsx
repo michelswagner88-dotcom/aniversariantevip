@@ -32,7 +32,6 @@ import {
   Utensils,
   Paintbrush,
   IceCream,
-  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -487,19 +486,20 @@ const FiltersBar = ({
       <p className="text-sm text-zinc-500">{totalResults} lugares encontrados</p>
     </div>
 
-    <div className="flex gap-2">
+    <div className="flex gap-2 flex-wrap">
       {/* Filtro de Ordenação */}
       <Select value={ordenacao} onValueChange={setOrdenacao}>
         <SelectTrigger
           className={cn(
-            "w-[140px] sm:w-[160px] h-10 text-sm bg-white border-zinc-200 rounded-lg",
+            "h-10 text-sm bg-white border-zinc-200 rounded-lg px-3",
             "shadow-sm hover:border-violet-300 hover:bg-violet-50/50",
             "focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400",
-            "transition-all duration-200",
+            "transition-all duration-200 w-auto min-w-[130px]",
           )}
         >
-          <span className="truncate text-zinc-700 font-medium">{ORDENACAO_LABELS[ordenacao] || "Mais próximos"}</span>
-          <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-zinc-400" />
+          <span className="text-zinc-700 font-medium whitespace-nowrap">
+            {ORDENACAO_LABELS[ordenacao] || "Mais próximos"}
+          </span>
         </SelectTrigger>
         <SelectContent
           className="z-[100] bg-white border border-zinc-200 shadow-lg rounded-lg overflow-hidden"
@@ -532,14 +532,15 @@ const FiltersBar = ({
       <Select value={raioKm} onValueChange={setRaioKm}>
         <SelectTrigger
           className={cn(
-            "w-[140px] sm:w-[160px] h-10 text-sm bg-white border-zinc-200 rounded-lg",
+            "h-10 text-sm bg-white border-zinc-200 rounded-lg px-3",
             "shadow-sm hover:border-violet-300 hover:bg-violet-50/50",
             "focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400",
-            "transition-all duration-200",
+            "transition-all duration-200 w-auto min-w-[150px]",
           )}
         >
-          <span className="truncate text-zinc-700 font-medium">{DISTANCIA_LABELS[raioKm] || "Qualquer distância"}</span>
-          <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-zinc-400" />
+          <span className="text-zinc-700 font-medium whitespace-nowrap">
+            {DISTANCIA_LABELS[raioKm] || "Qualquer distância"}
+          </span>
         </SelectTrigger>
         <SelectContent
           className="z-[100] bg-white border border-zinc-200 shadow-lg rounded-lg overflow-hidden"
@@ -616,7 +617,7 @@ const EstablishmentCTABar = () => {
             className="px-4 py-2 rounded-lg text-white text-sm font-medium transition-all hover:brightness-110"
             style={{ backgroundColor: BRAND_PURPLE }}
           >
-            Cadastrar grátis
+            Cadastrar estabelecimento
           </Link>
           <button onClick={() => setIsVisible(false)} className="p-2 hover:bg-violet-100 rounded-lg transition-colors">
             <X className="w-4 h-4 text-zinc-400" />

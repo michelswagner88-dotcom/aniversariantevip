@@ -1,6 +1,6 @@
 // =============================================================================
 // INDEX.TSX - ANIVERSARIANTE VIP
-// V10 - Categorias Sticky + Badges Coloridos + Menu Dark
+// V10.1 - CORREÇÃO: Pills navegam para /explorar + Menu Cadastrar → /como-funciona
 // =============================================================================
 
 import { useMemo, useState, useEffect, useCallback, useRef, memo } from "react";
@@ -262,27 +262,21 @@ const useRotatingCategories = (isUserInteracting: boolean) => {
   const [rotation, setRotation] = useState(0);
 
   useEffect(() => {
-    // Não rotaciona se o usuário estiver interagindo
     if (isUserInteracting) return;
-
-    // Rotaciona a cada 1 minuto
     const interval = setInterval(() => {
       setRotation((prev) => prev + 1);
     }, ROTATION_INTERVAL_MS);
-
     return () => clearInterval(interval);
   }, [isUserInteracting]);
 
   return rotation;
 };
 
-// Hook para detectar interação do usuário com carousels
 const useCarouselInteraction = () => {
   const [isInteracting, setIsInteracting] = useState(false);
   const interactionTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleInteractionStart = useCallback(() => {
-    // Cancela qualquer timeout pendente
     if (interactionTimeout.current) {
       clearTimeout(interactionTimeout.current);
       interactionTimeout.current = null;
@@ -291,7 +285,6 @@ const useCarouselInteraction = () => {
   }, []);
 
   const handleInteractionEnd = useCallback(() => {
-    // Aguarda 30 segundos após a última interação para voltar a rotacionar
     if (interactionTimeout.current) {
       clearTimeout(interactionTimeout.current);
     }
@@ -581,12 +574,13 @@ const Header = memo(
                         setMenuOpen(false);
                       }}
                     />
+                    {/* CORREÇÃO: Cadastrar agora vai para /como-funciona */}
                     <MenuBtnDark
                       icon={<Gift className="w-5 h-5 text-fuchsia-400" />}
                       label="Cadastrar"
                       sub="É grátis"
                       onClick={() => {
-                        navigate("/cadastro");
+                        navigate("/como-funciona");
                         setMenuOpen(false);
                       }}
                     />
@@ -914,9 +908,7 @@ const Categories = memo(
                     )}
                   >
                     <Icon className="w-5 h-5 text-white" />
-                  <span
-                    className="text-[10px] sm:text-[11px] font-semibold whitespace-nowrap text-white"
-                  >
+                    <span className="text-[10px] sm:text-[11px] font-semibold whitespace-nowrap text-white">
                       {shortLabel}
                     </span>
                     {isActive && <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-white rounded-full" />}
@@ -974,17 +966,12 @@ const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => 
   if (!beneficio || beneficio.length < 3) return { emoji: "🎁", text: "Presente" };
   const b = beneficio.toLowerCase();
 
-  // Desconto - quando tem porcentagem
   if (b.includes("%") || b.includes("desconto") || b.includes("off")) {
     return { emoji: "🎁", text: "Desconto" };
   }
-
-  // Cortesia - quando é algo grátis
   if (b.includes("grátis") || b.includes("gratis") || b.includes("free") || b.includes("cortesia")) {
     return { emoji: "🎁", text: "Cortesia" };
   }
-
-  // Brinde - quando é presente/mimo/surpresa
   if (
     b.includes("brinde") ||
     b.includes("presente") ||
@@ -994,23 +981,15 @@ const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => 
   ) {
     return { emoji: "🎁", text: "Brinde" };
   }
-
-  // Dobro - quando é 2x1 ou dobro
   if (b.includes("2x1") || b.includes("dobro") || b.includes("dois por um") || b.includes("leve 2")) {
     return { emoji: "🎁", text: "Dobro" };
   }
-
-  // Bônus - quando é adicional/extra
   if (b.includes("bônus") || b.includes("bonus") || b.includes("extra") || b.includes("adicional")) {
     return { emoji: "🎁", text: "Bônus" };
   }
-
-  // Voucher - quando menciona voucher/cupom
   if (b.includes("voucher") || b.includes("cupom") || b.includes("vale")) {
     return { emoji: "🎁", text: "Voucher" };
   }
-
-  // Padrão - Presente
   return { emoji: "🎁", text: "Presente" };
 };
 
@@ -1156,7 +1135,7 @@ const Card = memo(({ data, onClick, isLoggedIn, onLoginRequired }: any) => {
 });
 
 // =============================================================================
-// CAROUSEL - COM PROTEÇÃO DE INTERAÇÃO
+// CAROUSEL
 // =============================================================================
 
 const Carousel = memo(
@@ -1196,22 +1175,10 @@ const Carousel = memo(
       }
     };
 
-    // Handlers para detectar interação do usuário
-    const handleTouchStart = () => {
-      onInteractionStart?.();
-    };
-
-    const handleTouchEnd = () => {
-      onInteractionEnd?.();
-    };
-
-    const handleMouseDown = () => {
-      onInteractionStart?.();
-    };
-
-    const handleMouseUp = () => {
-      onInteractionEnd?.();
-    };
+    const handleTouchStart = () => onInteractionStart?.();
+    const handleTouchEnd = () => onInteractionEnd?.();
+    const handleMouseDown = () => onInteractionStart?.();
+    const handleMouseUp = () => onInteractionEnd?.();
 
     if (!items?.length) return null;
 
@@ -1350,10 +1317,7 @@ const Index = () => {
   const { user } = useAuth();
   const isLoggedIn = !!user;
 
-  // Hook de interação dos carousels
   const { isInteracting, handleInteractionStart, handleInteractionEnd } = useCarouselInteraction();
-
-  // Rotação dos carousels - pausa quando usuário está interagindo
   const rotation = useRotatingCategories(isInteracting);
 
   const handleLoginRequired = useCallback(() => {
@@ -1442,12 +1406,20 @@ const Index = () => {
     return result;
   }, [cityEstablishments, categoria, city, rotation]);
 
+  // CORREÇÃO: Pills de categoria agora navegam para /explorar
   const handleCategoria = (id: string) => {
-    const params = new URLSearchParams(searchParams);
-    id === "all" ? params.delete("categoria") : params.set("categoria", id);
-    setSearchParams(params);
-    setSelectedSubcategory(null);
+    // Se for "all", apenas filtra na home
+    if (id === "all") {
+      const params = new URLSearchParams(searchParams);
+      params.delete("categoria");
+      setSearchParams(params);
+      setSelectedSubcategory(null);
+      return;
+    }
+    // Se for categoria específica, navega para /explorar com mapa
+    navigate(`/explorar?categoria=${id}&cidade=${encodeURIComponent(city)}&estado=${state}`);
   };
+
   const handleViewAll = (categoryId: string) => {
     navigate(`/explorar?categoria=${categoryId}&cidade=${encodeURIComponent(city)}&estado=${state}`);
   };

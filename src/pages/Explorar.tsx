@@ -1,7 +1,8 @@
 // =============================================================================
-// EXPLORAR.TSX - V2.1
+// EXPLORAR.TSX - V2.2
 // Layout claro consistente com Home + Mapa Split + Subcategorias funcionando
 // CORREÇÕES: Botão roxo, filtros com labels, sem "Melhor avaliados"
+// CORREÇÃO: Badge padronizado com Home (🎁 + uma palavra)
 // =============================================================================
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
@@ -52,7 +53,7 @@ import { cn } from "@/lib/utils";
 // =============================================================================
 
 const HEADER_COLOR = "#240046";
-const BRAND_PURPLE = "#7C3AED"; // Roxo padrão do site (igual header principal)
+const BRAND_PURPLE = "#7C3AED";
 const BRAND_PURPLE_HOVER = "#6D28D9";
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -71,7 +72,6 @@ const CATEGORY_ICONS: Record<string, any> = {
   sorveteria: IceCream,
 };
 
-// Labels para os filtros
 const DISTANCIA_LABELS: Record<string, string> = {
   all: "Qualquer distância",
   "1": "Até 1 km",
@@ -101,37 +101,53 @@ const normalizeText = (text: string): string => {
 };
 
 // =============================================================================
-// BENEFIT CHIP - BRANCO COM TEXTO ROXO
+// BENEFIT CHIP - PADRONIZADO COM A HOME (🎁 + uma palavra)
 // =============================================================================
 
-// Badge único: branco com texto roxo do site
 const BADGE_STYLE = "bg-white text-[#240046] font-bold shadow-md border border-violet-100";
 
 const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => {
-  if (!beneficio || beneficio.length < 3) return { emoji: "🎂", text: "Benefício" };
-
+  if (!beneficio || beneficio.length < 3) return { emoji: "🎁", text: "Presente" };
   const b = beneficio.toLowerCase();
 
-  const descontoMatch = beneficio.match(/(\d+)\s*%/);
-  if (descontoMatch) return { emoji: "🏷️", text: `${descontoMatch[1]}% OFF` };
-
-  if (b.includes("grátis") || b.includes("gratis") || b.includes("free") || b.includes("cortesia")) {
-    if (b.includes("drink") || b.includes("bebida") || b.includes("chopp"))
-      return { emoji: "🍺", text: "Drink grátis" };
-    if (b.includes("sobremesa") || b.includes("doce") || b.includes("bolo"))
-      return { emoji: "🍰", text: "Sobremesa grátis" };
-    if (b.includes("entrada") || b.includes("ingresso")) return { emoji: "🎟️", text: "Entrada grátis" };
-    if (b.includes("corte") || b.includes("cabelo")) return { emoji: "✂️", text: "Corte grátis" };
-    if (b.includes("café") || b.includes("coffee")) return { emoji: "☕", text: "Café grátis" };
-    if (b.includes("pizza")) return { emoji: "🍕", text: "Pizza grátis" };
-    if (b.includes("sorvete") || b.includes("açaí")) return { emoji: "🍦", text: "Sorvete grátis" };
-    return { emoji: "🎁", text: "Grátis" };
+  // Desconto - quando tem porcentagem
+  if (b.includes("%") || b.includes("desconto") || b.includes("off")) {
+    return { emoji: "🎁", text: "Desconto" };
   }
 
-  if (b.includes("brinde") || b.includes("presente") || b.includes("mimo")) return { emoji: "🎁", text: "Brinde" };
-  if (beneficio.length <= 15) return { emoji: "🎁", text: beneficio };
+  // Cortesia - quando é algo grátis
+  if (b.includes("grátis") || b.includes("gratis") || b.includes("free") || b.includes("cortesia")) {
+    return { emoji: "🎁", text: "Cortesia" };
+  }
 
-  return { emoji: "🎂", text: "Benefício" };
+  // Brinde - quando é presente/mimo/surpresa
+  if (
+    b.includes("brinde") ||
+    b.includes("presente") ||
+    b.includes("mimo") ||
+    b.includes("surpresa") ||
+    b.includes("gift")
+  ) {
+    return { emoji: "🎁", text: "Brinde" };
+  }
+
+  // Dobro - quando é 2x1 ou dobro
+  if (b.includes("2x1") || b.includes("dobro") || b.includes("dois por um") || b.includes("leve 2")) {
+    return { emoji: "🎁", text: "Dobro" };
+  }
+
+  // Bônus - quando é adicional/extra
+  if (b.includes("bônus") || b.includes("bonus") || b.includes("extra") || b.includes("adicional")) {
+    return { emoji: "🎁", text: "Bônus" };
+  }
+
+  // Voucher - quando menciona voucher/cupom
+  if (b.includes("voucher") || b.includes("cupom") || b.includes("vale")) {
+    return { emoji: "🎁", text: "Voucher" };
+  }
+
+  // Padrão - Presente
+  return { emoji: "🎁", text: "Presente" };
 };
 
 // =============================================================================
@@ -244,7 +260,7 @@ const PlaceCard = ({ place }: PlaceCardProps) => {
 };
 
 // =============================================================================
-// HEADER - ROXO IGUAL HOME
+// HEADER
 // =============================================================================
 
 const Header = ({ city, state, onBack }: { city: string; state: string; onBack: () => void }) => (
@@ -283,7 +299,7 @@ const Header = ({ city, state, onBack }: { city: string; state: string; onBack: 
 );
 
 // =============================================================================
-// CATEGORIES BAR - STICKY COM FUNDO ROXO E SUBCATEGORIAS FILTRADAS
+// CATEGORIES BAR
 // =============================================================================
 
 const CategoriesBar = ({
@@ -294,7 +310,7 @@ const CategoriesBar = ({
   onSubcategoriesChange,
   cidade,
   estado,
-  estabelecimentos, // Recebe estabelecimentos pra filtrar subcategorias
+  estabelecimentos,
 }: {
   selected: string | null;
   onSelect: (id: string | null) => void;
@@ -314,7 +330,6 @@ const CategoriesBar = ({
     })),
   ];
 
-  // Subcategorias estáticas (igual Home)
   const SUBCATEGORIAS: Record<string, string[]> = {
     academia: ["Musculação", "CrossFit", "Pilates", "Natação", "Funcional", "Spinning", "Yoga", "Artes Marciais"],
     bar: ["Cervejaria", "Pub", "Rooftop", "Bar de Vinhos", "Coquetelaria", "Boteco", "Sports Bar"],
@@ -329,29 +344,20 @@ const CategoriesBar = ({
     sorveteria: ["Artesanal", "Açaí", "Frozen", "Picolé", "Milk Shake"],
   };
 
-  // Filtra subcategorias baseado no que existe nos estabelecimentos da categoria
   const subcatsDisponiveis = useMemo(() => {
     if (!selected) return [];
-
     const todasSubs = SUBCATEGORIAS[selected.toLowerCase()] || [];
     if (todasSubs.length === 0) return [];
-
-    // Pega estabelecimentos da categoria selecionada
     const estabsDaCategoria = estabelecimentos.filter((e) => {
       const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
       return cats.some((c) => c?.toLowerCase() === selected.toLowerCase());
     });
-
     if (estabsDaCategoria.length === 0) return [];
-
-    // Coleta todas as especialidades dos estabelecimentos dessa categoria
     const especialidadesExistentes = new Set<string>();
     estabsDaCategoria.forEach((est) => {
       const specs = est.especialidades || [];
       specs.forEach((s: string) => especialidadesExistentes.add(s.toLowerCase()));
     });
-
-    // Filtra subcategorias que existem nos estabelecimentos
     return todasSubs.filter((sub) => {
       const subLower = sub.toLowerCase();
       return Array.from(especialidadesExistentes).some(
@@ -363,7 +369,6 @@ const CategoriesBar = ({
   return (
     <div className="sticky top-[56px] z-40" style={{ backgroundColor: HEADER_COLOR }}>
       <div className="max-w-7xl mx-auto">
-        {/* Categories */}
         <div
           className="flex items-center overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-8 border-b border-white/10"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -378,7 +383,7 @@ const CategoriesBar = ({
                   onClick={() => onSelect(cat.id)}
                   className={cn(
                     "flex flex-col items-center gap-1 min-w-[72px] px-3 py-2 relative transition-all flex-shrink-0",
-                    "text-white", // Sempre branco forte
+                    "text-white",
                   )}
                 >
                   <Icon className="w-5 h-5 text-white" />
@@ -397,14 +402,12 @@ const CategoriesBar = ({
           </div>
         </div>
 
-        {/* Subcategories - Só aparece se tiver subcategorias disponíveis */}
         {showSubcategories && selected && subcatsDisponiveis.length > 0 && (
           <div
             className="flex items-center overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-8 py-2 bg-[#3C096C]/50"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             <div className="flex items-center gap-2">
-              {/* Ver todos */}
               <button
                 onClick={() => onSubcategoriesChange([])}
                 className={cn(
@@ -416,10 +419,7 @@ const CategoriesBar = ({
               >
                 Ver todos
               </button>
-
               <div className="w-px h-5 bg-white/30 mx-1" />
-
-              {/* Subcategorias filtradas */}
               {subcatsDisponiveis.map((sub) => {
                 const isSubActive = selectedSubcategories.includes(sub);
                 return (
@@ -452,7 +452,7 @@ const CategoriesBar = ({
 };
 
 // =============================================================================
-// FILTERS BAR - CORRIGIDO: Labels sempre visíveis, sem "Melhor avaliados"
+// FILTERS BAR
 // =============================================================================
 
 const FiltersBar = ({
@@ -487,7 +487,6 @@ const FiltersBar = ({
     </div>
 
     <div className="flex gap-2 flex-wrap">
-      {/* Filtro de Ordenação */}
       <Select value={ordenacao} onValueChange={setOrdenacao}>
         <SelectTrigger
           className={cn(
@@ -524,11 +523,9 @@ const FiltersBar = ({
           >
             Mais recentes
           </SelectItem>
-          {/* REMOVIDO: "Melhor avaliados" */}
         </SelectContent>
       </Select>
 
-      {/* Filtro de Distância */}
       <Select value={raioKm} onValueChange={setRaioKm}>
         <SelectTrigger
           className={cn(
@@ -590,7 +587,7 @@ const FiltersBar = ({
 );
 
 // =============================================================================
-// CTA BAR FOR ESTABLISHMENTS - BOTÃO ROXO (sem gradiente rosa)
+// CTA BAR FOR ESTABLISHMENTS
 // =============================================================================
 
 const EstablishmentCTABar = () => {
@@ -611,7 +608,6 @@ const EstablishmentCTABar = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* CORRIGIDO: Botão agora usa roxo puro (#7C3AED) igual header principal */}
           <Link
             to="/seja-parceiro"
             className="px-4 py-2 rounded-lg text-white text-sm font-medium transition-all hover:brightness-110"
@@ -662,29 +658,24 @@ const Explorar = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // URL Params
   const cidadeParam = searchParams.get("cidade") || "";
   const estadoParam = searchParams.get("estado") || "";
   const categoriaParam = searchParams.get("categoria") || "";
 
-  // State
   const [selectedCategory, setSelectedCategory] = useState<string | null>(categoriaParam || null);
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
   const [raioKm, setRaioKm] = useState("all");
   const [ordenacao, setOrdenacao] = useState("distancia");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
-  // Location
   const { location: userLocation } = useUserLocation();
 
-  // Sync category with URL
   useEffect(() => {
     if (categoriaParam) {
       setSelectedCategory(categoriaParam);
     }
   }, [categoriaParam]);
 
-  // Fetch establishments
   const { data: estabelecimentosCidade = [], isLoading: loadingCidade } = useEstabelecimentos({
     cidade: cidadeParam,
     estado: estadoParam,
@@ -694,24 +685,17 @@ const Explorar = () => {
     showAll: !cidadeParam,
   });
 
-  // Use normalized comparison for city filtering
   const estabelecimentos = useMemo(() => {
     if (!cidadeParam) return todosEstabelecimentos;
-
-    // Try exact match first
     if (estabelecimentosCidade.length > 0) return estabelecimentosCidade;
-
-    // Fallback: normalized comparison
     const normalizedCity = normalizeText(cidadeParam);
     return todosEstabelecimentos.filter((est) => normalizeText(est.cidade || "") === normalizedCity);
   }, [cidadeParam, estabelecimentosCidade, todosEstabelecimentos]);
 
   const isLoading = cidadeParam ? loadingCidade : loadingTodos;
 
-  // Apply proximity filters
   const estabelecimentosComDistancia = useEstabelecimentosProximos(estabelecimentos, userLocation, raioKm, ordenacao);
 
-  // Transform to card format
   const allPlaces = useMemo(
     () =>
       estabelecimentosComDistancia.map((est) => ({
@@ -737,12 +721,9 @@ const Explorar = () => {
     [estabelecimentosComDistancia],
   );
 
-  // Format for map component - FILTRADO pela categoria e subcategoria
   const estabelecimentosFormatados = useMemo(() => {
-    // Primeiro filtra pelos mesmos critérios do filteredPlaces
     let filtered = estabelecimentosComDistancia;
 
-    // Filtro por categoria
     if (selectedCategory) {
       filtered = filtered.filter((est) => {
         const cats = Array.isArray(est.categoria) ? est.categoria : [est.categoria];
@@ -750,7 +731,6 @@ const Explorar = () => {
       });
     }
 
-    // Filtro por subcategoria - usa mesma lógica do filteredPlaces
     if (selectedSubcategories.length > 0) {
       filtered = filtered.filter((est) => {
         const specs = est.especialidades || [];
@@ -758,7 +738,6 @@ const Explorar = () => {
           const subNorm = normalizeText(sub);
           return specs.some((s: string) => {
             const specNorm = normalizeText(s);
-            // Match exato OU parcial
             return specNorm === subNorm || specNorm.includes(subNorm) || subNorm.includes(specNorm);
           });
         });
@@ -766,15 +745,6 @@ const Explorar = () => {
       });
     }
 
-    // DEBUG - remover depois
-    console.log("[Mapa] Filtros:", {
-      categoria: selectedCategory,
-      subcategorias: selectedSubcategories,
-      totalFiltrado: filtered.length,
-      comCoordenadas: filtered.filter((e) => e.latitude && e.longitude).length,
-    });
-
-    // Agora formata para o mapa (só os que têm coordenadas)
     return filtered
       .filter((est) => est.latitude && est.longitude)
       .map((est) => ({
@@ -792,22 +762,18 @@ const Explorar = () => {
       }));
   }, [estabelecimentosComDistancia, selectedCategory, selectedSubcategories]);
 
-  // Filter places
   const filteredPlaces = useMemo(() => {
     return allPlaces.filter((place) => {
-      // Category filter
       if (selectedCategory && place.category?.toLowerCase() !== selectedCategory.toLowerCase()) {
         return false;
       }
 
-      // Subcategory filter - mesma lógica do mapa
       if (selectedSubcategories.length > 0) {
         const placeSubcats = place.especialidades || [];
         const hasMatch = selectedSubcategories.some((sub) => {
           const subNorm = normalizeText(sub);
           return placeSubcats.some((ps: string) => {
             const specNorm = normalizeText(ps);
-            // Match exato OU parcial
             return specNorm === subNorm || specNorm.includes(subNorm) || subNorm.includes(specNorm);
           });
         });
@@ -818,12 +784,10 @@ const Explorar = () => {
     });
   }, [allPlaces, selectedCategory, selectedSubcategories]);
 
-  // Handlers
   const handleCategorySelect = (categoryId: string | null) => {
     setSelectedCategory(categoryId);
-    setSelectedSubcategories([]); // Reset subcategories when category changes
+    setSelectedSubcategories([]);
 
-    // Update URL
     const newParams = new URLSearchParams(searchParams);
     if (categoryId) {
       newParams.set("categoria", categoryId);
@@ -847,7 +811,6 @@ const Explorar = () => {
 
   return (
     <div className="min-h-screen bg-white pb-20 lg:pb-8">
-      {/* Shimmer animation */}
       <style>{`
         @keyframes shimmer {
           0% { background-position: 200% 0; }
@@ -856,10 +819,8 @@ const Explorar = () => {
         .scrollbar-hide::-webkit-scrollbar { display: none; }
       `}</style>
 
-      {/* Header */}
       <Header city={cidadeParam || "Todas as cidades"} state={estadoParam || ""} onBack={handleBack} />
 
-      {/* Categories */}
       <CategoriesBar
         selected={selectedCategory}
         onSelect={handleCategorySelect}
@@ -871,12 +832,9 @@ const Explorar = () => {
         estabelecimentos={estabelecimentos}
       />
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* CTA Bar */}
         <EstablishmentCTABar />
 
-        {/* Loading */}
         {isLoading && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {Array.from({ length: 10 }).map((_, i) => (
@@ -885,13 +843,10 @@ const Explorar = () => {
           </div>
         )}
 
-        {/* Empty State */}
         {!isLoading && filteredPlaces.length === 0 && <EmptyState cidade={cidadeParam || null} />}
 
-        {/* Results with Map */}
         {!isLoading && filteredPlaces.length > 0 && (
           <>
-            {/* Filters */}
             <FiltersBar
               raioKm={raioKm}
               setRaioKm={setRaioKm}
@@ -902,7 +857,6 @@ const Explorar = () => {
               categoria={selectedCategory}
             />
 
-            {/* Map Layout */}
             <AirbnbMapLayout
               establishments={estabelecimentosFormatados}
               onEstablishmentClick={handleEstablishmentClick}

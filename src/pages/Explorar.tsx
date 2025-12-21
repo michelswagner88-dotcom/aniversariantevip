@@ -1,6 +1,7 @@
 // =============================================================================
-// EXPLORAR.TSX - V2
+// EXPLORAR.TSX - V2.1
 // Layout claro consistente com Home + Mapa Split + Subcategorias funcionando
+// CORREÇÕES: Botão roxo, filtros com labels, sem "Melhor avaliados"
 // =============================================================================
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
@@ -31,6 +32,7 @@ import {
   Utensils,
   Paintbrush,
   IceCream,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -51,6 +53,8 @@ import { cn } from "@/lib/utils";
 // =============================================================================
 
 const HEADER_COLOR = "#240046";
+const BRAND_PURPLE = "#7C3AED"; // Roxo padrão do site (igual header principal)
+const BRAND_PURPLE_HOVER = "#6D28D9";
 
 const CATEGORY_ICONS: Record<string, any> = {
   all: Sparkles,
@@ -66,6 +70,22 @@ const CATEGORY_ICONS: Record<string, any> = {
   salao: Paintbrush,
   salão: Paintbrush,
   sorveteria: IceCream,
+};
+
+// Labels para os filtros
+const DISTANCIA_LABELS: Record<string, string> = {
+  all: "Qualquer distância",
+  "1": "Até 1 km",
+  "3": "Até 3 km",
+  "5": "Até 5 km",
+  "10": "Até 10 km",
+  "25": "Até 25 km",
+};
+
+const ORDENACAO_LABELS: Record<string, string> = {
+  distancia: "Mais próximos",
+  nome: "Nome A-Z",
+  recentes: "Mais recentes",
 };
 
 // =============================================================================
@@ -433,7 +453,7 @@ const CategoriesBar = ({
 };
 
 // =============================================================================
-// FILTERS BAR
+// FILTERS BAR - CORRIGIDO: Labels sempre visíveis, sem "Melhor avaliados"
 // =============================================================================
 
 const FiltersBar = ({
@@ -468,29 +488,100 @@ const FiltersBar = ({
     </div>
 
     <div className="flex gap-2">
-      <Select value={raioKm} onValueChange={setRaioKm}>
-        <SelectTrigger className="w-[160px] h-9 text-sm bg-white border-zinc-200">
-          <SelectValue placeholder="Distância" />
+      {/* Filtro de Ordenação */}
+      <Select value={ordenacao} onValueChange={setOrdenacao}>
+        <SelectTrigger
+          className={cn(
+            "w-[140px] sm:w-[160px] h-10 text-sm bg-white border-zinc-200 rounded-lg",
+            "shadow-sm hover:border-violet-300 hover:bg-violet-50/50",
+            "focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400",
+            "transition-all duration-200",
+          )}
+        >
+          <span className="truncate text-zinc-700 font-medium">{ORDENACAO_LABELS[ordenacao] || "Mais próximos"}</span>
+          <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-zinc-400" />
         </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Qualquer distância</SelectItem>
-          <SelectItem value="1">Até 1 km</SelectItem>
-          <SelectItem value="3">Até 3 km</SelectItem>
-          <SelectItem value="5">Até 5 km</SelectItem>
-          <SelectItem value="10">Até 10 km</SelectItem>
-          <SelectItem value="25">Até 25 km</SelectItem>
+        <SelectContent
+          className="z-[100] bg-white border border-zinc-200 shadow-lg rounded-lg overflow-hidden"
+          position="popper"
+          sideOffset={4}
+        >
+          <SelectItem
+            value="distancia"
+            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
+          >
+            Mais próximos
+          </SelectItem>
+          <SelectItem
+            value="nome"
+            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
+          >
+            Nome A-Z
+          </SelectItem>
+          <SelectItem
+            value="recentes"
+            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
+          >
+            Mais recentes
+          </SelectItem>
+          {/* REMOVIDO: "Melhor avaliados" */}
         </SelectContent>
       </Select>
 
-      <Select value={ordenacao} onValueChange={setOrdenacao}>
-        <SelectTrigger className="w-[160px] h-9 text-sm bg-white border-zinc-200">
-          <SelectValue placeholder="Ordenar por" />
+      {/* Filtro de Distância */}
+      <Select value={raioKm} onValueChange={setRaioKm}>
+        <SelectTrigger
+          className={cn(
+            "w-[140px] sm:w-[160px] h-10 text-sm bg-white border-zinc-200 rounded-lg",
+            "shadow-sm hover:border-violet-300 hover:bg-violet-50/50",
+            "focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400",
+            "transition-all duration-200",
+          )}
+        >
+          <span className="truncate text-zinc-700 font-medium">{DISTANCIA_LABELS[raioKm] || "Qualquer distância"}</span>
+          <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-zinc-400" />
         </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="distancia">Mais próximos</SelectItem>
-          <SelectItem value="nome">Nome A-Z</SelectItem>
-          <SelectItem value="avaliacao">Melhor avaliados</SelectItem>
-          <SelectItem value="recentes">Mais recentes</SelectItem>
+        <SelectContent
+          className="z-[100] bg-white border border-zinc-200 shadow-lg rounded-lg overflow-hidden"
+          position="popper"
+          sideOffset={4}
+        >
+          <SelectItem
+            value="all"
+            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
+          >
+            Qualquer distância
+          </SelectItem>
+          <SelectItem
+            value="1"
+            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
+          >
+            Até 1 km
+          </SelectItem>
+          <SelectItem
+            value="3"
+            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
+          >
+            Até 3 km
+          </SelectItem>
+          <SelectItem
+            value="5"
+            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
+          >
+            Até 5 km
+          </SelectItem>
+          <SelectItem
+            value="10"
+            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
+          >
+            Até 10 km
+          </SelectItem>
+          <SelectItem
+            value="25"
+            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
+          >
+            Até 25 km
+          </SelectItem>
         </SelectContent>
       </Select>
     </div>
@@ -498,7 +589,7 @@ const FiltersBar = ({
 );
 
 // =============================================================================
-// CTA BAR FOR ESTABLISHMENTS
+// CTA BAR FOR ESTABLISHMENTS - BOTÃO ROXO (sem gradiente rosa)
 // =============================================================================
 
 const EstablishmentCTABar = () => {
@@ -519,9 +610,11 @@ const EstablishmentCTABar = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* CORRIGIDO: Botão agora usa roxo puro (#7C3AED) igual header principal */}
           <Link
             to="/seja-parceiro"
-            className="px-4 py-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 rounded-lg text-white text-sm font-medium transition-all"
+            className="px-4 py-2 rounded-lg text-white text-sm font-medium transition-all hover:brightness-110"
+            style={{ backgroundColor: BRAND_PURPLE }}
           >
             Cadastrar grátis
           </Link>
@@ -551,7 +644,8 @@ const EmptyState = ({ cidade }: { cidade: string | null }) => (
     </p>
     <Link
       to="/seja-parceiro"
-      className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 rounded-xl text-white font-medium transition-all"
+      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-medium transition-all hover:brightness-110"
+      style={{ backgroundColor: BRAND_PURPLE }}
     >
       <Store className="w-5 h-5" />
       Cadastrar meu estabelecimento

@@ -44,8 +44,13 @@ const buscarPlaceId = async (
   }
 };
 
-// Buscar foto do Place ID
-const buscarFotoGoogle = async (placeId: string, apiKey: string): Promise<string | null> => {
+// Buscar foto do Place ID e fazer upload para Supabase Storage
+const buscarFotoGoogle = async (
+  placeId: string, 
+  apiKey: string, 
+  estabelecimentoId: string,
+  supabase: any
+): Promise<string | null> => {
   try {
     // Primeiro, buscar detalhes do lugar pra pegar photo_reference
     const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${apiKey}`;
@@ -56,16 +61,54 @@ const buscarFotoGoogle = async (placeId: string, apiKey: string): Promise<string
     const photoReference = data.result?.photos?.[0]?.photo_reference;
     
     if (!photoReference) {
-      console.log('   Sem fotos disponíveis');
+      console.log('   Sem fotos disponíveis no Google');
       return null;
     }
     
-    // Montar URL da foto (essa URL é permanente)
-    const fotoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoReference}&key=${apiKey}`;
+    // Baixar a foto do Google (UMA ÚNICA VEZ)
+    const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoReference}&key=${apiKey}`;
+    console.log('   📥 Baixando foto do Google...');
     
-    return fotoUrl;
+    const photoResponse = await fetch(photoUrl);
+    if (!photoResponse.ok) {
+      console.log(`   ⚠️ Erro ao baixar foto: ${photoResponse.status}`);
+      return null;
+    }
+    
+    const imageBuffer = await photoResponse.arrayBuffer();
+    const contentType = photoResponse.headers.get("content-type") || "image/jpeg";
+    
+    // Determinar extensão
+    let extension = "jpg";
+    if (contentType.includes("png")) extension = "png";
+    if (contentType.includes("webp")) extension = "webp";
+    
+    const fileName = `establishments/${estabelecimentoId}/photo.${extension}`;
+    
+    // Upload para Supabase Storage
+    console.log('   📤 Fazendo upload para Supabase Storage...');
+    const { error: uploadError } = await supabase.storage
+      .from("establishment-photos")
+      .upload(fileName, imageBuffer, { 
+        contentType, 
+        upsert: true 
+      });
+    
+    if (uploadError) {
+      console.log(`   ⚠️ Erro no upload: ${uploadError.message}`);
+      return null;
+    }
+    
+    // Obter URL pública do Supabase Storage
+    const { data: publicUrlData } = supabase.storage
+      .from("establishment-photos")
+      .getPublicUrl(fileName);
+    
+    console.log('   ✅ Foto salva no Supabase Storage!');
+    return publicUrlData.publicUrl;
+    
   } catch (error) {
-    console.error('Erro ao buscar foto:', error);
+    console.error('Erro ao buscar/salvar foto:', error);
     return null;
   }
 };
@@ -178,8 +221,8 @@ serve(async (req) => {
         let fotoUrl: string | null = null;
 
         if (placeId) {
-          console.log('   📷 Buscando foto do Google...');
-          fotoUrl = await buscarFotoGoogle(placeId, googleApiKey);
+          console.log('   📷 Buscando foto do Google e salvando no Storage...');
+          fotoUrl = await buscarFotoGoogle(placeId, googleApiKey, est.id, supabase);
         }
 
         // 3. Atualizar no Supabase

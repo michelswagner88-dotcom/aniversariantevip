@@ -601,6 +601,8 @@ export type Database = {
           especialidades: string[] | null
           estado: string | null
           foto_buscada: boolean | null
+          foto_migrada: boolean | null
+          foto_migrada_em: string | null
           galeria_fotos: string[] | null
           google_place_id: string | null
           horario_funcionamento: string | null
@@ -609,6 +611,7 @@ export type Database = {
           latitude: number | null
           link_cardapio: string | null
           logo_url: string | null
+          logo_url_backup: string | null
           logradouro: string | null
           longitude: number | null
           nome_fantasia: string | null
@@ -648,6 +651,8 @@ export type Database = {
           especialidades?: string[] | null
           estado?: string | null
           foto_buscada?: boolean | null
+          foto_migrada?: boolean | null
+          foto_migrada_em?: string | null
           galeria_fotos?: string[] | null
           google_place_id?: string | null
           horario_funcionamento?: string | null
@@ -656,6 +661,7 @@ export type Database = {
           latitude?: number | null
           link_cardapio?: string | null
           logo_url?: string | null
+          logo_url_backup?: string | null
           logradouro?: string | null
           longitude?: number | null
           nome_fantasia?: string | null
@@ -695,6 +701,8 @@ export type Database = {
           especialidades?: string[] | null
           estado?: string | null
           foto_buscada?: boolean | null
+          foto_migrada?: boolean | null
+          foto_migrada_em?: string | null
           galeria_fotos?: string[] | null
           google_place_id?: string | null
           horario_funcionamento?: string | null
@@ -703,6 +711,7 @@ export type Database = {
           latitude?: number | null
           link_cardapio?: string | null
           logo_url?: string | null
+          logo_url_backup?: string | null
           logradouro?: string | null
           longitude?: number | null
           nome_fantasia?: string | null

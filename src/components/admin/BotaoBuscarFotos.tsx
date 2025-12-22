@@ -199,23 +199,55 @@ export const BotaoBuscarFotos = () => {
             Atualizar
           </Button>
 
-          <Button
-            onClick={buscarFotos}
-            disabled={isAnyLoading || pendentes === 0}
-            className="bg-violet-600 hover:bg-violet-500 min-h-[44px]"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="animate-spin mr-2 w-4 h-4" aria-hidden="true" />
-                Buscando...
-              </>
-            ) : (
-              <>
-                <Camera className="mr-2 w-4 h-4" aria-hidden="true" />
-                Buscar próximos 50
-              </>
-            )}
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                disabled={isAnyLoading || pendentes === 0}
+                className="bg-violet-600 hover:bg-violet-500 min-h-[44px]"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin mr-2 w-4 h-4" aria-hidden="true" />
+                    Buscando...
+                  </>
+                ) : (
+                  <>
+                    <Camera className="mr-2 w-4 h-4" aria-hidden="true" />
+                    Buscar próximos 50
+                  </>
+                )}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-destructive flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5" />
+                  ⚠️ ATENÇÃO: Custo Google API
+                </AlertDialogTitle>
+                <AlertDialogDescription className="space-y-3">
+                  <p>
+                    Esta ação vai <strong>buscar fotos no Google Places API</strong> e gerar custos.
+                  </p>
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-destructive">
+                    <p className="font-medium">💰 Custo estimado: ~R$ 2,50 por lote de 50</p>
+                    <p className="text-sm mt-1">As fotos serão salvas permanentemente no Supabase Storage.</p>
+                  </div>
+                  <p className="text-sm">
+                    Tem certeza que deseja continuar?
+                  </p>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="min-h-[44px]">Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={buscarFotos}
+                  className="bg-violet-600 hover:bg-violet-500 min-h-[44px]"
+                >
+                  Sim, buscar fotos
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>

@@ -134,3 +134,6 @@ verify_jwt = true
 # --- BUSCA DE FOTOS ---
 [functions.buscar-fotos-lote]
 verify_jwt = true
+
+[functions.migrate-google-photos]
+verify_jwt = true

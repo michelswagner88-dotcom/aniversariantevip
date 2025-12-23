@@ -5,7 +5,7 @@
 
 import { memo, useState, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, User, Gift, Building2, LogOut, Settings, HelpCircle, X } from "lucide-react";
+import { Menu, User, Gift, Building2, LogOut, HelpCircle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -154,11 +154,6 @@ const MobileMenu = memo(({ isOpen, onClose, user, onSignOut }: MobileMenuProps) 
                 icon={<Gift className="w-5 h-5 text-violet-600" />}
                 label="Minha Área"
                 onClick={() => handleNavigate("/area-aniversariante")}
-              />
-              <MenuItem
-                icon={<Settings className="w-5 h-5 text-gray-400" />}
-                label="Configurações"
-                onClick={() => handleNavigate("/configuracoes")}
               />
               <div className="my-2 mx-3 border-t border-gray-100" />
               <MenuItem

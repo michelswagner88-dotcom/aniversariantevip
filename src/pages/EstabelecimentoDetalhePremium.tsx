@@ -2,6 +2,7 @@
 // ESTABELECIMENTO DETALHE PREMIUM - AIRBNB STYLE
 // Aniversariante VIP - Complete Redesign
 // Mobile-first + Desktop 2-column layout
+// CORREÇÃO: Link do 99 atualizado para https://99app.com/passageiro/
 // =============================================================================
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -65,7 +66,6 @@ interface EstabelecimentoDetalhePremiumProps {
 
 const ACCENT_COLOR = "#240046";
 
-// Mapeamento de validade para texto humano (nunca exibir keys técnicas)
 const VALIDADE_MAP: Record<string, string> = {
   dia_aniversario: "Válido no dia do aniversário",
   semana_aniversario: "Válido na semana do aniversário",
@@ -84,7 +84,6 @@ const getValidadeTexto = (validade?: string): string => {
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-white">
-    {/* Mobile skeleton */}
     <div className="lg:hidden">
       <Skeleton className="w-full h-[44vh] min-h-[260px] max-h-[380px] rounded-none" />
       <div className="px-4 sm:px-6 py-6 space-y-6">
@@ -101,9 +100,7 @@ const PageSkeleton = () => (
         </div>
       </div>
     </div>
-    {/* Desktop skeleton - wrapper único */}
     <div className="hidden lg:block max-w-[1120px] mx-auto px-4 md:px-6 lg:px-10 py-6">
-      {/* Barra de ações skeleton */}
       <div className="flex justify-between items-center mb-4">
         <Skeleton className="h-5 w-20" />
         <div className="flex gap-3">
@@ -111,9 +108,7 @@ const PageSkeleton = () => (
           <Skeleton className="h-5 w-16" />
         </div>
       </div>
-      {/* Foto skeleton */}
       <Skeleton className="w-full h-[380px] rounded-3xl mb-6" />
-      {/* Conteúdo skeleton */}
       <div className="space-y-6">
         <div className="space-y-3">
           <Skeleton className="h-10 w-3/4 max-w-[860px]" />
@@ -133,7 +128,7 @@ const PageSkeleton = () => (
 );
 
 // =============================================================================
-// HERO GALLERY MOBILE - Full bleed (apenas mobile)
+// HERO GALLERY MOBILE
 // =============================================================================
 
 const HeroGalleryMobile = ({
@@ -198,10 +193,8 @@ const HeroGalleryMobile = ({
         ))}
       </div>
 
-      {/* Gradiente superior */}
       <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/40 to-transparent pointer-events-none" />
 
-      {/* Botões flutuantes */}
       <div className="absolute top-4 inset-x-4 flex items-center justify-between z-10">
         <button
           onClick={onBack}
@@ -231,14 +224,12 @@ const HeroGalleryMobile = ({
         </div>
       </div>
 
-      {/* Contador */}
       {fotos.length > 1 && (
         <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-sm font-medium">
           {currentIndex + 1} / {fotos.length}
         </div>
       )}
 
-      {/* Dots */}
       {fotos.length > 1 && fotos.length <= 8 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
           {fotos.map((_, index) => (
@@ -259,7 +250,7 @@ const HeroGalleryMobile = ({
 };
 
 // =============================================================================
-// GALLERY DESKTOP - Contida no container, carrossel horizontal
+// GALLERY DESKTOP
 // =============================================================================
 
 const GalleryDesktop = ({
@@ -289,7 +280,6 @@ const GalleryDesktop = ({
 
   return (
     <div>
-      {/* Header com navegação e ações */}
       <div className="flex items-center justify-between pt-5 pb-4">
         <button
           onClick={onBack}
@@ -319,7 +309,6 @@ const GalleryDesktop = ({
         </div>
       </div>
 
-      {/* Foto com altura controlada */}
       <div className="relative h-[320px] md:h-[360px] lg:h-[380px] xl:h-[420px] rounded-3xl overflow-hidden bg-zinc-100 shadow-sm">
         {!imagesLoaded.has(currentIndex) && <div className="absolute inset-0 bg-zinc-200 animate-pulse" />}
         <img
@@ -333,7 +322,6 @@ const GalleryDesktop = ({
           onLoad={() => handleImageLoad(currentIndex)}
         />
 
-        {/* Setas de navegação */}
         {fotos.length > 1 && (
           <>
             <button
@@ -359,14 +347,12 @@ const GalleryDesktop = ({
           </>
         )}
 
-        {/* Indicador de posição */}
         {fotos.length > 1 && (
           <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-sm font-medium">
             {currentIndex + 1} / {fotos.length}
           </div>
         )}
 
-        {/* Dots */}
         {fotos.length > 1 && fotos.length <= 8 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
             {fotos.map((_, index) => (
@@ -388,7 +374,7 @@ const GalleryDesktop = ({
 };
 
 // =============================================================================
-// BENEFIT CARD - Igual em mobile e desktop
+// BENEFIT CARD
 // =============================================================================
 
 const BenefitCard = ({
@@ -516,7 +502,6 @@ const QuickActions = ({
   const availableActions = actions.filter((a) => a.available);
   if (availableActions.length === 0) return null;
 
-  // Grid fixo de 4 colunas no mobile
   return (
     <div className="py-6 border-t border-zinc-100">
       <h2 className="text-lg font-semibold text-zinc-900 mb-4">Contato</h2>
@@ -536,7 +521,6 @@ const QuickActions = ({
           </button>
         ))}
       </div>
-      {/* Se tiver mais de 4 ações, mostra em linha extra */}
       {availableActions.length > 4 && (
         <div className="grid grid-cols-4 gap-2 mt-2">
           {availableActions.slice(4).map((action) => (
@@ -560,7 +544,7 @@ const QuickActions = ({
 };
 
 // =============================================================================
-// BIO MOBILE - Aparece logo após identidade, estilo Instagram (MOBILE ONLY)
+// BIO MOBILE
 // =============================================================================
 
 const BioMobile = ({ descricao }: { descricao?: string }) => {
@@ -588,7 +572,7 @@ const BioMobile = ({ descricao }: { descricao?: string }) => {
 };
 
 // =============================================================================
-// ABOUT SECTION - Desktop only (mobile usa BioMobile)
+// ABOUT SECTION
 // =============================================================================
 
 const AboutSection = ({ descricao }: { descricao?: string }) => {
@@ -702,7 +686,6 @@ const LocationSection = ({
         </div>
       )}
 
-      {/* Botões de navegação com ícones SVG */}
       <div className="grid grid-cols-4 gap-2">
         {/* Google Maps */}
         <button
@@ -1216,12 +1199,16 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
       .filter(Boolean)
       .join(", ");
 
+  // ==========================================================================
+  // CORREÇÃO: Link do 99 atualizado
+  // ==========================================================================
   const handleDirections = (app: string) => {
     if (id) trackDirectionsClick(id, app);
     const endereco = getEnderecoCompleto();
     const lat = estabelecimento?.latitude;
     const lng = estabelecimento?.longitude;
     const nome = estabelecimento?.nome_fantasia;
+
     switch (app) {
       case "google_maps":
         window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`, "_blank");
@@ -1240,12 +1227,8 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
           : window.open("https://m.uber.com/", "_blank");
         break;
       case "99":
-        lat && lng
-          ? window.open(
-              `https://99app.com/app/ride?destination_latitude=${lat}&destination_longitude=${lng}&destination_title=${encodeURIComponent(nome)}`,
-              "_blank",
-            )
-          : window.open("https://99app.com/", "_blank");
+        // CORREÇÃO: URL antiga não funciona mais, usar nova URL
+        window.open("https://99app.com/passageiro/", "_blank");
         break;
     }
   };
@@ -1313,7 +1296,6 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
     <div className="min-h-screen bg-white">
       <style>{`.scrollbar-hide::-webkit-scrollbar { display: none; } .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
 
-      {/* Galeria mobile - full bleed */}
       <HeroGalleryMobile
         fotos={fotos}
         nome={estabelecimento.nome_fantasia}
@@ -1323,13 +1305,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
         isFavorited={id ? isFavorito(id) : false}
       />
 
-      {/* =========================================================================
-          DESKTOP: Wrapper único para garantir bordas alinhadas
-          - Barra de ações, foto e conteúdo todos no mesmo container
-          - max-w-[1120px] com px-4 md:px-6 lg:px-10
-          ========================================================================= */}
       <div className="hidden lg:block max-w-[1120px] mx-auto px-4 md:px-6 lg:px-10 pb-12">
-        {/* Galeria Desktop (inclui barra de ações + foto) */}
         <GalleryDesktop
           fotos={fotos}
           nome={estabelecimento.nome_fantasia}
@@ -1339,9 +1315,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
           isFavorited={id ? isFavorito(id) : false}
         />
 
-        {/* Conteúdo - mesmas bordas, line-length controlado internamente */}
         <div className="pt-6">
-          {/* Título e info */}
           <div className="pb-6 border-b border-zinc-100">
             <h1 className="text-[32px] xl:text-[40px] font-bold text-zinc-900 leading-tight tracking-[-0.02em] max-w-[860px]">
               {estabelecimento.nome_fantasia}
@@ -1373,10 +1347,8 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
             )}
           </div>
 
-          {/* Sobre - com max-width para line-length premium */}
           <AboutSection descricao={estabelecimento.bio || estabelecimento.descricao} />
 
-          {/* Benefício */}
           {beneficio && (
             <div className="py-6 border-b border-zinc-100">
               <BenefitCard beneficio={beneficio} validade={validadeBeneficio} onShowRules={handleShowRules} />
@@ -1415,9 +1387,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
         </div>
       </div>
 
-      {/* Container mobile */}
       <div className="lg:hidden px-4 sm:px-6 pb-12">
-        {/* Título e info */}
         <div className="py-6 border-b border-zinc-100">
           <h1 className="text-2xl font-bold text-zinc-900 leading-tight">{estabelecimento.nome_fantasia}</h1>
           <div className="flex items-center gap-2 mt-2 text-zinc-600">
@@ -1443,11 +1413,9 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
             </div>
           )}
 
-          {/* Bio mobile */}
           <BioMobile descricao={estabelecimento.bio || estabelecimento.descricao} />
         </div>
 
-        {/* Benefício */}
         {beneficio && (
           <div className="py-6 border-b border-zinc-100">
             <BenefitCard beneficio={beneficio} validade={validadeBeneficio} onShowRules={handleShowRules} />

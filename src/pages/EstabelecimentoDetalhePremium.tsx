@@ -887,16 +887,8 @@ const RulesModal = ({
             </div>
           </div>
 
-          <div className="sticky bottom-0 bg-white p-5 border-t border-zinc-100 space-y-3">
-            <button
-              onClick={onEmitirCupom}
-              className="w-full py-3.5 text-white font-semibold rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2"
-              style={{ backgroundColor: ACCENT_COLOR }}
-            >
-              <Gift className="w-5 h-5" />
-              Emitir Meu Cupom
-            </button>
-            {hasWhatsApp && (
+          {hasWhatsApp && (
+            <div className="sticky bottom-0 bg-white p-5 border-t border-zinc-100">
               <button
                 onClick={onWhatsApp}
                 className="w-full py-3.5 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
@@ -904,8 +896,8 @@ const RulesModal = ({
                 <MessageCircle className="w-5 h-5" />
                 Falar no WhatsApp
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </>

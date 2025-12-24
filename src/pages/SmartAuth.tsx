@@ -1,13 +1,31 @@
+// =============================================================================
+// SMART AUTH - V2.0 PREMIUM
+// Design System: Roxo profundo (#240046) + Violet (#7C3AED)
+// Padrão Airbnb/Stripe - Zero rosa, apenas roxo consistente
+// =============================================================================
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, AlertCircle, Mail, Lock, User, ChevronDown, ChevronUp, Eye, EyeOff, Check } from "lucide-react";
+import {
+  Loader2,
+  AlertCircle,
+  Mail,
+  Lock,
+  User,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  EyeOff,
+  Check,
+  ArrowLeft,
+  Cake,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MaskedInput from "@/components/MaskedInput";
 import BuscaCepPorEndereco from "@/components/BuscaCepPorEndereco";
-import { BackButton } from "@/components/BackButton";
 import { TelaConfirmacaoEmail } from "@/components/TelaConfirmacaoEmail";
 import { useInputMask } from "@/hooks/useInputMask";
 import { useCheckCpfExists } from "@/hooks/useCheckCpfExists";
@@ -15,6 +33,110 @@ import { useCepLookup } from "@/hooks/useCepLookup";
 import { getFriendlyErrorMessage } from "@/lib/errorTranslator";
 import { useSEO } from "@/hooks/useSEO";
 import { SEO_CONTENT } from "@/constants/seo";
+import { cn } from "@/lib/utils";
+
+// =============================================================================
+// DESIGN SPEC
+// =============================================================================
+//
+// CORES:
+// - Primary: #7C3AED (violet-600)
+// - Primary Hover: #6D28D9 (violet-700)
+// - Dark BG: #0F0A1A (quase preto com tom roxo)
+// - Card BG: rgba(15, 10, 26, 0.85) + backdrop-blur
+// - Border: rgba(255,255,255,0.08)
+// - Border Hover: rgba(124,58,237,0.3)
+// - Border Focus: rgba(124,58,237,0.5)
+//
+// DIMENSÕES:
+// - Card: max-w-[440px] desktop, 100% mobile com px-4
+// - Inputs: h-12 (48px), pl-11 (com ícone), rounded-xl
+// - Botões: h-[52px], rounded-xl, font-semibold
+// - Min touch target: 44px
+//
+// TIPOGRAFIA:
+// - Título: text-[26px] sm:text-[30px] font-bold
+// - Subtítulo: text-[15px] text-white/50
+// - Labels: text-sm font-medium text-white/80
+// - Placeholder: text-white/30
+//
+// ESTADOS:
+// - Focus: ring-2 ring-violet-500/20 border-violet-500/50
+// - Error: border-red-500/50 ring-red-500/20
+// - Disabled: opacity-60 cursor-not-allowed
+// =============================================================================
+
+// =============================================================================
+// BACK BUTTON COMPONENT (inline - sem dependência externa)
+// =============================================================================
+
+const BackButtonAuth = ({ onClick }: { onClick: () => void }) => (
+  <button
+    onClick={onClick}
+    className={cn(
+      "group flex items-center gap-2 px-3 py-2 rounded-xl",
+      "text-white/70 hover:text-white",
+      "bg-white/[0.03] hover:bg-white/[0.08]",
+      "border border-white/[0.06] hover:border-white/[0.12]",
+      "backdrop-blur-sm",
+      "transition-all duration-200",
+      "min-h-[44px] min-w-[44px]",
+    )}
+    aria-label="Voltar para página inicial"
+  >
+    <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
+    <span className="text-sm font-medium hidden sm:inline">Voltar</span>
+  </button>
+);
+
+// =============================================================================
+// PASSWORD STRENGTH INDICATOR
+// =============================================================================
+
+const PasswordStrength = ({
+  checks,
+}: {
+  checks: { hasMinLength: boolean; hasUppercase: boolean; hasSpecialChar: boolean };
+}) => {
+  const items = [
+    { key: "hasMinLength", label: "Mínimo 8 caracteres", checked: checks.hasMinLength },
+    { key: "hasUppercase", label: "Uma letra maiúscula", checked: checks.hasUppercase },
+    { key: "hasSpecialChar", label: "Um caractere especial (!@#$%...)", checked: checks.hasSpecialChar },
+  ];
+
+  return (
+    <div className="mt-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+      <p className="text-xs font-medium text-white/40 mb-3">A senha deve conter:</p>
+      <ul className="space-y-2.5">
+        {items.map((item) => (
+          <li
+            key={item.key}
+            className={cn(
+              "flex items-center gap-2.5 text-sm transition-colors duration-200",
+              item.checked ? "text-emerald-400" : "text-white/40",
+            )}
+          >
+            <span
+              className={cn(
+                "w-5 h-5 rounded-full flex items-center justify-center transition-all duration-200",
+                item.checked
+                  ? "bg-emerald-500/20 ring-1 ring-emerald-500/30"
+                  : "bg-white/[0.03] ring-1 ring-white/[0.08]",
+              )}
+            >
+              {item.checked && <Check className="w-3 h-3" />}
+            </span>
+            {item.label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
 
 const SmartAuth = () => {
   const location = useLocation();
@@ -23,20 +145,12 @@ const SmartAuth = () => {
 
   // Determinar modo inicial baseado na rota OU query param
   const getInitialMode = () => {
-    // 1. Primeiro verificar query param ?modo=
     const modoParam = searchParams.get("modo");
-    if (modoParam === "cadastro") {
-      return false; // isLogin = false = modo cadastro
-    }
-    if (modoParam === "login") {
-      return true; // isLogin = true = modo login
-    }
+    if (modoParam === "cadastro") return false;
+    if (modoParam === "login") return true;
 
-    // 2. Se não tem query param, usar a rota
     const path = location.pathname.toLowerCase();
-    if (path === "/cadastro" || path === "/cadastro/aniversariante") {
-      return false;
-    }
+    if (path === "/cadastro" || path === "/cadastro/aniversariante") return false;
     return true;
   };
 
@@ -175,13 +289,8 @@ const SmartAuth = () => {
   // Verificar sessão inicial
   useEffect(() => {
     const checkSession = async () => {
-      if (isProcessingRef.current) {
-        return;
-      }
-
-      if (hasProcessedRef.current && step === 2) {
-        return;
-      }
+      if (isProcessingRef.current) return;
+      if (hasProcessedRef.current && step === 2) return;
 
       isProcessingRef.current = true;
 
@@ -196,7 +305,6 @@ const SmartAuth = () => {
           if (session) {
             sessionStorage.removeItem("forceStep2");
             sessionStorage.removeItem("needsCompletion");
-
             setUserId(session.user.id);
             setEmail(session.user.email || "");
             setName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || "");
@@ -235,9 +343,7 @@ const SmartAuth = () => {
             .eq("id", session.user.id)
             .maybeSingle();
 
-          if (step === 2 || userId) {
-            return;
-          }
+          if (step === 2 || userId) return;
 
           if (!anivData?.cpf || !anivData?.data_nascimento) {
             setUserId(session.user.id);
@@ -248,12 +354,7 @@ const SmartAuth = () => {
           } else {
             const redirectTo = sessionStorage.getItem("redirectAfterLogin");
             sessionStorage.removeItem("redirectAfterLogin");
-
-            if (redirectTo) {
-              navigate(redirectTo, { replace: true });
-            } else {
-              navigate("/", { replace: true });
-            }
+            navigate(redirectTo || "/", { replace: true });
           }
         }
       } finally {
@@ -268,22 +369,10 @@ const SmartAuth = () => {
     } = supabase.auth.onAuthStateChange((event, session) => {
       const forceStep2 = sessionStorage.getItem("forceStep2");
       const needsCompletion = sessionStorage.getItem("needsCompletion");
-
-      if (forceStep2 === "true" || needsCompletion === "true") {
-        return;
-      }
-
-      if (step === 2) {
-        return;
-      }
-
-      if (hasProcessedRef.current) {
-        return;
-      }
-
-      if (event === "SIGNED_IN" && session) {
-        checkSession();
-      }
+      if (forceStep2 === "true" || needsCompletion === "true") return;
+      if (step === 2) return;
+      if (hasProcessedRef.current) return;
+      if (event === "SIGNED_IN" && session) checkSession();
     });
 
     return () => subscription.unsubscribe();
@@ -293,12 +382,9 @@ const SmartAuth = () => {
   useEffect(() => {
     const handleBeforeUnload = () => {
       supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!session) {
-          sessionStorage.removeItem("redirectAfterLogin");
-        }
+        if (!session) sessionStorage.removeItem("redirectAfterLogin");
       });
     };
-
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
@@ -380,7 +466,6 @@ const SmartAuth = () => {
               `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleMapsKey}`,
             );
             const geoData = await geoResponse.json();
-
             if (geoData.results && geoData.results[0]) {
               setLatitude(geoData.results[0].geometry.location.lat);
               setLongitude(geoData.results[0].geometry.location.lng);
@@ -417,10 +502,7 @@ const SmartAuth = () => {
         return;
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
         if (error.message.includes("Email not confirmed")) {
@@ -453,9 +535,7 @@ const SmartAuth = () => {
         return;
       }
 
-      toast.success("Login realizado!", {
-        description: "Bem-vindo de volta!",
-      });
+      toast.success("Login realizado!", { description: "Bem-vindo de volta!" });
 
       const redirectTo = sessionStorage.getItem("redirectAfterLogin");
       if (redirectTo) {
@@ -467,9 +547,7 @@ const SmartAuth = () => {
     } catch (err: any) {
       const friendlyMessage = getFriendlyErrorMessage(err);
       setError(friendlyMessage);
-      toast.error("Erro ao fazer login", {
-        description: friendlyMessage,
-      });
+      toast.error("Erro ao fazer login", { description: friendlyMessage });
     } finally {
       setIsLoading(false);
     }
@@ -482,13 +560,8 @@ const SmartAuth = () => {
     setError("");
 
     try {
-      if (!email || !password) {
-        throw new Error("Preencha email e senha");
-      }
-
-      if (!isPasswordValid()) {
-        throw new Error("A senha não atende aos requisitos mínimos");
-      }
+      if (!email || !password) throw new Error("Preencha email e senha");
+      if (!isPasswordValid()) throw new Error("A senha não atende aos requisitos mínimos");
 
       const rateLimitOk = await checkRateLimit(email, "signup");
       if (!rateLimitOk) {
@@ -509,9 +582,7 @@ const SmartAuth = () => {
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
 
       if (signUpError) throw signUpError;
@@ -532,9 +603,7 @@ const SmartAuth = () => {
     } catch (err: any) {
       const friendlyMessage = getFriendlyErrorMessage(err);
       setError(friendlyMessage);
-      toast.error("Erro na validação", {
-        description: friendlyMessage,
-      });
+      toast.error("Erro na validação", { description: friendlyMessage });
     } finally {
       setIsLoading(false);
     }
@@ -546,32 +615,22 @@ const SmartAuth = () => {
       setIsLoading(true);
       setError("");
 
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: { access_type: "offline", prompt: "consent" },
         },
       });
 
       if (error) {
         setError("Não foi possível conectar com Google. Tente novamente.");
-        toast.error("Erro ao conectar com Google", {
-          description: "Verifique sua conexão e tente novamente.",
-        });
+        toast.error("Erro ao conectar com Google", { description: "Verifique sua conexão e tente novamente." });
         setIsLoading(false);
-        return;
       }
     } catch (err: any) {
       setError("Erro ao conectar com Google. Tente novamente.");
-      toast.error("Erro inesperado", {
-        description: "Ocorreu um erro ao tentar conectar com o Google.",
-      });
+      toast.error("Erro inesperado", { description: "Ocorreu um erro ao tentar conectar com o Google." });
       setIsLoading(false);
     }
   };
@@ -579,7 +638,6 @@ const SmartAuth = () => {
   // Completar cadastro (Step 2)
   const handleCompletion = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!isStep2Valid) {
       toast.error("Por favor, preencha todos os campos corretamente");
       return;
@@ -628,15 +686,12 @@ const SmartAuth = () => {
       }
 
       if (isNewSignup) {
-        const redirectUrl = `${window.location.origin}/`;
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: redirectUrl,
-            data: {
-              nome: name,
-            },
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { nome: name },
           },
         });
 
@@ -645,16 +700,8 @@ const SmartAuth = () => {
 
         currentUserId = authData.user.id;
 
-        await supabase.from("profiles").insert({
-          id: authData.user.id,
-          email: email,
-          nome: name,
-        });
-
-        await supabase.from("user_roles").insert({
-          user_id: authData.user.id,
-          role: "aniversariante",
-        });
+        await supabase.from("profiles").insert({ id: authData.user.id, email: email, nome: name });
+        await supabase.from("user_roles").insert({ user_id: authData.user.id, role: "aniversariante" });
       }
 
       const [day, month, year] = birthDate.split("/");
@@ -676,17 +723,10 @@ const SmartAuth = () => {
         cadastro_completo: true,
       });
 
-      if (insertError) {
-        console.error("Erro ao salvar dados:", insertError);
-        throw insertError;
-      }
+      if (insertError) throw insertError;
 
       if (!isNewSignup) {
-        const { error: profileError } = await supabase.from("profiles").update({ nome: name }).eq("id", currentUserId);
-
-        if (profileError) {
-          console.error("Erro ao atualizar perfil:", profileError);
-        }
+        await supabase.from("profiles").update({ nome: name }).eq("id", currentUserId);
       }
 
       const { data: existingRole } = await supabase
@@ -701,16 +741,10 @@ const SmartAuth = () => {
           user_id: currentUserId,
           role: "aniversariante",
         });
-
-        if (roleError) {
-          console.error("Erro ao criar role:", roleError);
-          throw new Error("Erro ao finalizar cadastro. Tente novamente.");
-        }
+        if (roleError) throw new Error("Erro ao finalizar cadastro. Tente novamente.");
       }
 
-      toast.success("Cadastro completo!", {
-        description: "Bem-vindo ao Aniversariante VIP!",
-      });
+      toast.success("Cadastro completo!", { description: "Bem-vindo ao Aniversariante VIP!" });
 
       const redirectTo = sessionStorage.getItem("redirectAfterLogin");
       if (redirectTo) {
@@ -720,12 +754,9 @@ const SmartAuth = () => {
         navigate("/", { replace: true });
       }
     } catch (err: any) {
-      console.error("Erro ao completar cadastro:", err);
       const friendlyMessage = getFriendlyErrorMessage(err);
       setError(friendlyMessage);
-      toast.error("Erro ao completar cadastro", {
-        description: friendlyMessage,
-      });
+      toast.error("Erro ao completar cadastro", { description: friendlyMessage });
     } finally {
       setIsLoading(false);
     }
@@ -735,8 +766,7 @@ const SmartAuth = () => {
   const toggleMode = () => {
     const newIsLogin = !isLogin;
     setIsLogin(newIsLogin);
-    const newPath = newIsLogin ? "/login" : "/cadastro";
-    window.history.replaceState(null, "", newPath);
+    window.history.replaceState(null, "", newIsLogin ? "/login" : "/cadastro");
   };
 
   // Tela de confirmação de email
@@ -753,24 +783,102 @@ const SmartAuth = () => {
     );
   }
 
+  // ==========================================================================
+  // SHARED STYLES
+  // ==========================================================================
+
+  const inputBaseClass = cn(
+    "h-12 text-base text-white rounded-xl",
+    "bg-white/[0.03]",
+    "border border-white/[0.08]",
+    "placeholder:text-white/30",
+    "hover:bg-white/[0.05] hover:border-white/[0.12]",
+    "focus:bg-white/[0.05] focus:border-violet-500/50",
+    "focus:ring-2 focus:ring-violet-500/20 focus:outline-none",
+    "transition-all duration-200",
+  );
+
+  const inputWithIconClass = cn(inputBaseClass, "pl-11");
+
+  const inputErrorClass = "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20";
+
+  const labelClass = "text-sm font-medium text-white/80 flex items-center gap-1.5";
+
+  const buttonPrimaryClass = cn(
+    "w-full h-[52px] text-base font-semibold rounded-xl",
+    "bg-violet-600 hover:bg-violet-700 active:bg-violet-800",
+    "text-white",
+    "shadow-lg shadow-violet-600/20",
+    "hover:shadow-xl hover:shadow-violet-600/30",
+    "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
+    "transition-all duration-200",
+  );
+
+  const buttonGoogleClass = cn(
+    "w-full h-[52px] text-base font-semibold rounded-xl",
+    "bg-white hover:bg-white/95 active:bg-white/90",
+    "text-slate-900",
+    "shadow-lg hover:shadow-xl",
+    "transition-all duration-200",
+  );
+
+  const readOnlyInputClass = cn(inputBaseClass, "cursor-not-allowed opacity-60 text-white/60");
+
+  // ==========================================================================
+  // RENDER
+  // ==========================================================================
+
   return (
-    <div className="min-h-screen bg-slate-950 relative overflow-hidden">
-      {/* BackButton posicionado corretamente */}
-      <div className="absolute top-4 left-4 z-20">
-        <BackButton to="/" />
+    <div className="min-h-screen relative overflow-hidden bg-[#0F0A1A]">
+      {/* Background Pattern - Grid sutil */}
+      <div
+        className="absolute inset-0 opacity-[0.015]"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(255,255,255,0.5) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255,255,255,0.5) 1px, transparent 1px)
+          `,
+          backgroundSize: "32px 32px",
+        }}
+      />
+
+      {/* Glow Effects - Roxo apenas, sem rosa */}
+      <div
+        className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full pointer-events-none"
+        style={{
+          background: "radial-gradient(circle, rgba(124,58,237,0.25) 0%, transparent 70%)",
+          filter: "blur(80px)",
+        }}
+      />
+      <div
+        className="absolute -bottom-32 -right-32 w-[400px] h-[400px] rounded-full pointer-events-none"
+        style={{
+          background: "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)",
+          filter: "blur(80px)",
+        }}
+      />
+
+      {/* Back Button - Posicionado corretamente */}
+      <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
+        <BackButtonAuth onClick={() => navigate("/")} />
       </div>
 
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-violet-600/30 rounded-full blur-[120px]" />
-      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[120px]" />
-
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12 pb-24 sm:pb-12">
-        <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl backdrop-blur-xl">
-          {/* Progress bar */}
-          <div className="h-1.5 w-full bg-slate-800">
+      {/* Main Container */}
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-20 sm:py-12">
+        <div
+          className={cn(
+            "w-full max-w-[440px]",
+            "rounded-2xl overflow-hidden",
+            "border border-white/[0.06]",
+            "backdrop-blur-xl",
+            "shadow-[0_20px_50px_-15px_rgba(0,0,0,0.5)]",
+          )}
+          style={{ background: "rgba(15, 10, 26, 0.8)" }}
+        >
+          {/* Progress Bar */}
+          <div className="h-1 w-full bg-white/[0.03]">
             <div
-              className="h-full bg-gradient-to-r from-violet-600 to-violet-400 transition-all duration-500 ease-out"
+              className="h-full bg-gradient-to-r from-violet-600 to-violet-500 transition-all duration-500 ease-out"
               style={{ width: step === 1 ? "30%" : "100%" }}
               role="progressbar"
               aria-valuenow={step === 1 ? 30 : 100}
@@ -781,43 +889,46 @@ const SmartAuth = () => {
 
           <div className="p-6 sm:p-8 space-y-6">
             {/* Header */}
-            <div className="space-y-2 text-center">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-                {step === 1 ? (isLogin ? "Entre para ver os benefícios" : "Criar conta VIP") : "Complete seu cadastro"}
+            <div className="space-y-3 text-center">
+              {/* Logo Icon */}
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-violet-700 flex items-center justify-center shadow-lg shadow-violet-600/25">
+                <Cake className="w-7 h-7 text-white" />
+              </div>
+
+              <h1 className="text-[26px] sm:text-[30px] font-bold text-white leading-tight tracking-tight">
+                {step === 1 ? (isLogin ? "Bem-vindo de volta" : "Criar conta VIP") : "Complete seu cadastro"}
               </h1>
-              <p className="text-slate-400 text-sm sm:text-base">
+              <p className="text-white/50 text-[15px] leading-relaxed">
                 {step === 1
                   ? isLogin
-                    ? "Acesse sua conta Aniversariante VIP"
+                    ? "Acesse sua conta e veja seus benefícios"
                     : "Cadastre-se grátis em segundos"
                   : "Só mais alguns dados para finalizar"}
               </p>
             </div>
 
+            {/* Error Alert */}
             {error && (
               <div
-                className="flex items-center gap-3 rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400"
+                className="flex items-start gap-3 rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400"
                 role="alert"
               >
-                <AlertCircle className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
-                <span>{error}</span>
+                <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{error}</span>
               </div>
             )}
 
-            {/* Step 1: Login ou Cadastro Básico */}
+            {/* ================================================================ */}
+            {/* STEP 1: Login ou Cadastro Básico */}
+            {/* ================================================================ */}
             {step === 1 && (
               <div className="space-y-5">
                 {/* Google Button */}
-                <Button
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  disabled={isLoading}
-                  className="w-full min-h-[52px] h-[52px] text-base font-semibold bg-white hover:bg-slate-100 text-slate-900 rounded-xl shadow-lg hover:shadow-xl transition-all"
-                >
+                <Button type="button" onClick={handleGoogleLogin} disabled={isLoading} className={buttonGoogleClass}>
                   {isLoading ? (
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   ) : (
-                    <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+                    <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">
                       <path
                         fill="#4285F4"
                         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -839,15 +950,17 @@ const SmartAuth = () => {
                   {isLoading ? "Conectando..." : "Continuar com Google"}
                 </Button>
 
+                {/* Divider - mais elegante */}
                 <div className="flex items-center gap-4">
-                  <div className="h-px flex-1 bg-white/10" />
-                  <span className="text-sm text-slate-400 whitespace-nowrap">ou continue com email</span>
-                  <div className="h-px flex-1 bg-white/10" />
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+                  <span className="text-sm text-white/40 whitespace-nowrap px-2">ou continue com email</span>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
                 </div>
 
                 <form onSubmit={isLogin ? handleLogin : handleBasicSignup} className="space-y-4">
+                  {/* Email */}
                   <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-semibold text-slate-200 flex items-center gap-1">
+                    <label htmlFor="email" className={labelClass}>
                       Email <span className="text-violet-400">*</span>
                     </label>
                     <div className="relative">
@@ -858,32 +971,25 @@ const SmartAuth = () => {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="seu@email.com"
                         autoComplete="email"
-                        className={`h-[52px] text-base bg-white/5 text-white pl-11 focus:ring-2 transition-all ${
-                          email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-                            ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                            : "border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20"
-                        }`}
+                        className={cn(
+                          inputWithIconClass,
+                          email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && inputErrorClass,
+                        )}
                         required
-                        aria-invalid={email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? "true" : "false"}
-                        aria-describedby={
-                          email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? "email-error" : undefined
-                        }
                       />
-                      <Mail
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
-                        aria-hidden="true"
-                      />
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40 pointer-events-none" />
                     </div>
                     {email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && (
-                      <p id="email-error" className="text-sm text-red-400 flex items-center gap-1.5 mt-1">
-                        <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                      <p className="text-sm text-red-400 flex items-center gap-1.5 mt-1.5">
+                        <AlertCircle className="h-4 w-4" />
                         Digite um email válido
                       </p>
                     )}
                   </div>
 
+                  {/* Password */}
                   <div className="space-y-2">
-                    <label htmlFor="password" className="text-sm font-semibold text-slate-200 flex items-center gap-1">
+                    <label htmlFor="password" className={labelClass}>
                       Senha <span className="text-violet-400">*</span>
                     </label>
                     <div className="relative">
@@ -894,100 +1000,56 @@ const SmartAuth = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
                         autoComplete={isLogin ? "current-password" : "new-password"}
-                        className={`h-[52px] text-base bg-white/5 text-white pl-11 pr-14 focus:ring-2 transition-all ${
-                          !isLogin && password && !isPasswordValid()
-                            ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                            : "border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20"
-                        }`}
+                        className={cn(
+                          inputWithIconClass,
+                          "pr-14",
+                          !isLogin && password && !isPasswordValid() && inputErrorClass,
+                        )}
                         required
                         minLength={8}
-                        aria-describedby={!isLogin ? "password-requirements" : undefined}
                       />
-                      <Lock
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
-                        aria-hidden="true"
-                      />
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40 pointer-events-none" />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+                        className={cn(
+                          "absolute right-1.5 top-1/2 -translate-y-1/2",
+                          "w-10 h-10 flex items-center justify-center rounded-lg",
+                          "text-white/40 hover:text-white hover:bg-white/[0.08]",
+                          "transition-all duration-200",
+                        )}
                         tabIndex={-1}
                         aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
                       >
-                        {showPassword ? (
-                          <EyeOff className="w-5 h-5" aria-hidden="true" />
-                        ) : (
-                          <Eye className="w-5 h-5" aria-hidden="true" />
-                        )}
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
-                    {!isLogin && (
-                      <div
-                        id="password-requirements"
-                        className="space-y-2 mt-3 p-3 rounded-lg bg-slate-800/50 border border-slate-700/50"
-                      >
-                        <p className="text-xs text-slate-400 font-medium">A senha deve conter:</p>
-                        <ul className="text-xs space-y-1.5" aria-label="Requisitos de senha">
-                          <li
-                            className={`flex items-center gap-2 ${passwordChecks.hasMinLength ? "text-green-400" : "text-slate-500"}`}
-                            aria-label={`Mínimo 8 caracteres: ${passwordChecks.hasMinLength ? "atendido" : "não atendido"}`}
-                          >
-                            <span
-                              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${passwordChecks.hasMinLength ? "bg-green-500/20" : "bg-slate-700"}`}
-                              aria-hidden="true"
-                            >
-                              {passwordChecks.hasMinLength && <Check className="w-3 h-3" />}
-                            </span>
-                            Mínimo 8 caracteres
-                          </li>
-                          <li
-                            className={`flex items-center gap-2 ${passwordChecks.hasUppercase ? "text-green-400" : "text-slate-500"}`}
-                            aria-label={`Uma letra maiúscula: ${passwordChecks.hasUppercase ? "atendido" : "não atendido"}`}
-                          >
-                            <span
-                              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${passwordChecks.hasUppercase ? "bg-green-500/20" : "bg-slate-700"}`}
-                              aria-hidden="true"
-                            >
-                              {passwordChecks.hasUppercase && <Check className="w-3 h-3" />}
-                            </span>
-                            Uma letra maiúscula
-                          </li>
-                          <li
-                            className={`flex items-center gap-2 ${passwordChecks.hasSpecialChar ? "text-green-400" : "text-slate-500"}`}
-                            aria-label={`Um caractere especial: ${passwordChecks.hasSpecialChar ? "atendido" : "não atendido"}`}
-                          >
-                            <span
-                              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${passwordChecks.hasSpecialChar ? "bg-green-500/20" : "bg-slate-700"}`}
-                              aria-hidden="true"
-                            >
-                              {passwordChecks.hasSpecialChar && <Check className="w-3 h-3" />}
-                            </span>
-                            Um caractere especial (!@#$%...)
-                          </li>
-                        </ul>
-                      </div>
-                    )}
+
+                    {/* Password Strength (only for signup) */}
+                    {!isLogin && <PasswordStrength checks={passwordChecks} />}
                   </div>
 
+                  {/* Forgot Password (only for login) */}
                   {isLogin && (
                     <div className="flex justify-end">
                       <Link
                         to="/forgot-password"
-                        className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium"
+                        className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium py-1"
                       >
                         Esqueci minha senha
                       </Link>
                     </div>
                   )}
 
+                  {/* Submit Button */}
                   <Button
                     type="submit"
                     disabled={isLoading || (!isLogin && (!email || !isPasswordValid()))}
-                    className="w-full min-h-[52px] h-[52px] text-base font-semibold bg-[#7C3AED] hover:bg-[#6D28D9] transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg hover:shadow-xl"
+                    className={buttonPrimaryClass}
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         {isLogin ? "Entrando..." : "Criando conta..."}
                       </>
                     ) : isLogin ? (
@@ -998,6 +1060,7 @@ const SmartAuth = () => {
                   </Button>
                 </form>
 
+                {/* Toggle Mode */}
                 <div className="text-center pt-2">
                   <button
                     onClick={toggleMode}
@@ -1009,19 +1072,21 @@ const SmartAuth = () => {
               </div>
             )}
 
-            {/* Step 2: Complete registration */}
+            {/* ================================================================ */}
+            {/* STEP 2: Complete Registration */}
+            {/* ================================================================ */}
             {step === 2 && (
               <form onSubmit={handleCompletion} className="space-y-5">
-                {/* Mensagem para usuário Google */}
+                {/* Google User Info */}
                 {isGoogleUser && email && (
-                  <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4 space-y-2">
+                  <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl p-4 space-y-3">
                     <p className="text-violet-300 text-sm font-medium flex items-center gap-2">
-                      <Check className="h-4 w-4" aria-hidden="true" />
-                      Você está cadastrando com sua conta Google
+                      <Check className="h-4 w-4" />
+                      Conta Google conectada
                     </p>
-                    <div className="space-y-1">
-                      <label className="text-xs text-slate-400 font-medium">Email (Google)</label>
-                      <div className="bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-300">
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-white/40 font-medium">Email</label>
+                      <div className="bg-white/[0.03] border border-white/[0.08] rounded-lg px-4 py-2.5 text-sm text-white/70">
                         {email}
                       </div>
                     </div>
@@ -1053,19 +1118,17 @@ const SmartAuth = () => {
                   autoComplete="tel"
                 />
 
-                <div className="space-y-2">
-                  <MaskedInput
-                    label="CPF"
-                    value={cpf}
-                    onChange={handleCpfChange}
-                    mask={cpfMask}
-                    placeholder="000.000.000-00"
-                    error={cpfError || (cpfExists ? "Este CPF já está cadastrado em outra conta." : "")}
-                    isValid={isCpfValid && !cpfExists && !cpfChecking}
-                    loading={cpfChecking && cpf.replace(/\D/g, "").length === 11}
-                    required
-                  />
-                </div>
+                <MaskedInput
+                  label="CPF"
+                  value={cpf}
+                  onChange={handleCpfChange}
+                  mask={cpfMask}
+                  placeholder="000.000.000-00"
+                  error={cpfError || (cpfExists ? "Este CPF já está cadastrado em outra conta." : "")}
+                  isValid={isCpfValid && !cpfExists && !cpfChecking}
+                  loading={cpfChecking && cpf.replace(/\D/g, "").length === 11}
+                  required
+                />
 
                 <MaskedInput
                   label="Data de Nascimento"
@@ -1096,16 +1159,16 @@ const SmartAuth = () => {
                   <button
                     type="button"
                     onClick={() => setShowCepSearch(!showCepSearch)}
-                    className="text-sm text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1 font-medium min-h-[44px] px-2"
+                    className="text-sm text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1.5 font-medium min-h-[44px] px-1"
                   >
                     {showCepSearch ? (
                       <>
-                        <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                        <ChevronUp className="h-4 w-4" />
                         Fechar busca de CEP
                       </>
                     ) : (
                       <>
-                        <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                        <ChevronDown className="h-4 w-4" />
                         Não sei meu CEP
                       </>
                     )}
@@ -1114,9 +1177,10 @@ const SmartAuth = () => {
                   {showCepSearch && <BuscaCepPorEndereco onCepFound={handleCepFoundBySearch} />}
                 </div>
 
+                {/* Address Fields (Read-only) */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label htmlFor="estado" className="text-sm font-semibold text-slate-200">
+                    <label htmlFor="estado" className={labelClass}>
                       Estado
                     </label>
                     <Input
@@ -1124,12 +1188,12 @@ const SmartAuth = () => {
                       type="text"
                       value={estado}
                       readOnly
-                      className="h-[52px] text-base bg-white/5 border-white/10 text-slate-400 cursor-not-allowed"
-                      placeholder="Preenchido pelo CEP"
+                      className={readOnlyInputClass}
+                      placeholder="—"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="cidade" className="text-sm font-semibold text-slate-200">
+                    <label htmlFor="cidade" className={labelClass}>
                       Cidade
                     </label>
                     <Input
@@ -1137,14 +1201,14 @@ const SmartAuth = () => {
                       type="text"
                       value={cidade}
                       readOnly
-                      className="h-[52px] text-base bg-white/5 border-white/10 text-slate-400 cursor-not-allowed"
-                      placeholder="Preenchido pelo CEP"
+                      className={readOnlyInputClass}
+                      placeholder="—"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="bairro" className="text-sm font-semibold text-slate-200">
+                  <label htmlFor="bairro" className={labelClass}>
                     Bairro
                   </label>
                   <Input
@@ -1152,13 +1216,13 @@ const SmartAuth = () => {
                     type="text"
                     value={bairro}
                     readOnly
-                    className="h-[52px] text-base bg-white/5 border-white/10 text-slate-400 cursor-not-allowed"
+                    className={readOnlyInputClass}
                     placeholder="Preenchido pelo CEP"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="logradouro" className="text-sm font-semibold text-slate-200">
+                  <label htmlFor="logradouro" className={labelClass}>
                     Rua/Logradouro
                   </label>
                   <Input
@@ -1166,14 +1230,14 @@ const SmartAuth = () => {
                     type="text"
                     value={logradouro}
                     readOnly
-                    className="h-[52px] text-base bg-white/5 border-white/10 text-slate-400 cursor-not-allowed"
+                    className={readOnlyInputClass}
                     placeholder="Preenchido pelo CEP"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="numero" className="text-sm font-semibold text-slate-200">
-                    Número <span className="text-slate-400 text-xs font-normal">(opcional)</span>
+                  <label htmlFor="numero" className={labelClass}>
+                    Número <span className="text-white/40 text-xs font-normal">(opcional)</span>
                   </label>
                   <Input
                     id="numero"
@@ -1182,18 +1246,15 @@ const SmartAuth = () => {
                     onChange={(e) => setNumero(e.target.value.replace(/\D/g, ""))}
                     placeholder="123"
                     autoComplete="address-line2"
-                    className="h-[52px] text-base bg-white/5 border-white/10 text-white focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                    className={inputBaseClass}
                   />
                 </div>
 
-                <Button
-                  type="submit"
-                  disabled={isLoading || !isStep2Valid}
-                  className="w-full min-h-[52px] h-[52px] text-base font-semibold bg-[#7C3AED] hover:bg-[#6D28D9] transition-all disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg hover:shadow-xl"
-                >
+                {/* Submit Button */}
+                <Button type="submit" disabled={isLoading || !isStep2Valid} className={buttonPrimaryClass}>
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Finalizando...
                     </>
                   ) : (

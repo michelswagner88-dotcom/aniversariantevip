@@ -1,11 +1,12 @@
 // =============================================================================
-// EXPLORAR.TSX - V2.2
-// Layout claro consistente com Home + Mapa Split + Subcategorias funcionando
-// CORREÇÕES: Botão roxo, filtros com labels, sem "Melhor avaliados"
-// CORREÇÃO: Badge padronizado com Home (🎁 + uma palavra)
+// EXPLORAR.TSX - V2.3
+// CORREÇÕES:
+// - Novo sistema de categorias (categories.ts)
+// - Fix erro Google Maps getRootNode
+// - Saúde & Beleza como categoria principal
 // =============================================================================
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import {
   MapPin,
@@ -22,17 +23,15 @@ import {
   Map,
   List,
   Sparkles,
-  Dumbbell,
   Beer,
-  Scissors,
   Coffee,
   PartyPopper,
   Gamepad2,
   Hotel,
   Store as StoreIcon,
   Utensils,
-  Paintbrush,
   IceCream,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,7 +41,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { useEstabelecimentosProximos } from "@/hooks/useEstabelecimentosProximos";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
+import { CATEGORIAS, getSubcategoriasOptions } from "@/constants/categories";
 import { getEstabelecimentoUrl } from "@/lib/slugUtils";
 import { AirbnbMapLayout } from "@/components/map/AirbnbMapLayout";
 import BottomNav from "@/components/BottomNav";
@@ -56,20 +55,19 @@ const HEADER_COLOR = "#240046";
 const BRAND_PURPLE = "#7C3AED";
 const BRAND_PURPLE_HOVER = "#6D28D9";
 
+// Ícones Lucide para cada categoria (pelo ID)
 const CATEGORY_ICONS: Record<string, any> = {
   all: Sparkles,
-  academia: Dumbbell,
+  "casa-noturna": PartyPopper,
   bar: Beer,
-  barbearia: Scissors,
   cafeteria: Coffee,
-  "casa noturna": PartyPopper,
-  entretenimento: Gamepad2,
   hospedagem: Hotel,
+  entretenimento: Gamepad2,
   loja: StoreIcon,
   restaurante: Utensils,
-  salao: Paintbrush,
-  salão: Paintbrush,
+  "saude-beleza": Sparkles,
   sorveteria: IceCream,
+  outros: Plus,
 };
 
 const DISTANCIA_LABELS: Record<string, string> = {
@@ -110,17 +108,12 @@ const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => 
   if (!beneficio || beneficio.length < 3) return { emoji: "🎁", text: "Presente" };
   const b = beneficio.toLowerCase();
 
-  // Desconto - quando tem porcentagem
   if (b.includes("%") || b.includes("desconto") || b.includes("off")) {
     return { emoji: "🎁", text: "Desconto" };
   }
-
-  // Cortesia - quando é algo grátis
   if (b.includes("grátis") || b.includes("gratis") || b.includes("free") || b.includes("cortesia")) {
     return { emoji: "🎁", text: "Cortesia" };
   }
-
-  // Brinde - quando é presente/mimo/surpresa
   if (
     b.includes("brinde") ||
     b.includes("presente") ||
@@ -130,23 +123,15 @@ const getBenefitChip = (beneficio?: string): { emoji: string; text: string } => 
   ) {
     return { emoji: "🎁", text: "Brinde" };
   }
-
-  // Dobro - quando é 2x1 ou dobro
   if (b.includes("2x1") || b.includes("dobro") || b.includes("dois por um") || b.includes("leve 2")) {
     return { emoji: "🎁", text: "Dobro" };
   }
-
-  // Bônus - quando é adicional/extra
   if (b.includes("bônus") || b.includes("bonus") || b.includes("extra") || b.includes("adicional")) {
     return { emoji: "🎁", text: "Bônus" };
   }
-
-  // Voucher - quando menciona voucher/cupom
   if (b.includes("voucher") || b.includes("cupom") || b.includes("vale")) {
     return { emoji: "🎁", text: "Voucher" };
   }
-
-  // Padrão - Presente
   return { emoji: "🎁", text: "Presente" };
 };
 
@@ -299,7 +284,7 @@ const Header = ({ city, state, onBack }: { city: string; state: string; onBack: 
 );
 
 // =============================================================================
-// CATEGORIES BAR
+// CATEGORIES BAR - USANDO NOVO SISTEMA
 // =============================================================================
 
 const CategoriesBar = ({
@@ -321,47 +306,44 @@ const CategoriesBar = ({
   estado: string | null;
   estabelecimentos: any[];
 }) => {
+  // Monta lista de categorias a partir do novo sistema
   const cats = [
     { id: null, label: "Todos", icon: Sparkles },
-    ...CATEGORIAS_ESTABELECIMENTO.map((c) => ({
-      id: c.value,
-      label: c.label,
-      icon: CATEGORY_ICONS[c.value.toLowerCase()] || Sparkles,
+    ...CATEGORIAS.map((c) => ({
+      id: c.id,
+      label: c.plural,
+      icon: CATEGORY_ICONS[c.id] || Sparkles,
     })),
   ];
 
-  const SUBCATEGORIAS: Record<string, string[]> = {
-    academia: ["Musculação", "CrossFit", "Pilates", "Natação", "Funcional", "Spinning", "Yoga", "Artes Marciais"],
-    bar: ["Cervejaria", "Pub", "Rooftop", "Bar de Vinhos", "Coquetelaria", "Boteco", "Sports Bar"],
-    restaurante: ["Italiano", "Japonês", "Brasileiro", "Churrascaria", "Pizzaria", "Fast Food", "Vegano", "Árabe"],
-    cafeteria: ["Café Especial", "Confeitaria", "Padaria", "Brunch", "Doceria"],
-    barbearia: ["Corte Masculino", "Barba", "Tratamento Capilar", "Pigmentação"],
-    salao: ["Cabelo", "Manicure", "Estética", "Maquiagem", "Depilação", "Sobrancelha"],
-    "casa noturna": ["Balada", "Club", "Festa", "Show ao Vivo"],
-    hospedagem: ["Hotel", "Pousada", "Resort", "Hostel", "Flat"],
-    loja: ["Roupas", "Calçados", "Acessórios", "Presentes", "Eletrônicos", "Decoração"],
-    entretenimento: ["Cinema", "Teatro", "Parque", "Escape Room", "Boliche", "Karaokê"],
-    sorveteria: ["Artesanal", "Açaí", "Frozen", "Picolé", "Milk Shake"],
-  };
-
+  // Busca subcategorias disponíveis da categoria selecionada
   const subcatsDisponiveis = useMemo(() => {
     if (!selected) return [];
-    const todasSubs = SUBCATEGORIAS[selected.toLowerCase()] || [];
-    if (todasSubs.length === 0) return [];
+
+    // Busca subcategorias do novo sistema
+    const subcatOptions = getSubcategoriasOptions(selected);
+    if (subcatOptions.length === 0) return [];
+
+    // Filtra estabelecimentos da categoria
     const estabsDaCategoria = estabelecimentos.filter((e) => {
       const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
-      return cats.some((c) => c?.toLowerCase() === selected.toLowerCase());
+      return cats.some((c) => normalizeText(c || "") === normalizeText(selected));
     });
+
     if (estabsDaCategoria.length === 0) return [];
+
+    // Coleta especialidades existentes nos estabelecimentos
     const especialidadesExistentes = new Set<string>();
     estabsDaCategoria.forEach((est) => {
       const specs = est.especialidades || [];
-      specs.forEach((s: string) => especialidadesExistentes.add(s.toLowerCase()));
+      specs.forEach((s: string) => especialidadesExistentes.add(normalizeText(s)));
     });
-    return todasSubs.filter((sub) => {
-      const subLower = sub.toLowerCase();
+
+    // Filtra subcategorias que existem nos estabelecimentos
+    return subcatOptions.filter((sub) => {
+      const subNorm = normalizeText(sub.label);
       return Array.from(especialidadesExistentes).some(
-        (esp) => esp.includes(subLower) || subLower.includes(esp) || esp === subLower,
+        (esp) => esp.includes(subNorm) || subNorm.includes(esp) || esp === subNorm,
       );
     });
   }, [selected, estabelecimentos]);
@@ -421,15 +403,15 @@ const CategoriesBar = ({
               </button>
               <div className="w-px h-5 bg-white/30 mx-1" />
               {subcatsDisponiveis.map((sub) => {
-                const isSubActive = selectedSubcategories.includes(sub);
+                const isSubActive = selectedSubcategories.includes(sub.label);
                 return (
                   <button
-                    key={sub}
+                    key={sub.value}
                     onClick={() => {
                       if (isSubActive) {
-                        onSubcategoriesChange(selectedSubcategories.filter((s) => s !== sub));
+                        onSubcategoriesChange(selectedSubcategories.filter((s) => s !== sub.label));
                       } else {
-                        onSubcategoriesChange([...selectedSubcategories, sub]);
+                        onSubcategoriesChange([...selectedSubcategories, sub.label]);
                       }
                     }}
                     className={cn(
@@ -439,7 +421,7 @@ const CategoriesBar = ({
                         : "bg-white/90 text-[#240046] hover:bg-white",
                     )}
                   >
-                    {sub}
+                    {sub.icon} {sub.label}
                   </button>
                 );
               })}
@@ -471,120 +453,102 @@ const FiltersBar = ({
   totalResults: number;
   cidade: string | null;
   categoria: string | null;
-}) => (
-  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-    <div>
-      <h1 className="text-lg font-semibold text-zinc-900">
-        {categoria ? (
-          <span className="capitalize">
-            {categoria} em {cidade || "todas as cidades"}
-          </span>
-        ) : (
-          <span>{totalResults} lugares encontrados</span>
-        )}
-      </h1>
-      <p className="text-sm text-zinc-500">{totalResults} lugares encontrados</p>
-    </div>
+}) => {
+  // Busca o label da categoria selecionada
+  const categoriaLabel = useMemo(() => {
+    if (!categoria) return null;
+    const cat = CATEGORIAS.find((c) => c.id === categoria);
+    return cat?.plural || categoria;
+  }, [categoria]);
 
-    <div className="flex gap-2 flex-wrap">
-      <Select value={ordenacao} onValueChange={setOrdenacao}>
-        <SelectTrigger
-          className={cn(
-            "h-10 text-sm bg-white border-zinc-200 rounded-lg px-3",
-            "shadow-sm hover:border-violet-300 hover:bg-violet-50/50",
-            "focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400",
-            "transition-all duration-200 w-auto min-w-[130px]",
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <div>
+        <h1 className="text-lg font-semibold text-zinc-900">
+          {categoriaLabel ? (
+            <span>
+              {categoriaLabel} em {cidade || "todas as cidades"}
+            </span>
+          ) : (
+            <span>{totalResults} lugares encontrados</span>
           )}
-        >
-          <span className="text-zinc-700 font-medium whitespace-nowrap">
-            {ORDENACAO_LABELS[ordenacao] || "Mais próximos"}
-          </span>
-        </SelectTrigger>
-        <SelectContent
-          className="z-[100] bg-white border border-zinc-200 shadow-lg rounded-lg overflow-hidden"
-          position="popper"
-          sideOffset={4}
-        >
-          <SelectItem
-            value="distancia"
-            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
-          >
-            Mais próximos
-          </SelectItem>
-          <SelectItem
-            value="nome"
-            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
-          >
-            Nome A-Z
-          </SelectItem>
-          <SelectItem
-            value="recentes"
-            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
-          >
-            Mais recentes
-          </SelectItem>
-        </SelectContent>
-      </Select>
+        </h1>
+        <p className="text-sm text-zinc-500">{totalResults} lugares encontrados</p>
+      </div>
 
-      <Select value={raioKm} onValueChange={setRaioKm}>
-        <SelectTrigger
-          className={cn(
-            "h-10 text-sm bg-white border-zinc-200 rounded-lg px-3",
-            "shadow-sm hover:border-violet-300 hover:bg-violet-50/50",
-            "focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400",
-            "transition-all duration-200 w-auto min-w-[150px]",
-          )}
-        >
-          <span className="text-zinc-700 font-medium whitespace-nowrap">
-            {DISTANCIA_LABELS[raioKm] || "Qualquer distância"}
-          </span>
-        </SelectTrigger>
-        <SelectContent
-          className="z-[100] bg-white border border-zinc-200 shadow-lg rounded-lg overflow-hidden"
-          position="popper"
-          sideOffset={4}
-        >
-          <SelectItem
-            value="all"
-            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
+      <div className="flex gap-2 flex-wrap">
+        <Select value={ordenacao} onValueChange={setOrdenacao}>
+          <SelectTrigger
+            className={cn(
+              "h-10 text-sm bg-white border-zinc-200 rounded-lg px-3",
+              "shadow-sm hover:border-violet-300 hover:bg-violet-50/50",
+              "focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400",
+              "transition-all duration-200 w-auto min-w-[130px]",
+            )}
           >
-            Qualquer distância
-          </SelectItem>
-          <SelectItem
-            value="1"
-            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
+            <span className="text-zinc-700 font-medium whitespace-nowrap">
+              {ORDENACAO_LABELS[ordenacao] || "Mais próximos"}
+            </span>
+          </SelectTrigger>
+          <SelectContent
+            className="z-[100] bg-white border border-zinc-200 shadow-lg rounded-lg overflow-hidden"
+            position="popper"
+            sideOffset={4}
           >
-            Até 1 km
-          </SelectItem>
-          <SelectItem
-            value="3"
-            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
+            <SelectItem value="distancia" className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50">
+              Mais próximos
+            </SelectItem>
+            <SelectItem value="nome" className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50">
+              Nome A-Z
+            </SelectItem>
+            <SelectItem value="recentes" className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50">
+              Mais recentes
+            </SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={raioKm} onValueChange={setRaioKm}>
+          <SelectTrigger
+            className={cn(
+              "h-10 text-sm bg-white border-zinc-200 rounded-lg px-3",
+              "shadow-sm hover:border-violet-300 hover:bg-violet-50/50",
+              "focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400",
+              "transition-all duration-200 w-auto min-w-[150px]",
+            )}
           >
-            Até 3 km
-          </SelectItem>
-          <SelectItem
-            value="5"
-            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
+            <span className="text-zinc-700 font-medium whitespace-nowrap">
+              {DISTANCIA_LABELS[raioKm] || "Qualquer distância"}
+            </span>
+          </SelectTrigger>
+          <SelectContent
+            className="z-[100] bg-white border border-zinc-200 shadow-lg rounded-lg overflow-hidden"
+            position="popper"
+            sideOffset={4}
           >
-            Até 5 km
-          </SelectItem>
-          <SelectItem
-            value="10"
-            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
-          >
-            Até 10 km
-          </SelectItem>
-          <SelectItem
-            value="25"
-            className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50 focus:bg-violet-50 data-[state=checked]:bg-violet-100 data-[state=checked]:text-violet-900"
-          >
-            Até 25 km
-          </SelectItem>
-        </SelectContent>
-      </Select>
+            <SelectItem value="all" className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50">
+              Qualquer distância
+            </SelectItem>
+            <SelectItem value="1" className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50">
+              Até 1 km
+            </SelectItem>
+            <SelectItem value="3" className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50">
+              Até 3 km
+            </SelectItem>
+            <SelectItem value="5" className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50">
+              Até 5 km
+            </SelectItem>
+            <SelectItem value="10" className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50">
+              Até 10 km
+            </SelectItem>
+            <SelectItem value="25" className="text-sm py-2.5 px-3 cursor-pointer hover:bg-violet-50">
+              Até 25 km
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // =============================================================================
 // CTA BAR FOR ESTABLISHMENTS
@@ -649,6 +613,52 @@ const EmptyState = ({ cidade }: { cidade: string | null }) => (
     </Link>
   </div>
 );
+
+// =============================================================================
+// MAP WRAPPER - Previne erro getRootNode
+// =============================================================================
+
+const SafeMapLayout = ({
+  children,
+  establishments,
+  onEstablishmentClick,
+  userLocation,
+}: {
+  children: React.ReactNode;
+  establishments: any[];
+  onEstablishmentClick: (est: any) => void;
+  userLocation: { lat: number; lng: number } | null;
+}) => {
+  const [mapReady, setMapReady] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Aguarda o DOM estar completamente montado
+    const timer = setTimeout(() => {
+      if (containerRef.current) {
+        setMapReady(true);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div ref={containerRef}>
+      {mapReady ? (
+        <AirbnbMapLayout
+          establishments={establishments}
+          onEstablishmentClick={onEstablishmentClick}
+          userLocation={userLocation}
+        >
+          {children}
+        </AirbnbMapLayout>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">{children}</div>
+      )}
+    </div>
+  );
+};
 
 // =============================================================================
 // MAIN COMPONENT
@@ -727,7 +737,7 @@ const Explorar = () => {
     if (selectedCategory) {
       filtered = filtered.filter((est) => {
         const cats = Array.isArray(est.categoria) ? est.categoria : [est.categoria];
-        return cats.some((c) => c?.toLowerCase() === selectedCategory.toLowerCase());
+        return cats.some((c) => normalizeText(c || "") === normalizeText(selectedCategory));
       });
     }
 
@@ -764,8 +774,12 @@ const Explorar = () => {
 
   const filteredPlaces = useMemo(() => {
     return allPlaces.filter((place) => {
-      if (selectedCategory && place.category?.toLowerCase() !== selectedCategory.toLowerCase()) {
-        return false;
+      if (selectedCategory) {
+        const placeCategory = normalizeText(place.category || "");
+        const selectedNorm = normalizeText(selectedCategory);
+        if (placeCategory !== selectedNorm) {
+          return false;
+        }
       }
 
       if (selectedSubcategories.length > 0) {
@@ -857,7 +871,7 @@ const Explorar = () => {
               categoria={selectedCategory}
             />
 
-            <AirbnbMapLayout
+            <SafeMapLayout
               establishments={estabelecimentosFormatados}
               onEstablishmentClick={handleEstablishmentClick}
               userLocation={userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : null}
@@ -867,7 +881,7 @@ const Explorar = () => {
                   <PlaceCard key={place.id} place={place} />
                 ))}
               </div>
-            </AirbnbMapLayout>
+            </SafeMapLayout>
           </>
         )}
       </main>

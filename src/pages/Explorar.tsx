@@ -1,6 +1,7 @@
 // =============================================================================
-// EXPLORAR.TSX - V2.3
+// EXPLORAR.TSX - V2.4
 // CORREÇÕES:
+// - FIX: Filtragem de categorias usando mapLegacyCategoriaToId
 // - Novo sistema de categorias (categories.ts)
 // - Fix erro Google Maps getRootNode
 // - Saúde & Beleza como categoria principal
@@ -41,7 +42,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { useEstabelecimentosProximos } from "@/hooks/useEstabelecimentosProximos";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { CATEGORIAS, getSubcategoriasOptions } from "@/constants/categories";
+import { CATEGORIAS, getSubcategoriasOptions, mapLegacyCategoriaToId, getCategoriaById } from "@/constants/categories";
 import { getEstabelecimentoUrl } from "@/lib/slugUtils";
 import { AirbnbMapLayout } from "@/components/map/AirbnbMapLayout";
 import BottomNav from "@/components/BottomNav";
@@ -96,6 +97,21 @@ const normalizeText = (text: string): string => {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
+};
+
+// =============================================================================
+// HELPER: Comparar categoria do banco com ID selecionado
+// Converte o label do banco para ID antes de comparar
+// =============================================================================
+
+const matchCategory = (dbCategory: string, selectedCategoryId: string): boolean => {
+  if (!dbCategory || !selectedCategoryId) return false;
+
+  // Converte a categoria do banco (label) para ID
+  const dbCategoryId = mapLegacyCategoriaToId(dbCategory);
+
+  // Compara IDs normalizados
+  return normalizeText(dbCategoryId) === normalizeText(selectedCategoryId);
 };
 
 // =============================================================================
@@ -176,6 +192,14 @@ const PlaceCard = ({ place }: PlaceCardProps) => {
 
   const chip = getBenefitChip(place.benefit);
 
+  // Converte categoria do banco para label legível
+  const categoryLabel = useMemo(() => {
+    if (!place.category) return "";
+    const catId = mapLegacyCategoriaToId(place.category);
+    const cat = getCategoriaById(catId);
+    return cat?.label || place.category;
+  }, [place.category]);
+
   const handleClick = () => {
     const url = getEstabelecimentoUrl({
       estado: place.estado,
@@ -234,8 +258,8 @@ const PlaceCard = ({ place }: PlaceCardProps) => {
           {place.name}
         </h3>
         <p className="text-zinc-500 text-sm line-clamp-1 mt-0.5">
-          {place.category && <span className="capitalize">{place.category}</span>}
-          {place.category && place.neighborhood && " · "}
+          {categoryLabel && <span className="capitalize">{categoryLabel}</span>}
+          {categoryLabel && place.neighborhood && " · "}
           {place.neighborhood}
           {place.distance && ` · ${place.distance}`}
         </p>
@@ -324,10 +348,10 @@ const CategoriesBar = ({
     const subcatOptions = getSubcategoriasOptions(selected);
     if (subcatOptions.length === 0) return [];
 
-    // Filtra estabelecimentos da categoria
+    // Filtra estabelecimentos da categoria (usando matchCategory)
     const estabsDaCategoria = estabelecimentos.filter((e) => {
       const cats = Array.isArray(e.categoria) ? e.categoria : [e.categoria];
-      return cats.some((c) => normalizeText(c || "") === normalizeText(selected));
+      return cats.some((c) => matchCategory(c, selected));
     });
 
     if (estabsDaCategoria.length === 0) return [];
@@ -731,16 +755,22 @@ const Explorar = () => {
     [estabelecimentosComDistancia],
   );
 
+  // =========================================================================
+  // FILTRAGEM CORRIGIDA - usa matchCategory para converter label → ID
+  // =========================================================================
+
   const estabelecimentosFormatados = useMemo(() => {
     let filtered = estabelecimentosComDistancia;
 
+    // Filtra por categoria usando matchCategory
     if (selectedCategory) {
       filtered = filtered.filter((est) => {
         const cats = Array.isArray(est.categoria) ? est.categoria : [est.categoria];
-        return cats.some((c) => normalizeText(c || "") === normalizeText(selectedCategory));
+        return cats.some((c) => matchCategory(c, selectedCategory));
       });
     }
 
+    // Filtra por subcategorias
     if (selectedSubcategories.length > 0) {
       filtered = filtered.filter((est) => {
         const specs = est.especialidades || [];
@@ -772,16 +802,20 @@ const Explorar = () => {
       }));
   }, [estabelecimentosComDistancia, selectedCategory, selectedSubcategories]);
 
+  // =========================================================================
+  // FILTRAGEM CORRIGIDA PARA CARDS - usa matchCategory
+  // =========================================================================
+
   const filteredPlaces = useMemo(() => {
     return allPlaces.filter((place) => {
+      // Filtra por categoria usando matchCategory
       if (selectedCategory) {
-        const placeCategory = normalizeText(place.category || "");
-        const selectedNorm = normalizeText(selectedCategory);
-        if (placeCategory !== selectedNorm) {
+        if (!matchCategory(place.category, selectedCategory)) {
           return false;
         }
       }
 
+      // Filtra por subcategorias
       if (selectedSubcategories.length > 0) {
         const placeSubcats = place.especialidades || [];
         const hasMatch = selectedSubcategories.some((sub) => {

@@ -1,7 +1,7 @@
 // =============================================================================
 // SMART AUTH - V2.0 PREMIUM
-// Design System: Roxo profundo (#240046) + Violet (#7C3AED)
-// Padrão Airbnb/Stripe - Zero rosa, apenas roxo consistente
+// Design System: Fundo claro (branco/slate-50) + Roxo (#7C3AED) como destaque
+// Consistente com o resto do site AniversarianteVIP
 // =============================================================================
 
 import { useState, useEffect, useRef } from "react";
@@ -36,38 +36,7 @@ import { SEO_CONTENT } from "@/constants/seo";
 import { cn } from "@/lib/utils";
 
 // =============================================================================
-// DESIGN SPEC
-// =============================================================================
-//
-// CORES:
-// - Primary: #7C3AED (violet-600)
-// - Primary Hover: #6D28D9 (violet-700)
-// - Dark BG: #0F0A1A (quase preto com tom roxo)
-// - Card BG: rgba(15, 10, 26, 0.85) + backdrop-blur
-// - Border: rgba(255,255,255,0.08)
-// - Border Hover: rgba(124,58,237,0.3)
-// - Border Focus: rgba(124,58,237,0.5)
-//
-// DIMENSÕES:
-// - Card: max-w-[440px] desktop, 100% mobile com px-4
-// - Inputs: h-12 (48px), pl-11 (com ícone), rounded-xl
-// - Botões: h-[52px], rounded-xl, font-semibold
-// - Min touch target: 44px
-//
-// TIPOGRAFIA:
-// - Título: text-[26px] sm:text-[30px] font-bold
-// - Subtítulo: text-[15px] text-white/50
-// - Labels: text-sm font-medium text-white/80
-// - Placeholder: text-white/30
-//
-// ESTADOS:
-// - Focus: ring-2 ring-violet-500/20 border-violet-500/50
-// - Error: border-red-500/50 ring-red-500/20
-// - Disabled: opacity-60 cursor-not-allowed
-// =============================================================================
-
-// =============================================================================
-// BACK BUTTON COMPONENT (inline - sem dependência externa)
+// BACK BUTTON COMPONENT
 // =============================================================================
 
 const BackButtonAuth = ({ onClick }: { onClick: () => void }) => (
@@ -75,10 +44,10 @@ const BackButtonAuth = ({ onClick }: { onClick: () => void }) => (
     onClick={onClick}
     className={cn(
       "group flex items-center gap-2 px-3 py-2 rounded-xl",
-      "text-white/70 hover:text-white",
-      "bg-white/[0.03] hover:bg-white/[0.08]",
-      "border border-white/[0.06] hover:border-white/[0.12]",
-      "backdrop-blur-sm",
+      "text-zinc-600 hover:text-zinc-900",
+      "bg-white hover:bg-zinc-50",
+      "border border-zinc-200 hover:border-zinc-300",
+      "shadow-sm hover:shadow",
       "transition-all duration-200",
       "min-h-[44px] min-w-[44px]",
     )}
@@ -105,23 +74,21 @@ const PasswordStrength = ({
   ];
 
   return (
-    <div className="mt-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-      <p className="text-xs font-medium text-white/40 mb-3">A senha deve conter:</p>
+    <div className="mt-3 p-4 rounded-xl bg-zinc-50 border border-zinc-100">
+      <p className="text-xs font-medium text-zinc-500 mb-3">A senha deve conter:</p>
       <ul className="space-y-2.5">
         {items.map((item) => (
           <li
             key={item.key}
             className={cn(
               "flex items-center gap-2.5 text-sm transition-colors duration-200",
-              item.checked ? "text-emerald-400" : "text-white/40",
+              item.checked ? "text-emerald-600" : "text-zinc-400",
             )}
           >
             <span
               className={cn(
                 "w-5 h-5 rounded-full flex items-center justify-center transition-all duration-200",
-                item.checked
-                  ? "bg-emerald-500/20 ring-1 ring-emerald-500/30"
-                  : "bg-white/[0.03] ring-1 ring-white/[0.08]",
+                item.checked ? "bg-emerald-100 text-emerald-600" : "bg-zinc-100",
               )}
             >
               {item.checked && <Check className="w-3 h-3" />}
@@ -784,31 +751,30 @@ const SmartAuth = () => {
   }
 
   // ==========================================================================
-  // SHARED STYLES
+  // SHARED STYLES - TEMA CLARO
   // ==========================================================================
 
   const inputBaseClass = cn(
-    "h-12 text-base text-white rounded-xl",
-    "bg-white/[0.03]",
-    "border border-white/[0.08]",
-    "placeholder:text-white/30",
-    "hover:bg-white/[0.05] hover:border-white/[0.12]",
-    "focus:bg-white/[0.05] focus:border-violet-500/50",
-    "focus:ring-2 focus:ring-violet-500/20 focus:outline-none",
+    "h-12 text-base text-zinc-900 rounded-xl",
+    "bg-white",
+    "border border-zinc-200",
+    "placeholder:text-zinc-400",
+    "hover:border-zinc-300",
+    "focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none",
     "transition-all duration-200",
   );
 
   const inputWithIconClass = cn(inputBaseClass, "pl-11");
 
-  const inputErrorClass = "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20";
+  const inputErrorClass = "border-red-400 focus:border-red-500 focus:ring-red-500/20";
 
-  const labelClass = "text-sm font-medium text-white/80 flex items-center gap-1.5";
+  const labelClass = "text-sm font-medium text-zinc-700 flex items-center gap-1.5";
 
   const buttonPrimaryClass = cn(
     "w-full h-[52px] text-base font-semibold rounded-xl",
     "bg-violet-600 hover:bg-violet-700 active:bg-violet-800",
     "text-white",
-    "shadow-lg shadow-violet-600/20",
+    "shadow-lg shadow-violet-600/25",
     "hover:shadow-xl hover:shadow-violet-600/30",
     "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
     "transition-all duration-200",
@@ -816,49 +782,50 @@ const SmartAuth = () => {
 
   const buttonGoogleClass = cn(
     "w-full h-[52px] text-base font-semibold rounded-xl",
-    "bg-white hover:bg-white/95 active:bg-white/90",
-    "text-slate-900",
-    "shadow-lg hover:shadow-xl",
+    "bg-white hover:bg-zinc-50 active:bg-zinc-100",
+    "text-zinc-800",
+    "border border-zinc-200 hover:border-zinc-300",
+    "shadow-sm hover:shadow",
     "transition-all duration-200",
   );
 
-  const readOnlyInputClass = cn(inputBaseClass, "cursor-not-allowed opacity-60 text-white/60");
+  const readOnlyInputClass = cn(inputBaseClass, "cursor-not-allowed bg-zinc-50 text-zinc-500");
 
   // ==========================================================================
   // RENDER
   // ==========================================================================
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#0F0A1A]">
-      {/* Background Pattern - Grid sutil */}
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-b from-slate-50 to-white">
+      {/* Background Pattern - Grid sutil roxo */}
       <div
-        className="absolute inset-0 opacity-[0.015]"
+        className="absolute inset-0 opacity-40"
         style={{
           backgroundImage: `
-            linear-gradient(to right, rgba(255,255,255,0.5) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(255,255,255,0.5) 1px, transparent 1px)
+            linear-gradient(to right, rgba(124,58,237,0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(124,58,237,0.03) 1px, transparent 1px)
           `,
           backgroundSize: "32px 32px",
         }}
       />
 
-      {/* Glow Effects - Roxo apenas, sem rosa */}
+      {/* Glow Effects - Roxo sutil */}
       <div
-        className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full pointer-events-none"
+        className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full pointer-events-none opacity-30"
         style={{
-          background: "radial-gradient(circle, rgba(124,58,237,0.25) 0%, transparent 70%)",
-          filter: "blur(80px)",
+          background: "radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)",
+          filter: "blur(60px)",
         }}
       />
       <div
-        className="absolute -bottom-32 -right-32 w-[400px] h-[400px] rounded-full pointer-events-none"
+        className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full pointer-events-none opacity-20"
         style={{
-          background: "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)",
-          filter: "blur(80px)",
+          background: "radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)",
+          filter: "blur(60px)",
         }}
       />
 
-      {/* Back Button - Posicionado corretamente */}
+      {/* Back Button */}
       <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
         <BackButtonAuth onClick={() => navigate("/")} />
       </div>
@@ -869,14 +836,13 @@ const SmartAuth = () => {
           className={cn(
             "w-full max-w-[440px]",
             "rounded-2xl overflow-hidden",
-            "border border-white/[0.06]",
-            "backdrop-blur-xl",
-            "shadow-[0_20px_50px_-15px_rgba(0,0,0,0.5)]",
+            "bg-white",
+            "border border-zinc-200/80",
+            "shadow-xl shadow-zinc-200/50",
           )}
-          style={{ background: "rgba(15, 10, 26, 0.8)" }}
         >
           {/* Progress Bar */}
-          <div className="h-1 w-full bg-white/[0.03]">
+          <div className="h-1.5 w-full bg-zinc-100">
             <div
               className="h-full bg-gradient-to-r from-violet-600 to-violet-500 transition-all duration-500 ease-out"
               style={{ width: step === 1 ? "30%" : "100%" }}
@@ -895,10 +861,10 @@ const SmartAuth = () => {
                 <Cake className="w-7 h-7 text-white" />
               </div>
 
-              <h1 className="text-[26px] sm:text-[30px] font-bold text-white leading-tight tracking-tight">
+              <h1 className="text-[26px] sm:text-[30px] font-bold text-zinc-900 leading-tight tracking-tight">
                 {step === 1 ? (isLogin ? "Bem-vindo de volta" : "Criar conta VIP") : "Complete seu cadastro"}
               </h1>
-              <p className="text-white/50 text-[15px] leading-relaxed">
+              <p className="text-zinc-500 text-[15px] leading-relaxed">
                 {step === 1
                   ? isLogin
                     ? "Acesse sua conta e veja seus benefícios"
@@ -910,10 +876,10 @@ const SmartAuth = () => {
             {/* Error Alert */}
             {error && (
               <div
-                className="flex items-start gap-3 rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400"
+                className="flex items-start gap-3 rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700"
                 role="alert"
               >
-                <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5 text-red-500" />
                 <span className="leading-relaxed">{error}</span>
               </div>
             )}
@@ -950,18 +916,18 @@ const SmartAuth = () => {
                   {isLoading ? "Conectando..." : "Continuar com Google"}
                 </Button>
 
-                {/* Divider - mais elegante */}
+                {/* Divider */}
                 <div className="flex items-center gap-4">
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
-                  <span className="text-sm text-white/40 whitespace-nowrap px-2">ou continue com email</span>
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+                  <div className="h-px flex-1 bg-zinc-200" />
+                  <span className="text-sm text-zinc-400 whitespace-nowrap px-2">ou continue com email</span>
+                  <div className="h-px flex-1 bg-zinc-200" />
                 </div>
 
                 <form onSubmit={isLogin ? handleLogin : handleBasicSignup} className="space-y-4">
                   {/* Email */}
                   <div className="space-y-2">
                     <label htmlFor="email" className={labelClass}>
-                      Email <span className="text-violet-400">*</span>
+                      Email <span className="text-violet-600">*</span>
                     </label>
                     <div className="relative">
                       <Input
@@ -977,10 +943,10 @@ const SmartAuth = () => {
                         )}
                         required
                       />
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40 pointer-events-none" />
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400 pointer-events-none" />
                     </div>
                     {email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && (
-                      <p className="text-sm text-red-400 flex items-center gap-1.5 mt-1.5">
+                      <p className="text-sm text-red-600 flex items-center gap-1.5 mt-1.5">
                         <AlertCircle className="h-4 w-4" />
                         Digite um email válido
                       </p>
@@ -990,7 +956,7 @@ const SmartAuth = () => {
                   {/* Password */}
                   <div className="space-y-2">
                     <label htmlFor="password" className={labelClass}>
-                      Senha <span className="text-violet-400">*</span>
+                      Senha <span className="text-violet-600">*</span>
                     </label>
                     <div className="relative">
                       <Input
@@ -1008,14 +974,14 @@ const SmartAuth = () => {
                         required
                         minLength={8}
                       />
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40 pointer-events-none" />
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400 pointer-events-none" />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className={cn(
                           "absolute right-1.5 top-1/2 -translate-y-1/2",
                           "w-10 h-10 flex items-center justify-center rounded-lg",
-                          "text-white/40 hover:text-white hover:bg-white/[0.08]",
+                          "text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100",
                           "transition-all duration-200",
                         )}
                         tabIndex={-1}
@@ -1034,7 +1000,7 @@ const SmartAuth = () => {
                     <div className="flex justify-end">
                       <Link
                         to="/forgot-password"
-                        className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium py-1"
+                        className="text-sm text-violet-600 hover:text-violet-700 transition-colors font-medium py-1"
                       >
                         Esqueci minha senha
                       </Link>
@@ -1064,7 +1030,7 @@ const SmartAuth = () => {
                 <div className="text-center pt-2">
                   <button
                     onClick={toggleMode}
-                    className="text-sm text-violet-400 hover:text-violet-300 transition-colors font-medium min-h-[44px] px-4 inline-flex items-center"
+                    className="text-sm text-violet-600 hover:text-violet-700 transition-colors font-medium min-h-[44px] px-4 inline-flex items-center"
                   >
                     {isLogin ? "Primeira vez aqui? Crie sua conta grátis" : "Já tem conta? Faça login"}
                   </button>
@@ -1079,14 +1045,14 @@ const SmartAuth = () => {
               <form onSubmit={handleCompletion} className="space-y-5">
                 {/* Google User Info */}
                 {isGoogleUser && email && (
-                  <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl p-4 space-y-3">
-                    <p className="text-violet-300 text-sm font-medium flex items-center gap-2">
+                  <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 space-y-3">
+                    <p className="text-violet-700 text-sm font-medium flex items-center gap-2">
                       <Check className="h-4 w-4" />
                       Conta Google conectada
                     </p>
                     <div className="space-y-1.5">
-                      <label className="text-xs text-white/40 font-medium">Email</label>
-                      <div className="bg-white/[0.03] border border-white/[0.08] rounded-lg px-4 py-2.5 text-sm text-white/70">
+                      <label className="text-xs text-zinc-500 font-medium">Email</label>
+                      <div className="bg-white border border-violet-100 rounded-lg px-4 py-2.5 text-sm text-zinc-700">
                         {email}
                       </div>
                     </div>
@@ -1104,6 +1070,7 @@ const SmartAuth = () => {
                   required
                   icon={<User className="h-5 w-5" />}
                   autoComplete="name"
+                  theme="light"
                 />
 
                 <MaskedInput
@@ -1116,6 +1083,7 @@ const SmartAuth = () => {
                   isValid={isPhoneValid}
                   required
                   autoComplete="tel"
+                  theme="light"
                 />
 
                 <MaskedInput
@@ -1128,6 +1096,7 @@ const SmartAuth = () => {
                   isValid={isCpfValid && !cpfExists && !cpfChecking}
                   loading={cpfChecking && cpf.replace(/\D/g, "").length === 11}
                   required
+                  theme="light"
                 />
 
                 <MaskedInput
@@ -1140,6 +1109,7 @@ const SmartAuth = () => {
                   isValid={isBirthDateValid}
                   required
                   autoComplete="bday"
+                  theme="light"
                 />
 
                 <div className="space-y-3">
@@ -1154,12 +1124,13 @@ const SmartAuth = () => {
                     loading={cepLoading}
                     required
                     autoComplete="postal-code"
+                    theme="light"
                   />
 
                   <button
                     type="button"
                     onClick={() => setShowCepSearch(!showCepSearch)}
-                    className="text-sm text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1.5 font-medium min-h-[44px] px-1"
+                    className="text-sm text-violet-600 hover:text-violet-700 transition-colors flex items-center gap-1.5 font-medium min-h-[44px] px-1"
                   >
                     {showCepSearch ? (
                       <>
@@ -1237,7 +1208,7 @@ const SmartAuth = () => {
 
                 <div className="space-y-2">
                   <label htmlFor="numero" className={labelClass}>
-                    Número <span className="text-white/40 text-xs font-normal">(opcional)</span>
+                    Número <span className="text-zinc-400 text-xs font-normal">(opcional)</span>
                   </label>
                   <Input
                     id="numero"

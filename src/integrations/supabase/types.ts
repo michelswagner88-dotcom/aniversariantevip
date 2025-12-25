@@ -603,6 +603,7 @@ export type Database = {
           foto_buscada: boolean | null
           foto_migrada: boolean | null
           foto_migrada_em: string | null
+          fotos: Json | null
           galeria_fotos: string[] | null
           google_place_id: string | null
           horario_funcionamento: string | null
@@ -626,6 +627,7 @@ export type Database = {
           stripe_customer_id: string | null
           telefone: string | null
           tem_conta_acesso: boolean | null
+          tipo_beneficio: string | null
           updated_at: string | null
           whatsapp: string | null
         }
@@ -653,6 +655,7 @@ export type Database = {
           foto_buscada?: boolean | null
           foto_migrada?: boolean | null
           foto_migrada_em?: string | null
+          fotos?: Json | null
           galeria_fotos?: string[] | null
           google_place_id?: string | null
           horario_funcionamento?: string | null
@@ -676,6 +679,7 @@ export type Database = {
           stripe_customer_id?: string | null
           telefone?: string | null
           tem_conta_acesso?: boolean | null
+          tipo_beneficio?: string | null
           updated_at?: string | null
           whatsapp?: string | null
         }
@@ -703,6 +707,7 @@ export type Database = {
           foto_buscada?: boolean | null
           foto_migrada?: boolean | null
           foto_migrada_em?: string | null
+          fotos?: Json | null
           galeria_fotos?: string[] | null
           google_place_id?: string | null
           horario_funcionamento?: string | null
@@ -726,6 +731,7 @@ export type Database = {
           stripe_customer_id?: string | null
           telefone?: string | null
           tem_conta_acesso?: boolean | null
+          tipo_beneficio?: string | null
           updated_at?: string | null
           whatsapp?: string | null
         }

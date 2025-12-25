@@ -1,3 +1,8 @@
+// =============================================================================
+// CADASTRO ESTABELECIMENTO - TEMA CLARO
+// Design System: Fundo claro (branco/slate-50) + Roxo (#7C3AED) como destaque
+// =============================================================================
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -26,15 +31,16 @@ import {
   X,
   Camera,
   Trash2,
+  ArrowLeft,
 } from "lucide-react";
-import { BackButton } from "@/components/BackButton";
 import { TelaConfirmacaoEmail } from "@/components/TelaConfirmacaoEmail";
-import { validateCNPJ, formatCNPJ, fetchCNPJData } from "@/lib/validators";
+import { validateCNPJ, formatCNPJ } from "@/lib/validators";
 import { useCepLookup } from "@/hooks/useCepLookup";
 import { useLogradouroExtractor } from "@/hooks/useLogradouroExtractor";
 import { getFriendlyErrorMessage } from "@/lib/errorTranslator";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 import { normalizarCidade } from "@/lib/utils";
@@ -49,8 +55,6 @@ const standardizeTextWithAI = async (text: string): Promise<string> => {
 
     if (error) {
       console.error("Erro ao padronizar texto:", error);
-
-      // Tratamento específico para rate limit e payment
       if (error.message?.includes("429")) {
         toast.error("Limite de requisições excedido. Tente novamente em alguns segundos.");
       } else if (error.message?.includes("402")) {
@@ -58,8 +62,7 @@ const standardizeTextWithAI = async (text: string): Promise<string> => {
       } else {
         toast.error("Erro ao corrigir texto. Tente novamente.");
       }
-
-      return text; // Retorna texto original em caso de erro
+      return text;
     }
 
     if (!data?.correctedText) {
@@ -75,42 +78,73 @@ const standardizeTextWithAI = async (text: string): Promise<string> => {
   }
 };
 
-const formatPhone = (phone) => {
+const formatPhone = (phone: string) => {
   const raw = phone.replace(/\D/g, "").substring(0, 11);
   if (raw.length === 11) {
-    // Celular/WhatsApp
     return raw.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
   }
   if (raw.length === 10) {
-    // Fixo
     return raw.replace(/^(\d{2})(\d{4})(\d{4})$/, "($1) $2-$3");
   }
   return raw;
 };
 
-// --- COMPONENTES AUXILIARES ---
+// =============================================================================
+// BACK BUTTON COMPONENT
+// =============================================================================
 
-const Stepper = ({ currentStep, totalSteps }) => (
+const BackButtonAuth = ({ onClick }: { onClick: () => void }) => (
+  <button
+    onClick={onClick}
+    className={cn(
+      "group flex items-center gap-2 px-3 py-2 rounded-xl",
+      "text-zinc-600 hover:text-zinc-900",
+      "bg-white hover:bg-zinc-50",
+      "border border-zinc-200 hover:border-zinc-300",
+      "shadow-sm hover:shadow",
+      "transition-all duration-200",
+      "min-h-[44px] min-w-[44px]",
+    )}
+    aria-label="Voltar"
+  >
+    <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
+    <span className="text-sm font-medium hidden sm:inline">Voltar</span>
+  </button>
+);
+
+// =============================================================================
+// STEPPER COMPONENT
+// =============================================================================
+
+const Stepper = ({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) => (
   <div className="flex justify-center gap-2 mb-8">
     {Array.from({ length: totalSteps }).map((_, index) => (
       <div
         key={index}
         className={`h-2 rounded-full transition-all duration-300 ${
-          index + 1 === currentStep ? "w-8 bg-[#7C3AED]" : "w-4 bg-white/20"
+          index + 1 === currentStep
+            ? "w-8 bg-violet-600"
+            : index + 1 < currentStep
+              ? "w-4 bg-violet-400"
+              : "w-4 bg-zinc-200"
         }`}
       />
     ))}
   </div>
 );
 
-const BenefitRulesSection = ({ rules, setRules }) => {
+// =============================================================================
+// BENEFIT RULES SECTION
+// =============================================================================
+
+const BenefitRulesSection = ({ rules, setRules }: { rules: any; setRules: any }) => {
   const [showHelper, setShowHelper] = useState(false);
   const [isStandardizing, setIsStandardizing] = useState(false);
   const MAX_CHARS = 200;
 
-  const handleTextChange = (e) => {
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value.substring(0, MAX_CHARS);
-    setRules((prev) => ({ ...prev, description: text }));
+    setRules((prev: any) => ({ ...prev, description: text }));
   };
 
   const handleStandardize = async () => {
@@ -123,7 +157,7 @@ const BenefitRulesSection = ({ rules, setRules }) => {
 
     try {
       const correctedText = await standardizeTextWithAI(rules.description);
-      setRules((prev) => ({ ...prev, description: correctedText }));
+      setRules((prev: any) => ({ ...prev, description: correctedText }));
       toast.success("Texto corrigido com sucesso!");
     } catch (error) {
       console.error("Erro ao padronizar:", error);
@@ -133,8 +167,8 @@ const BenefitRulesSection = ({ rules, setRules }) => {
     }
   };
 
-  const setScope = (scope) => {
-    setRules((prev) => ({ ...prev, scope }));
+  const setScope = (scope: string) => {
+    setRules((prev: any) => ({ ...prev, scope }));
   };
 
   return (
@@ -149,9 +183,9 @@ const BenefitRulesSection = ({ rules, setRules }) => {
           onChange={handleTextChange}
           placeholder="Ex: 10% de desconto em qualquer produto, válido de segunda a sexta."
           rows={4}
-          className="w-full p-3 border border-violet-300 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none resize-none text-slate-900 bg-white"
+          className="w-full p-3 border border-violet-300 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none resize-none text-zinc-900 bg-white"
         />
-        <div className="absolute bottom-2 right-3 text-xs text-slate-500">
+        <div className="absolute bottom-2 right-3 text-xs text-zinc-500">
           {rules.description.length} / {MAX_CHARS}
         </div>
       </div>
@@ -176,7 +210,7 @@ const BenefitRulesSection = ({ rules, setRules }) => {
         <button
           type="button"
           onClick={() => setShowHelper(!showHelper)}
-          className="text-slate-500 hover:text-violet-600 flex items-center gap-1"
+          className="text-zinc-500 hover:text-violet-600 flex items-center gap-1"
         >
           <Info size={16} /> Ajuda
         </button>
@@ -199,8 +233,8 @@ const BenefitRulesSection = ({ rules, setRules }) => {
               onClick={() => setScope(scope)}
               className={`flex-1 py-2 rounded-lg font-semibold transition-colors ${
                 rules.scope === scope
-                  ? "bg-[#7C3AED] text-white shadow-md"
-                  : "bg-white text-slate-600 hover:bg-violet-100"
+                  ? "bg-violet-600 text-white shadow-md"
+                  : "bg-white text-zinc-600 hover:bg-violet-100 border border-zinc-200"
               }`}
             >
               <Calendar size={16} className="inline mr-1" /> {scope}
@@ -212,7 +246,9 @@ const BenefitRulesSection = ({ rules, setRules }) => {
   );
 };
 
-// --- COMPONENTE PRINCIPAL ---
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
 
 export default function EstablishmentRegistration() {
   const navigate = useNavigate();
@@ -252,7 +288,7 @@ export default function EstablishmentRegistration() {
     cidade: "",
     estado: "",
     isMall: false,
-    categories: [],
+    categories: [] as string[],
     especialidades: [] as string[],
     menuLink: "",
     siteLink: "",
@@ -279,16 +315,11 @@ export default function EstablishmentRegistration() {
       const providerFromUrl = searchParams.get("provider");
 
       if (stepFromUrl === "2" && providerFromUrl === "google") {
-        console.log("=== ETAPA 2 GOOGLE RETURN ===");
-        console.log("Iniciando etapa 2...");
-
         setStep(2);
         setIsGoogleUser(true);
         setError("");
         setCnpjVerified(false);
-        setLoading(false); // GARANTIR FALSE
-
-        console.log("Loading definido como FALSE");
+        setLoading(false);
 
         const {
           data: { user },
@@ -298,10 +329,7 @@ export default function EstablishmentRegistration() {
             ...prev,
             email: user.email || "",
           }));
-          console.log("Email do usuário:", user.email);
         }
-
-        console.log("Estado loading após setup:", loading);
       }
     };
 
@@ -310,26 +338,24 @@ export default function EstablishmentRegistration() {
 
   // --- LÓGICA DE APIs E VALIDAÇÃO ---
 
-  const handleCnpjChange = (e) => {
+  const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCNPJ(e.target.value);
     setEstablishmentData((prev) => ({ ...prev, cnpj: formatted }));
-    setCnpjVerified(false); // Reset verificação ao alterar
+    setCnpjVerified(false);
   };
 
   const formatarTelefone = (telefone: string): string => {
     const numeros = telefone.replace(/\D/g, "");
-
     if (numeros.length === 10) {
       return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 6)}-${numeros.slice(6)}`;
     }
     if (numeros.length === 11) {
       return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7)}`;
     }
-
     return telefone;
   };
 
-  // Processar imagem de forma tolerante (aceita qualquer foto)
+  // Processar imagem
   const processImage = (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const img = new window.Image();
@@ -340,27 +366,21 @@ export default function EstablishmentRegistration() {
           const ctx = canvas.getContext("2d");
 
           if (!ctx) {
-            // Se canvas não funcionar, retorna arquivo original
-            console.log("Canvas não disponível, usando imagem original");
             resolve(file);
             return;
           }
 
-          // Tamanho quadrado 400x400 com boa qualidade
           const size = 400;
           canvas.width = size;
           canvas.height = size;
 
-          // Fundo branco (para PNGs transparentes)
           ctx.fillStyle = "#FFFFFF";
           ctx.fillRect(0, 0, size, size);
 
-          // Calcular crop centralizado para ficar quadrado
           const minDimension = Math.min(img.width, img.height);
           const sx = (img.width - minDimension) / 2;
           const sy = (img.height - minDimension) / 2;
 
-          // Desenhar imagem redimensionada
           ctx.drawImage(img, sx, sy, minDimension, minDimension, 0, 0, size, size);
 
           canvas.toBlob(
@@ -368,8 +388,6 @@ export default function EstablishmentRegistration() {
               if (blob) {
                 resolve(blob);
               } else {
-                // Fallback: retorna arquivo original
-                console.log("Erro ao gerar blob, usando original");
                 resolve(file);
               }
             },
@@ -377,19 +395,14 @@ export default function EstablishmentRegistration() {
             0.85,
           );
         } catch (err) {
-          // Qualquer erro: retorna arquivo original
-          console.log("Erro no processamento, usando original:", err);
           resolve(file);
         }
       };
 
       img.onerror = () => {
-        // Se não conseguir carregar, rejeita com mensagem amigável
-        console.log("Erro ao carregar imagem");
         reject(new Error("Não foi possível carregar a imagem. Tente outra foto."));
       };
 
-      // Criar URL para a imagem
       const objectUrl = URL.createObjectURL(file);
       img.src = objectUrl;
     });
@@ -399,7 +412,6 @@ export default function EstablishmentRegistration() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Aceitar QUALQUER arquivo de imagem
     const isImage =
       file.type.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|bmp|heic|heif|tiff|svg)$/i.test(file.name);
 
@@ -408,7 +420,6 @@ export default function EstablishmentRegistration() {
       return;
     }
 
-    // Limite generoso de 25MB
     if (file.size > 25 * 1024 * 1024) {
       toast.error("Imagem muito grande. Máximo 25MB.");
       return;
@@ -417,18 +428,13 @@ export default function EstablishmentRegistration() {
     setUploadingImage(true);
 
     try {
-      // Processar imagem
       const processedBlob = await processImage(file);
-
-      // Criar preview
       const previewUrl = URL.createObjectURL(processedBlob);
       setImagePreview(previewUrl);
 
-      // Criar arquivo processado
       const processedFile = new File([processedBlob], `foto_${Date.now()}.jpg`, { type: "image/jpeg" });
       setSelectedImage(processedFile);
 
-      // Upload para Supabase Storage
       const fileName = `estabelecimento_${Date.now()}.jpg`;
       const { data, error } = await supabase.storage.from("establishment-photos").upload(fileName, processedFile, {
         cacheControl: "3600",
@@ -436,7 +442,6 @@ export default function EstablishmentRegistration() {
       });
 
       if (error) {
-        console.error("Erro no upload:", error);
         toast.error("Erro ao enviar foto. Tente novamente.");
         setUploadingImage(false);
         return;
@@ -449,7 +454,6 @@ export default function EstablishmentRegistration() {
       setEstablishmentData((prev) => ({ ...prev, mainPhotoUrl: publicUrl }));
       toast.success("Foto adicionada com sucesso!");
     } catch (error: any) {
-      console.error("Erro ao processar imagem:", error);
       toast.error(error.message || "Erro ao processar foto. Tente outra imagem.");
     } finally {
       setUploadingImage(false);
@@ -471,18 +475,13 @@ export default function EstablishmentRegistration() {
   const verifyCnpj = async () => {
     const rawCnpj = establishmentData.cnpj.replace(/\D/g, "");
 
-    // Early return se vazio
-    if (rawCnpj.length === 0) {
-      return;
-    }
+    if (rawCnpj.length === 0) return;
 
-    // Validar tamanho
     if (rawCnpj.length < 14) {
       toast.error("CNPJ deve ter 14 dígitos");
       return;
     }
 
-    // Validar dígitos verificadores
     if (!validateCNPJ(rawCnpj)) {
       toast.error("CNPJ inválido. Verifique os dígitos verificadores.");
       return;
@@ -492,7 +491,6 @@ export default function EstablishmentRegistration() {
     setError("");
 
     try {
-      // Verificar se CNPJ já existe no banco
       const { data: cnpjExistente } = await supabase
         .from("estabelecimentos")
         .select("id, nome_fantasia")
@@ -506,7 +504,6 @@ export default function EstablishmentRegistration() {
         return;
       }
 
-      // Buscar dados na BrasilAPI
       const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${rawCnpj}`);
 
       if (!response.ok) {
@@ -524,18 +521,15 @@ export default function EstablishmentRegistration() {
 
       const data = await response.json();
 
-      // Verificar situação cadastral
       if (data.descricao_situacao_cadastral && data.descricao_situacao_cadastral !== "ATIVA") {
         toast.warning(
           `Atenção: Este CNPJ está com situação "${data.descricao_situacao_cadastral}" na Receita Federal.`,
         );
       }
 
-      // Extrair e validar logradouro automaticamente da BrasilAPI
       const logradouroExtraido = extractLogradouro(data.logradouro || "");
       const validacaoLogradouro = logradouroExtraido ? validateLogradouro(logradouroExtraido) : null;
 
-      // Preencher campos automaticamente (apenas se estiverem vazios)
       setEstablishmentData((prev) => ({
         ...prev,
         name: prev.name || data.nome_fantasia || data.razao_social || "",
@@ -549,16 +543,9 @@ export default function EstablishmentRegistration() {
         complemento: prev.complemento || data.complemento || "",
       }));
 
-      if (validacaoLogradouro?.valid) {
-        console.log("✅ Logradouro extraído e validado via CNPJ:", logradouroExtraido);
-      }
-
       setCnpjVerified(true);
       toast.success("CNPJ verificado! Dados preenchidos automaticamente.");
     } catch (error: any) {
-      console.error("Erro ao verificar CNPJ:", error);
-
-      // Mostrar mensagem amigável
       if (
         error.message &&
         !error.message.includes("fetch") &&
@@ -569,14 +556,13 @@ export default function EstablishmentRegistration() {
       } else {
         toast.error("Erro de conexão. Verifique sua internet e tente novamente.");
       }
-
       setCnpjVerified(false);
     } finally {
       setLoadingCnpj(false);
     }
   };
 
-  const fetchCep = async (cepValue) => {
+  const fetchCep = async (cepValue: string) => {
     const rawCep = cepValue.replace(/\D/g, "").substring(0, 8);
     setEstablishmentData((prev) => ({ ...prev, cep: rawCep }));
 
@@ -588,7 +574,6 @@ export default function EstablishmentRegistration() {
       const data = await lookupCep(rawCep);
 
       if (data) {
-        // Extrair e validar logradouro automaticamente
         const logradouroExtraido = extractLogradouro(data.logradouro || "");
         const validacao = logradouroExtraido ? validateLogradouro(logradouroExtraido) : null;
 
@@ -599,10 +584,6 @@ export default function EstablishmentRegistration() {
           cidade: data.localidade || "",
           estado: data.uf || "",
         }));
-
-        if (validacao?.valid) {
-          console.log("✅ Logradouro validado e populado:", logradouroExtraido);
-        }
       }
     } catch (error) {
       console.error("Erro ao buscar CEP:", error);
@@ -611,7 +592,7 @@ export default function EstablishmentRegistration() {
     }
   };
 
-  const handleCategoryToggle = (category) => {
+  const handleCategoryToggle = (category: string) => {
     setEstablishmentData((prev) => {
       const isSelected = prev.categories.includes(category);
       if (isSelected) {
@@ -619,7 +600,7 @@ export default function EstablishmentRegistration() {
       } else if (prev.categories.length < 3) {
         return { ...prev, categories: [...prev.categories, category] };
       }
-      return prev; // Max 3 categories
+      return prev;
     });
   };
 
@@ -627,7 +608,6 @@ export default function EstablishmentRegistration() {
 
   const handleGoogleSignUp = async () => {
     try {
-      // Salvar no sessionStorage que é cadastro de estabelecimento
       sessionStorage.setItem("authType", "estabelecimento");
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -642,11 +622,9 @@ export default function EstablishmentRegistration() {
       });
 
       if (error) {
-        console.error("Erro Google OAuth:", error);
         toast.error("Erro ao conectar com Google");
       }
     } catch (error) {
-      console.error("Erro:", error);
       toast.error("Erro ao conectar com Google");
     }
   };
@@ -659,7 +637,7 @@ export default function EstablishmentRegistration() {
     });
   };
 
-  const handleAuthSubmit = (e) => {
+  const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const allRequirementsMet =
       passwordRequirements.minLength && passwordRequirements.hasUppercase && passwordRequirements.hasSpecialChar;
@@ -677,14 +655,13 @@ export default function EstablishmentRegistration() {
     setStep(2);
   };
 
-  const handleFinalSubmit = async (e) => {
+  const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     const rawCnpj = establishmentData.cnpj.replace(/\D/g, "");
     const isPhoneFilled = establishmentData.phoneFixed || establishmentData.phoneWhatsapp;
 
-    // Validar foto obrigatória
     if (
       !selectedImage &&
       !imagePreview &&
@@ -695,7 +672,6 @@ export default function EstablishmentRegistration() {
       return;
     }
 
-    // Validar CNPJ verificado
     if (!cnpjVerified) {
       setError('CNPJ deve ser verificado antes de continuar. Clique em "Verificar".');
       toast.error("CNPJ deve ser verificado antes de continuar.");
@@ -727,7 +703,6 @@ export default function EstablishmentRegistration() {
 
     try {
       if (isGoogleUser) {
-        // Usuário Google: já tem conta no Auth, só criar estabelecimento
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -736,7 +711,6 @@ export default function EstablishmentRegistration() {
           throw new Error("Sessão não encontrada");
         }
 
-        // Verificar CNPJ duplicado
         const { data: cnpjExistente } = await supabase
           .from("estabelecimentos")
           .select("cnpj")
@@ -748,9 +722,8 @@ export default function EstablishmentRegistration() {
           return;
         }
 
-        // Criar estabelecimento
         const { error: estabError } = await supabase.from("estabelecimentos").insert({
-          id: user.id, // Vincular estabelecimento ao usuário autenticado
+          id: user.id,
           cnpj: rawCnpj,
           razao_social: establishmentData.name,
           nome_fantasia: establishmentData.name,
@@ -784,7 +757,6 @@ export default function EstablishmentRegistration() {
 
         if (estabError) throw estabError;
 
-        // Criar role de estabelecimento
         await supabase.from("user_roles").upsert(
           {
             user_id: user.id,
@@ -796,13 +768,9 @@ export default function EstablishmentRegistration() {
         toast.success("Estabelecimento cadastrado com sucesso!");
         navigate("/area-estabelecimento");
       } else {
-        // Usuário email/senha: criar conta completa
         await criarContaEstabelecimentoCompleta();
       }
     } catch (error: any) {
-      console.error("Erro:", error);
-
-      // Não mostrar erro se é apenas requisição de confirmação de email
       if (error.message === "CONFIRMATION_REQUIRED") {
         return;
       }
@@ -818,7 +786,6 @@ export default function EstablishmentRegistration() {
   const criarContaEstabelecimentoCompleta = async () => {
     const rawCnpj = establishmentData.cnpj.replace(/\D/g, "");
 
-    // Verificar CNPJ duplicado
     const { data: cnpjExistente } = await supabase
       .from("estabelecimentos")
       .select("cnpj")
@@ -830,7 +797,6 @@ export default function EstablishmentRegistration() {
       throw new Error("CNPJ duplicado");
     }
 
-    // 1. Criar usuário no Auth com confirmação de email
     const { data: signUpData, error: authError } = await supabase.auth.signUp({
       email: authData.email,
       password: authData.password,
@@ -854,19 +820,16 @@ export default function EstablishmentRegistration() {
       throw new Error("Erro ao criar conta");
     }
 
-    // Se não tem sessão, precisa confirmar email
     if (signUpData.user && !signUpData.session) {
       toast.success("Cadastro iniciado!");
       setEmailParaConfirmar(authData.email);
       setMostrarTelaConfirmacao(true);
       setLoading(false);
-      throw new Error("CONFIRMATION_REQUIRED"); // Interromper fluxo para mostrar tela
+      throw new Error("CONFIRMATION_REQUIRED");
     }
 
-    // Se tem sessão (auto-confirmação ativa), continua o cadastro
-    // 2. Criar estabelecimento
     const { error: estabError } = await supabase.from("estabelecimentos").insert({
-      id: signUpData.user.id, // Vincular estabelecimento ao usuário autenticado
+      id: signUpData.user.id,
       cnpj: rawCnpj,
       razao_social: establishmentData.name,
       nome_fantasia: establishmentData.name,
@@ -897,7 +860,6 @@ export default function EstablishmentRegistration() {
 
     if (estabError) throw estabError;
 
-    // 3. Criar role
     await supabase.from("user_roles").insert({
       user_id: signUpData.user.id,
       role: "estabelecimento",
@@ -907,18 +869,47 @@ export default function EstablishmentRegistration() {
     navigate("/area-estabelecimento");
   };
 
-  // --- RENDERIZAÇÃO POR ETAPA ---
+  // ==========================================================================
+  // SHARED STYLES - TEMA CLARO
+  // ==========================================================================
+
+  const inputBaseClass = cn(
+    "w-full px-4 py-3 text-base text-zinc-900 rounded-xl",
+    "bg-white",
+    "border border-zinc-200",
+    "placeholder:text-zinc-400",
+    "hover:border-zinc-300",
+    "focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none",
+    "transition-all duration-200",
+  );
+
+  const inputWithIconClass = cn(inputBaseClass, "pl-10");
+
+  const labelClass = "text-sm font-medium text-zinc-700 mb-1 block";
+
+  const sectionClass = "p-6 bg-white rounded-xl shadow-sm border border-zinc-200 space-y-4";
+
+  const sectionTitleClass = "text-xl font-semibold text-zinc-800 flex items-center gap-2";
+
+  // ==========================================================================
+  // RENDER STEP 1
+  // ==========================================================================
 
   const renderStep1 = () => (
     <form onSubmit={handleAuthSubmit} className="space-y-6">
-      <h2 className="text-2xl font-bold text-white text-center">Cadastre o seu estabelecimento</h2>
-      <p className="text-slate-400 text-center">Crie suas credenciais e complete os dados da sua empresa.</p>
+      <h2 className="text-2xl font-bold text-zinc-900 text-center">Cadastre o seu estabelecimento</h2>
+      <p className="text-zinc-500 text-center">Crie suas credenciais e complete os dados da sua empresa.</p>
 
       {/* Login Google */}
       <button
         type="button"
         onClick={handleGoogleSignUp}
-        className="w-full py-3 bg-white/5 border border-white/10 text-white rounded-xl flex items-center justify-center gap-3 font-semibold hover:bg-white/10 transition-colors"
+        className={cn(
+          "w-full py-3 rounded-xl flex items-center justify-center gap-3 font-semibold transition-colors",
+          "bg-white border border-zinc-200 text-zinc-800",
+          "hover:bg-zinc-50 hover:border-zinc-300",
+          "shadow-sm hover:shadow",
+        )}
       >
         <img
           src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/48px-Google_%22G%22_logo.svg.png"
@@ -929,29 +920,31 @@ export default function EstablishmentRegistration() {
       </button>
 
       <div className="flex items-center">
-        <hr className="flex-1 border-white/10" />
-        <span className="px-3 text-slate-500 text-sm">OU</span>
-        <hr className="flex-1 border-white/10" />
+        <hr className="flex-1 border-zinc-200" />
+        <span className="px-3 text-zinc-400 text-sm">OU</span>
+        <hr className="flex-1 border-zinc-200" />
       </div>
 
       {/* Login Email/Senha */}
       <div>
-        <label className="block text-sm font-medium text-slate-400 mb-1">E-mail</label>
+        <label className={labelClass}>E-mail</label>
         <div className="relative">
-          <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input
             type="email"
             value={authData.email}
             onChange={(e) => setAuthData((prev) => ({ ...prev, email: e.target.value }))}
-            className="w-full pl-10 pr-4 py-3 border border-white/10 bg-white/5 text-white placeholder-slate-600 rounded-xl focus:ring-violet-500/50 focus:border-violet-500/50 outline-none transition-all"
+            className={inputWithIconClass}
+            placeholder="seu@email.com"
             required
           />
         </div>
       </div>
+
       <div>
-        <label className="block text-sm font-medium text-slate-400 mb-1">Senha</label>
+        <label className={labelClass}>Senha</label>
         <div className="relative">
-          <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input
             type="password"
             value={authData.password}
@@ -960,571 +953,542 @@ export default function EstablishmentRegistration() {
               setAuthData((prev) => ({ ...prev, password: newPassword }));
               validatePassword(newPassword);
             }}
-            className="w-full pl-10 pr-4 py-3 border border-white/10 bg-white/5 text-white placeholder-slate-600 rounded-xl focus:ring-violet-500/50 focus:border-violet-500/50 outline-none transition-all"
+            className={inputWithIconClass}
+            placeholder="••••••••"
             required
           />
         </div>
 
         {/* Password Requirements */}
-        <div className="mt-3 space-y-2 text-sm">
-          <p className="text-slate-400 font-medium">A senha deve conter:</p>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              {passwordRequirements.minLength ? (
-                <CheckCircle size={16} className="text-emerald-400" />
-              ) : (
-                <div className="w-4 h-4 rounded-full border-2 border-slate-600" />
-              )}
-              <span className={passwordRequirements.minLength ? "text-emerald-400" : "text-slate-500"}>
-                Mínimo 8 caracteres
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              {passwordRequirements.hasUppercase ? (
-                <CheckCircle size={16} className="text-emerald-400" />
-              ) : (
-                <div className="w-4 h-4 rounded-full border-2 border-slate-600" />
-              )}
-              <span className={passwordRequirements.hasUppercase ? "text-emerald-400" : "text-slate-500"}>
-                Uma letra maiúscula
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              {passwordRequirements.hasSpecialChar ? (
-                <CheckCircle size={16} className="text-emerald-400" />
-              ) : (
-                <div className="w-4 h-4 rounded-full border-2 border-slate-600" />
-              )}
-              <span className={passwordRequirements.hasSpecialChar ? "text-emerald-400" : "text-slate-500"}>
-                Um caractere especial (!@#$%...)
-              </span>
-            </div>
+        <div className="mt-3 p-4 rounded-xl bg-zinc-50 border border-zinc-100">
+          <p className="text-xs font-medium text-zinc-500 mb-3">A senha deve conter:</p>
+          <div className="space-y-2">
+            {[
+              { key: "minLength", label: "Mínimo 8 caracteres", met: passwordRequirements.minLength },
+              { key: "hasUppercase", label: "Uma letra maiúscula", met: passwordRequirements.hasUppercase },
+              {
+                key: "hasSpecialChar",
+                label: "Um caractere especial (!@#$%...)",
+                met: passwordRequirements.hasSpecialChar,
+              },
+            ].map((req) => (
+              <div key={req.key} className="flex items-center gap-2">
+                {req.met ? (
+                  <CheckCircle size={16} className="text-emerald-500" />
+                ) : (
+                  <div className="w-4 h-4 rounded-full border-2 border-zinc-300" />
+                )}
+                <span className={req.met ? "text-emerald-600 text-sm" : "text-zinc-400 text-sm"}>{req.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {error && (
-        <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-lg text-sm">{error}</div>
-      )}
+      {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
 
       <button
         type="submit"
-        className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-500/25"
+        className={cn(
+          "w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2",
+          "bg-violet-600 hover:bg-violet-700 text-white",
+          "shadow-lg shadow-violet-600/25 hover:shadow-xl hover:shadow-violet-600/30",
+        )}
       >
         Próxima Etapa <ArrowRight size={20} />
       </button>
     </form>
   );
 
-  const renderStep2 = () => {
-    // DEBUG TEMPORÁRIO
-    console.log("=== RENDERIZANDO ETAPA 2 ===");
-    console.log("loading:", loading);
-    console.log("step:", step);
-    console.log("isGoogleUser:", isGoogleUser);
-    console.log("error:", error);
-    console.log("establishmentData:", establishmentData);
+  // ==========================================================================
+  // RENDER STEP 2
+  // ==========================================================================
 
-    return (
-      <form onSubmit={handleFinalSubmit} className="space-y-8">
-        <div className="flex justify-between items-center border-b pb-4 mb-4">
-          <button
-            type="button"
-            onClick={() => setStep(1)}
-            className="text-slate-500 hover:text-violet-600 flex items-center gap-1"
-          >
-            <ChevronLeft size={20} /> Voltar
-          </button>
-          <h2 className="text-2xl font-bold text-slate-800">Dados do Estabelecimento</h2>
-        </div>
+  const renderStep2 = () => (
+    <form onSubmit={handleFinalSubmit} className="space-y-6">
+      <div className="flex justify-between items-center border-b border-zinc-200 pb-4 mb-4">
+        <button
+          type="button"
+          onClick={() => setStep(1)}
+          className="text-zinc-500 hover:text-violet-600 flex items-center gap-1 font-medium"
+        >
+          <ChevronLeft size={20} /> Voltar
+        </button>
+        <h2 className="text-xl font-bold text-zinc-900">Dados do Estabelecimento</h2>
+      </div>
 
-        {/* Mensagem para usuário Google */}
-        {isGoogleUser && authData.email && (
-          <div className="bg-violet-500/10 border border-violet-500/30 rounded-lg p-4 space-y-2">
-            <p className="text-violet-700 text-sm font-medium">✓ Você está cadastrando com sua conta Google</p>
-            <div className="space-y-1">
-              <label className="text-xs text-slate-600">Email (Google)</label>
-              <div className="bg-slate-200 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-700">
-                {authData.email}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {error && <div className="p-3 bg-rose-50 text-rose-600 rounded-lg text-sm mb-4">{error}</div>}
-
-        {/* 1. CNPJ e Nome */}
-        <div className="p-6 bg-white rounded-xl shadow-md border border-slate-100 space-y-4">
-          <h3 className="text-xl font-semibold text-slate-700 flex items-center gap-2">
-            <Building2 size={20} /> Informações Básicas
-          </h3>
-
-          {/* CNPJ Input */}
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700 mb-1 block">CNPJ (Apenas números) *</span>
-            <div className="flex gap-3">
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  value={establishmentData.cnpj}
-                  onChange={handleCnpjChange}
-                  maxLength={18}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-                  placeholder="00.000.000/0000-00"
-                  required
-                />
-                {cnpjVerified && (
-                  <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" size={20} />
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={verifyCnpj}
-                disabled={loadingCnpj || establishmentData.cnpj.replace(/\D/g, "").length !== 14}
-                className="px-6 py-3 bg-[#7C3AED] hover:bg-[#6D28D9] text-white rounded-xl font-semibold disabled:opacity-50 transition-all flex items-center gap-2"
-              >
-                {loadingCnpj ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Verificando...
-                  </>
-                ) : cnpjVerified ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    Verificado
-                  </>
-                ) : (
-                  "Verificar"
-                )}
-              </button>
-            </div>
-            {cnpjVerified && establishmentData.name && (
-              <p className="mt-2 text-sm text-emerald-600 font-semibold flex items-center gap-1">
-                <CheckCircle size={16} /> Empresa Verificada: {establishmentData.name}
-              </p>
-            )}
-          </label>
-
-          {/* Nome e Slogan */}
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700 mb-1 block">Nome do Estabelecimento *</span>
-            <input
-              type="text"
-              value={establishmentData.name}
-              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, name: e.target.value }))}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-              placeholder="Nome do seu estabelecimento"
-              required
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700 mb-1 block">
-              Slogan/Descrição Curta (Máx. 50 Caracteres)
-            </span>
-            <input
-              type="text"
-              value={establishmentData.slogan}
-              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, slogan: e.target.value.substring(0, 50) }))}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-              placeholder="Ex: O melhor açaí da cidade!"
-            />
-          </label>
-        </div>
-
-        {/* 2. CONTATO E REDES SOCIAIS */}
-        <div className="p-6 bg-white rounded-xl shadow-md border border-slate-100 space-y-4">
-          <h3 className="text-xl font-semibold text-slate-700 flex items-center gap-2">
-            <Phone size={20} /> Contato e Redes
-          </h3>
-          <p className="text-sm text-slate-500 flex items-center gap-1">
-            <Info size={16} className="text-violet-500" /> Pelo menos um telefone (Fixo ou WhatsApp) é obrigatório.
+      {/* Mensagem para usuário Google */}
+      {isGoogleUser && authData.email && (
+        <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 space-y-2">
+          <p className="text-violet-700 text-sm font-medium flex items-center gap-2">
+            <Check className="h-4 w-4" />
+            Você está cadastrando com sua conta Google
           </p>
-
-          {/* Telefone Fixo */}
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700 mb-1 block">Telefone Fixo (Opcional)</span>
-            <div className="relative">
-              <Phone size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={formatPhone(establishmentData.phoneFixed)}
-                onChange={(e) =>
-                  setEstablishmentData((prev) => ({ ...prev, phoneFixed: e.target.value.replace(/\D/g, "") }))
-                }
-                maxLength={14}
-                className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-                placeholder="(XX) XXXX-XXXX"
-              />
+          <div className="space-y-1">
+            <label className="text-xs text-zinc-500">Email (Google)</label>
+            <div className="bg-white border border-violet-100 rounded-lg px-3 py-2 text-sm text-zinc-700">
+              {authData.email}
             </div>
-          </label>
-
-          {/* Telefone WhatsApp */}
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700 mb-1 block">WhatsApp (Opcional)</span>
-            <div className="relative">
-              <MessageSquare size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={formatPhone(establishmentData.phoneWhatsapp)}
-                onChange={(e) =>
-                  setEstablishmentData((prev) => ({ ...prev, phoneWhatsapp: e.target.value.replace(/\D/g, "") }))
-                }
-                maxLength={15}
-                className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-                placeholder="(XX) 9XXXX-XXXX"
-              />
-            </div>
-          </label>
-
-          <hr className="border-slate-100 my-4" />
-
-          {/* Site/Website */}
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700 mb-1 block">
-              Website Principal (Opcional - Exibido na Info)
-            </span>
-            <div className="relative">
-              <Globe size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={establishmentData.siteLink}
-                onChange={(e) => setEstablishmentData((prev) => ({ ...prev, siteLink: e.target.value }))}
-                onBlur={(e) => {
-                  // Adiciona https:// automaticamente se não tiver protocolo
-                  const value = e.target.value.trim();
-                  if (value && !value.startsWith("http://") && !value.startsWith("https://")) {
-                    setEstablishmentData((prev) => ({ ...prev, siteLink: `https://${value}` }));
-                  }
-                }}
-                className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-                placeholder="www.suaempresa.com.br"
-              />
-              <p className="mt-1 text-xs text-slate-500">Este link aparecerá na seção 'Informações' do Card.</p>
-            </div>
-          </label>
-
-          {/* Instagram */}
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700 mb-1 block">Instagram (Opcional)</span>
-            <div className="relative">
-              <Instagram size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <div className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-600 font-semibold">@</div>
-              <input
-                type="text"
-                value={establishmentData.instagramUser}
-                onChange={(e) =>
-                  setEstablishmentData((prev) => ({ ...prev, instagramUser: e.target.value.replace("@", "") }))
-                }
-                className="w-full pl-16 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-                placeholder="seuusuário"
-              />
-            </div>
-          </label>
-        </div>
-
-        {/* 3. Endereço */}
-        <div className="p-6 bg-white rounded-xl shadow-md border border-slate-100 space-y-4">
-          <h3 className="text-xl font-semibold text-slate-700 flex items-center gap-2">
-            <MapPin size={20} /> Endereço
-          </h3>
-
-          {/* CEP Input */}
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700 mb-1 block">CEP *</span>
-            <input
-              type="text"
-              value={establishmentData.cep}
-              onChange={(e) => fetchCep(e.target.value)}
-              maxLength={8}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-              placeholder="00000000"
-              required
-            />
-          </label>
-
-          {/* Campos de Endereço */}
-          <div className="grid grid-cols-2 gap-4">
-            <label className="col-span-2 md:col-span-1">
-              <span className="text-sm font-medium text-slate-700 mb-1 block">Estado *</span>
-              <input
-                type="text"
-                value={establishmentData.estado}
-                onChange={(e) => setEstablishmentData((prev) => ({ ...prev, estado: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-                required
-              />
-            </label>
-            <label className="col-span-2 md:col-span-1">
-              <span className="text-sm font-medium text-slate-700 mb-1 block">Cidade *</span>
-              <input
-                type="text"
-                value={establishmentData.cidade}
-                onChange={(e) => setEstablishmentData((prev) => ({ ...prev, cidade: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-                required
-              />
-            </label>
           </div>
+        </div>
+      )}
 
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700 mb-1 block">Bairro *</span>
-            <input
-              type="text"
-              value={establishmentData.bairro}
-              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, bairro: e.target.value }))}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-              required
-            />
-          </label>
+      {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
 
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700 mb-1 block">Rua/Avenida *</span>
-            <input
-              type="text"
-              value={establishmentData.logradouro}
-              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, logradouro: e.target.value }))}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-              required
-            />
-          </label>
+      {/* 1. CNPJ e Nome */}
+      <div className={sectionClass}>
+        <h3 className={sectionTitleClass}>
+          <Building2 size={20} className="text-violet-600" /> Informações Básicas
+        </h3>
 
-          {/* Número e Sem Número */}
-          <div className="flex gap-4 items-end">
-            <label className="flex-1">
-              <span className="text-sm font-medium text-slate-700 mb-1 block">Número *</span>
+        {/* CNPJ Input */}
+        <div>
+          <label className={labelClass}>CNPJ (Apenas números) *</label>
+          <div className="flex gap-3">
+            <div className="flex-1 relative">
               <input
                 type="text"
-                value={establishmentData.numero}
-                onChange={(e) =>
-                  setEstablishmentData((prev) => ({ ...prev, numero: e.target.value.replace(/\D/g, "") }))
-                }
-                disabled={establishmentData.semNumero}
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none disabled:bg-slate-100 text-slate-900"
-                required={!establishmentData.semNumero}
+                value={establishmentData.cnpj}
+                onChange={handleCnpjChange}
+                maxLength={18}
+                className={inputBaseClass}
+                placeholder="00.000.000/0000-00"
+                required
               />
-            </label>
+              {cnpjVerified && (
+                <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" size={20} />
+              )}
+            </div>
             <button
               type="button"
-              onClick={() => setEstablishmentData((prev) => ({ ...prev, semNumero: !prev.semNumero, numero: "" }))}
-              className={`py-3 px-4 rounded-xl font-semibold transition-colors ${
-                establishmentData.semNumero
-                  ? "bg-emerald-600 text-white"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              }`}
+              onClick={verifyCnpj}
+              disabled={loadingCnpj || establishmentData.cnpj.replace(/\D/g, "").length !== 14}
+              className={cn(
+                "px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2",
+                "bg-violet-600 hover:bg-violet-700 text-white",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+              )}
             >
-              Sem Número
+              {loadingCnpj ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Verificando...
+                </>
+              ) : cnpjVerified ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Verificado
+                </>
+              ) : (
+                "Verificar"
+              )}
             </button>
           </div>
-
-          {/* Complemento e Shopping */}
-          <div className="grid grid-cols-2 gap-4">
-            <label className="col-span-2 md:col-span-1">
-              <span className="text-sm font-medium text-slate-700 mb-1 block">Complemento (Opcional)</span>
-              <input
-                type="text"
-                value={establishmentData.complemento}
-                onChange={(e) => setEstablishmentData((prev) => ({ ...prev, complemento: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-              />
-            </label>
-
-            <div className="col-span-2 md:col-span-1 flex items-end">
-              <button
-                type="button"
-                onClick={() => setEstablishmentData((prev) => ({ ...prev, isMall: !prev.isMall }))}
-                className={`w-full py-3 px-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 ${
-                  establishmentData.isMall
-                    ? "bg-[#7C3AED] text-white shadow-md"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
-              >
-                <ShoppingBag size={20} /> Localizado em Shopping?
-              </button>
-            </div>
-          </div>
+          {cnpjVerified && establishmentData.name && (
+            <p className="mt-2 text-sm text-emerald-600 font-semibold flex items-center gap-1">
+              <CheckCircle size={16} /> Empresa Verificada: {establishmentData.name}
+            </p>
+          )}
         </div>
 
-        {/* 4. Categorias e Links */}
-        <div className="p-6 bg-white rounded-xl shadow-md border border-slate-100 space-y-4">
-          <h3 className="text-xl font-semibold text-slate-700 flex items-center gap-2">
-            <MapPin size={20} /> Categorias e Links
-          </h3>
+        {/* Nome e Slogan */}
+        <div>
+          <label className={labelClass}>Nome do Estabelecimento *</label>
+          <input
+            type="text"
+            value={establishmentData.name}
+            onChange={(e) => setEstablishmentData((prev) => ({ ...prev, name: e.target.value }))}
+            className={inputBaseClass}
+            placeholder="Nome do seu estabelecimento"
+            required
+          />
+        </div>
 
-          {/* Seleção de Categoria */}
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700 mb-1 block">Categoria (Selecione até 3) *</span>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIAS_ESTABELECIMENTO.map((cat) => (
-                <button
-                  key={cat.value}
-                  type="button"
-                  onClick={() => handleCategoryToggle(cat.value)}
-                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-                    establishmentData.categories.includes(cat.value)
-                      ? "bg-[#7C3AED] text-white shadow-md"
-                      : "bg-slate-100 text-slate-700 hover:bg-violet-100"
-                  }`}
-                >
-                  {cat.icon} {cat.label}
-                </button>
-              ))}
-            </div>
-            {establishmentData.categories.length === 3 && (
-              <p className="mt-2 text-xs text-slate-500">Máximo de 3 categorias selecionadas.</p>
-            )}
-          </label>
+        <div>
+          <label className={labelClass}>Slogan/Descrição Curta (Máx. 50 Caracteres)</label>
+          <input
+            type="text"
+            value={establishmentData.slogan}
+            onChange={(e) => setEstablishmentData((prev) => ({ ...prev, slogan: e.target.value.substring(0, 50) }))}
+            className={inputBaseClass}
+            placeholder="Ex: O melhor açaí da cidade!"
+          />
+        </div>
+      </div>
 
-          {/* Especialidades */}
-          <div className="space-y-2">
-            <EspecialidadesSelector
-              categoria={establishmentData.categories[0] || ""}
-              selected={establishmentData.especialidades}
-              onChange={(especialidades) => setEstablishmentData((prev) => ({ ...prev, especialidades }))}
-              maxSelection={3}
+      {/* 2. CONTATO E REDES SOCIAIS */}
+      <div className={sectionClass}>
+        <h3 className={sectionTitleClass}>
+          <Phone size={20} className="text-violet-600" /> Contato e Redes
+        </h3>
+        <p className="text-sm text-zinc-500 flex items-center gap-1">
+          <Info size={16} className="text-violet-500" /> Pelo menos um telefone (Fixo ou WhatsApp) é obrigatório.
+        </p>
+
+        <div>
+          <label className={labelClass}>Telefone Fixo (Opcional)</label>
+          <div className="relative">
+            <Phone size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="text"
+              value={formatPhone(establishmentData.phoneFixed)}
+              onChange={(e) =>
+                setEstablishmentData((prev) => ({ ...prev, phoneFixed: e.target.value.replace(/\D/g, "") }))
+              }
+              maxLength={14}
+              className={inputWithIconClass}
+              placeholder="(XX) XXXX-XXXX"
             />
           </div>
-
-          {/* Link Cardápio Digital */}
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700 mb-1 block">
-              Link do Cardápio Digital (Opcional - Exibido no Card)
-            </span>
-            <div className="relative">
-              <Link size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="url"
-                value={establishmentData.menuLink}
-                onChange={(e) => setEstablishmentData((prev) => ({ ...prev, menuLink: e.target.value }))}
-                className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-violet-500 outline-none text-slate-900"
-                placeholder="https://linkdocardapio.com.br"
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Este link é acessível diretamente pelo cliente no Card principal.
-              </p>
-            </div>
-          </label>
         </div>
 
-        {/* 5. Imagem e Horário */}
-        <div className="p-6 bg-white rounded-xl shadow-md border border-slate-100 space-y-4">
-          <h3 className="text-xl font-semibold text-slate-700 flex items-center gap-2">
-            <Image size={20} /> Imagem e Horário
-          </h3>
+        <div>
+          <label className={labelClass}>WhatsApp (Opcional)</label>
+          <div className="relative">
+            <MessageSquare size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="text"
+              value={formatPhone(establishmentData.phoneWhatsapp)}
+              onChange={(e) =>
+                setEstablishmentData((prev) => ({ ...prev, phoneWhatsapp: e.target.value.replace(/\D/g, "") }))
+              }
+              maxLength={15}
+              className={inputWithIconClass}
+              placeholder="(XX) 9XXXX-XXXX"
+            />
+          </div>
+        </div>
 
-          {/* Horário de Funcionamento */}
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700 mb-1 block">Horário de Funcionamento</span>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 px-4 py-3 border border-slate-200 bg-slate-50 rounded-xl text-slate-600 font-medium flex items-center gap-2">
-                <Clock size={18} /> {establishmentData.hoursText}
-              </div>
+        <hr className="border-zinc-100" />
+
+        <div>
+          <label className={labelClass}>Website Principal (Opcional)</label>
+          <div className="relative">
+            <Globe size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="text"
+              value={establishmentData.siteLink}
+              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, siteLink: e.target.value }))}
+              onBlur={(e) => {
+                const value = e.target.value.trim();
+                if (value && !value.startsWith("http://") && !value.startsWith("https://")) {
+                  setEstablishmentData((prev) => ({ ...prev, siteLink: `https://${value}` }));
+                }
+              }}
+              className={inputWithIconClass}
+              placeholder="www.suaempresa.com.br"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className={labelClass}>Instagram (Opcional)</label>
+          <div className="relative">
+            <Instagram size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <div className="absolute left-10 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">@</div>
+            <input
+              type="text"
+              value={establishmentData.instagramUser}
+              onChange={(e) =>
+                setEstablishmentData((prev) => ({ ...prev, instagramUser: e.target.value.replace("@", "") }))
+              }
+              className={cn(inputBaseClass, "pl-16")}
+              placeholder="seuusuário"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Endereço */}
+      <div className={sectionClass}>
+        <h3 className={sectionTitleClass}>
+          <MapPin size={20} className="text-violet-600" /> Endereço
+        </h3>
+
+        <div>
+          <label className={labelClass}>CEP *</label>
+          <input
+            type="text"
+            value={establishmentData.cep}
+            onChange={(e) => fetchCep(e.target.value)}
+            maxLength={8}
+            className={inputBaseClass}
+            placeholder="00000000"
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Estado *</label>
+            <input
+              type="text"
+              value={establishmentData.estado}
+              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, estado: e.target.value }))}
+              className={inputBaseClass}
+              required
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Cidade *</label>
+            <input
+              type="text"
+              value={establishmentData.cidade}
+              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, cidade: e.target.value }))}
+              className={inputBaseClass}
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className={labelClass}>Bairro *</label>
+          <input
+            type="text"
+            value={establishmentData.bairro}
+            onChange={(e) => setEstablishmentData((prev) => ({ ...prev, bairro: e.target.value }))}
+            className={inputBaseClass}
+            required
+          />
+        </div>
+
+        <div>
+          <label className={labelClass}>Rua/Avenida *</label>
+          <input
+            type="text"
+            value={establishmentData.logradouro}
+            onChange={(e) => setEstablishmentData((prev) => ({ ...prev, logradouro: e.target.value }))}
+            className={inputBaseClass}
+            required
+          />
+        </div>
+
+        <div className="flex gap-4 items-end">
+          <div className="flex-1">
+            <label className={labelClass}>Número *</label>
+            <input
+              type="text"
+              value={establishmentData.numero}
+              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, numero: e.target.value.replace(/\D/g, "") }))}
+              disabled={establishmentData.semNumero}
+              className={cn(inputBaseClass, establishmentData.semNumero && "bg-zinc-100 cursor-not-allowed")}
+              required={!establishmentData.semNumero}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setEstablishmentData((prev) => ({ ...prev, semNumero: !prev.semNumero, numero: "" }))}
+            className={cn(
+              "py-3 px-4 rounded-xl font-semibold transition-colors",
+              establishmentData.semNumero
+                ? "bg-emerald-600 text-white"
+                : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border border-zinc-200",
+            )}
+          >
+            Sem Número
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Complemento (Opcional)</label>
+            <input
+              type="text"
+              value={establishmentData.complemento}
+              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, complemento: e.target.value }))}
+              className={inputBaseClass}
+            />
+          </div>
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={() => setEstablishmentData((prev) => ({ ...prev, isMall: !prev.isMall }))}
+              className={cn(
+                "w-full py-3 px-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2",
+                establishmentData.isMall
+                  ? "bg-violet-600 text-white shadow-md"
+                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border border-zinc-200",
+              )}
+            >
+              <ShoppingBag size={20} /> Localizado em Shopping?
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Categorias e Links */}
+      <div className={sectionClass}>
+        <h3 className={sectionTitleClass}>
+          <MapPin size={20} className="text-violet-600" /> Categorias e Links
+        </h3>
+
+        <div>
+          <label className={labelClass}>Categoria (Selecione até 3) *</label>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIAS_ESTABELECIMENTO.map((cat) => (
               <button
+                key={cat.value}
                 type="button"
-                onClick={() => setShowHorarioModal(true)}
-                className="px-4 py-3 bg-slate-100 text-violet-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center gap-2"
-              >
-                <RefreshCw size={18} /> Editar
-              </button>
-            </div>
-          </label>
-
-          {/* Foto Principal */}
-          <div className="space-y-3">
-            <span className="text-sm font-medium text-slate-700 block">Foto do Estabelecimento *</span>
-
-            <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
-              {/* Preview da Foto */}
-              <div className="w-full aspect-video bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center border-2 border-dashed border-slate-300 mb-3">
-                {uploadingImage ? (
-                  <div className="text-center">
-                    <Loader2 className="w-10 h-10 animate-spin text-violet-500 mx-auto mb-2" />
-                    <p className="text-sm text-slate-600">Processando...</p>
-                  </div>
-                ) : imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                ) : establishmentData.mainPhotoUrl !==
-                  "https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)" ? (
-                  <img src={establishmentData.mainPhotoUrl} alt="Foto atual" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="text-center p-6">
-                    <Camera className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-                    <p className="text-slate-500 text-sm font-medium">Nenhuma foto selecionada</p>
-                    <p className="text-slate-400 text-xs mt-1">Clique abaixo para adicionar</p>
-                  </div>
+                onClick={() => handleCategoryToggle(cat.value)}
+                className={cn(
+                  "px-4 py-2 rounded-full text-sm font-semibold transition-colors",
+                  establishmentData.categories.includes(cat.value)
+                    ? "bg-violet-600 text-white shadow-md"
+                    : "bg-zinc-100 text-zinc-700 hover:bg-violet-100 border border-zinc-200",
                 )}
-              </div>
+              >
+                {cat.icon} {cat.label}
+              </button>
+            ))}
+          </div>
+          {establishmentData.categories.length === 3 && (
+            <p className="mt-2 text-xs text-zinc-500">Máximo de 3 categorias selecionadas.</p>
+          )}
+        </div>
 
-              <input id="foto-input" type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+        <EspecialidadesSelector
+          categoria={establishmentData.categories[0] || ""}
+          selected={establishmentData.especialidades}
+          onChange={(especialidades) => setEstablishmentData((prev) => ({ ...prev, especialidades }))}
+          maxSelection={3}
+        />
 
-              {/* Botões de Ação */}
-              <div className="flex gap-2">
-                {imagePreview ||
-                establishmentData.mainPhotoUrl !==
-                  "https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)" ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => document.getElementById("foto-input")?.click()}
-                      disabled={uploadingImage}
-                      className="flex-1 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      <RefreshCw size={18} /> Alterar Foto
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRemovePhoto}
-                      disabled={uploadingImage}
-                      className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      <Trash2 size={18} /> Excluir Foto
-                    </button>
-                  </>
-                ) : (
+        <div>
+          <label className={labelClass}>Link do Cardápio Digital (Opcional)</label>
+          <div className="relative">
+            <Link size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="url"
+              value={establishmentData.menuLink}
+              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, menuLink: e.target.value }))}
+              className={inputWithIconClass}
+              placeholder="https://linkdocardapio.com.br"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Imagem e Horário */}
+      <div className={sectionClass}>
+        <h3 className={sectionTitleClass}>
+          <Image size={20} className="text-violet-600" /> Imagem e Horário
+        </h3>
+
+        <div>
+          <label className={labelClass}>Horário de Funcionamento</label>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 px-4 py-3 border border-zinc-200 bg-zinc-50 rounded-xl text-zinc-600 font-medium flex items-center gap-2">
+              <Clock size={18} /> {establishmentData.hoursText}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowHorarioModal(true)}
+              className="px-4 py-3 bg-zinc-100 text-violet-600 rounded-xl font-semibold hover:bg-zinc-200 transition-colors flex items-center gap-2 border border-zinc-200"
+            >
+              <RefreshCw size={18} /> Editar
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <label className={labelClass}>Foto do Estabelecimento *</label>
+
+          <div className="bg-zinc-50 rounded-xl p-4 border border-zinc-200">
+            <div className="w-full aspect-video bg-zinc-100 rounded-lg overflow-hidden flex items-center justify-center border-2 border-dashed border-zinc-300 mb-3">
+              {uploadingImage ? (
+                <div className="text-center">
+                  <Loader2 className="w-10 h-10 animate-spin text-violet-500 mx-auto mb-2" />
+                  <p className="text-sm text-zinc-600">Processando...</p>
+                </div>
+              ) : imagePreview ? (
+                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+              ) : establishmentData.mainPhotoUrl !==
+                "https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)" ? (
+                <img src={establishmentData.mainPhotoUrl} alt="Foto atual" className="w-full h-full object-cover" />
+              ) : (
+                <div className="text-center p-6">
+                  <Camera className="w-12 h-12 text-zinc-400 mx-auto mb-3" />
+                  <p className="text-zinc-500 text-sm font-medium">Nenhuma foto selecionada</p>
+                  <p className="text-zinc-400 text-xs mt-1">Clique abaixo para adicionar</p>
+                </div>
+              )}
+            </div>
+
+            <input id="foto-input" type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+
+            <div className="flex gap-2">
+              {imagePreview ||
+              establishmentData.mainPhotoUrl !==
+                "https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)" ? (
+                <>
                   <button
                     type="button"
                     onClick={() => document.getElementById("foto-input")?.click()}
                     disabled={uploadingImage}
-                    className="w-full px-4 py-2.5 bg-[#7C3AED] hover:bg-[#6D28D9] text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="flex-1 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    <Camera size={18} /> Adicionar Foto
+                    <RefreshCw size={18} /> Alterar Foto
                   </button>
-                )}
-              </div>
-
-              <p className="text-xs text-slate-500 text-center mt-2">
-                Aceita qualquer imagem (JPG, PNG, GIF, WEBP, etc) até 25MB
-              </p>
+                  <button
+                    type="button"
+                    onClick={handleRemovePhoto}
+                    disabled={uploadingImage}
+                    className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <Trash2 size={18} /> Excluir Foto
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("foto-input")?.click()}
+                  disabled={uploadingImage}
+                  className="w-full px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <Camera size={18} /> Adicionar Foto
+                </button>
+              )}
             </div>
+
+            <p className="text-xs text-zinc-500 text-center mt-2">
+              Aceita qualquer imagem (JPG, PNG, GIF, WEBP, etc) até 25MB
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* 6. Regras de Benefício */}
-        <BenefitRulesSection rules={rules} setRules={setRules} />
+      {/* 6. Regras de Benefício */}
+      <BenefitRulesSection rules={rules} setRules={setRules} />
 
-        {/* Botão Final */}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-6 h-6 animate-spin" />
-              Finalizando...
-            </>
-          ) : (
-            <>
-              Finalizar Cadastro <ChevronRight size={24} />
-            </>
-          )}
-        </button>
-      </form>
-    );
-  };
+      {/* Botão Final */}
+      <button
+        type="submit"
+        disabled={loading}
+        className={cn(
+          "w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-xl",
+          "bg-violet-600 hover:bg-violet-700 text-white",
+          "shadow-lg shadow-violet-600/25 hover:shadow-xl hover:shadow-violet-600/30",
+          "disabled:opacity-50 disabled:cursor-not-allowed",
+        )}
+      >
+        {loading ? (
+          <>
+            <Loader2 className="w-6 h-6 animate-spin" />
+            Finalizando...
+          </>
+        ) : (
+          <>
+            Finalizar Cadastro <ChevronRight size={24} />
+          </>
+        )}
+      </button>
+    </form>
+  );
 
-  // --- LAYOUT ---
+  // ==========================================================================
+  // LAYOUT
+  // ==========================================================================
 
-  // Se está mostrando tela de confirmação de email, exibir componente dedicado
   if (mostrarTelaConfirmacao) {
     return (
       <TelaConfirmacaoEmail
@@ -1539,23 +1503,53 @@ export default function EstablishmentRegistration() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-4 sm:p-8 font-sans">
-      <div className="max-w-3xl mx-auto bg-white/5 backdrop-blur-xl border border-white/10 p-6 sm:p-10 rounded-3xl shadow-xl">
-        <div className="mb-6">
-          <BackButton to="/seja-parceiro" />
-        </div>
-        <Stepper currentStep={step} totalSteps={2} />
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-b from-slate-50 to-white">
+      {/* Background Pattern */}
+      <div
+        className="absolute inset-0 opacity-40"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(124,58,237,0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(124,58,237,0.03) 1px, transparent 1px)
+          `,
+          backgroundSize: "32px 32px",
+        }}
+      />
 
-        {step === 1 ? renderStep1() : renderStep2()}
+      {/* Glow Effects */}
+      <div
+        className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full pointer-events-none opacity-30"
+        style={{
+          background: "radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)",
+          filter: "blur(60px)",
+        }}
+      />
+      <div
+        className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full pointer-events-none opacity-20"
+        style={{
+          background: "radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)",
+          filter: "blur(60px)",
+        }}
+      />
+
+      <div className="relative z-10 p-4 sm:p-8">
+        <div className="max-w-3xl mx-auto bg-white border border-zinc-200 p-6 sm:p-10 rounded-2xl shadow-xl">
+          <div className="mb-6">
+            <BackButtonAuth onClick={() => navigate("/seja-parceiro")} />
+          </div>
+          <Stepper currentStep={step} totalSteps={2} />
+
+          {step === 1 ? renderStep1() : renderStep2()}
+        </div>
       </div>
 
       {/* Modal de Horário de Funcionamento */}
       {showHorarioModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg border border-slate-200 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg border border-zinc-200 max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-900">Horário de Funcionamento</h2>
-              <button onClick={() => setShowHorarioModal(false)} className="text-slate-400 hover:text-slate-900">
+              <h2 className="text-xl font-bold text-zinc-900">Horário de Funcionamento</h2>
+              <button onClick={() => setShowHorarioModal(false)} className="text-zinc-400 hover:text-zinc-900">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1570,48 +1564,48 @@ export default function EstablishmentRegistration() {
                 { key: "sabado", label: "Sábado" },
                 { key: "domingo", label: "Domingo" },
               ].map(({ key, label }) => (
-                <div key={key} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                <div key={key} className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg border border-zinc-100">
                   <input
                     type="checkbox"
-                    checked={horarioTemp[key].aberto}
+                    checked={horarioTemp[key as keyof typeof horarioTemp].aberto}
                     onChange={(e) =>
                       setHorarioTemp((prev) => ({
                         ...prev,
-                        [key]: { ...prev[key], aberto: e.target.checked },
+                        [key]: { ...prev[key as keyof typeof horarioTemp], aberto: e.target.checked },
                       }))
                     }
-                    className="w-4 h-4"
+                    className="w-4 h-4 accent-violet-600"
                   />
-                  <span className="text-slate-900 text-sm w-20 font-medium">{label}</span>
+                  <span className="text-zinc-900 text-sm w-20 font-medium">{label}</span>
 
-                  {horarioTemp[key].aberto ? (
+                  {horarioTemp[key as keyof typeof horarioTemp].aberto ? (
                     <div className="flex items-center gap-2 flex-1">
                       <input
                         type="time"
-                        value={horarioTemp[key].inicio}
+                        value={horarioTemp[key as keyof typeof horarioTemp].inicio}
                         onChange={(e) =>
                           setHorarioTemp((prev) => ({
                             ...prev,
-                            [key]: { ...prev[key], inicio: e.target.value },
+                            [key]: { ...prev[key as keyof typeof horarioTemp], inicio: e.target.value },
                           }))
                         }
-                        className="px-2 py-1 border border-slate-300 rounded-lg w-24 text-sm text-slate-900 bg-white"
+                        className="px-2 py-1 border border-zinc-300 rounded-lg w-24 text-sm text-zinc-900 bg-white"
                       />
-                      <span className="text-slate-500 text-sm">às</span>
+                      <span className="text-zinc-500 text-sm">às</span>
                       <input
                         type="time"
-                        value={horarioTemp[key].fim}
+                        value={horarioTemp[key as keyof typeof horarioTemp].fim}
                         onChange={(e) =>
                           setHorarioTemp((prev) => ({
                             ...prev,
-                            [key]: { ...prev[key], fim: e.target.value },
+                            [key]: { ...prev[key as keyof typeof horarioTemp], fim: e.target.value },
                           }))
                         }
-                        className="px-2 py-1 border border-slate-300 rounded-lg w-24 text-sm text-slate-900 bg-white"
+                        className="px-2 py-1 border border-zinc-300 rounded-lg w-24 text-sm text-zinc-900 bg-white"
                       />
                     </div>
                   ) : (
-                    <span className="text-slate-400 text-sm">Fechado</span>
+                    <span className="text-zinc-400 text-sm">Fechado</span>
                   )}
                 </div>
               ))}
@@ -1620,7 +1614,7 @@ export default function EstablishmentRegistration() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowHorarioModal(false)}
-                className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors"
+                className="flex-1 px-4 py-3 border border-zinc-300 text-zinc-700 rounded-xl font-semibold hover:bg-zinc-50 transition-colors"
               >
                 Cancelar
               </button>
@@ -1628,7 +1622,7 @@ export default function EstablishmentRegistration() {
                 onClick={() => {
                   const formatado = Object.entries(horarioTemp)
                     .map(([dia, info]) => {
-                      const abrev = {
+                      const abrev: Record<string, string> = {
                         segunda: "Seg",
                         terca: "Ter",
                         quarta: "Qua",
@@ -1636,15 +1630,17 @@ export default function EstablishmentRegistration() {
                         sexta: "Sex",
                         sabado: "Sáb",
                         domingo: "Dom",
-                      }[dia];
-                      return info.aberto ? `${abrev}: ${info.inicio}-${info.fim}` : `${abrev}: Fechado`;
+                      };
+                      return (info as any).aberto
+                        ? `${abrev[dia]}: ${(info as any).inicio}-${(info as any).fim}`
+                        : `${abrev[dia]}: Fechado`;
                     })
                     .join(", ");
                   setEstablishmentData((prev) => ({ ...prev, hoursText: formatado }));
                   setShowHorarioModal(false);
                   toast.success("Horário salvo!");
                 }}
-                className="flex-1 px-4 py-3 bg-[#7C3AED] hover:bg-[#6D28D9] text-white rounded-xl font-semibold transition-colors"
+                className="flex-1 px-4 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold transition-colors"
               >
                 Salvar
               </button>

@@ -1,6 +1,12 @@
 // =============================================================================
-// CADASTRO ESTABELECIMENTO - TEMA CLARO
-// Design System: Fundo claro (branco/slate-50) + Roxo (#7C3AED) como destaque
+// CADASTRO ESTABELECIMENTO - V3.0 COMPLETO
+// CORREÇÕES IMPLEMENTADAS:
+// - P0.2: Upload múltiplas fotos (1-10) com preview, capa, reordenar, excluir
+// - P0.2: Pipeline 3 variações (thumb/card/gallery) em WEBP
+// - P0.3: Chips "Tipo de Benefício" obrigatório
+// - P0.4: CNPJ não preenche nome (mostra hint apenas)
+// - P1.1: Spellcheck nos campos texto
+// - Tema claro (branco + roxo)
 // =============================================================================
 
 import React, { useState, useEffect } from "react";
@@ -31,8 +37,17 @@ import {
   X,
   Camera,
   Trash2,
-  ArrowLeft,
+  Star,
+  ArrowUp,
+  ArrowDown,
+  Plus,
+  Gift,
+  Percent,
+  Sparkles,
+  Award,
+  AlertCircle,
 } from "lucide-react";
+import { BackButton } from "@/components/BackButton";
 import { TelaConfirmacaoEmail } from "@/components/TelaConfirmacaoEmail";
 import { validateCNPJ, formatCNPJ } from "@/lib/validators";
 import { useCepLookup } from "@/hooks/useCepLookup";
@@ -41,161 +56,240 @@ import { getFriendlyErrorMessage } from "@/lib/errorTranslator";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-
 import { CATEGORIAS_ESTABELECIMENTO } from "@/lib/constants";
 import { normalizarCidade } from "@/lib/utils";
 import EspecialidadesSelector from "@/components/EspecialidadesSelector";
 
-// Função para padronizar texto usando Lovable AI
+// =============================================================================
+// TYPES & CONSTANTS
+// =============================================================================
+
+interface PhotoUrls {
+  thumb: string;
+  card: string;
+  gallery: string;
+}
+
+interface PhotoItem {
+  id: string;
+  file?: File;
+  urls: PhotoUrls;
+  isCover: boolean;
+  order: number;
+  uploading?: boolean;
+  error?: string;
+}
+
+type TipoBeneficio = "cortesia" | "brinde" | "desconto" | "bonus" | "gratis";
+
+const MAX_PHOTOS = 10;
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
+
+const TIPOS_BENEFICIO = [
+  { id: "cortesia" as TipoBeneficio, label: "Cortesia", emoji: "🎁" },
+  { id: "brinde" as TipoBeneficio, label: "Brinde", emoji: "🎀" },
+  { id: "desconto" as TipoBeneficio, label: "Desconto", emoji: "💰" },
+  { id: "bonus" as TipoBeneficio, label: "Bônus", emoji: "⭐" },
+  { id: "gratis" as TipoBeneficio, label: "Grátis", emoji: "🆓" },
+];
+
+// =============================================================================
+// HELPERS
+// =============================================================================
+
 const standardizeTextWithAI = async (text: string): Promise<string> => {
   try {
-    const { data, error } = await supabase.functions.invoke("standardize-text", {
-      body: { text },
-    });
-
+    const { data, error } = await supabase.functions.invoke("standardize-text", { body: { text } });
     if (error) {
-      console.error("Erro ao padronizar texto:", error);
-      if (error.message?.includes("429")) {
-        toast.error("Limite de requisições excedido. Tente novamente em alguns segundos.");
-      } else if (error.message?.includes("402")) {
-        toast.error("Serviço temporariamente indisponível. Entre em contato com o suporte.");
-      } else {
-        toast.error("Erro ao corrigir texto. Tente novamente.");
-      }
+      if (error.message?.includes("429")) toast.error("Limite de requisições. Tente novamente.");
+      else if (error.message?.includes("402")) toast.error("Serviço indisponível.");
+      else toast.error("Erro ao corrigir texto.");
       return text;
     }
-
-    if (!data?.correctedText) {
-      toast.error("Resposta inválida da correção");
-      return text;
-    }
-
-    return data.correctedText;
-  } catch (error) {
-    console.error("Erro na chamada da API:", error);
-    toast.error("Erro ao conectar com o serviço de correção");
+    return data?.correctedText || text;
+  } catch {
+    toast.error("Erro ao conectar com o serviço");
     return text;
   }
 };
 
-const formatPhone = (phone: string) => {
+const formatPhone = (phone: string): string => {
   const raw = phone.replace(/\D/g, "").substring(0, 11);
-  if (raw.length === 11) {
-    return raw.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
-  }
-  if (raw.length === 10) {
-    return raw.replace(/^(\d{2})(\d{4})(\d{4})$/, "($1) $2-$3");
-  }
+  if (raw.length === 11) return raw.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+  if (raw.length === 10) return raw.replace(/^(\d{2})(\d{4})(\d{4})$/, "($1) $2-$3");
   return raw;
 };
 
-// =============================================================================
-// BACK BUTTON COMPONENT
-// =============================================================================
+const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-const BackButtonAuth = ({ onClick }: { onClick: () => void }) => (
-  <button
-    onClick={onClick}
-    className={cn(
-      "group flex items-center gap-2 px-3 py-2 rounded-xl",
-      "text-zinc-600 hover:text-zinc-900",
-      "bg-white hover:bg-zinc-50",
-      "border border-zinc-200 hover:border-zinc-300",
-      "shadow-sm hover:shadow",
-      "transition-all duration-200",
-      "min-h-[44px] min-w-[44px]",
-    )}
-    aria-label="Voltar"
-  >
-    <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
-    <span className="text-sm font-medium hidden sm:inline">Voltar</span>
-  </button>
-);
+const processImageToSizes = (file: File): Promise<{ thumb: Blob; card: Blob; gallery: Blob }> => {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const createBlob = (targetWidth: number, quality: number): Promise<Blob> => {
+        return new Promise((res, rej) => {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            rej(new Error("Canvas não disponível"));
+            return;
+          }
+
+          const ratio = img.height / img.width;
+          let width = Math.min(img.width, targetWidth);
+          let height = width * ratio;
+          if (img.height > img.width) {
+            height = Math.min(img.height, targetWidth);
+            width = height / ratio;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) =>
+              blob ? res(blob) : canvas.toBlob((b) => (b ? res(b) : rej(new Error("Falha"))), "image/jpeg", quality),
+            "image/webp",
+            quality,
+          );
+        });
+      };
+      Promise.all([createBlob(360, 0.75), createBlob(900, 0.82), createBlob(1600, 0.85)])
+        .then(([thumb, card, gallery]) => resolve({ thumb, card, gallery }))
+        .catch(reject);
+    };
+    img.onerror = () => reject(new Error("Não foi possível carregar a imagem."));
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+const uploadToStorage = async (blob: Blob, folder: string, fileName: string): Promise<string> => {
+  const ext = blob.type === "image/webp" ? "webp" : "jpg";
+  const path = `${folder}/${fileName}.${ext}`;
+  const { error } = await supabase.storage
+    .from("establishment-photos")
+    .upload(path, blob, { cacheControl: "31536000", upsert: true });
+  if (error) throw error;
+  return supabase.storage.from("establishment-photos").getPublicUrl(path).data.publicUrl;
+};
 
 // =============================================================================
-// STEPPER COMPONENT
+// COMPONENTS
 // =============================================================================
 
 const Stepper = ({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) => (
   <div className="flex justify-center gap-2 mb-8">
-    {Array.from({ length: totalSteps }).map((_, index) => (
+    {Array.from({ length: totalSteps }).map((_, i) => (
       <div
-        key={index}
-        className={`h-2 rounded-full transition-all duration-300 ${
-          index + 1 === currentStep
-            ? "w-8 bg-violet-600"
-            : index + 1 < currentStep
-              ? "w-4 bg-violet-400"
-              : "w-4 bg-zinc-200"
-        }`}
+        key={i}
+        className={cn(
+          "h-2 rounded-full transition-all",
+          i + 1 === currentStep ? "w-8 bg-violet-600" : i + 1 < currentStep ? "w-4 bg-violet-400" : "w-4 bg-zinc-200",
+        )}
       />
     ))}
   </div>
 );
 
-// =============================================================================
-// BENEFIT RULES SECTION
-// =============================================================================
+const BenefitTypeChips = ({
+  selected,
+  onChange,
+  error,
+}: {
+  selected: TipoBeneficio | null;
+  onChange: (t: TipoBeneficio) => void;
+  error?: boolean;
+}) => (
+  <div className="space-y-3">
+    <div className="flex items-center justify-between">
+      <label className="text-sm font-semibold text-violet-800 flex items-center gap-2">
+        <Gift size={18} /> Tipo de Benefício <span className="text-red-500">*</span>
+      </label>
+      {error && (
+        <span className="text-xs text-red-600 flex items-center gap-1">
+          <AlertCircle size={12} /> Selecione um tipo
+        </span>
+      )}
+    </div>
+    <div className="flex flex-wrap gap-2">
+      {TIPOS_BENEFICIO.map((t) => (
+        <button
+          key={t.id}
+          type="button"
+          onClick={() => onChange(t.id)}
+          aria-pressed={selected === t.id}
+          className={cn(
+            "px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 min-h-[44px] border-2 focus:outline-none focus:ring-2 focus:ring-violet-500/50",
+            selected === t.id
+              ? "bg-violet-600 text-white border-violet-600 shadow-md"
+              : "bg-white text-zinc-700 border-zinc-200 hover:border-violet-300 hover:bg-violet-50",
+            error && selected !== t.id && "border-red-300",
+          )}
+        >
+          <span className="text-lg">{t.emoji}</span>
+          <span>{t.label}</span>
+          {selected === t.id && <Check size={16} className="ml-1" />}
+        </button>
+      ))}
+    </div>
+  </div>
+);
 
-const BenefitRulesSection = ({ rules, setRules }: { rules: any; setRules: any }) => {
+const BenefitRulesSection = ({
+  rules,
+  setRules,
+  tipoBeneficio,
+  setTipoBeneficio,
+  tipoBeneficioError,
+}: {
+  rules: { description: string; scope: string };
+  setRules: React.Dispatch<React.SetStateAction<{ description: string; scope: string }>>;
+  tipoBeneficio: TipoBeneficio | null;
+  setTipoBeneficio: (t: TipoBeneficio) => void;
+  tipoBeneficioError: boolean;
+}) => {
   const [showHelper, setShowHelper] = useState(false);
   const [isStandardizing, setIsStandardizing] = useState(false);
-  const MAX_CHARS = 200;
-
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const text = e.target.value.substring(0, MAX_CHARS);
-    setRules((prev: any) => ({ ...prev, description: text }));
-  };
 
   const handleStandardize = async () => {
     if (!rules.description.trim()) {
-      toast.error("Digite um texto antes de corrigir");
+      toast.error("Digite um texto");
       return;
     }
-
     setIsStandardizing(true);
-
-    try {
-      const correctedText = await standardizeTextWithAI(rules.description);
-      setRules((prev: any) => ({ ...prev, description: correctedText }));
-      toast.success("Texto corrigido com sucesso!");
-    } catch (error) {
-      console.error("Erro ao padronizar:", error);
-      toast.error("Erro ao corrigir texto");
-    } finally {
-      setIsStandardizing(false);
-    }
-  };
-
-  const setScope = (scope: string) => {
-    setRules((prev: any) => ({ ...prev, scope }));
+    const corrected = await standardizeTextWithAI(rules.description);
+    setRules((p) => ({ ...p, description: corrected }));
+    toast.success("Texto corrigido!");
+    setIsStandardizing(false);
   };
 
   return (
-    <div className="border border-violet-200 bg-violet-50 p-4 rounded-xl space-y-3">
+    <div className="border border-violet-200 bg-violet-50 p-5 rounded-xl space-y-4">
       <h3 className="text-lg font-bold text-violet-800 flex items-center gap-2">
         <Ruler size={20} /> Regras de Benefício
       </h3>
-
       <div className="relative">
         <textarea
           value={rules.description}
-          onChange={handleTextChange}
-          placeholder="Ex: 10% de desconto em qualquer produto, válido de segunda a sexta."
+          onChange={(e) => setRules((p) => ({ ...p, description: e.target.value.substring(0, 200) }))}
+          placeholder="Ex: 10% de desconto em qualquer produto..."
           rows={4}
-          className="w-full p-3 border border-violet-300 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none resize-none text-zinc-900 bg-white"
+          spellCheck={true}
+          autoCorrect="on"
+          autoCapitalize="sentences"
+          className="w-full p-3 border border-violet-300 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none resize-none text-zinc-900 bg-white placeholder:text-zinc-400"
         />
-        <div className="absolute bottom-2 right-3 text-xs text-zinc-500">
-          {rules.description.length} / {MAX_CHARS}
-        </div>
+        <div className="absolute bottom-2 right-3 text-xs text-zinc-500">{rules.description.length}/200</div>
       </div>
-
       <div className="flex justify-between items-center text-sm">
         <button
           type="button"
           onClick={handleStandardize}
           disabled={isStandardizing || !rules.description.trim()}
-          className="px-3 py-1 bg-violet-200 text-violet-700 rounded-full hover:bg-violet-300 transition-colors flex items-center gap-1 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-1.5 rounded-full bg-violet-200 text-violet-700 hover:bg-violet-300 flex items-center gap-1.5 font-semibold disabled:opacity-50"
         >
           {isStandardizing ? (
             <>
@@ -203,7 +297,7 @@ const BenefitRulesSection = ({ rules, setRules }: { rules: any; setRules: any })
             </>
           ) : (
             <>
-              <CheckCircle size={14} /> Corrigir/Padronizar Texto
+              <CheckCircle size={14} /> Corrigir Texto
             </>
           )}
         </button>
@@ -215,33 +309,258 @@ const BenefitRulesSection = ({ rules, setRules }: { rules: any; setRules: any })
           <Info size={16} /> Ajuda
         </button>
       </div>
-
       {showHelper && (
         <p className="text-xs text-violet-700 bg-white p-2 rounded-lg border border-violet-200">
-          As regras devem ser claras. Use o botão de padronização para garantir a melhor leitura no App.
+          Use o botão para padronizar o texto.
         </p>
       )}
-
-      {/* Seletor de Escopo */}
-      <div className="pt-2">
-        <label className="block text-sm font-semibold text-violet-800 mb-2">Escopo da Regra</label>
+      <div className="pt-3 border-t border-violet-200">
+        <BenefitTypeChips selected={tipoBeneficio} onChange={setTipoBeneficio} error={tipoBeneficioError} />
+      </div>
+      <div className="pt-3 border-t border-violet-200">
+        <label className="block text-sm font-semibold text-violet-800 mb-2">Validade do Benefício</label>
         <div className="flex gap-2">
-          {["Dia", "Semana", "Mês"].map((scope) => (
+          {["Dia", "Semana", "Mês"].map((s) => (
             <button
-              key={scope}
+              key={s}
               type="button"
-              onClick={() => setScope(scope)}
-              className={`flex-1 py-2 rounded-lg font-semibold transition-colors ${
-                rules.scope === scope
+              onClick={() => setRules((p) => ({ ...p, scope: s }))}
+              className={cn(
+                "flex-1 py-2.5 rounded-lg font-semibold transition-all min-h-[44px]",
+                rules.scope === s
                   ? "bg-violet-600 text-white shadow-md"
-                  : "bg-white text-zinc-600 hover:bg-violet-100 border border-zinc-200"
-              }`}
+                  : "bg-white text-zinc-600 hover:bg-violet-100 border border-zinc-200",
+              )}
             >
-              <Calendar size={16} className="inline mr-1" /> {scope}
+              <Calendar size={16} className="inline mr-1.5" />
+              {s === "Dia" ? "Dia do Aniv." : s}
             </button>
           ))}
         </div>
       </div>
+    </div>
+  );
+};
+
+const PhotoGalleryUpload = ({
+  photos,
+  setPhotos,
+  establishmentId,
+  error,
+}: {
+  photos: PhotoItem[];
+  setPhotos: React.Dispatch<React.SetStateAction<PhotoItem[]>>;
+  establishmentId?: string;
+  error?: boolean;
+}) => {
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files) return;
+    const slots = MAX_PHOTOS - photos.length;
+    if (slots <= 0) {
+      toast.error(`Máximo ${MAX_PHOTOS} fotos`);
+      return;
+    }
+
+    for (const file of Array.from(files).slice(0, slots)) {
+      if (!file.type.startsWith("image/") && !/\.(jpg|jpeg|png|gif|webp|heic)$/i.test(file.name)) {
+        toast.error(`${file.name} inválido`);
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`${file.name} > 25MB`);
+        continue;
+      }
+
+      const id = generateId();
+      const isFirst = photos.length === 0;
+      setPhotos((p) => [
+        ...p,
+        { id, file, urls: { thumb: "", card: "", gallery: "" }, isCover: isFirst, order: p.length, uploading: true },
+      ]);
+
+      try {
+        const processed = await processImageToSizes(file);
+        const folder = establishmentId || `temp_${Date.now()}`;
+        const [thumb, card, gallery] = await Promise.all([
+          uploadToStorage(processed.thumb, folder, `${id}_thumb`),
+          uploadToStorage(processed.card, folder, `${id}_card`),
+          uploadToStorage(processed.gallery, folder, `${id}_gallery`),
+        ]);
+        setPhotos((p) => p.map((x) => (x.id === id ? { ...x, urls: { thumb, card, gallery }, uploading: false } : x)));
+        toast.success("Foto adicionada!");
+      } catch (e: any) {
+        setPhotos((p) => p.map((x) => (x.id === id ? { ...x, uploading: false, error: e.message } : x)));
+        toast.error(`Erro: ${file.name}`);
+      }
+    }
+  };
+
+  const remove = (id: string) => {
+    setPhotos((p) => {
+      const f = p.filter((x) => x.id !== id);
+      if (f.length && !f.some((x) => x.isCover)) f[0].isCover = true;
+      return f.map((x, i) => ({ ...x, order: i }));
+    });
+    toast.success("Removida");
+  };
+
+  const setCover = (id: string) => {
+    setPhotos((p) => p.map((x) => ({ ...x, isCover: x.id === id })));
+    toast.success("Capa definida!");
+  };
+  const moveUp = (i: number) => {
+    if (i === 0) return;
+    setPhotos((p) => {
+      const n = [...p];
+      [n[i - 1], n[i]] = [n[i], n[i - 1]];
+      return n.map((x, j) => ({ ...x, order: j }));
+    });
+  };
+  const moveDown = (i: number) => {
+    if (i === photos.length - 1) return;
+    setPhotos((p) => {
+      const n = [...p];
+      [n[i], n[i + 1]] = [n[i + 1], n[i]];
+      return n.map((x, j) => ({ ...x, order: j }));
+    });
+  };
+  const preview = (p: PhotoItem) => p.urls.thumb || (p.file ? URL.createObjectURL(p.file) : "");
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium text-zinc-700 flex items-center gap-2">
+          <Camera size={18} /> Fotos <span className="text-red-500">*</span>{" "}
+          <span className="text-zinc-400">
+            ({photos.length}/{MAX_PHOTOS})
+          </span>
+        </label>
+        {error && photos.length === 0 && (
+          <span className="text-xs text-red-600 flex items-center gap-1">
+            <AlertCircle size={12} /> Mínimo 1 foto
+          </span>
+        )}
+      </div>
+      {photos.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {photos.map((p, i) => (
+            <div
+              key={p.id}
+              className={cn(
+                "relative aspect-square rounded-xl overflow-hidden border-2",
+                p.isCover ? "border-violet-500 ring-2 ring-violet-500/30" : "border-zinc-200",
+                p.error && "border-red-400",
+              )}
+            >
+              {p.uploading ? (
+                <div className="absolute inset-0 bg-zinc-100 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+                </div>
+              ) : p.error ? (
+                <div className="absolute inset-0 bg-red-50 flex flex-col items-center justify-center p-2">
+                  <AlertCircle className="w-6 h-6 text-red-400 mb-1" />
+                  <span className="text-xs text-red-600 text-center">{p.error}</span>
+                </div>
+              ) : (
+                <img src={preview(p)} alt="" className="w-full h-full object-cover" />
+              )}
+              {p.isCover && !p.uploading && !p.error && (
+                <div className="absolute top-1.5 left-1.5 px-2 py-0.5 bg-violet-600 text-white text-[10px] font-bold rounded-full flex items-center gap-1">
+                  <Star size={10} fill="currentColor" />
+                  CAPA
+                </div>
+              )}
+              {!p.uploading && !p.error && (
+                <div className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-colors group">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {!p.isCover && (
+                      <button
+                        type="button"
+                        onClick={() => setCover(p.id)}
+                        className="px-2 py-1 bg-white/90 text-zinc-800 text-xs font-semibold rounded-lg flex items-center gap-1 hover:bg-white"
+                      >
+                        <Star size={12} />
+                        Capa
+                      </button>
+                    )}
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moveUp(i)}
+                        disabled={i === 0}
+                        className="p-1.5 bg-white/90 rounded-lg disabled:opacity-40"
+                      >
+                        <ArrowUp size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveDown(i)}
+                        disabled={i === photos.length - 1}
+                        className="p-1.5 bg-white/90 rounded-lg disabled:opacity-40"
+                      >
+                        <ArrowDown size={14} />
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => remove(p.id)}
+                      className="px-2 py-1 bg-red-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1 hover:bg-red-600"
+                    >
+                      <Trash2 size={12} />
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {photos.length < MAX_PHOTOS && (
+        <div
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            handleFiles(e.dataTransfer.files);
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          className={cn(
+            "border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-colors",
+            dragOver
+              ? "border-violet-500 bg-violet-50"
+              : error && !photos.length
+                ? "border-red-300 bg-red-50"
+                : "border-zinc-300 bg-zinc-50 hover:border-violet-400",
+          )}
+        >
+          <div className="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center">
+            <Plus className="w-6 h-6 text-violet-600" />
+          </div>
+          <p className="text-sm font-medium text-zinc-700">
+            Arraste ou{" "}
+            <label className="text-violet-600 cursor-pointer hover:underline">
+              clique
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => handleFiles(e.target.files)}
+                className="hidden"
+              />
+            </label>
+          </p>
+          <p className="text-xs text-zinc-500">JPG, PNG, WEBP até 25MB • Máx {MAX_PHOTOS}</p>
+        </div>
+      )}
+      <p className="text-xs text-zinc-500 flex items-center gap-1">
+        <Info size={12} /> Primeira foto = capa. Altere clicando em "Capa".
+      </p>
     </div>
   );
 };
@@ -265,17 +584,26 @@ export default function EstablishmentRegistration() {
   const [emailParaConfirmar, setEmailParaConfirmar] = useState("");
   const [showHorarioModal, setShowHorarioModal] = useState(false);
   const [horarioTemp, setHorarioTemp] = useState({
-    segunda: { aberto: true, inicio: "00:00", fim: "00:00" },
-    terca: { aberto: true, inicio: "00:00", fim: "00:00" },
-    quarta: { aberto: true, inicio: "00:00", fim: "00:00" },
-    quinta: { aberto: true, inicio: "00:00", fim: "00:00" },
-    sexta: { aberto: true, inicio: "00:00", fim: "00:00" },
-    sabado: { aberto: true, inicio: "00:00", fim: "00:00" },
+    segunda: { aberto: true, inicio: "09:00", fim: "18:00" },
+    terca: { aberto: true, inicio: "09:00", fim: "18:00" },
+    quarta: { aberto: true, inicio: "09:00", fim: "18:00" },
+    quinta: { aberto: true, inicio: "09:00", fim: "18:00" },
+    sexta: { aberto: true, inicio: "09:00", fim: "18:00" },
+    sabado: { aberto: true, inicio: "09:00", fim: "14:00" },
     domingo: { aberto: false, inicio: "00:00", fim: "00:00" },
   });
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // FOTOS: Array ao invés de única (P0.2)
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [photosError, setPhotosError] = useState(false);
+
+  // TIPO BENEFÍCIO (P0.3)
+  const [tipoBeneficio, setTipoBeneficio] = useState<TipoBeneficio | null>(null);
+  const [tipoBeneficioError, setTipoBeneficioError] = useState(false);
+
+  // CNPJ HINT (P0.4)
+  const [cnpjRazaoSocial, setCnpjRazaoSocial] = useState<string | null>(null);
+
   const [establishmentData, setEstablishmentData] = useState({
     cnpj: "",
     name: "",
@@ -296,8 +624,7 @@ export default function EstablishmentRegistration() {
     phoneFixed: "",
     phoneWhatsapp: "",
     slogan: "",
-    mainPhotoUrl: "https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)",
-    hoursText: "Seg-Sáb: 10h às 22h, Dom: Fechado",
+    hoursText: "Seg-Sex: 09h-18h, Sáb: 09h-14h, Dom: Fechado",
   });
   const [rules, setRules] = useState({ description: "", scope: "Dia" });
   const [loading, setLoading] = useState(false);
@@ -308,182 +635,39 @@ export default function EstablishmentRegistration() {
   const { fetchCep: lookupCep } = useCepLookup();
   const { extractLogradouro, validateLogradouro } = useLogradouroExtractor();
 
-  // Detectar retorno do Google OAuth
+  // Google OAuth return
   useEffect(() => {
-    const checkGoogleReturn = async () => {
-      const stepFromUrl = searchParams.get("step");
-      const providerFromUrl = searchParams.get("provider");
-
-      if (stepFromUrl === "2" && providerFromUrl === "google") {
+    const check = async () => {
+      if (searchParams.get("step") === "2" && searchParams.get("provider") === "google") {
         setStep(2);
         setIsGoogleUser(true);
         setError("");
         setCnpjVerified(false);
         setLoading(false);
-
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        if (user) {
-          setAuthData((prev) => ({
-            ...prev,
-            email: user.email || "",
-          }));
-        }
+        if (user) setAuthData((p) => ({ ...p, email: user.email || "" }));
       }
     };
-
-    checkGoogleReturn();
+    check();
   }, [searchParams]);
 
-  // --- LÓGICA DE APIs E VALIDAÇÃO ---
-
   const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCNPJ(e.target.value);
-    setEstablishmentData((prev) => ({ ...prev, cnpj: formatted }));
+    setEstablishmentData((p) => ({ ...p, cnpj: formatCNPJ(e.target.value) }));
     setCnpjVerified(false);
+    setCnpjRazaoSocial(null);
   };
 
-  const formatarTelefone = (telefone: string): string => {
-    const numeros = telefone.replace(/\D/g, "");
-    if (numeros.length === 10) {
-      return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 6)}-${numeros.slice(6)}`;
-    }
-    if (numeros.length === 11) {
-      return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7)}`;
-    }
-    return telefone;
-  };
-
-  // Processar imagem
-  const processImage = (file: File): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const img = new window.Image();
-
-      img.onload = () => {
-        try {
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
-
-          if (!ctx) {
-            resolve(file);
-            return;
-          }
-
-          const size = 400;
-          canvas.width = size;
-          canvas.height = size;
-
-          ctx.fillStyle = "#FFFFFF";
-          ctx.fillRect(0, 0, size, size);
-
-          const minDimension = Math.min(img.width, img.height);
-          const sx = (img.width - minDimension) / 2;
-          const sy = (img.height - minDimension) / 2;
-
-          ctx.drawImage(img, sx, sy, minDimension, minDimension, 0, 0, size, size);
-
-          canvas.toBlob(
-            (blob) => {
-              if (blob) {
-                resolve(blob);
-              } else {
-                resolve(file);
-              }
-            },
-            "image/jpeg",
-            0.85,
-          );
-        } catch (err) {
-          resolve(file);
-        }
-      };
-
-      img.onerror = () => {
-        reject(new Error("Não foi possível carregar a imagem. Tente outra foto."));
-      };
-
-      const objectUrl = URL.createObjectURL(file);
-      img.src = objectUrl;
-    });
-  };
-
-  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const isImage =
-      file.type.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|bmp|heic|heif|tiff|svg)$/i.test(file.name);
-
-    if (!isImage) {
-      toast.error("Por favor, selecione um arquivo de imagem");
-      return;
-    }
-
-    if (file.size > 25 * 1024 * 1024) {
-      toast.error("Imagem muito grande. Máximo 25MB.");
-      return;
-    }
-
-    setUploadingImage(true);
-
-    try {
-      const processedBlob = await processImage(file);
-      const previewUrl = URL.createObjectURL(processedBlob);
-      setImagePreview(previewUrl);
-
-      const processedFile = new File([processedBlob], `foto_${Date.now()}.jpg`, { type: "image/jpeg" });
-      setSelectedImage(processedFile);
-
-      const fileName = `estabelecimento_${Date.now()}.jpg`;
-      const { data, error } = await supabase.storage.from("establishment-photos").upload(fileName, processedFile, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-
-      if (error) {
-        toast.error("Erro ao enviar foto. Tente novamente.");
-        setUploadingImage(false);
-        return;
-      }
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("establishment-photos").getPublicUrl(fileName);
-
-      setEstablishmentData((prev) => ({ ...prev, mainPhotoUrl: publicUrl }));
-      toast.success("Foto adicionada com sucesso!");
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao processar foto. Tente outra imagem.");
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  const handleRemovePhoto = () => {
-    setImagePreview(null);
-    setSelectedImage(null);
-    setEstablishmentData((prev) => ({
-      ...prev,
-      mainPhotoUrl: "https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)",
-    }));
-    const input = document.getElementById("foto-input") as HTMLInputElement;
-    if (input) input.value = "";
-    toast.success("Foto removida");
-  };
-
+  // P0.4: Verificar CNPJ mas NÃO preencher nome
   const verifyCnpj = async () => {
-    const rawCnpj = establishmentData.cnpj.replace(/\D/g, "");
-
-    if (rawCnpj.length === 0) return;
-
-    if (rawCnpj.length < 14) {
+    const raw = establishmentData.cnpj.replace(/\D/g, "");
+    if (raw.length < 14) {
       toast.error("CNPJ deve ter 14 dígitos");
       return;
     }
-
-    if (!validateCNPJ(rawCnpj)) {
-      toast.error("CNPJ inválido. Verifique os dígitos verificadores.");
+    if (!validateCNPJ(raw)) {
+      toast.error("CNPJ inválido");
       return;
     }
 
@@ -491,240 +675,175 @@ export default function EstablishmentRegistration() {
     setError("");
 
     try {
-      const { data: cnpjExistente } = await supabase
-        .from("estabelecimentos")
-        .select("id, nome_fantasia")
-        .eq("cnpj", rawCnpj)
-        .maybeSingle();
-
-      if (cnpjExistente) {
-        toast.error("Este CNPJ já está cadastrado na plataforma.");
+      const { data: existe } = await supabase.from("estabelecimentos").select("id").eq("cnpj", raw).maybeSingle();
+      if (existe) {
+        toast.error("CNPJ já cadastrado");
         setLoadingCnpj(false);
-        setCnpjVerified(false);
         return;
       }
 
-      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${rawCnpj}`);
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          toast.error("CNPJ não encontrado na Receita Federal. Verifique o número.");
-        } else if (response.status === 429) {
-          toast.error("Muitas consultas. Aguarde um momento e tente novamente.");
-        } else {
-          toast.error("Erro ao consultar CNPJ. Tente novamente.");
-        }
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`);
+      if (!res.ok) {
+        toast.error(res.status === 404 ? "CNPJ não encontrado" : "Erro ao consultar");
         setLoadingCnpj(false);
-        setCnpjVerified(false);
         return;
       }
 
-      const data = await response.json();
-
+      const data = await res.json();
       if (data.descricao_situacao_cadastral && data.descricao_situacao_cadastral !== "ATIVA") {
-        toast.warning(
-          `Atenção: Este CNPJ está com situação "${data.descricao_situacao_cadastral}" na Receita Federal.`,
-        );
+        toast.warning(`Situação: ${data.descricao_situacao_cadastral}`);
       }
 
-      const logradouroExtraido = extractLogradouro(data.logradouro || "");
-      const validacaoLogradouro = logradouroExtraido ? validateLogradouro(logradouroExtraido) : null;
+      const logExtraido = extractLogradouro(data.logradouro || "");
+      const validacao = logExtraido ? validateLogradouro(logExtraido) : null;
 
-      setEstablishmentData((prev) => ({
-        ...prev,
-        name: prev.name || data.nome_fantasia || data.razao_social || "",
-        phoneFixed: prev.phoneFixed || (data.ddd_telefone_1 ? formatarTelefone(data.ddd_telefone_1) : ""),
-        cep: prev.cep || (data.cep ? data.cep.replace(/\D/g, "") : ""),
-        estado: prev.estado || data.uf || "",
-        cidade: prev.cidade || data.municipio || "",
-        bairro: prev.bairro || data.bairro || "",
-        logradouro: prev.logradouro || (validacaoLogradouro?.valid ? logradouroExtraido : data.logradouro) || "",
-        numero: prev.numero || data.numero || "",
-        complemento: prev.complemento || data.complemento || "",
+      // P0.4: NÃO preencher name, apenas mostrar hint
+      setCnpjRazaoSocial(data.nome_fantasia || data.razao_social || null);
+
+      setEstablishmentData((p) => ({
+        ...p,
+        // name: NÃO PREENCHER (P0.4)
+        phoneFixed: p.phoneFixed || (data.ddd_telefone_1 ? formatPhone(data.ddd_telefone_1) : ""),
+        cep: p.cep || data.cep?.replace(/\D/g, "") || "",
+        estado: p.estado || data.uf || "",
+        cidade: p.cidade || data.municipio || "",
+        bairro: p.bairro || data.bairro || "",
+        logradouro: p.logradouro || (validacao?.valid ? logExtraido : data.logradouro) || "",
+        numero: p.numero || data.numero || "",
+        complemento: p.complemento || data.complemento || "",
       }));
 
       setCnpjVerified(true);
-      toast.success("CNPJ verificado! Dados preenchidos automaticamente.");
-    } catch (error: any) {
-      if (
-        error.message &&
-        !error.message.includes("fetch") &&
-        !error.message.includes("network") &&
-        !error.message.includes("Failed")
-      ) {
-        toast.error(error.message);
-      } else {
-        toast.error("Erro de conexão. Verifique sua internet e tente novamente.");
-      }
+      toast.success("CNPJ verificado!");
+    } catch (e: any) {
+      toast.error("Erro de conexão");
       setCnpjVerified(false);
     } finally {
       setLoadingCnpj(false);
     }
   };
 
-  const fetchCep = async (cepValue: string) => {
-    const rawCep = cepValue.replace(/\D/g, "").substring(0, 8);
-    setEstablishmentData((prev) => ({ ...prev, cep: rawCep }));
-
-    if (rawCep.length !== 8) return;
-
+  const fetchCep = async (cep: string) => {
+    const raw = cep.replace(/\D/g, "").substring(0, 8);
+    setEstablishmentData((p) => ({ ...p, cep: raw }));
+    if (raw.length !== 8) return;
     setLoading(true);
-
     try {
-      const data = await lookupCep(rawCep);
-
+      const data = await lookupCep(raw);
       if (data) {
-        const logradouroExtraido = extractLogradouro(data.logradouro || "");
-        const validacao = logradouroExtraido ? validateLogradouro(logradouroExtraido) : null;
-
-        setEstablishmentData((prev) => ({
-          ...prev,
-          logradouro: validacao?.valid ? logradouroExtraido : data.logradouro || "",
+        const log = extractLogradouro(data.logradouro || "");
+        const v = log ? validateLogradouro(log) : null;
+        setEstablishmentData((p) => ({
+          ...p,
+          logradouro: v?.valid ? log : data.logradouro || "",
           bairro: data.bairro || "",
           cidade: data.localidade || "",
           estado: data.uf || "",
         }));
       }
-    } catch (error) {
-      console.error("Erro ao buscar CEP:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCategoryToggle = (category: string) => {
-    setEstablishmentData((prev) => {
-      const isSelected = prev.categories.includes(category);
-      if (isSelected) {
-        return { ...prev, categories: prev.categories.filter((c) => c !== category) };
-      } else if (prev.categories.length < 3) {
-        return { ...prev, categories: [...prev.categories, category] };
-      }
-      return prev;
+  const handleCategoryToggle = (cat: string) => {
+    setEstablishmentData((p) => {
+      if (p.categories.includes(cat)) return { ...p, categories: p.categories.filter((c) => c !== cat) };
+      if (p.categories.length < 3) return { ...p, categories: [...p.categories, cat] };
+      return p;
     });
   };
 
-  // --- FLUXO DE SUBMISSÃO ---
-
   const handleGoogleSignUp = async () => {
-    try {
-      sessionStorage.setItem("authType", "estabelecimento");
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
-        },
-      });
-
-      if (error) {
-        toast.error("Erro ao conectar com Google");
-      }
-    } catch (error) {
-      toast.error("Erro ao conectar com Google");
-    }
+    sessionStorage.setItem("authType", "estabelecimento");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: { access_type: "offline", prompt: "consent" },
+      },
+    });
+    if (error) toast.error("Erro Google");
   };
 
-  const validatePassword = (password: string) => {
+  const validatePassword = (pw: string) => {
     setPasswordRequirements({
-      minLength: password.length >= 8,
-      hasUppercase: /[A-Z]/.test(password),
-      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+      minLength: pw.length >= 8,
+      hasUppercase: /[A-Z]/.test(pw),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(pw),
     });
   };
 
   const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const allRequirementsMet =
-      passwordRequirements.minLength && passwordRequirements.hasUppercase && passwordRequirements.hasSpecialChar;
-
     if (!authData.email || !authData.password) {
-      setError("Preencha email e senha.");
+      setError("Preencha email e senha");
       return;
     }
-
-    if (!allRequirementsMet) {
-      setError("A senha não atende aos requisitos mínimos.");
+    if (!passwordRequirements.minLength || !passwordRequirements.hasUppercase || !passwordRequirements.hasSpecialChar) {
+      setError("Senha não atende requisitos");
       return;
     }
-
     setStep(2);
   };
 
   const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setPhotosError(false);
+    setTipoBeneficioError(false);
 
-    const rawCnpj = establishmentData.cnpj.replace(/\D/g, "");
-    const isPhoneFilled = establishmentData.phoneFixed || establishmentData.phoneWhatsapp;
+    const raw = establishmentData.cnpj.replace(/\D/g, "");
+    const hasPhone = establishmentData.phoneFixed || establishmentData.phoneWhatsapp;
 
-    if (
-      !selectedImage &&
-      !imagePreview &&
-      establishmentData.mainPhotoUrl === "https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)"
-    ) {
-      setError("Adicione uma foto do estabelecimento");
-      toast.error("Adicione uma foto do estabelecimento");
+    // Validações
+    if (photos.length === 0) {
+      setPhotosError(true);
+      toast.error("Adicione pelo menos 1 foto");
       return;
     }
-
+    if (!tipoBeneficio) {
+      setTipoBeneficioError(true);
+      toast.error("Selecione o tipo de benefício");
+      return;
+    }
     if (!cnpjVerified) {
-      setError('CNPJ deve ser verificado antes de continuar. Clique em "Verificar".');
-      toast.error("CNPJ deve ser verificado antes de continuar.");
+      toast.error("Verifique o CNPJ");
       return;
     }
-
     if (
-      rawCnpj.length !== 14 ||
+      raw.length !== 14 ||
       !establishmentData.logradouro ||
       !establishmentData.cidade ||
-      establishmentData.categories.length === 0
+      !establishmentData.categories.length
     ) {
-      setError("Por favor, preencha todos os campos obrigatórios: CNPJ, Endereço e Categoria.");
+      setError("Preencha campos obrigatórios");
       return;
     }
-
-    if (!isPhoneFilled) {
-      setError("Pelo menos um número de contato (Fixo ou WhatsApp) é obrigatório.");
+    if (!hasPhone) {
+      setError("Informe pelo menos um telefone");
       return;
     }
-
-    if (!establishmentData.name || establishmentData.name.trim().length < 2) {
-      setError("Nome do estabelecimento obrigatório");
-      toast.error("Nome do estabelecimento obrigatório");
+    if (!establishmentData.name?.trim()) {
+      toast.error("Nome obrigatório");
       return;
     }
 
     setLoading(true);
 
     try {
+      const coverPhoto = photos.find((p) => p.isCover) || photos[0];
+      const photosData = photos.map((p) => ({ id: p.id, order: p.order, isCover: p.isCover, urls: p.urls }));
+
       if (isGoogleUser) {
         const {
           data: { user },
         } = await supabase.auth.getUser();
-
-        if (!user) {
-          throw new Error("Sessão não encontrada");
-        }
-
-        const { data: cnpjExistente } = await supabase
-          .from("estabelecimentos")
-          .select("cnpj")
-          .eq("cnpj", rawCnpj)
-          .maybeSingle();
-
-        if (cnpjExistente) {
-          toast.error("Este CNPJ já está cadastrado");
-          return;
-        }
+        if (!user) throw new Error("Sessão não encontrada");
 
         const { error: estabError } = await supabase.from("estabelecimentos").insert({
           id: user.id,
-          cnpj: rawCnpj,
+          cnpj: raw,
           razao_social: establishmentData.name,
           nome_fantasia: establishmentData.name,
           telefone: establishmentData.phoneFixed?.replace(/\D/g, "") || null,
@@ -739,7 +858,9 @@ export default function EstablishmentRegistration() {
           numero: establishmentData.numero || null,
           complemento: establishmentData.complemento || null,
           categoria: establishmentData.categories,
+          especialidades: establishmentData.especialidades.length ? establishmentData.especialidades : null,
           descricao_beneficio: rules.description || null,
+          tipo_beneficio: tipoBeneficio,
           periodo_validade_beneficio:
             rules.scope === "Dia"
               ? "dia_aniversario"
@@ -747,53 +868,34 @@ export default function EstablishmentRegistration() {
                 ? "semana_aniversario"
                 : "mes_aniversario",
           horario_funcionamento: establishmentData.hoursText || null,
-          logo_url:
-            establishmentData.mainPhotoUrl !== "https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)"
-              ? establishmentData.mainPhotoUrl
-              : null,
+          logo_url: coverPhoto?.urls.card || null,
+          fotos: photosData,
           link_cardapio: establishmentData.menuLink || null,
           ativo: false,
         });
 
         if (estabError) throw estabError;
-
-        await supabase.from("user_roles").upsert(
-          {
-            user_id: user.id,
-            role: "estabelecimento",
-          },
-          { onConflict: "user_id,role" },
-        );
-
-        toast.success("Estabelecimento cadastrado com sucesso!");
+        await supabase
+          .from("user_roles")
+          .upsert({ user_id: user.id, role: "estabelecimento" }, { onConflict: "user_id,role" });
+        toast.success("Cadastrado com sucesso!");
         navigate("/area-estabelecimento");
       } else {
-        await criarContaEstabelecimentoCompleta();
+        await criarContaCompleta(raw, coverPhoto, photosData);
       }
-    } catch (error: any) {
-      if (error.message === "CONFIRMATION_REQUIRED") {
-        return;
-      }
-
-      const friendlyError = getFriendlyErrorMessage(error);
-      toast.error(friendlyError);
-      setError(friendlyError);
+    } catch (e: any) {
+      if (e.message === "CONFIRMATION_REQUIRED") return;
+      toast.error(getFriendlyErrorMessage(e));
+      setError(getFriendlyErrorMessage(e));
     } finally {
       setLoading(false);
     }
   };
 
-  const criarContaEstabelecimentoCompleta = async () => {
-    const rawCnpj = establishmentData.cnpj.replace(/\D/g, "");
-
-    const { data: cnpjExistente } = await supabase
-      .from("estabelecimentos")
-      .select("cnpj")
-      .eq("cnpj", rawCnpj)
-      .maybeSingle();
-
-    if (cnpjExistente) {
-      toast.error("Este CNPJ já está cadastrado");
+  const criarContaCompleta = async (raw: string, coverPhoto: PhotoItem | undefined, photosData: any[]) => {
+    const { data: existe } = await supabase.from("estabelecimentos").select("cnpj").eq("cnpj", raw).maybeSingle();
+    if (existe) {
+      toast.error("CNPJ já cadastrado");
       throw new Error("CNPJ duplicado");
     }
 
@@ -802,25 +904,17 @@ export default function EstablishmentRegistration() {
       password: authData.password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
-        data: {
-          tipo: "estabelecimento",
-          nome_fantasia: establishmentData.name,
-        },
+        data: { tipo: "estabelecimento", nome_fantasia: establishmentData.name },
       },
     });
 
     if (authError) {
-      if (authError.message.includes("already registered")) {
-        toast.error("Este email já está cadastrado");
-      }
+      if (authError.message.includes("already registered")) toast.error("Email já cadastrado");
       throw authError;
     }
+    if (!signUpData.user) throw new Error("Erro ao criar conta");
 
-    if (!signUpData.user) {
-      throw new Error("Erro ao criar conta");
-    }
-
-    if (signUpData.user && !signUpData.session) {
+    if (!signUpData.session) {
       toast.success("Cadastro iniciado!");
       setEmailParaConfirmar(authData.email);
       setMostrarTelaConfirmacao(true);
@@ -830,7 +924,7 @@ export default function EstablishmentRegistration() {
 
     const { error: estabError } = await supabase.from("estabelecimentos").insert({
       id: signUpData.user.id,
-      cnpj: rawCnpj,
+      cnpj: raw,
       razao_social: establishmentData.name,
       nome_fantasia: establishmentData.name,
       telefone: establishmentData.phoneFixed?.replace(/\D/g, "") || null,
@@ -845,75 +939,41 @@ export default function EstablishmentRegistration() {
       numero: establishmentData.numero || null,
       complemento: establishmentData.complemento || null,
       categoria: establishmentData.categories,
-      especialidades: establishmentData.especialidades.length > 0 ? establishmentData.especialidades : null,
+      especialidades: establishmentData.especialidades.length ? establishmentData.especialidades : null,
       descricao_beneficio: rules.description || null,
+      tipo_beneficio: tipoBeneficio,
       periodo_validade_beneficio:
         rules.scope === "Dia" ? "dia_aniversario" : rules.scope === "Semana" ? "semana_aniversario" : "mes_aniversario",
       horario_funcionamento: establishmentData.hoursText || null,
-      logo_url:
-        establishmentData.mainPhotoUrl !== "https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)"
-          ? establishmentData.mainPhotoUrl
-          : null,
+      logo_url: coverPhoto?.urls.card || null,
+      fotos: photosData,
       link_cardapio: establishmentData.menuLink || null,
       ativo: false,
     });
 
     if (estabError) throw estabError;
-
-    await supabase.from("user_roles").insert({
-      user_id: signUpData.user.id,
-      role: "estabelecimento",
-    });
-
-    toast.success("Estabelecimento cadastrado! Aguarde aprovação.");
+    await supabase.from("user_roles").insert({ user_id: signUpData.user.id, role: "estabelecimento" });
+    toast.success("Cadastrado! Aguarde aprovação.");
     navigate("/area-estabelecimento");
   };
 
-  // ==========================================================================
-  // SHARED STYLES - TEMA CLARO
-  // ==========================================================================
-
-  const inputBaseClass = cn(
-    "w-full px-4 py-3 text-base text-zinc-900 rounded-xl",
-    "bg-white",
-    "border border-zinc-200",
-    "placeholder:text-zinc-400",
-    "hover:border-zinc-300",
-    "focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none",
-    "transition-all duration-200",
-  );
-
-  const inputWithIconClass = cn(inputBaseClass, "pl-10");
-
-  const labelClass = "text-sm font-medium text-zinc-700 mb-1 block";
-
-  const sectionClass = "p-6 bg-white rounded-xl shadow-sm border border-zinc-200 space-y-4";
-
-  const sectionTitleClass = "text-xl font-semibold text-zinc-800 flex items-center gap-2";
-
-  // ==========================================================================
-  // RENDER STEP 1
-  // ==========================================================================
+  // =============================================================================
+  // RENDER STEP 1 (Tema Claro)
+  // =============================================================================
 
   const renderStep1 = () => (
     <form onSubmit={handleAuthSubmit} className="space-y-6">
-      <h2 className="text-2xl font-bold text-zinc-900 text-center">Cadastre o seu estabelecimento</h2>
+      <h2 className="text-2xl font-bold text-zinc-900 text-center">Cadastre seu estabelecimento</h2>
       <p className="text-zinc-500 text-center">Crie suas credenciais e complete os dados da sua empresa.</p>
 
-      {/* Login Google */}
       <button
         type="button"
         onClick={handleGoogleSignUp}
-        className={cn(
-          "w-full py-3 rounded-xl flex items-center justify-center gap-3 font-semibold transition-colors",
-          "bg-white border border-zinc-200 text-zinc-800",
-          "hover:bg-zinc-50 hover:border-zinc-300",
-          "shadow-sm hover:shadow",
-        )}
+        className="w-full py-3 bg-white border border-zinc-200 text-zinc-700 rounded-xl flex items-center justify-center gap-3 font-semibold hover:bg-zinc-50 transition-colors shadow-sm"
       >
         <img
           src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/48px-Google_%22G%22_logo.svg.png"
-          alt="Google Logo"
+          alt="Google"
           className="w-5 h-5"
         />
         Continuar com Google
@@ -925,63 +985,57 @@ export default function EstablishmentRegistration() {
         <hr className="flex-1 border-zinc-200" />
       </div>
 
-      {/* Login Email/Senha */}
       <div>
-        <label className={labelClass}>E-mail</label>
+        <label className="block text-sm font-medium text-zinc-700 mb-1">E-mail</label>
         <div className="relative">
           <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input
             type="email"
             value={authData.email}
-            onChange={(e) => setAuthData((prev) => ({ ...prev, email: e.target.value }))}
-            className={inputWithIconClass}
-            placeholder="seu@email.com"
+            onChange={(e) => setAuthData((p) => ({ ...p, email: e.target.value }))}
+            className="w-full pl-10 pr-4 py-3 border border-zinc-200 bg-white text-zinc-900 placeholder-zinc-400 rounded-xl focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none"
             required
           />
         </div>
       </div>
 
       <div>
-        <label className={labelClass}>Senha</label>
+        <label className="block text-sm font-medium text-zinc-700 mb-1">Senha</label>
         <div className="relative">
           <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input
             type="password"
             value={authData.password}
             onChange={(e) => {
-              const newPassword = e.target.value;
-              setAuthData((prev) => ({ ...prev, password: newPassword }));
-              validatePassword(newPassword);
+              setAuthData((p) => ({ ...p, password: e.target.value }));
+              validatePassword(e.target.value);
             }}
-            className={inputWithIconClass}
-            placeholder="••••••••"
+            className="w-full pl-10 pr-4 py-3 border border-zinc-200 bg-white text-zinc-900 placeholder-zinc-400 rounded-xl focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none"
             required
           />
         </div>
-
-        {/* Password Requirements */}
-        <div className="mt-3 p-4 rounded-xl bg-zinc-50 border border-zinc-100">
-          <p className="text-xs font-medium text-zinc-500 mb-3">A senha deve conter:</p>
-          <div className="space-y-2">
-            {[
-              { key: "minLength", label: "Mínimo 8 caracteres", met: passwordRequirements.minLength },
-              { key: "hasUppercase", label: "Uma letra maiúscula", met: passwordRequirements.hasUppercase },
-              {
-                key: "hasSpecialChar",
-                label: "Um caractere especial (!@#$%...)",
-                met: passwordRequirements.hasSpecialChar,
-              },
-            ].map((req) => (
-              <div key={req.key} className="flex items-center gap-2">
-                {req.met ? (
-                  <CheckCircle size={16} className="text-emerald-500" />
-                ) : (
-                  <div className="w-4 h-4 rounded-full border-2 border-zinc-300" />
-                )}
-                <span className={req.met ? "text-emerald-600 text-sm" : "text-zinc-400 text-sm"}>{req.label}</span>
-              </div>
-            ))}
-          </div>
+        <div className="mt-3 space-y-1 text-sm">
+          <p className="text-zinc-500 font-medium">A senha deve conter:</p>
+          {[
+            { key: "minLength", label: "Mínimo 8 caracteres" },
+            { key: "hasUppercase", label: "Uma letra maiúscula" },
+            { key: "hasSpecialChar", label: "Um caractere especial" },
+          ].map(({ key, label }) => (
+            <div key={key} className="flex items-center gap-2">
+              {passwordRequirements[key as keyof typeof passwordRequirements] ? (
+                <CheckCircle size={16} className="text-emerald-500" />
+              ) : (
+                <div className="w-4 h-4 rounded-full border-2 border-zinc-300" />
+              )}
+              <span
+                className={
+                  passwordRequirements[key as keyof typeof passwordRequirements] ? "text-emerald-600" : "text-zinc-500"
+                }
+              >
+                {label}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -989,61 +1043,49 @@ export default function EstablishmentRegistration() {
 
       <button
         type="submit"
-        className={cn(
-          "w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2",
-          "bg-violet-600 hover:bg-violet-700 text-white",
-          "shadow-lg shadow-violet-600/25 hover:shadow-xl hover:shadow-violet-600/30",
-        )}
+        className="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25"
       >
         Próxima Etapa <ArrowRight size={20} />
       </button>
     </form>
   );
 
-  // ==========================================================================
-  // RENDER STEP 2
-  // ==========================================================================
+  // =============================================================================
+  // RENDER STEP 2 (Tema Claro)
+  // =============================================================================
 
   const renderStep2 = () => (
-    <form onSubmit={handleFinalSubmit} className="space-y-6">
+    <form onSubmit={handleFinalSubmit} className="space-y-8">
       <div className="flex justify-between items-center border-b border-zinc-200 pb-4 mb-4">
         <button
           type="button"
           onClick={() => setStep(1)}
-          className="text-zinc-500 hover:text-violet-600 flex items-center gap-1 font-medium"
+          className="text-zinc-500 hover:text-violet-600 flex items-center gap-1"
         >
           <ChevronLeft size={20} /> Voltar
         </button>
-        <h2 className="text-xl font-bold text-zinc-900">Dados do Estabelecimento</h2>
+        <h2 className="text-2xl font-bold text-zinc-900">Dados do Estabelecimento</h2>
       </div>
 
-      {/* Mensagem para usuário Google */}
       {isGoogleUser && authData.email && (
-        <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 space-y-2">
-          <p className="text-violet-700 text-sm font-medium flex items-center gap-2">
-            <Check className="h-4 w-4" />
-            Você está cadastrando com sua conta Google
-          </p>
-          <div className="space-y-1">
-            <label className="text-xs text-zinc-500">Email (Google)</label>
-            <div className="bg-white border border-violet-100 rounded-lg px-3 py-2 text-sm text-zinc-700">
-              {authData.email}
-            </div>
+        <div className="bg-violet-50 border border-violet-200 rounded-lg p-4">
+          <p className="text-violet-700 text-sm font-medium">✓ Cadastrando com Google</p>
+          <div className="mt-2 bg-zinc-100 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-700">
+            {authData.email}
           </div>
         </div>
       )}
 
       {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
 
-      {/* 1. CNPJ e Nome */}
-      <div className={sectionClass}>
-        <h3 className={sectionTitleClass}>
-          <Building2 size={20} className="text-violet-600" /> Informações Básicas
+      {/* SEÇÃO 1: CNPJ e Nome */}
+      <div className="p-6 bg-white rounded-xl shadow-sm border border-zinc-200 space-y-4">
+        <h3 className="text-xl font-semibold text-zinc-800 flex items-center gap-2">
+          <Building2 size={20} /> Informações Básicas
         </h3>
 
-        {/* CNPJ Input */}
-        <div>
-          <label className={labelClass}>CNPJ (Apenas números) *</label>
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-700 mb-1 block">CNPJ *</span>
           <div className="flex gap-3">
             <div className="flex-1 relative">
               <input
@@ -1051,7 +1093,7 @@ export default function EstablishmentRegistration() {
                 value={establishmentData.cnpj}
                 onChange={handleCnpjChange}
                 maxLength={18}
-                className={inputBaseClass}
+                className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none text-zinc-900"
                 placeholder="00.000.000/0000-00"
                 required
               />
@@ -1063,11 +1105,7 @@ export default function EstablishmentRegistration() {
               type="button"
               onClick={verifyCnpj}
               disabled={loadingCnpj || establishmentData.cnpj.replace(/\D/g, "").length !== 14}
-              className={cn(
-                "px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2",
-                "bg-violet-600 hover:bg-violet-700 text-white",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-              )}
+              className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold disabled:opacity-50 transition-all flex items-center gap-2"
             >
               {loadingCnpj ? (
                 <>
@@ -1077,253 +1115,261 @@ export default function EstablishmentRegistration() {
               ) : cnpjVerified ? (
                 <>
                   <Check className="w-4 h-4" />
-                  Verificado
+                  OK
                 </>
               ) : (
                 "Verificar"
               )}
             </button>
           </div>
-          {cnpjVerified && establishmentData.name && (
-            <p className="mt-2 text-sm text-emerald-600 font-semibold flex items-center gap-1">
-              <CheckCircle size={16} /> Empresa Verificada: {establishmentData.name}
+          {/* P0.4: Hint da razão social (NÃO preenche o input) */}
+          {cnpjRazaoSocial && (
+            <p className="mt-2 text-sm text-violet-600 bg-violet-50 px-3 py-2 rounded-lg flex items-center gap-2">
+              <Info size={16} /> Razão social encontrada: <strong>{cnpjRazaoSocial}</strong>
             </p>
           )}
-        </div>
+        </label>
 
-        {/* Nome e Slogan */}
-        <div>
-          <label className={labelClass}>Nome do Estabelecimento *</label>
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-700 mb-1 block">
+            Nome do Estabelecimento * <span className="text-zinc-400 font-normal">(nome fantasia)</span>
+          </span>
           <input
             type="text"
             value={establishmentData.name}
-            onChange={(e) => setEstablishmentData((prev) => ({ ...prev, name: e.target.value }))}
-            className={inputBaseClass}
-            placeholder="Nome do seu estabelecimento"
+            onChange={(e) => setEstablishmentData((p) => ({ ...p, name: e.target.value }))}
+            spellCheck={true}
+            autoCorrect="on"
+            autoCapitalize="words"
+            className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none text-zinc-900"
+            placeholder="Como seu estabelecimento é conhecido"
             required
           />
-        </div>
+        </label>
 
-        <div>
-          <label className={labelClass}>Slogan/Descrição Curta (Máx. 50 Caracteres)</label>
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-700 mb-1 block">Slogan/Descrição Curta (máx. 50)</span>
           <input
             type="text"
             value={establishmentData.slogan}
-            onChange={(e) => setEstablishmentData((prev) => ({ ...prev, slogan: e.target.value.substring(0, 50) }))}
-            className={inputBaseClass}
+            onChange={(e) => setEstablishmentData((p) => ({ ...p, slogan: e.target.value.substring(0, 50) }))}
+            spellCheck={true}
+            autoCorrect="on"
+            autoCapitalize="sentences"
+            className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none text-zinc-900"
             placeholder="Ex: O melhor açaí da cidade!"
           />
-        </div>
+        </label>
       </div>
 
-      {/* 2. CONTATO E REDES SOCIAIS */}
-      <div className={sectionClass}>
-        <h3 className={sectionTitleClass}>
-          <Phone size={20} className="text-violet-600" /> Contato e Redes
+      {/* SEÇÃO 2: Contato */}
+      <div className="p-6 bg-white rounded-xl shadow-sm border border-zinc-200 space-y-4">
+        <h3 className="text-xl font-semibold text-zinc-800 flex items-center gap-2">
+          <Phone size={20} /> Contato e Redes
         </h3>
         <p className="text-sm text-zinc-500 flex items-center gap-1">
-          <Info size={16} className="text-violet-500" /> Pelo menos um telefone (Fixo ou WhatsApp) é obrigatório.
+          <Info size={16} className="text-violet-500" /> Pelo menos um telefone obrigatório.
         </p>
 
-        <div>
-          <label className={labelClass}>Telefone Fixo (Opcional)</label>
-          <div className="relative">
-            <Phone size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-            <input
-              type="text"
-              value={formatPhone(establishmentData.phoneFixed)}
-              onChange={(e) =>
-                setEstablishmentData((prev) => ({ ...prev, phoneFixed: e.target.value.replace(/\D/g, "") }))
-              }
-              maxLength={14}
-              className={inputWithIconClass}
-              placeholder="(XX) XXXX-XXXX"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className={labelClass}>WhatsApp (Opcional)</label>
-          <div className="relative">
-            <MessageSquare size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-            <input
-              type="text"
-              value={formatPhone(establishmentData.phoneWhatsapp)}
-              onChange={(e) =>
-                setEstablishmentData((prev) => ({ ...prev, phoneWhatsapp: e.target.value.replace(/\D/g, "") }))
-              }
-              maxLength={15}
-              className={inputWithIconClass}
-              placeholder="(XX) 9XXXX-XXXX"
-            />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label className="block">
+            <span className="text-sm font-medium text-zinc-700 mb-1 block">Telefone Fixo</span>
+            <div className="relative">
+              <Phone size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+              <input
+                type="text"
+                value={formatPhone(establishmentData.phoneFixed)}
+                onChange={(e) => setEstablishmentData((p) => ({ ...p, phoneFixed: e.target.value.replace(/\D/g, "") }))}
+                maxLength={14}
+                className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 outline-none text-zinc-900"
+                placeholder="(XX) XXXX-XXXX"
+              />
+            </div>
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium text-zinc-700 mb-1 block">WhatsApp</span>
+            <div className="relative">
+              <MessageSquare size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+              <input
+                type="text"
+                value={formatPhone(establishmentData.phoneWhatsapp)}
+                onChange={(e) =>
+                  setEstablishmentData((p) => ({ ...p, phoneWhatsapp: e.target.value.replace(/\D/g, "") }))
+                }
+                maxLength={15}
+                className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 outline-none text-zinc-900"
+                placeholder="(XX) 9XXXX-XXXX"
+              />
+            </div>
+          </label>
         </div>
 
         <hr className="border-zinc-100" />
 
-        <div>
-          <label className={labelClass}>Website Principal (Opcional)</label>
-          <div className="relative">
-            <Globe size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-            <input
-              type="text"
-              value={establishmentData.siteLink}
-              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, siteLink: e.target.value }))}
-              onBlur={(e) => {
-                const value = e.target.value.trim();
-                if (value && !value.startsWith("http://") && !value.startsWith("https://")) {
-                  setEstablishmentData((prev) => ({ ...prev, siteLink: `https://${value}` }));
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label className="block">
+            <span className="text-sm font-medium text-zinc-700 mb-1 block">Website</span>
+            <div className="relative">
+              <Globe size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+              <input
+                type="text"
+                value={establishmentData.siteLink}
+                onChange={(e) => setEstablishmentData((p) => ({ ...p, siteLink: e.target.value }))}
+                onBlur={(e) => {
+                  const v = e.target.value.trim();
+                  if (v && !v.startsWith("http")) setEstablishmentData((p) => ({ ...p, siteLink: `https://${v}` }));
+                }}
+                className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 outline-none text-zinc-900"
+                placeholder="www.site.com.br"
+              />
+            </div>
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium text-zinc-700 mb-1 block">Instagram</span>
+            <div className="relative">
+              <Instagram size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+              <span className="absolute left-10 top-1/2 -translate-y-1/2 text-zinc-500">@</span>
+              <input
+                type="text"
+                value={establishmentData.instagramUser}
+                onChange={(e) =>
+                  setEstablishmentData((p) => ({ ...p, instagramUser: e.target.value.replace("@", "") }))
                 }
-              }}
-              className={inputWithIconClass}
-              placeholder="www.suaempresa.com.br"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className={labelClass}>Instagram (Opcional)</label>
-          <div className="relative">
-            <Instagram size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-            <div className="absolute left-10 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">@</div>
-            <input
-              type="text"
-              value={establishmentData.instagramUser}
-              onChange={(e) =>
-                setEstablishmentData((prev) => ({ ...prev, instagramUser: e.target.value.replace("@", "") }))
-              }
-              className={cn(inputBaseClass, "pl-16")}
-              placeholder="seuusuário"
-            />
-          </div>
+                className="w-full pl-16 pr-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 outline-none text-zinc-900"
+                placeholder="seuusuario"
+              />
+            </div>
+          </label>
         </div>
       </div>
 
-      {/* 3. Endereço */}
-      <div className={sectionClass}>
-        <h3 className={sectionTitleClass}>
-          <MapPin size={20} className="text-violet-600" /> Endereço
+      {/* SEÇÃO 3: Endereço */}
+      <div className="p-6 bg-white rounded-xl shadow-sm border border-zinc-200 space-y-4">
+        <h3 className="text-xl font-semibold text-zinc-800 flex items-center gap-2">
+          <MapPin size={20} /> Endereço
         </h3>
 
-        <div>
-          <label className={labelClass}>CEP *</label>
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-700 mb-1 block">CEP *</span>
           <input
             type="text"
             value={establishmentData.cep}
             onChange={(e) => fetchCep(e.target.value)}
             maxLength={8}
-            className={inputBaseClass}
+            className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 outline-none text-zinc-900"
             placeholder="00000000"
             required
           />
-        </div>
+        </label>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Estado *</label>
+          <label>
+            <span className="text-sm font-medium text-zinc-700 mb-1 block">Estado *</span>
             <input
               type="text"
               value={establishmentData.estado}
-              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, estado: e.target.value }))}
-              className={inputBaseClass}
+              onChange={(e) => setEstablishmentData((p) => ({ ...p, estado: e.target.value }))}
+              className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 outline-none text-zinc-900"
               required
             />
-          </div>
-          <div>
-            <label className={labelClass}>Cidade *</label>
+          </label>
+          <label>
+            <span className="text-sm font-medium text-zinc-700 mb-1 block">Cidade *</span>
             <input
               type="text"
               value={establishmentData.cidade}
-              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, cidade: e.target.value }))}
-              className={inputBaseClass}
+              onChange={(e) => setEstablishmentData((p) => ({ ...p, cidade: e.target.value }))}
+              className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 outline-none text-zinc-900"
               required
             />
-          </div>
+          </label>
         </div>
 
-        <div>
-          <label className={labelClass}>Bairro *</label>
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-700 mb-1 block">Bairro *</span>
           <input
             type="text"
             value={establishmentData.bairro}
-            onChange={(e) => setEstablishmentData((prev) => ({ ...prev, bairro: e.target.value }))}
-            className={inputBaseClass}
+            onChange={(e) => setEstablishmentData((p) => ({ ...p, bairro: e.target.value }))}
+            className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 outline-none text-zinc-900"
             required
           />
-        </div>
+        </label>
 
-        <div>
-          <label className={labelClass}>Rua/Avenida *</label>
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-700 mb-1 block">Rua/Avenida *</span>
           <input
             type="text"
             value={establishmentData.logradouro}
-            onChange={(e) => setEstablishmentData((prev) => ({ ...prev, logradouro: e.target.value }))}
-            className={inputBaseClass}
+            onChange={(e) => setEstablishmentData((p) => ({ ...p, logradouro: e.target.value }))}
+            spellCheck={true}
+            autoCorrect="on"
+            className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 outline-none text-zinc-900"
             required
           />
-        </div>
+        </label>
 
         <div className="flex gap-4 items-end">
-          <div className="flex-1">
-            <label className={labelClass}>Número *</label>
+          <label className="flex-1">
+            <span className="text-sm font-medium text-zinc-700 mb-1 block">Número *</span>
             <input
               type="text"
               value={establishmentData.numero}
-              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, numero: e.target.value.replace(/\D/g, "") }))}
+              onChange={(e) => setEstablishmentData((p) => ({ ...p, numero: e.target.value.replace(/\D/g, "") }))}
               disabled={establishmentData.semNumero}
-              className={cn(inputBaseClass, establishmentData.semNumero && "bg-zinc-100 cursor-not-allowed")}
+              className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 outline-none disabled:bg-zinc-100 text-zinc-900"
               required={!establishmentData.semNumero}
             />
-          </div>
+          </label>
           <button
             type="button"
-            onClick={() => setEstablishmentData((prev) => ({ ...prev, semNumero: !prev.semNumero, numero: "" }))}
+            onClick={() => setEstablishmentData((p) => ({ ...p, semNumero: !p.semNumero, numero: "" }))}
             className={cn(
-              "py-3 px-4 rounded-xl font-semibold transition-colors",
-              establishmentData.semNumero
-                ? "bg-emerald-600 text-white"
-                : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border border-zinc-200",
+              "py-3 px-4 rounded-xl font-semibold transition-colors min-h-[48px]",
+              establishmentData.semNumero ? "bg-emerald-600 text-white" : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200",
             )}
           >
             Sem Número
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Complemento (Opcional)</label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label>
+            <span className="text-sm font-medium text-zinc-700 mb-1 block">Complemento</span>
             <input
               type="text"
               value={establishmentData.complemento}
-              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, complemento: e.target.value }))}
-              className={inputBaseClass}
+              onChange={(e) => setEstablishmentData((p) => ({ ...p, complemento: e.target.value }))}
+              spellCheck={true}
+              autoCorrect="on"
+              className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 outline-none text-zinc-900"
             />
-          </div>
+          </label>
           <div className="flex items-end">
             <button
               type="button"
-              onClick={() => setEstablishmentData((prev) => ({ ...prev, isMall: !prev.isMall }))}
+              onClick={() => setEstablishmentData((p) => ({ ...p, isMall: !p.isMall }))}
               className={cn(
-                "w-full py-3 px-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2",
+                "w-full py-3 px-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 min-h-[48px]",
                 establishmentData.isMall
                   ? "bg-violet-600 text-white shadow-md"
-                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border border-zinc-200",
+                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200",
               )}
             >
-              <ShoppingBag size={20} /> Localizado em Shopping?
+              <ShoppingBag size={20} /> Em Shopping?
             </button>
           </div>
         </div>
       </div>
 
-      {/* 4. Categorias e Links */}
-      <div className={sectionClass}>
-        <h3 className={sectionTitleClass}>
-          <MapPin size={20} className="text-violet-600" /> Categorias e Links
+      {/* SEÇÃO 4: Categorias */}
+      <div className="p-6 bg-white rounded-xl shadow-sm border border-zinc-200 space-y-4">
+        <h3 className="text-xl font-semibold text-zinc-800 flex items-center gap-2">
+          <MapPin size={20} /> Categorias e Links
         </h3>
 
-        <div>
-          <label className={labelClass}>Categoria (Selecione até 3) *</label>
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-700 mb-1 block">Categoria (até 3) *</span>
           <div className="flex flex-wrap gap-2">
             {CATEGORIAS_ESTABELECIMENTO.map((cat) => (
               <button
@@ -1331,51 +1377,48 @@ export default function EstablishmentRegistration() {
                 type="button"
                 onClick={() => handleCategoryToggle(cat.value)}
                 className={cn(
-                  "px-4 py-2 rounded-full text-sm font-semibold transition-colors",
+                  "px-4 py-2 rounded-full text-sm font-semibold transition-colors min-h-[44px]",
                   establishmentData.categories.includes(cat.value)
                     ? "bg-violet-600 text-white shadow-md"
-                    : "bg-zinc-100 text-zinc-700 hover:bg-violet-100 border border-zinc-200",
+                    : "bg-zinc-100 text-zinc-700 hover:bg-violet-100",
                 )}
               >
                 {cat.icon} {cat.label}
               </button>
             ))}
           </div>
-          {establishmentData.categories.length === 3 && (
-            <p className="mt-2 text-xs text-zinc-500">Máximo de 3 categorias selecionadas.</p>
-          )}
-        </div>
+        </label>
 
         <EspecialidadesSelector
           categoria={establishmentData.categories[0] || ""}
           selected={establishmentData.especialidades}
-          onChange={(especialidades) => setEstablishmentData((prev) => ({ ...prev, especialidades }))}
+          onChange={(esp) => setEstablishmentData((p) => ({ ...p, especialidades: esp }))}
           maxSelection={3}
         />
 
-        <div>
-          <label className={labelClass}>Link do Cardápio Digital (Opcional)</label>
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-700 mb-1 block">Link do Cardápio Digital</span>
           <div className="relative">
             <Link size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               type="url"
               value={establishmentData.menuLink}
-              onChange={(e) => setEstablishmentData((prev) => ({ ...prev, menuLink: e.target.value }))}
-              className={inputWithIconClass}
-              placeholder="https://linkdocardapio.com.br"
+              onChange={(e) => setEstablishmentData((p) => ({ ...p, menuLink: e.target.value }))}
+              className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-violet-500/50 outline-none text-zinc-900"
+              placeholder="https://cardapio.com"
             />
           </div>
-        </div>
+        </label>
       </div>
 
-      {/* 5. Imagem e Horário */}
-      <div className={sectionClass}>
-        <h3 className={sectionTitleClass}>
-          <Image size={20} className="text-violet-600" /> Imagem e Horário
+      {/* SEÇÃO 5: Fotos e Horário */}
+      <div className="p-6 bg-white rounded-xl shadow-sm border border-zinc-200 space-y-4">
+        <h3 className="text-xl font-semibold text-zinc-800 flex items-center gap-2">
+          <Image size={20} /> Fotos e Horário
         </h3>
 
-        <div>
-          <label className={labelClass}>Horário de Funcionamento</label>
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-700 mb-1 block">Horário de Funcionamento</span>
           <div className="flex items-center gap-2">
             <div className="flex-1 px-4 py-3 border border-zinc-200 bg-zinc-50 rounded-xl text-zinc-600 font-medium flex items-center gap-2">
               <Clock size={18} /> {establishmentData.hoursText}
@@ -1383,93 +1426,31 @@ export default function EstablishmentRegistration() {
             <button
               type="button"
               onClick={() => setShowHorarioModal(true)}
-              className="px-4 py-3 bg-zinc-100 text-violet-600 rounded-xl font-semibold hover:bg-zinc-200 transition-colors flex items-center gap-2 border border-zinc-200"
+              className="px-4 py-3 bg-zinc-100 text-violet-600 rounded-xl font-semibold hover:bg-zinc-200 transition-colors flex items-center gap-2"
             >
               <RefreshCw size={18} /> Editar
             </button>
           </div>
-        </div>
+        </label>
 
-        <div className="space-y-3">
-          <label className={labelClass}>Foto do Estabelecimento *</label>
-
-          <div className="bg-zinc-50 rounded-xl p-4 border border-zinc-200">
-            <div className="w-full aspect-video bg-zinc-100 rounded-lg overflow-hidden flex items-center justify-center border-2 border-dashed border-zinc-300 mb-3">
-              {uploadingImage ? (
-                <div className="text-center">
-                  <Loader2 className="w-10 h-10 animate-spin text-violet-500 mx-auto mb-2" />
-                  <p className="text-sm text-zinc-600">Processando...</p>
-                </div>
-              ) : imagePreview ? (
-                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-              ) : establishmentData.mainPhotoUrl !==
-                "https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)" ? (
-                <img src={establishmentData.mainPhotoUrl} alt="Foto atual" className="w-full h-full object-cover" />
-              ) : (
-                <div className="text-center p-6">
-                  <Camera className="w-12 h-12 text-zinc-400 mx-auto mb-3" />
-                  <p className="text-zinc-500 text-sm font-medium">Nenhuma foto selecionada</p>
-                  <p className="text-zinc-400 text-xs mt-1">Clique abaixo para adicionar</p>
-                </div>
-              )}
-            </div>
-
-            <input id="foto-input" type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
-
-            <div className="flex gap-2">
-              {imagePreview ||
-              establishmentData.mainPhotoUrl !==
-                "https://placehold.co/800x450/4C74B5/ffffff?text=FOTO+PADRÃO+(16:9)" ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => document.getElementById("foto-input")?.click()}
-                    disabled={uploadingImage}
-                    className="flex-1 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    <RefreshCw size={18} /> Alterar Foto
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleRemovePhoto}
-                    disabled={uploadingImage}
-                    className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    <Trash2 size={18} /> Excluir Foto
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => document.getElementById("foto-input")?.click()}
-                  disabled={uploadingImage}
-                  className="w-full px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  <Camera size={18} /> Adicionar Foto
-                </button>
-              )}
-            </div>
-
-            <p className="text-xs text-zinc-500 text-center mt-2">
-              Aceita qualquer imagem (JPG, PNG, GIF, WEBP, etc) até 25MB
-            </p>
-          </div>
-        </div>
+        {/* UPLOAD MÚLTIPLAS FOTOS (P0.2) */}
+        <PhotoGalleryUpload photos={photos} setPhotos={setPhotos} error={photosError} />
       </div>
 
-      {/* 6. Regras de Benefício */}
-      <BenefitRulesSection rules={rules} setRules={setRules} />
+      {/* SEÇÃO 6: Regras de Benefício + Tipo (P0.3) */}
+      <BenefitRulesSection
+        rules={rules}
+        setRules={setRules}
+        tipoBeneficio={tipoBeneficio}
+        setTipoBeneficio={setTipoBeneficio}
+        tipoBeneficioError={tipoBeneficioError}
+      />
 
-      {/* Botão Final */}
+      {/* BOTÃO FINAL */}
       <button
         type="submit"
         disabled={loading}
-        className={cn(
-          "w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-xl",
-          "bg-violet-600 hover:bg-violet-700 text-white",
-          "shadow-lg shadow-violet-600/25 hover:shadow-xl hover:shadow-violet-600/30",
-          "disabled:opacity-50 disabled:cursor-not-allowed",
-        )}
+        className="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xl shadow-lg shadow-violet-600/25 disabled:opacity-50"
       >
         {loading ? (
           <>
@@ -1485,9 +1466,9 @@ export default function EstablishmentRegistration() {
     </form>
   );
 
-  // ==========================================================================
-  // LAYOUT
-  // ==========================================================================
+  // =============================================================================
+  // LAYOUT PRINCIPAL (Tema Claro)
+  // =============================================================================
 
   if (mostrarTelaConfirmacao) {
     return (
@@ -1495,7 +1476,6 @@ export default function EstablishmentRegistration() {
         email={emailParaConfirmar}
         onVoltar={() => {
           setMostrarTelaConfirmacao(false);
-          setEmailParaConfirmar("");
           setStep(1);
         }}
       />
@@ -1503,57 +1483,25 @@ export default function EstablishmentRegistration() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-b from-slate-50 to-white">
-      {/* Background Pattern */}
-      <div
-        className="absolute inset-0 opacity-40"
-        style={{
-          backgroundImage: `
-            linear-gradient(to right, rgba(124,58,237,0.03) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(124,58,237,0.03) 1px, transparent 1px)
-          `,
-          backgroundSize: "32px 32px",
-        }}
-      />
-
-      {/* Glow Effects */}
-      <div
-        className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full pointer-events-none opacity-30"
-        style={{
-          background: "radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)",
-          filter: "blur(60px)",
-        }}
-      />
-      <div
-        className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full pointer-events-none opacity-20"
-        style={{
-          background: "radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)",
-          filter: "blur(60px)",
-        }}
-      />
-
-      <div className="relative z-10 p-4 sm:p-8">
-        <div className="max-w-3xl mx-auto bg-white border border-zinc-200 p-6 sm:p-10 rounded-2xl shadow-xl">
-          <div className="mb-6">
-            <BackButtonAuth onClick={() => navigate("/seja-parceiro")} />
-          </div>
-          <Stepper currentStep={step} totalSteps={2} />
-
-          {step === 1 ? renderStep1() : renderStep2()}
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-4 sm:p-8 font-sans">
+      <div className="max-w-3xl mx-auto bg-white border border-zinc-200/80 p-6 sm:p-10 rounded-3xl shadow-xl shadow-zinc-200/50">
+        <div className="mb-6">
+          <BackButton to="/seja-parceiro" />
         </div>
+        <Stepper currentStep={step} totalSteps={2} />
+        {step === 1 ? renderStep1() : renderStep2()}
       </div>
 
-      {/* Modal de Horário de Funcionamento */}
+      {/* MODAL HORÁRIO */}
       {showHorarioModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg border border-zinc-200 max-h-[90vh] overflow-y-auto shadow-2xl">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg border border-zinc-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-zinc-900">Horário de Funcionamento</h2>
               <button onClick={() => setShowHorarioModal(false)} className="text-zinc-400 hover:text-zinc-900">
                 <X className="w-5 h-5" />
               </button>
             </div>
-
             <div className="space-y-3">
               {[
                 { key: "segunda", label: "Segunda" },
@@ -1564,42 +1512,32 @@ export default function EstablishmentRegistration() {
                 { key: "sabado", label: "Sábado" },
                 { key: "domingo", label: "Domingo" },
               ].map(({ key, label }) => (
-                <div key={key} className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg border border-zinc-100">
+                <div key={key} className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg">
                   <input
                     type="checkbox"
-                    checked={horarioTemp[key as keyof typeof horarioTemp].aberto}
+                    checked={(horarioTemp as any)[key].aberto}
                     onChange={(e) =>
-                      setHorarioTemp((prev) => ({
-                        ...prev,
-                        [key]: { ...prev[key as keyof typeof horarioTemp], aberto: e.target.checked },
-                      }))
+                      setHorarioTemp((p) => ({ ...p, [key]: { ...(p as any)[key], aberto: e.target.checked } }))
                     }
                     className="w-4 h-4 accent-violet-600"
                   />
                   <span className="text-zinc-900 text-sm w-20 font-medium">{label}</span>
-
-                  {horarioTemp[key as keyof typeof horarioTemp].aberto ? (
+                  {(horarioTemp as any)[key].aberto ? (
                     <div className="flex items-center gap-2 flex-1">
                       <input
                         type="time"
-                        value={horarioTemp[key as keyof typeof horarioTemp].inicio}
+                        value={(horarioTemp as any)[key].inicio}
                         onChange={(e) =>
-                          setHorarioTemp((prev) => ({
-                            ...prev,
-                            [key]: { ...prev[key as keyof typeof horarioTemp], inicio: e.target.value },
-                          }))
+                          setHorarioTemp((p) => ({ ...p, [key]: { ...(p as any)[key], inicio: e.target.value } }))
                         }
                         className="px-2 py-1 border border-zinc-300 rounded-lg w-24 text-sm text-zinc-900 bg-white"
                       />
                       <span className="text-zinc-500 text-sm">às</span>
                       <input
                         type="time"
-                        value={horarioTemp[key as keyof typeof horarioTemp].fim}
+                        value={(horarioTemp as any)[key].fim}
                         onChange={(e) =>
-                          setHorarioTemp((prev) => ({
-                            ...prev,
-                            [key]: { ...prev[key as keyof typeof horarioTemp], fim: e.target.value },
-                          }))
+                          setHorarioTemp((p) => ({ ...p, [key]: { ...(p as any)[key], fim: e.target.value } }))
                         }
                         className="px-2 py-1 border border-zinc-300 rounded-lg w-24 text-sm text-zinc-900 bg-white"
                       />
@@ -1610,19 +1548,18 @@ export default function EstablishmentRegistration() {
                 </div>
               ))}
             </div>
-
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowHorarioModal(false)}
-                className="flex-1 px-4 py-3 border border-zinc-300 text-zinc-700 rounded-xl font-semibold hover:bg-zinc-50 transition-colors"
+                className="flex-1 px-4 py-3 border border-zinc-300 text-zinc-700 rounded-xl font-semibold hover:bg-zinc-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => {
-                  const formatado = Object.entries(horarioTemp)
-                    .map(([dia, info]) => {
-                      const abrev: Record<string, string> = {
+                  const fmt = Object.entries(horarioTemp)
+                    .map(([d, i]) => {
+                      const ab = {
                         segunda: "Seg",
                         terca: "Ter",
                         quarta: "Qua",
@@ -1630,17 +1567,15 @@ export default function EstablishmentRegistration() {
                         sexta: "Sex",
                         sabado: "Sáb",
                         domingo: "Dom",
-                      };
-                      return (info as any).aberto
-                        ? `${abrev[dia]}: ${(info as any).inicio}-${(info as any).fim}`
-                        : `${abrev[dia]}: Fechado`;
+                      }[d];
+                      return (i as any).aberto ? `${ab}: ${(i as any).inicio}-${(i as any).fim}` : `${ab}: Fechado`;
                     })
                     .join(", ");
-                  setEstablishmentData((prev) => ({ ...prev, hoursText: formatado }));
+                  setEstablishmentData((p) => ({ ...p, hoursText: fmt }));
                   setShowHorarioModal(false);
                   toast.success("Horário salvo!");
                 }}
-                className="flex-1 px-4 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold transition-colors"
+                className="flex-1 px-4 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold"
               >
                 Salvar
               </button>

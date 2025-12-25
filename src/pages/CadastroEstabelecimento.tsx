@@ -841,7 +841,8 @@ export default function EstablishmentRegistration() {
         } = await supabase.auth.getUser();
         if (!user) throw new Error("Sessão não encontrada");
 
-        const { error: estabError } = await supabase.from("estabelecimentos").insert({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const establishmentRecord: any = {
           id: user.id,
           cnpj: raw,
           razao_social: establishmentData.name,
@@ -872,8 +873,9 @@ export default function EstablishmentRegistration() {
           fotos: photosData,
           link_cardapio: establishmentData.menuLink || null,
           ativo: false,
-          cadastro_completo: true, // P0.1: Flag para o Guard
-        });
+          cadastro_completo: true,
+        };
+        const { error: estabError } = await supabase.from("estabelecimentos").insert(establishmentRecord);
 
         if (estabError) throw estabError;
         await supabase
@@ -923,7 +925,8 @@ export default function EstablishmentRegistration() {
       throw new Error("CONFIRMATION_REQUIRED");
     }
 
-    const { error: estabError } = await supabase.from("estabelecimentos").insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const establishmentRecord: any = {
       id: signUpData.user.id,
       cnpj: raw,
       razao_social: establishmentData.name,
@@ -950,8 +953,9 @@ export default function EstablishmentRegistration() {
       fotos: photosData,
       link_cardapio: establishmentData.menuLink || null,
       ativo: false,
-      cadastro_completo: true, // P0.1: Flag para o Guard
-    });
+      cadastro_completo: true,
+    };
+    const { error: estabError } = await supabase.from("estabelecimentos").insert(establishmentRecord);
 
     if (estabError) throw estabError;
     await supabase.from("user_roles").insert({ user_id: signUpData.user.id, role: "estabelecimento" });

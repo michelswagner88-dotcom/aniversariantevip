@@ -96,7 +96,7 @@ serve(async (req) => {
       // Buscar alguns estabelecimentos de exemplo
       const { data: exemplos } = await supabase
         .from("public_estabelecimentos")
-        .select("nome_fantasia, categoria, cidade, descricao_beneficio")
+        .select("nome_fantasia, categoria, cidade, descricao_beneficio, tipo_beneficio")
         .limit(5);
 
       contextInfo = `

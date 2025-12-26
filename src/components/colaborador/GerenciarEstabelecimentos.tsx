@@ -90,7 +90,7 @@ export const GerenciarEstabelecimentos = ({ onUpdate }: GerenciarEstabelecimento
       const { data, error } = await supabase
         .from("estabelecimentos")
         .select(
-          "id, nome_fantasia, razao_social, cnpj, telefone, cidade, estado, categoria, ativo, created_at, descricao_beneficio",
+          "id, nome_fantasia, razao_social, cnpj, telefone, cidade, estado, categoria, ativo, created_at, descricao_beneficio, tipo_beneficio, fotos",
         )
         .order("created_at", { ascending: false });
 

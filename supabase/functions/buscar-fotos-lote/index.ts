@@ -139,7 +139,7 @@ serve(async (req) => {
     // IMPORTANTE: Não buscar foto do Google se já tem galeria_fotos (fotos manuais)
     const { data: estabelecimentos, error } = await supabase
       .from('estabelecimentos')
-      .select('id, nome_fantasia, cidade, estado, categoria, google_place_id, endereco, galeria_fotos')
+      .select('id, nome_fantasia, cidade, estado, categoria, google_place_id, endereco, galeria_fotos, fotos')
       .eq('foto_buscada', false)
       .eq('ativo', true)
       .order('created_at', { ascending: false })

@@ -142,7 +142,7 @@ const AreaAniversariante = () => {
       try {
         const { data, error } = await supabase
           .from('public_estabelecimentos')
-          .select('id, nome_fantasia, logo_url, categoria, cidade, estado')
+          .select('id, nome_fantasia, logo_url, categoria, cidade, estado, tipo_beneficio, fotos')
           .in('id', favoritos)
           .limit(3);
 

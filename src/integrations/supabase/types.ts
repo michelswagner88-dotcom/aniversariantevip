@@ -1622,6 +1622,7 @@ export type Database = {
           endereco: string | null
           especialidades: string[] | null
           estado: string | null
+          fotos: Json | null
           galeria_fotos: string[] | null
           horario_funcionamento: string | null
           id: string | null
@@ -1638,6 +1639,7 @@ export type Database = {
           site: string | null
           slug: string | null
           telefone: string | null
+          tipo_beneficio: string | null
           whatsapp: string | null
         }
         Insert: {
@@ -1657,6 +1659,7 @@ export type Database = {
           endereco?: string | null
           especialidades?: string[] | null
           estado?: string | null
+          fotos?: Json | null
           galeria_fotos?: string[] | null
           horario_funcionamento?: string | null
           id?: string | null
@@ -1673,6 +1676,7 @@ export type Database = {
           site?: string | null
           slug?: string | null
           telefone?: string | null
+          tipo_beneficio?: string | null
           whatsapp?: string | null
         }
         Update: {
@@ -1692,6 +1696,7 @@ export type Database = {
           endereco?: string | null
           especialidades?: string[] | null
           estado?: string | null
+          fotos?: Json | null
           galeria_fotos?: string[] | null
           horario_funcionamento?: string | null
           id?: string | null
@@ -1708,6 +1713,7 @@ export type Database = {
           site?: string | null
           slug?: string | null
           telefone?: string | null
+          tipo_beneficio?: string | null
           whatsapp?: string | null
         }
         Relationships: []

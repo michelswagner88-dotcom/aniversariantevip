@@ -92,7 +92,7 @@ export default function MeusCupons() {
       // Fetch estabelecimentos
       const { data: estabelecimentos, error: estabError } = await supabase
         .from("estabelecimentos")
-        .select("id, nome_fantasia, logo_url, descricao_beneficio, endereco, cidade, estado")
+        .select("id, nome_fantasia, logo_url, descricao_beneficio, endereco, cidade, estado, tipo_beneficio, fotos")
         .in("id", estabelecimentoIds);
 
       if (estabError) throw estabError;

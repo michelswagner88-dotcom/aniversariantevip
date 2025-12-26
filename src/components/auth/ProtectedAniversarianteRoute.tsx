@@ -31,7 +31,10 @@ export const ProtectedAniversarianteRoute = ({ children }: Props) => {
           error: sessionError,
         } = await supabase.auth.getSession();
 
+        console.log('[GuardAniv] Sessão:', session?.user?.id, session?.user?.email);
+
         if (sessionError || !session) {
+          console.log('[GuardAniv] Sem sessão, redirecionando para /auth');
           if (mounted) {
             setRedirectTo("/auth");
             setRedirectReason("no_session");
@@ -42,13 +45,16 @@ export const ProtectedAniversarianteRoute = ({ children }: Props) => {
         }
 
         // 2. Verificar role do usuário
-        const { data: roleData } = await supabase
+        const { data: roleData, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
           .maybeSingle();
 
+        console.log('[GuardAniv] RoleData:', roleData, 'RoleError:', roleError);
+
         if (!roleData || roleData.role !== "aniversariante") {
+          console.log('[GuardAniv] Role não é aniversariante, redirecionando para /');
           if (mounted) {
             setRedirectTo("/");
             setRedirectReason("not_aniversariante");
@@ -65,7 +71,10 @@ export const ProtectedAniversarianteRoute = ({ children }: Props) => {
           .eq("id", session.user.id)
           .maybeSingle();
 
+        console.log('[GuardAniv] Aniversariante:', aniversariante, 'Error:', anivError);
+
         if (anivError || !aniversariante) {
+          console.log('[GuardAniv] Aniversariante não encontrado, redirecionando para /auth');
           if (mounted) {
             setRedirectTo("/auth");
             setRedirectReason("incomplete_registration");
@@ -91,7 +100,10 @@ export const ProtectedAniversarianteRoute = ({ children }: Props) => {
           .filter(([, value]) => !value || value === "")
           .map(([key]) => key);
 
+        console.log('[GuardAniv] Cadastro completo:', aniversariante.cadastro_completo, 'Campos faltando:', camposFaltando);
+
         if (!aniversariante.cadastro_completo || camposFaltando.length > 0) {
+          console.log('[GuardAniv] Cadastro incompleto, redirecionando para /auth');
           if (mounted) {
             // Redirecionar para completar cadastro com flag
             sessionStorage.setItem("needsCompletion", "true");
@@ -105,11 +117,13 @@ export const ProtectedAniversarianteRoute = ({ children }: Props) => {
         }
 
         // 5. Tudo OK - autorizado
+        console.log('[GuardAniv] ✅ Autorizado!');
         if (mounted) {
           setIsAuthorized(true);
           setLoading(false);
         }
-      } catch {
+      } catch (error) {
+        console.error('[GuardAniv] Erro:', error);
         if (mounted) {
           setRedirectTo("/auth");
           setRedirectReason("error");
@@ -153,7 +167,7 @@ export const ProtectedAniversarianteRoute = ({ children }: Props) => {
           toast.error("Complete seu cadastro para acessar esta página");
           break;
         case "not_aniversariante":
-          // Sem toast - redireciona silenciosamente
+          toast.error("Você precisa ter cadastro de aniversariante para acessar esta área");
           break;
         case "error":
           toast.error("Erro ao verificar permissões");

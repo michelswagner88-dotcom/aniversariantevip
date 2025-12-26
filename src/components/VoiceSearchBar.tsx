@@ -243,7 +243,7 @@ const VoiceSearchBar = () => {
       // 3. Buscar estabelecimentos
       const { data: establishments } = await supabase
         .from("public_estabelecimentos")
-        .select("id, nome_fantasia, slug, cidade, estado, categoria")
+        .select("id, nome_fantasia, slug, cidade, estado, categoria, tipo_beneficio")
         .eq("ativo", true)
         .ilike("nome_fantasia", `%${query}%`)
         .limit(5);

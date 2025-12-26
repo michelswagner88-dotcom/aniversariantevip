@@ -92,7 +92,7 @@ const EmitirCupom = () => {
       // Buscar dados do estabelecimento
       const { data: estabelecimentoData, error: estabError } = await supabase
         .from("estabelecimentos")
-        .select("nome_fantasia, logo_url, descricao_beneficio, regras_utilizacao, periodo_validade_beneficio")
+        .select("nome_fantasia, logo_url, descricao_beneficio, regras_utilizacao, periodo_validade_beneficio, tipo_beneficio, fotos")
         .eq("id", estabelecimentoId)
         .single();
 

@@ -872,8 +872,8 @@ export default function EstablishmentRegistration() {
           fotos: photosData,
           link_cardapio: establishmentData.menuLink || null,
           ativo: false,
-          cadastro_completo: true, // P0.1: Flag para o Guard
-        });
+          cadastro_completo: true,
+        } as any);
 
         if (estabError) throw estabError;
         await supabase
@@ -950,8 +950,8 @@ export default function EstablishmentRegistration() {
       fotos: photosData,
       link_cardapio: establishmentData.menuLink || null,
       ativo: false,
-      cadastro_completo: true, // P0.1: Flag para o Guard
-    });
+      cadastro_completo: true,
+    } as any);
 
     if (estabError) throw estabError;
     await supabase.from("user_roles").insert({ user_id: signUpData.user.id, role: "estabelecimento" });

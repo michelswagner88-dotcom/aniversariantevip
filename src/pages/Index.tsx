@@ -535,14 +535,6 @@ const Header = memo(
                         setMenuOpen(false);
                       }}
                     />
-                    <MenuBtnDark
-                      icon={<Settings className="w-5 h-5 text-white/70" />}
-                      label="Configurações"
-                      onClick={() => {
-                        navigate("/configuracoes");
-                        setMenuOpen(false);
-                      }}
-                    />
 
                     <div className="my-3 mx-2 border-t border-white/10" />
 

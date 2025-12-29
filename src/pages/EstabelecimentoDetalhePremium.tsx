@@ -1,11 +1,14 @@
 // =============================================================================
-// ESTABELECIMENTO DETALHE PREMIUM - AIRBNB STYLE
+// ESTABELECIMENTO DETALHE PREMIUM v2.0 - AIRBNB STYLE
 // Aniversariante VIP - Complete Redesign
-// Mobile-first + Desktop 2-column layout
-// CORREÇÃO: Link do 99 atualizado para https://99app.com/passageiro/
+// MELHORIAS:
+// - Suporte a novo campo fotos[] com 3 tamanhos (thumb/card/gallery)
+// - Badge tipo_beneficio no card de benefício
+// - Galeria usa urls.gallery (1600px) para melhor qualidade
+// - Compatibilidade total com campos legados
 // =============================================================================
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -56,6 +59,19 @@ import {
 // TYPES
 // =============================================================================
 
+interface PhotoUrls {
+  thumb?: string;
+  card?: string;
+  gallery?: string;
+}
+
+interface PhotoItem {
+  id: string;
+  order: number;
+  isCover: boolean;
+  urls: PhotoUrls;
+}
+
 interface EstabelecimentoDetalhePremiumProps {
   estabelecimentoIdProp?: string | null;
 }
@@ -76,6 +92,93 @@ const VALIDADE_MAP: Record<string, string> = {
 const getValidadeTexto = (validade?: string): string => {
   if (!validade) return "Válido no dia do aniversário";
   return VALIDADE_MAP[validade] || validade;
+};
+
+// =============================================================================
+// TIPO BENEFÍCIO CONFIG
+// =============================================================================
+
+const TIPO_BENEFICIO_CONFIG: Record<string, { emoji: string; label: string; color: string }> = {
+  cortesia: { emoji: "🎁", label: "Cortesia", color: "text-violet-700" },
+  brinde: { emoji: "🎀", label: "Brinde", color: "text-pink-700" },
+  desconto: { emoji: "💰", label: "Desconto", color: "text-emerald-700" },
+  bonus: { emoji: "⭐", label: "Bônus", color: "text-amber-700" },
+  gratis: { emoji: "🆓", label: "Grátis", color: "text-blue-700" },
+};
+
+// Inferir tipo pelo texto (fallback)
+const inferTipoBeneficio = (descricao?: string): { emoji: string; label: string; color: string } | null => {
+  if (!descricao) return null;
+  const text = descricao.toLowerCase();
+
+  if (text.includes("%") || text.includes("desconto") || text.includes("off")) {
+    return TIPO_BENEFICIO_CONFIG.desconto;
+  }
+  if (text.includes("grátis") || text.includes("gratis") || text.includes("free")) {
+    return TIPO_BENEFICIO_CONFIG.gratis;
+  }
+  if (text.includes("brinde") || text.includes("presente") || text.includes("mimo")) {
+    return TIPO_BENEFICIO_CONFIG.brinde;
+  }
+  if (text.includes("cortesia")) {
+    return TIPO_BENEFICIO_CONFIG.cortesia;
+  }
+  if (text.includes("bônus") || text.includes("bonus") || text.includes("extra")) {
+    return TIPO_BENEFICIO_CONFIG.bonus;
+  }
+
+  return null;
+};
+
+// =============================================================================
+// HELPER: Extrair fotos do estabelecimento
+// =============================================================================
+
+const extractPhotos = (estabelecimento: any): string[] => {
+  // 1. Prioridade: novo campo fotos[] com urls.gallery
+  if (estabelecimento.fotos) {
+    let fotosArray: PhotoItem[] = [];
+
+    if (typeof estabelecimento.fotos === "string") {
+      try {
+        fotosArray = JSON.parse(estabelecimento.fotos);
+      } catch {
+        fotosArray = [];
+      }
+    } else if (Array.isArray(estabelecimento.fotos)) {
+      fotosArray = estabelecimento.fotos;
+    }
+
+    if (fotosArray.length > 0) {
+      // Ordenar por order, capa primeiro
+      const sorted = [...fotosArray].sort((a, b) => {
+        if (a.isCover && !b.isCover) return -1;
+        if (!a.isCover && b.isCover) return 1;
+        return a.order - b.order;
+      });
+
+      // Extrair URLs na ordem: gallery > card > thumb
+      const urls = sorted.map((f) => f.urls?.gallery || f.urls?.card || f.urls?.thumb).filter(Boolean) as string[];
+
+      if (urls.length > 0) return urls;
+    }
+  }
+
+  // 2. Fallback: galeria_fotos legada
+  if (estabelecimento.galeria_fotos?.length > 0) {
+    return estabelecimento.galeria_fotos;
+  }
+
+  // 3. Fallback: imagem_url ou logo_url
+  if (estabelecimento.imagem_url) {
+    return [estabelecimento.imagem_url];
+  }
+  if (estabelecimento.logo_url) {
+    return [estabelecimento.logo_url];
+  }
+
+  // 4. Fallback final: placeholder
+  return ["https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800"];
 };
 
 // =============================================================================
@@ -117,11 +220,6 @@ const PageSkeleton = () => (
         </div>
         <Skeleton className="h-24 w-full max-w-[760px] rounded-2xl" />
         <Skeleton className="h-32 w-full rounded-2xl" />
-        <div className="flex gap-3">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-20 w-20 rounded-xl" />
-          ))}
-        </div>
       </div>
     </div>
   </div>
@@ -178,7 +276,9 @@ const HeroGalleryMobile = ({
       >
         {fotos.map((foto, index) => (
           <div key={index} className="flex-shrink-0 w-full h-full snap-center relative">
-            {!imagesLoaded.has(index) && <div className="absolute inset-0 bg-zinc-200 animate-pulse" />}
+            {!imagesLoaded.has(index) && (
+              <div className="absolute inset-0 bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 bg-[length:400%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+            )}
             <img
               src={foto}
               alt={`${nome} - Foto ${index + 1}`}
@@ -187,6 +287,7 @@ const HeroGalleryMobile = ({
                 imagesLoaded.has(index) ? "opacity-100" : "opacity-0",
               )}
               loading={index === 0 ? "eager" : "lazy"}
+              decoding="async"
               onLoad={() => handleImageLoad(index)}
             />
           </div>
@@ -310,7 +411,9 @@ const GalleryDesktop = ({
       </div>
 
       <div className="relative h-[320px] md:h-[360px] lg:h-[380px] xl:h-[420px] rounded-3xl overflow-hidden bg-zinc-100 shadow-sm">
-        {!imagesLoaded.has(currentIndex) && <div className="absolute inset-0 bg-zinc-200 animate-pulse" />}
+        {!imagesLoaded.has(currentIndex) && (
+          <div className="absolute inset-0 bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 bg-[length:400%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+        )}
         <img
           src={fotos[currentIndex]}
           alt={`${nome} - Foto ${currentIndex + 1}`}
@@ -319,6 +422,7 @@ const GalleryDesktop = ({
             imagesLoaded.has(currentIndex) ? "opacity-100" : "opacity-0",
           )}
           loading="eager"
+          decoding="async"
           onLoad={() => handleImageLoad(currentIndex)}
         />
 
@@ -374,21 +478,31 @@ const GalleryDesktop = ({
 };
 
 // =============================================================================
-// BENEFIT CARD
+// BENEFIT CARD - ATUALIZADO COM TIPO_BENEFICIO
 // =============================================================================
 
 const BenefitCard = ({
   beneficio,
   validade,
+  tipoBeneficio,
   onShowRules,
   className,
 }: {
   beneficio: string;
   validade?: string;
+  tipoBeneficio?: string;
   onShowRules: () => void;
   className?: string;
 }) => {
   const validadeTexto = getValidadeTexto(validade);
+
+  // Pegar config do tipo de benefício
+  const tipoConfig = useMemo(() => {
+    if (tipoBeneficio && TIPO_BENEFICIO_CONFIG[tipoBeneficio]) {
+      return TIPO_BENEFICIO_CONFIG[tipoBeneficio];
+    }
+    return inferTipoBeneficio(beneficio);
+  }, [tipoBeneficio, beneficio]);
 
   return (
     <div className={cn("bg-white border border-zinc-200 rounded-2xl p-5", className)}>
@@ -400,12 +514,30 @@ const BenefitCard = ({
           <Gift className="w-6 h-6" style={{ color: ACCENT_COLOR }} />
         </div>
         <div className="flex-1 min-w-0">
+          {/* Badge Tipo Benefício */}
+          {tipoConfig && (
+            <div className="flex items-center gap-2 mb-2">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-2.5 py-1",
+                  "bg-zinc-100 text-xs font-bold rounded-full",
+                  tipoConfig.color,
+                )}
+              >
+                <span>{tipoConfig.emoji}</span>
+                <span>{tipoConfig.label}</span>
+              </span>
+            </div>
+          )}
+
+          {/* Validade */}
           <div className="flex items-center gap-1.5 mb-2">
             <Calendar className="w-3.5 h-3.5" style={{ color: ACCENT_COLOR }} />
             <span className="text-xs font-medium" style={{ color: ACCENT_COLOR }}>
               {validadeTexto}
             </span>
           </div>
+
           <h3 className="text-lg font-semibold text-zinc-900 leading-snug">{beneficio}</h3>
         </div>
       </div>
@@ -759,7 +891,7 @@ const LocationSection = ({
 };
 
 // =============================================================================
-// RULES MODAL
+// RULES MODAL - ATUALIZADO COM TIPO_BENEFICIO
 // =============================================================================
 
 const RulesModal = ({
@@ -768,6 +900,7 @@ const RulesModal = ({
   beneficio,
   regras,
   validade,
+  tipoBeneficio,
   onEmitirCupom,
   onWhatsApp,
   hasWhatsApp,
@@ -777,6 +910,7 @@ const RulesModal = ({
   beneficio?: string;
   regras?: string;
   validade?: string;
+  tipoBeneficio?: string;
   onEmitirCupom: () => void;
   onWhatsApp: () => void;
   hasWhatsApp: boolean;
@@ -784,6 +918,13 @@ const RulesModal = ({
   if (!isOpen) return null;
 
   const validadeTexto = getValidadeTexto(validade);
+
+  const tipoConfig = useMemo(() => {
+    if (tipoBeneficio && TIPO_BENEFICIO_CONFIG[tipoBeneficio]) {
+      return TIPO_BENEFICIO_CONFIG[tipoBeneficio];
+    }
+    return inferTipoBeneficio(beneficio);
+  }, [tipoBeneficio, beneficio]);
 
   return (
     <>
@@ -814,6 +955,18 @@ const RulesModal = ({
                 <span className="font-semibold" style={{ color: ACCENT_COLOR }}>
                   Seu benefício
                 </span>
+                {tipoConfig && (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 px-2 py-0.5",
+                      "bg-white text-xs font-bold rounded-full border",
+                      tipoConfig.color,
+                    )}
+                  >
+                    <span>{tipoConfig.emoji}</span>
+                    <span>{tipoConfig.label}</span>
+                  </span>
+                )}
               </div>
               <p className="text-zinc-800 font-medium">{beneficio}</p>
             </div>
@@ -1090,12 +1243,15 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
   useEffect(() => {
     const fetchEstabelecimento = async () => {
       if (!id) return;
+
+      // Buscar incluindo novos campos
       const { data, error } = await supabase
         .from("public_estabelecimentos")
-        .select("*")
+        .select("*, tipo_beneficio, fotos")
         .eq("id", id)
         .eq("ativo", true)
         .maybeSingle();
+
       if (error || !data) {
         toast.error("Estabelecimento não encontrado");
         navigate("/explorar");
@@ -1199,9 +1355,6 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
       .filter(Boolean)
       .join(", ");
 
-  // ==========================================================================
-  // CORREÇÃO: Link do 99 atualizado
-  // ==========================================================================
   const handleDirections = (app: string) => {
     if (id) trackDirectionsClick(id, app);
     const endereco = getEnderecoCompleto();
@@ -1227,7 +1380,6 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
           : window.open("https://m.uber.com/", "_blank");
         break;
       case "99":
-        // CORREÇÃO: URL antiga não funciona mais, usar nova URL
         window.open("https://99app.com/passageiro/", "_blank");
         break;
     }
@@ -1276,20 +1428,16 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
   if (loading) return <PageSkeleton />;
   if (!estabelecimento) return null;
 
-  const fotos =
-    estabelecimento.galeria_fotos?.length > 0
-      ? estabelecimento.galeria_fotos
-      : estabelecimento.imagem_url
-        ? [estabelecimento.imagem_url]
-        : estabelecimento.logo_url
-          ? [estabelecimento.logo_url]
-          : ["https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800"];
+  // Extrair fotos usando helper (suporta novo formato + legado)
+  const fotos = extractPhotos(estabelecimento);
+
   const categoria = estabelecimento.categoria?.[0] || "Estabelecimento";
   const localizacao = [estabelecimento.bairro, estabelecimento.cidade].filter(Boolean).join(", ");
   const mostraCardapio = ["Bar", "Restaurante"].includes(categoria);
   const beneficio = estabelecimento.beneficio_titulo || estabelecimento.descricao_beneficio;
-  const validadeBeneficio = estabelecimento.beneficio_validade;
+  const validadeBeneficio = estabelecimento.beneficio_validade || estabelecimento.periodo_validade_beneficio;
   const regrasBeneficio = estabelecimento.beneficio_regras || estabelecimento.regras_utilizacao;
+  const tipoBeneficio = estabelecimento.tipo_beneficio;
   const hasWhatsApp = !!formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone);
 
   return (
@@ -1351,7 +1499,12 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
 
           {beneficio && (
             <div className="py-6 border-b border-zinc-100">
-              <BenefitCard beneficio={beneficio} validade={validadeBeneficio} onShowRules={handleShowRules} />
+              <BenefitCard
+                beneficio={beneficio}
+                validade={validadeBeneficio}
+                tipoBeneficio={tipoBeneficio}
+                onShowRules={handleShowRules}
+              />
             </div>
           )}
 
@@ -1418,7 +1571,12 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
 
         {beneficio && (
           <div className="py-6 border-b border-zinc-100">
-            <BenefitCard beneficio={beneficio} validade={validadeBeneficio} onShowRules={handleShowRules} />
+            <BenefitCard
+              beneficio={beneficio}
+              validade={validadeBeneficio}
+              tipoBeneficio={tipoBeneficio}
+              onShowRules={handleShowRules}
+            />
           </div>
         )}
 
@@ -1459,6 +1617,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
         beneficio={beneficio}
         regras={regrasBeneficio}
         validade={validadeBeneficio}
+        tipoBeneficio={tipoBeneficio}
         onEmitirCupom={handleEmitirCupom}
         onWhatsApp={handleWhatsApp}
         hasWhatsApp={hasWhatsApp}

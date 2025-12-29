@@ -87,7 +87,7 @@ export const ProtectedEstabelecimentoRoute = ({ children }: Props) => {
       // 3. Verificar se estabelecimento existe
       const { data: estabelecimento, error: estabError } = await supabase
         .from("estabelecimentos")
-        .select("id, ativo, cadastro_completo, cnpj, nome_fantasia, razao_social, tipo_beneficio")
+        .select("id, ativo, cadastro_completo, cnpj, nome_fantasia, razao_social")
         .eq("id", session.user.id)
         .maybeSingle();
 

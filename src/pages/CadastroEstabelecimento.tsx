@@ -873,7 +873,7 @@ export default function EstablishmentRegistration() {
           link_cardapio: establishmentData.menuLink || null,
           ativo: false,
           cadastro_completo: true, // P0.1: Flag para o Guard
-        } as any);
+        });
 
         if (estabError) throw estabError;
         await supabase

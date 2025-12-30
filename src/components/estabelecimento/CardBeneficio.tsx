@@ -1,254 +1,182 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Gift, Calendar, FileText, X, Sparkles, Info, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useEstablishmentMetrics } from '@/hooks/useEstablishmentMetrics';
-import { getValidadeTexto } from '@/lib/bioUtils';
+// =============================================================================
+// CARD BENEFÍCIO v2 - ANIVERSARIANTE VIP
+// Card limpo + Bottom Sheet premium (BenefitSheet)
+// Mobile-first, estilo Airbnb
+// =============================================================================
+
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Gift, Calendar, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useEstablishmentMetrics } from "@/hooks/useEstablishmentMetrics";
+import { BenefitSheet } from "./BenefitSheet";
+import { formatWhatsApp, getWhatsAppMessage } from "@/lib/contactUtils";
+
+// =============================================================================
+// TYPES
+// =============================================================================
 
 interface CardBeneficioProps {
   beneficio: string;
-  validadeTexto: string;
+  tipoBeneficio?: "cortesia" | "brinde" | "desconto" | "bonus" | "gratis";
+  validade?: "dia_aniversario" | "semana_aniversario" | "mes_aniversario" | "sempre";
   regras?: string;
   estabelecimentoId: string;
+  estabelecimentoNome: string;
+  estabelecimentoCategoria?: string;
+  whatsapp?: string;
+  telefone?: string;
   userId: string | null;
   onEmitirCupom: () => void;
 }
 
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const TIPO_CONFIG: Record<string, { emoji: string; label: string; color: string }> = {
+  cortesia: { emoji: "🎁", label: "Cortesia", color: "text-violet-700 bg-violet-100" },
+  brinde: { emoji: "🎀", label: "Brinde", color: "text-pink-700 bg-pink-100" },
+  desconto: { emoji: "💰", label: "Desconto", color: "text-emerald-700 bg-emerald-100" },
+  bonus: { emoji: "⭐", label: "Bônus", color: "text-amber-700 bg-amber-100" },
+  gratis: { emoji: "🆓", label: "Grátis", color: "text-blue-700 bg-blue-100" },
+};
+
+const VALIDADE_LABEL: Record<string, string> = {
+  dia_aniversario: "No dia do aniversário",
+  semana_aniversario: "Na semana do aniversário",
+  mes_aniversario: "No mês do aniversário",
+  sempre: "Válido o ano todo",
+};
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
 export const CardBeneficio = ({
   beneficio,
-  validadeTexto,
+  tipoBeneficio,
+  validade = "dia_aniversario",
   regras,
   estabelecimentoId,
+  estabelecimentoNome,
+  estabelecimentoCategoria,
+  whatsapp,
+  telefone,
   userId,
   onEmitirCupom,
 }: CardBeneficioProps) => {
   const navigate = useNavigate();
-  const [modalAberto, setModalAberto] = useState(false);
-  const { trackEvent } = useEstablishmentMetrics();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const { trackBenefitClick } = useEstablishmentMetrics();
 
+  // Configurações derivadas
+  const tipoConfig = tipoBeneficio ? TIPO_CONFIG[tipoBeneficio] : null;
+  const validadeLabel = VALIDADE_LABEL[validade] || VALIDADE_LABEL.dia_aniversario;
+
+  // Montar URL do WhatsApp
+  const whatsappNumber = formatWhatsApp(whatsapp || telefone);
+  const whatsappUrl = whatsappNumber
+    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+        getWhatsAppMessage(estabelecimentoNome, estabelecimentoCategoria),
+      )}`
+    : undefined;
+
+  // Handler para abrir o sheet
   const handleVerRegras = async () => {
-    await trackEvent(estabelecimentoId, 'benefit_click');
+    // Rastrear clique
+    if (estabelecimentoId) {
+      trackBenefitClick(estabelecimentoId);
+    }
 
+    // Se não estiver logado, redirecionar para auth
     if (!userId) {
-      sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
-      navigate('/auth', {
-        state: { mensagem: 'Faça login para ver as regras do benefício' },
+      sessionStorage.setItem("redirectAfterLogin", window.location.pathname);
+      navigate("/auth", {
+        state: { mensagem: "Faça login para ver as regras do benefício" },
       });
       return;
     }
 
-    setModalAberto(true);
+    // Abrir sheet
+    setSheetOpen(true);
   };
 
   return (
     <>
-      {/* Card de Benefício - Design Clean Premium */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, type: 'spring', stiffness: 100 }}
-        className="relative overflow-hidden rounded-2xl"
-      >
-        {/* Gradient border sutil */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#240046] to-[#3C096C] opacity-30 blur-sm" />
-        <div className="absolute inset-[1px] rounded-2xl bg-slate-900/95" />
-        
-        {/* Inner glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#240046]/10 via-transparent to-[#3C096C]/10 pointer-events-none" />
-        
-        <div className="relative p-6 md:p-8 space-y-5">
-          {/* Ícone com pulse premium */}
-          <motion.div
-            animate={{ scale: [1, 1.08, 1] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-            className="flex justify-center"
-          >
-            <div className="w-16 h-16 rounded-2xl bg-[#240046]/30 flex items-center justify-center border border-[#240046]/40 shadow-lg shadow-[#240046]/20">
-              <Gift className="w-8 h-8 text-[#A78BFA]" />
-            </div>
-          </motion.div>
-
-          {/* Benefício - Grande e impactante */}
-          <div className="text-center">
-            <p className="text-xl md:text-2xl text-white font-bold leading-tight tracking-tight">
-              {beneficio || 'Benefício exclusivo para aniversariantes!'}
-            </p>
+      {/* ================================================================= */}
+      {/* CARD DO BENEFÍCIO - Design Clean */}
+      {/* ================================================================= */}
+      <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm">
+        <div className="flex items-start gap-4">
+          {/* Ícone */}
+          <div className="w-12 h-12 rounded-xl bg-[#240046]/10 flex items-center justify-center flex-shrink-0">
+            <Gift className="w-6 h-6 text-[#240046]" />
           </div>
 
-          {/* Validade - Elegante */}
-          <div className="flex items-center justify-center gap-2">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
-              <Calendar className="w-4 h-4 text-[#A78BFA]" />
-              <span className="text-sm text-gray-300">
-                Válido: <span className="text-[#A78BFA] font-medium">{getValidadeTexto(validadeTexto)}</span>
+          <div className="flex-1 min-w-0">
+            {/* Badges */}
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              {/* Badge tipo benefício */}
+              {tipoConfig && (
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2.5 py-1",
+                    "text-xs font-bold rounded-full",
+                    tipoConfig.color,
+                  )}
+                >
+                  <span>{tipoConfig.emoji}</span>
+                  <span>{tipoConfig.label}</span>
+                </span>
+              )}
+
+              {/* Badge validade */}
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-100 text-zinc-600 text-xs font-medium rounded-full">
+                <Calendar className="w-3 h-3" />
+                {validadeLabel}
               </span>
             </div>
+
+            {/* Texto do benefício */}
+            <h3 className="text-lg font-semibold text-zinc-900 leading-snug">
+              {beneficio || "Benefício exclusivo para aniversariantes!"}
+            </h3>
           </div>
-
-          {/* Botão Clean - SEM shimmer excessivo */}
-          <button
-            onClick={handleVerRegras}
-            className="
-              w-full py-4 
-              bg-gradient-to-r from-[#240046] to-[#3C096C]
-              hover:from-[#3C096C] hover:to-[#5B21B6]
-              text-white font-semibold text-base
-              rounded-xl
-              transition-all duration-300
-              hover:scale-[1.02] active:scale-[0.98]
-              shadow-lg shadow-[#240046]/30
-              flex items-center justify-center gap-2
-            "
-          >
-            <Sparkles className="w-5 h-5" />
-            Ver regras e como usar o benefício
-          </button>
         </div>
-      </motion.div>
 
-      {/* Modal de Regras - Premium */}
-      <AnimatePresence>
-        {modalAberto && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          >
-            {/* Backdrop blur premium */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/85 backdrop-blur-md"
-              onClick={() => setModalAberto(false)}
-            />
+        {/* Botão CTA */}
+        <button
+          onClick={handleVerRegras}
+          className={cn(
+            "w-full mt-5 py-3.5 px-4",
+            "bg-[#240046] hover:bg-[#3C096C] text-white",
+            "font-semibold rounded-xl",
+            "transition-all duration-150",
+            "active:scale-[0.98]",
+            "flex items-center justify-center gap-2",
+            "min-h-[48px]", // Touch target
+          )}
+        >
+          <Sparkles className="w-5 h-5" />
+          Ver regras e como usar
+        </button>
+      </div>
 
-            {/* Modal Content */}
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 30 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 30 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-md overflow-hidden rounded-3xl"
-            >
-              {/* Gradient border effect */}
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[#240046] to-[#3C096C] opacity-20" />
-              <div className="absolute inset-[1px] rounded-3xl bg-slate-900" />
-              
-              <div className="relative">
-                {/* Header */}
-                <div className="p-6 border-b border-white/10 bg-gradient-to-b from-[#240046]/15 to-transparent">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#240046] to-[#3C096C] flex items-center justify-center">
-                        <Info className="w-5 h-5 text-white" />
-                      </div>
-                      Como usar seu benefício
-                    </h2>
-                    <button
-                      onClick={() => setModalAberto(false)}
-                      className="p-2.5 hover:bg-white/10 rounded-xl transition-colors"
-                    >
-                      <X className="w-5 h-5 text-gray-400" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Conteúdo */}
-                <div className="p-6 space-y-5 overflow-y-auto max-h-[60vh]">
-                  {/* Benefício highlight */}
-                  <div className="relative overflow-hidden rounded-2xl">
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#240046]/20 to-[#3C096C]/20" />
-                    <div className="relative p-5 text-center border border-[#240046]/30 rounded-2xl">
-                      <p className="text-sm text-[#A78BFA] mb-2">Você ganha:</p>
-                      <p className="text-lg font-bold text-white">
-                        🎁 {beneficio || 'Benefício exclusivo!'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Regras */}
-                  {regras && (
-                    <div>
-                      <h3 className="font-bold text-white mb-3 flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-[#A78BFA]" />
-                        Regras de uso
-                      </h3>
-                      <div className="text-gray-300 text-sm space-y-2 whitespace-pre-line bg-white/5 p-4 rounded-xl border border-white/5">
-                        {regras}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Dica */}
-                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
-                    <p className="text-sm text-amber-200 flex items-start gap-3">
-                      <span className="text-xl">💡</span>
-                      <span>
-                        <strong>Dica:</strong> Leve um documento com foto para confirmar sua data de nascimento.
-                      </span>
-                    </p>
-                  </div>
-
-                  {/* Checklist elegante */}
-                  <div className="bg-white/5 rounded-xl p-5 border border-white/5">
-                    <p className="text-xs text-gray-400 uppercase tracking-wider mb-4 font-medium">
-                      Passos para usar
-                    </p>
-                    <ul className="space-y-3 text-sm text-gray-300">
-                      {[
-                        'Veja seu benefício abaixo',
-                        'Apresente seu benefício no local',
-                        'Mostre documento com data de nascimento',
-                        'Aproveite seu benefício! 🎉'
-                      ].map((step, i) => (
-                        <li key={i} className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                            <Check className="w-3.5 h-3.5 text-green-400" />
-                          </div>
-                          {step}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="p-6 border-t border-white/10 bg-slate-900/80 space-y-3">
-                  <button
-                    onClick={() => {
-                      setModalAberto(false);
-                      onEmitirCupom();
-                    }}
-                    className="
-                      w-full py-4 
-                      bg-gradient-to-r from-[#240046] to-[#3C096C]
-                      hover:from-[#3C096C] hover:to-[#5B21B6]
-                      text-white font-semibold text-base
-                      rounded-xl
-                      transition-all duration-300
-                      hover:scale-[1.02] active:scale-[0.98]
-                      shadow-lg shadow-[#240046]/30
-                      flex items-center justify-center gap-2
-                    "
-                  >
-                    <Gift className="w-5 h-5" />
-                    Ver Meu Benefício
-                  </button>
-
-                  <button
-                    onClick={() => setModalAberto(false)}
-                    className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 font-medium transition-colors border border-white/10"
-                  >
-                    Entendi!
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* ================================================================= */}
+      {/* BOTTOM SHEET - BenefitSheet */}
+      {/* ================================================================= */}
+      <BenefitSheet
+        isOpen={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        estabelecimentoNome={estabelecimentoNome}
+        beneficio={beneficio}
+        tipoBeneficio={tipoBeneficio}
+        validade={validade}
+        regras={regras}
+        whatsappUrl={whatsappUrl}
+        onUsarBeneficio={onEmitirCupom}
+      />
     </>
   );
 };

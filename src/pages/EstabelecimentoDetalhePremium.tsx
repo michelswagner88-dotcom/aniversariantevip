@@ -45,6 +45,7 @@ import { useSEO } from "@/hooks/useSEO";
 import { getEstabelecimentoSEO } from "@/constants/seo";
 import CupomModal from "@/components/CupomModal";
 import LoginRequiredModal from "@/components/LoginRequiredModal";
+import BenefitSheet from "@/components/BenefitSheet";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -890,155 +891,6 @@ const LocationSection = ({
   );
 };
 
-// =============================================================================
-// RULES MODAL - ATUALIZADO COM TIPO_BENEFICIO
-// =============================================================================
-
-const RulesModal = ({
-  isOpen,
-  onClose,
-  beneficio,
-  regras,
-  validade,
-  tipoBeneficio,
-  onEmitirCupom,
-  onWhatsApp,
-  hasWhatsApp,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  beneficio?: string;
-  regras?: string;
-  validade?: string;
-  tipoBeneficio?: string;
-  onEmitirCupom: () => void;
-  onWhatsApp: () => void;
-  hasWhatsApp: boolean;
-}) => {
-  if (!isOpen) return null;
-
-  const validadeTexto = getValidadeTexto(validade);
-
-  const tipoConfig = useMemo(() => {
-    if (tipoBeneficio && TIPO_BENEFICIO_CONFIG[tipoBeneficio]) {
-      return TIPO_BENEFICIO_CONFIG[tipoBeneficio];
-    }
-    return inferTipoBeneficio(beneficio);
-  }, [tipoBeneficio, beneficio]);
-
-  return (
-    <>
-      <div className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed inset-x-0 bottom-0 z-50 sm:inset-0 sm:flex sm:items-center sm:justify-center sm:p-4">
-        <div className="bg-white rounded-t-3xl sm:rounded-2xl max-h-[90vh] sm:max-h-[80vh] w-full sm:max-w-lg overflow-hidden flex flex-col">
-          <div className="sm:hidden flex justify-center pt-3 pb-1">
-            <div className="w-10 h-1 rounded-full bg-zinc-300" />
-          </div>
-
-          <div className="sticky top-0 bg-white px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-zinc-900">Como usar seu benefício</h2>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center hover:bg-zinc-200 transition-colors"
-            >
-              <X className="w-5 h-5 text-zinc-600" />
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-5 space-y-6">
-            <div
-              className="p-4 rounded-xl border"
-              style={{ backgroundColor: `${ACCENT_COLOR}05`, borderColor: `${ACCENT_COLOR}20` }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Gift className="w-5 h-5" style={{ color: ACCENT_COLOR }} />
-                <span className="font-semibold" style={{ color: ACCENT_COLOR }}>
-                  Seu benefício
-                </span>
-                {tipoConfig && (
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 px-2 py-0.5",
-                      "bg-white text-xs font-bold rounded-full border",
-                      tipoConfig.color,
-                    )}
-                  >
-                    <span>{tipoConfig.emoji}</span>
-                    <span>{tipoConfig.label}</span>
-                  </span>
-                )}
-              </div>
-              <p className="text-zinc-800 font-medium">{beneficio}</p>
-            </div>
-
-            <div className="flex items-center gap-3 p-4 bg-zinc-50 rounded-xl">
-              <Calendar className="w-5 h-5 text-zinc-500" />
-              <div>
-                <span className="text-xs text-zinc-500 block">Validade</span>
-                <p className="font-medium text-zinc-900">{validadeTexto}</p>
-              </div>
-            </div>
-
-            {regras && (
-              <div>
-                <h3 className="font-semibold text-zinc-900 mb-3">Regras e condições</h3>
-                <div className="space-y-2.5">
-                  {regras
-                    .split(/[.;]/)
-                    .filter((r) => r.trim().length > 0)
-                    .map((regra, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                        <p className="text-zinc-600 text-sm">
-                          {regra.trim()}
-                          {!regra.trim().endsWith(".") && "."}
-                        </p>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-
-            <div>
-              <h3 className="font-semibold text-zinc-900 mb-3">Passo a passo</h3>
-              <div className="space-y-4">
-                {[
-                  "Vá ao estabelecimento no período de validade",
-                  "Apresente um documento com foto que comprove sua data de nascimento",
-                  "Aproveite seu benefício exclusivo!",
-                ].map((step, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: `${ACCENT_COLOR}15` }}
-                    >
-                      <span className="text-sm font-bold" style={{ color: ACCENT_COLOR }}>
-                        {i + 1}
-                      </span>
-                    </div>
-                    <p className="text-zinc-600 text-sm pt-0.5">{step}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {hasWhatsApp && (
-            <div className="sticky bottom-0 bg-white p-5 border-t border-zinc-100">
-              <button
-                onClick={onWhatsApp}
-                className="w-full py-3.5 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-              >
-                <MessageCircle className="w-5 h-5" />
-                Falar no WhatsApp
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </>
-  );
-};
 
 // =============================================================================
 // PARTNER BANNER
@@ -1611,16 +1463,16 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
         <PartnerBanner />
       </div>
 
-      <RulesModal
+      <BenefitSheet
         isOpen={showRulesModal}
         onClose={() => setShowRulesModal(false)}
+        estabelecimentoNome={estabelecimento.nome_fantasia || ""}
         beneficio={beneficio}
+        tipoBeneficio={tipoBeneficio as any}
+        validade={validadeBeneficio as any}
         regras={regrasBeneficio}
-        validade={validadeBeneficio}
-        tipoBeneficio={tipoBeneficio}
-        onEmitirCupom={handleEmitirCupom}
-        onWhatsApp={handleWhatsApp}
-        hasWhatsApp={hasWhatsApp}
+        whatsappUrl={hasWhatsApp ? `https://wa.me/${formatWhatsApp(estabelecimento.whatsapp || estabelecimento.telefone)}?text=${encodeURIComponent(getWhatsAppMessage(estabelecimento.nome_fantasia || "", estabelecimento.categoria?.[0]))}` : undefined}
+        onUsarBeneficio={handleEmitirCupom}
       />
       <CupomModal isOpen={showCupomModal} onClose={() => setShowCupomModal(false)} estabelecimento={estabelecimento} />
       <LoginRequiredModal

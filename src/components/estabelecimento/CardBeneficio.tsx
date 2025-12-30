@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { Gift, Calendar, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEstablishmentMetrics } from "@/hooks/useEstablishmentMetrics";
-import { BenefitSheet } from "./BenefitSheet";
+import { BenefitSheet } from "@/components/BenefitSheet";
 import { formatWhatsApp, getWhatsAppMessage } from "@/lib/contactUtils";
 
 // =============================================================================

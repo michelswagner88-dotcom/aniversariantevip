@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Json } from "@/integrations/supabase/types";
 
 // =============================================================================
 // TYPES
@@ -50,7 +51,7 @@ interface EstabelecimentoData {
   instagram: string | null;
   site: string | null;
   bio: string | null;
-  fotos: any[] | null;
+  fotos: Json | null;
   horario_funcionamento: string | null;
   cidade: string | null;
 }
@@ -83,12 +84,13 @@ interface EstablishmentDashboardProps {
 const calculateProfileCompletion = (est: EstabelecimentoData | null): { percentage: number; missing: string[] } => {
   if (!est) return { percentage: 0, missing: [] };
 
+  const fotos = Array.isArray(est.fotos) ? est.fotos : [];
   const checks = [
     { field: est.nome_fantasia, label: "Nome fantasia" },
     { field: est.telefone || est.whatsapp, label: "Telefone ou WhatsApp" },
     { field: est.bio, label: "Descrição do estabelecimento" },
     { field: est.descricao_beneficio, label: "Benefício configurado" },
-    { field: est.fotos && est.fotos.length > 0, label: "Fotos" },
+    { field: fotos.length > 0, label: "Fotos" },
     { field: est.horario_funcionamento, label: "Horário de funcionamento" },
     { field: est.cidade, label: "Endereço" },
     { field: est.instagram, label: "Instagram" },

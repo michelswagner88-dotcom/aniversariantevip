@@ -17,7 +17,7 @@ import {
 
 interface EstablishmentSettingsProps {
   estabelecimento: any;
-  onUpdate: (updates: any) => Promise<void>;
+  onUpdate: (updates: any) => Promise<boolean>;
   onLogout: () => void;
 }
 

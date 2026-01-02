@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import type { Json } from "@/integrations/supabase/types";
 
 // =============================================================================
 // TYPES
@@ -45,7 +46,7 @@ interface EstabelecimentoData {
   instagram: string | null;
   bio: string | null;
   descricao_beneficio: string | null;
-  fotos: any[] | null;
+  fotos: Json | null;
   horario_funcionamento: string | null;
   cidade: string | null;
 }
@@ -68,12 +69,13 @@ interface EstablishmentSidebarProps {
 const calculateProfileCompletion = (est: EstabelecimentoData | null): number => {
   if (!est) return 0;
 
+  const fotos = Array.isArray(est.fotos) ? est.fotos : [];
   const fields = [
     est.nome_fantasia,
     est.telefone || est.whatsapp,
     est.bio,
     est.descricao_beneficio,
-    est.fotos && est.fotos.length > 0,
+    fotos.length > 0,
     est.horario_funcionamento,
     est.cidade,
     est.instagram,

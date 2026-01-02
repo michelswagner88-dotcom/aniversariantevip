@@ -20,7 +20,9 @@ import {
   Camera,
   Clock,
   ShieldAlert,
-  Hash
+  Hash,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -71,6 +73,9 @@ import { MapaEstabelecimentos } from '@/components/MapaEstabelecimentos';
 import { SecurityDashboard } from '@/components/admin/SecurityDashboard';
 import { BotaoBuscarFotos } from '@/components/admin/BotaoBuscarFotos';
 import { geocodificarEndereco } from '@/lib/geoUtils';
+import { GlobalSearchCommand } from '@/components/admin/GlobalSearchCommand';
+import { useAdminUsers } from '@/hooks/useAdminUsers';
+import { useAdminEstablishments } from '@/hooks/useAdminEstablishments';
 
 const COLORS = ['#94a3b8', '#8b5cf6', '#ec4899'];
 
@@ -146,6 +151,11 @@ export default function AdminDashboard() {
   const [filterCategory, setFilterCategory] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showDeleted, setShowDeleted] = useState<boolean>(false);
+  
+  // Paginação
+  const [currentPageEstab, setCurrentPageEstab] = useState(1);
+  const [currentPageUsers, setCurrentPageUsers] = useState(1);
+  const PAGE_SIZE = 20;
 
   useEffect(() => {
     checkAdminAccess();
@@ -193,7 +203,28 @@ export default function AdminDashboard() {
         supabase.from('email_analytics').select('*').order('sent_at', { ascending: false })
       ]);
 
-      if (usersRes.data) setUsers(usersRes.data);
+      // Enrich users with profile data (nome/email)
+      let enrichedUsers: any[] = [];
+      if (usersRes.data && usersRes.data.length > 0) {
+        const userIds = usersRes.data.map(u => u.id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, nome, email')
+          .in('id', userIds);
+        
+        const profilesMap: Record<string, { nome: string; email: string }> = {};
+        profiles?.forEach(p => {
+          profilesMap[p.id] = { nome: p.nome || '', email: p.email || '' };
+        });
+
+        enrichedUsers = usersRes.data.map(user => ({
+          ...user,
+          nome: profilesMap[user.id]?.nome || '',
+          email: profilesMap[user.id]?.email || '',
+        }));
+      }
+
+      setUsers(enrichedUsers);
       if (establishmentsRes.data) setEstablishments(establishmentsRes.data);
       if (cuponsRes.data) setCupons(cuponsRes.data);
       if (emailAnalyticsRes.data) setEmailAnalytics(emailAnalyticsRes.data);
@@ -507,10 +538,13 @@ export default function AdminDashboard() {
   };
 
   const filteredUsers = useMemo(() => {
-    const searchSeguro = sanitizarInput(searchTerm, 100);
+    const searchSeguro = sanitizarInput(searchTerm, 100).toLowerCase();
     return users.filter(user => 
-      user.cpf?.toLowerCase().includes(searchSeguro.toLowerCase()) || 
-      user.telefone?.toLowerCase().includes(searchSeguro.toLowerCase())
+      user.cpf?.toLowerCase().includes(searchSeguro) || 
+      user.telefone?.toLowerCase().includes(searchSeguro) ||
+      user.nome?.toLowerCase().includes(searchSeguro) ||
+      user.email?.toLowerCase().includes(searchSeguro) ||
+      user.cidade?.toLowerCase().includes(searchSeguro)
     );
   }, [users, searchTerm]);
 
@@ -543,6 +577,22 @@ export default function AdminDashboard() {
       return matchesSearch && matchesCity && matchesCategory && matchesStatus;
     });
   }, [establishments, searchTerm, searchCode, filterCity, filterCategory, filterStatus]);
+
+  // Paginação de estabelecimentos
+  const paginatedEstablishments = useMemo(() => {
+    const start = (currentPageEstab - 1) * PAGE_SIZE;
+    return filteredEstablishments.slice(start, start + PAGE_SIZE);
+  }, [filteredEstablishments, currentPageEstab]);
+
+  const totalPagesEstab = Math.ceil(filteredEstablishments.length / PAGE_SIZE);
+
+  // Paginação de usuários  
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPageUsers - 1) * PAGE_SIZE;
+    return filteredUsers.slice(start, start + PAGE_SIZE);
+  }, [filteredUsers, currentPageUsers]);
+
+  const totalPagesUsers = Math.ceil(filteredUsers.length / PAGE_SIZE);
 
   const estabelecimentosSemFoto = useMemo(() => {
     return establishments.filter(e => !e.logo_url || e.logo_url === '');
@@ -801,36 +851,22 @@ export default function AdminDashboard() {
   const renderUsersTable = () => (
     <div className="bg-slate-900/80 backdrop-blur-xl rounded-xl border border-white/10 overflow-hidden">
       <div className="p-6 border-b border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h2 className="text-xl font-bold text-white">Gerenciar Usuários</h2>
+        <div>
+          <h2 className="text-xl font-bold text-white">Gerenciar Usuários</h2>
+          <p className="text-sm text-slate-400 mt-1">
+            {filteredUsers.length} de {users.length} usuários
+          </p>
+        </div>
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500" size={18} />
           <input 
             type="text" 
-            placeholder="Buscar por CPF ou telefone..." 
+            placeholder="Buscar nome, email, CPF..." 
             className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 placeholder:text-slate-500"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-      </div>
-      <div className="p-4 border-b border-white/10 flex justify-end">
-        <button
-          onClick={handleBuscarFotosEmLote}
-          disabled={bulkFetchingPhotos || estabelecimentosSemFoto.length === 0}
-          className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg transition-colors"
-        >
-          {bulkFetchingPhotos ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Buscando... ({photoProgress.current}/{photoProgress.total})
-            </>
-          ) : (
-            <>
-              <Camera className="w-4 h-4" />
-              Buscar Fotos do Google ({estabelecimentosSemFoto.length})
-            </>
-          )}
-        </button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
@@ -838,67 +874,83 @@ export default function AdminDashboard() {
             <tr className="bg-slate-800/50 text-slate-300 text-sm font-semibold uppercase tracking-wider">
               <th className="p-4 border-b border-white/10">Usuário</th>
               <th className="p-4 border-b border-white/10">CPF</th>
+              <th className="p-4 border-b border-white/10">Cidade</th>
               <th className="p-4 border-b border-white/10">Data Nascimento</th>
               <th className="p-4 border-b border-white/10 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/10">
-            {filteredUsers.map(user => (
-              <tr key={user.id} className="hover:bg-white/5 transition-colors">
-                <td className="p-4">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 flex items-center justify-center text-white font-bold mr-3">
-                      {user.cpf?.charAt(0) || 'U'}
+            {filteredUsers.map(user => {
+              // Get display name (prioritize nome > email > cpf)
+              const displayName = user.nome || user.email?.split('@')[0] || user.cpf;
+              const displayInitial = (user.nome || user.email || user.cpf)?.charAt(0)?.toUpperCase() || 'U';
+              
+              return (
+                <tr key={user.id} className="hover:bg-white/5 transition-colors">
+                  <td className="p-4">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 flex items-center justify-center text-white font-bold mr-3">
+                        {displayInitial}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">{displayName}</div>
+                        <div className="text-sm text-slate-400">
+                          {user.email || user.telefone || 'Sem contato'}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-semibold text-white">{user.cpf}</div>
-                      <div className="text-sm text-slate-400">{user.telefone || 'Sem telefone'}</div>
+                  </td>
+                  <td className="p-4 text-slate-300 font-mono text-sm">{user.cpf}</td>
+                  <td className="p-4 text-slate-300">{user.cidade || 'N/A'}</td>
+                  <td className="p-4 text-slate-300 text-sm">{new Date(user.data_nascimento).toLocaleDateString('pt-BR')}</td>
+                  <td className="p-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button 
+                        onClick={() => handleEditClick(user, 'user')}
+                        className="p-2 text-slate-400 hover:text-violet-400 hover:bg-violet-500/10 rounded-lg transition-colors"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteClick(user, 'user')}
+                        className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={18} />
+                      </button>
                     </div>
-                  </div>
-                </td>
-                <td className="p-4 text-slate-300">{user.cpf}</td>
-                <td className="p-4 text-slate-300 text-sm">{new Date(user.data_nascimento).toLocaleDateString('pt-BR')}</td>
-                <td className="p-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <button 
-                      onClick={() => handleEditClick(user, 'user')}
-                      className="p-2 text-slate-400 hover:text-violet-400 hover:bg-violet-500/10 rounded-lg transition-colors"
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteClick(user, 'user')}
-                      className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                    >
-                      <Trash2 size={18} />
-            </button>
-            <button
-              onClick={handleBuscarHorariosGoogle}
-              disabled={buscandoHorarios || estabelecimentosSemHorario.length === 0}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-semibold flex items-center gap-2 transition-colors"
-            >
-              {buscandoHorarios ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Buscando...
-                </>
-              ) : (
-                <>
-                  <Clock className="w-4 h-4" />
-                  Buscar Horários ({estabelecimentosSemHorario.length})
-                </>
-              )}
-            </button>
-          </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         {filteredUsers.length === 0 && (
           <div className="p-8 text-center text-slate-500">Nenhum usuário encontrado.</div>
         )}
       </div>
+      
+      {/* Paginação */}
+      {users.length > 20 && (
+        <div className="p-4 border-t border-white/10 flex items-center justify-between">
+          <div className="text-sm text-slate-400">
+            Página {Math.ceil(filteredUsers.length / 20) > 0 ? 1 : 0} de {Math.ceil(users.length / 20)}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              disabled
+              className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              disabled
+              className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -1154,6 +1206,34 @@ export default function AdminDashboard() {
           <div className="p-8 text-center text-slate-500">Nenhum estabelecimento encontrado.</div>
         )}
       </div>
+      
+      {/* Paginação */}
+      {totalPagesEstab > 1 && (
+        <div className="p-4 border-t border-white/10 flex items-center justify-between">
+          <div className="text-sm text-slate-400">
+            Mostrando {((currentPageEstab - 1) * PAGE_SIZE) + 1}-{Math.min(currentPageEstab * PAGE_SIZE, filteredEstablishments.length)} de {filteredEstablishments.length}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPageEstab(p => Math.max(1, p - 1))}
+              disabled={currentPageEstab === 1}
+              className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <span className="text-sm text-slate-300">
+              {currentPageEstab} / {totalPagesEstab}
+            </span>
+            <button
+              onClick={() => setCurrentPageEstab(p => Math.min(totalPagesEstab, p + 1))}
+              disabled={currentPageEstab === totalPagesEstab}
+              className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -1439,8 +1519,11 @@ export default function AdminDashboard() {
           <button className="lg:hidden text-slate-400" onClick={() => setMobileMenuOpen(true)}>
             <Menu size={24} />
           </button>
-          <div className="hidden lg:flex text-slate-400 text-sm">
-            Última atualização: {new Date().toLocaleString('pt-BR')}
+          <div className="hidden lg:flex items-center gap-4">
+            <GlobalSearchCommand onNavigate={(tab) => setActiveTab(tab)} />
+            <span className="text-slate-400 text-sm">
+              Última atualização: {new Date().toLocaleString('pt-BR')}
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <button

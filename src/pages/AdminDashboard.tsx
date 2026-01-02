@@ -250,7 +250,7 @@ const MiniChart = ({ data, dataKey, color }: { data: any[]; dataKey: string; col
 // =============================================================================
 
 interface AdminDashboardProps {
-  onNavigate: (tab: string, params?: Record<string, string>) => void;
+  onNavigate?: (tab: string, params?: Record<string, string>) => void;
 }
 
 export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
@@ -329,29 +329,24 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         .slice(0, 5)
         .map(([categoria, count]) => ({ categoria, count }));
 
-      // Métricas de engajamento (placeholder - ajustar conforme sua tabela)
+      // Métricas de engajamento (usando tabelas existentes)
       let visualizacoesTotal = 0;
       let visualizacoes7d = 0;
       let cliquesWhatsapp7d = 0;
       let favoritosTotal = 0;
 
       try {
-        const { data: metrics } = await supabase.from("establishment_metrics").select("event_type, created_at");
-
-        if (metrics) {
-          visualizacoesTotal = metrics.filter((m) => m.event_type === "view").length;
-          visualizacoes7d = metrics.filter(
-            (m) => m.event_type === "view" && new Date(m.created_at) >= seteDiasAtras,
-          ).length;
-          cliquesWhatsapp7d = metrics.filter(
-            (m) => m.event_type === "whatsapp_click" && new Date(m.created_at) >= seteDiasAtras,
-          ).length;
-        }
-
+        // Favoritos
         const { count: favCount } = await supabase.from("favoritos").select("id", { count: "exact" });
         favoritosTotal = favCount || 0;
+
+        // Se tiver tabela de métricas no futuro, descomentar:
+        // const { data: metrics } = await supabase
+        //   .from('establishment_metrics')
+        //   .select('event_type, created_at');
+        // if (metrics) { ... }
       } catch (e) {
-        console.log("Metrics table may not exist");
+        console.log("Metrics query failed:", e);
       }
 
       // Gerar dados do gráfico (últimos 30 dias)
@@ -409,7 +404,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           description: "Revise e aprove para ficarem visíveis na plataforma",
           action: {
             label: "Ver pendentes",
-            onClick: () => onNavigate("establishments", { filter: "pending" }),
+            onClick: () => onNavigate?.("establishments", { filter: "pending" }),
           },
           timestamp: new Date(),
         });
@@ -492,7 +487,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           icon={Building2}
           iconColor="text-violet-400"
           loading={loading}
-          onClick={() => onNavigate("establishments")}
+          onClick={() => onNavigate?.("establishments")}
           badge={
             stats?.estabelecimentosPendentes
               ? {
@@ -510,7 +505,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           icon={Users}
           iconColor="text-blue-400"
           loading={loading}
-          onClick={() => onNavigate("users")}
+          onClick={() => onNavigate?.("users")}
         />
         <KPICard
           title="Aniversariantes Hoje"
@@ -533,7 +528,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           icon={MapPin}
           iconColor="text-emerald-400"
           loading={loading}
-          onClick={() => onNavigate("mapa")}
+          onClick={() => onNavigate?.("mapa")}
         />
       </div>
 
@@ -678,7 +673,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             <Button
               variant="outline"
               className="h-auto py-4 flex-col gap-2 border-slate-700 hover:bg-slate-800 hover:border-violet-500/50"
-              onClick={() => onNavigate("establishments", { filter: "pending" })}
+              onClick={() => onNavigate?.("establishments", { filter: "pending" })}
             >
               <Clock className="w-5 h-5 text-amber-400" />
               <span className="text-xs">Aprovar Pendentes</span>
@@ -692,7 +687,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             <Button
               variant="outline"
               className="h-auto py-4 flex-col gap-2 border-slate-700 hover:bg-slate-800 hover:border-violet-500/50"
-              onClick={() => onNavigate("import")}
+              onClick={() => onNavigate?.("import")}
             >
               <Building2 className="w-5 h-5 text-violet-400" />
               <span className="text-xs">Importar CSV</span>
@@ -701,7 +696,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             <Button
               variant="outline"
               className="h-auto py-4 flex-col gap-2 border-slate-700 hover:bg-slate-800 hover:border-violet-500/50"
-              onClick={() => onNavigate("email-analytics")}
+              onClick={() => onNavigate?.("email-analytics")}
             >
               <TrendingUp className="w-5 h-5 text-cyan-400" />
               <span className="text-xs">Ver Relatórios</span>

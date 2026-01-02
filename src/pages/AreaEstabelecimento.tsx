@@ -1,219 +1,274 @@
+// =============================================================================
+// ÁREA DO ESTABELECIMENTO - PREMIUM v2.0
+// Dashboard moderno estilo Stripe/Vercel
+// Sem sistema de cupons - foco em presença e engajamento
+// =============================================================================
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Crown, LogOut, Edit2, Save, Ticket, Search, Upload, Gift, TrendingUp, Eye, MousePointerClick, Calendar } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { resizeImage } from "@/lib/imageUtils";
-import { RadarOportunidades } from "@/components/estabelecimento/RadarOportunidades";
-import { EstabelecimentoAnalytics } from "@/components/estabelecimento/EstabelecimentoAnalytics";
-import { RadarAniversariantes } from "@/components/estabelecimento/RadarAniversariantes";
-import { EstablishmentSocialPanel } from "@/components/estabelecimento/EstablishmentSocialPanel";
-import { PostAnalyticsDashboard } from "@/components/estabelecimento/PostAnalyticsDashboard";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+// Components
+import { EstablishmentSidebar } from "@/components/estabelecimento/EstablishmentSidebar";
+import { EstablishmentDashboard } from "@/components/estabelecimento/EstablishmentDashboard";
+import { EstablishmentProfile } from "@/components/estabelecimento/EstablishmentProfile";
+import { EstablishmentBenefit } from "@/components/estabelecimento/EstablishmentBenefit";
+import { EstablishmentPhotos } from "@/components/estabelecimento/EstablishmentPhotos";
+import { EstablishmentAnalytics } from "@/components/estabelecimento/EstablishmentAnalytics";
+import { EstablishmentPreview } from "@/components/estabelecimento/EstablishmentPreview";
+import { EstablishmentSettings } from "@/components/estabelecimento/EstablishmentSettings";
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
+export interface EstabelecimentoData {
+  id: string;
+  nome_fantasia: string | null;
+  razao_social: string | null;
+  cnpj: string | null;
+  email: string | null;
+  telefone: string | null;
+  whatsapp: string | null;
+  instagram: string | null;
+  site: string | null;
+  bio: string | null;
+  logo_url: string | null;
+  fotos: any[] | null;
+  categoria: string[] | null;
+  especialidades: string[] | null;
+  cep: string | null;
+  estado: string | null;
+  cidade: string | null;
+  bairro: string | null;
+  logradouro: string | null;
+  numero: string | null;
+  complemento: string | null;
+  horario_funcionamento: string | null;
+  descricao_beneficio: string | null;
+  tipo_beneficio: string | null;
+  periodo_validade_beneficio: string | null;
+  regras_utilizacao: string | null;
+  ativo: boolean;
+  plan_status: string | null;
+  slug: string | null;
+  created_at: string;
+}
+
+export interface AnalyticsData {
+  visualizacoes: number;
+  visualizacoes7d: number;
+  cliquesWhatsapp: number;
+  cliquesWhatsapp7d: number;
+  cliquesTelefone: number;
+  cliquesInstagram: number;
+  cliquesSite: number;
+  favoritos: number;
+  posicaoRanking: number;
+}
+
+type ActiveTab = "dashboard" | "profile" | "benefit" | "photos" | "analytics" | "preview" | "settings";
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
 
 export default function AreaEstabelecimento() {
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  // Estado de autorização
-  const [authState, setAuthState] = useState<'checking' | 'authorized' | 'unauthorized'>('checking');
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
-  const [searchCPF, setSearchCPF] = useState("");
-  const [foundAniversariante, setFoundAniversariante] = useState<any>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [cuponsEmitidos, setCuponsEmitidos] = useState(0);
+  // Auth state
+  const [authState, setAuthState] = useState<"checking" | "authorized" | "unauthorized">("checking");
   const [userId, setUserId] = useState<string | null>(null);
-  const [analytics, setAnalytics] = useState({
-    visualizacoes: 0,
-    cliques: 0,
-    cuponsDoMes: 0,
-  });
-  const [formData, setFormData] = useState({
-    nomeFantasia: "",
-    email: "",
-    telefone: "",
-    whatsapp: "",
-    categoria: "",
-    endereco: "",
-    diasHorarioFuncionamento: "",
-    beneficiosAniversariante: "",
-    regrasAniversariante: "",
-    periodoValidade: "dia", // "dia" ou "mes"
-    logoUrl: "",
-    telefoneContato: "",
-    emailContato: "",
-    instagram: "",
-    site: "",
-    bio: "",
-  });
 
-  // Verificação de autenticação (PRIMEIRA coisa que executa)
+  // Data state
+  const [estabelecimento, setEstabelecimento] = useState<EstabelecimentoData | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // UI state
+  const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // =========================================================================
+  // AUTH CHECK
+  // =========================================================================
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         if (!session) {
           navigate("/login/estabelecimento", { replace: true });
           return;
         }
 
-        const { data: roles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id);
+        const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", session.user.id);
 
-        const isEstabelecimento = roles?.some(r => r.role === "estabelecimento");
-        
+        const isEstabelecimento = roles?.some((r) => r.role === "estabelecimento");
+
         if (!isEstabelecimento) {
           navigate("/", { replace: true });
           return;
         }
 
-        // Autorização confirmada
-        setAuthState('authorized');
+        setAuthState("authorized");
         setUserId(session.user.id);
       } catch (error) {
-        console.error("Erro na verificação de auth:", error);
+        console.error("Auth error:", error);
         navigate("/login/estabelecimento", { replace: true });
       }
     };
-    
+
     checkAuth();
   }, [navigate]);
 
-  // Carregar dados do estabelecimento (SOMENTE após autorização)
-  useEffect(() => {
-    if (authState !== 'authorized' || !userId) return;
+  // =========================================================================
+  // LOAD DATA
+  // =========================================================================
 
-    const loadEstabelecimentoData = async () => {
+  useEffect(() => {
+    if (authState !== "authorized" || !userId) return;
+
+    const loadData = async () => {
+      setLoading(true);
       try {
-        const { data: estabelecimento, error } = await supabase
+        // Load estabelecimento data
+        const { data: estab, error: estabError } = await supabase
           .from("estabelecimentos")
           .select("*")
           .eq("id", userId)
           .single();
 
-        if (error) throw error;
+        if (estabError) throw estabError;
 
-        if (estabelecimento) {
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          setUserData({
-            id: estabelecimento.id,
-            email: session?.user.email || "",
-            razaoSocial: estabelecimento.razao_social,
-            nomeFantasia: estabelecimento.nome_fantasia || "",
-            cnpj: estabelecimento.cnpj,
-            telefone: estabelecimento.telefone || "",
-            whatsapp: estabelecimento.whatsapp || "",
-            categoria: Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria || "",
-            endereco: estabelecimento.endereco || "",
-            cidade: estabelecimento.cidade || "",
-            estado: estabelecimento.estado || "",
-            diasHorarioFuncionamento: estabelecimento.horario_funcionamento || "",
-            beneficiosAniversariante: estabelecimento.descricao_beneficio || "",
-            regrasAniversariante: estabelecimento.regras_utilizacao || "",
-            periodoValidade: estabelecimento.periodo_validade_beneficio || "dia",
-            logoUrl: estabelecimento.logo_url || "",
-            telefoneContato: "",
-            emailContato: "",
-            instagram: estabelecimento.instagram || "",
-            site: estabelecimento.site || "",
-            planStatus: estabelecimento.plan_status || "pending",
-          });
-          
-          setFormData({
-            nomeFantasia: estabelecimento.nome_fantasia || "",
-            email: session?.user.email || "",
-            telefone: estabelecimento.telefone || "",
-            whatsapp: estabelecimento.whatsapp || "",
-            categoria: Array.isArray(estabelecimento.categoria) ? estabelecimento.categoria[0] : estabelecimento.categoria || "",
-            endereco: estabelecimento.endereco || "",
-            diasHorarioFuncionamento: estabelecimento.horario_funcionamento || "",
-            beneficiosAniversariante: estabelecimento.descricao_beneficio || "",
-            regrasAniversariante: estabelecimento.regras_utilizacao || "",
-            periodoValidade: estabelecimento.periodo_validade_beneficio || "dia",
-            logoUrl: estabelecimento.logo_url || "",
-            telefoneContato: "",
-            emailContato: "",
-            instagram: estabelecimento.instagram || "",
-            site: estabelecimento.site || "",
-            bio: estabelecimento.bio || "",
-          });
-          
-          await loadCuponsEmitidos(userId);
-        }
-      } catch (error) {
-        console.error("Erro ao carregar dados do estabelecimento:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar dados",
-          description: "Não foi possível carregar suas informações. Tente novamente.",
+        // Get email from auth
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        setEstabelecimento({
+          ...estab,
+          email: session?.user.email || null,
         });
+
+        // Load analytics
+        await loadAnalytics(userId);
+      } catch (error) {
+        console.error("Error loading data:", error);
+        toast.error("Erro ao carregar dados");
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadEstabelecimentoData();
-  }, [authState, userId, toast]);
+    loadData();
+  }, [authState, userId]);
 
-  const loadCuponsEmitidos = async (estabelecimentoId: string) => {
-    const { count, error } = await supabase
-      .from("cupons")
-      .select("*", { count: "exact", head: true })
-      .eq("estabelecimento_id", estabelecimentoId);
+  // =========================================================================
+  // LOAD ANALYTICS
+  // =========================================================================
 
-    if (error) {
-      console.error("Erro ao carregar cupons:", error);
-      return;
+  const loadAnalytics = async (estabelecimentoId: string) => {
+    try {
+      const seteDiasAtras = new Date();
+      seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
+
+      // Visualizações totais
+      const { count: visualizacoes } = await supabase
+        .from("estabelecimento_analytics")
+        .select("*", { count: "exact", head: true })
+        .eq("estabelecimento_id", estabelecimentoId)
+        .eq("tipo_evento", "visualizacao");
+
+      // Visualizações 7 dias
+      const { count: visualizacoes7d } = await supabase
+        .from("estabelecimento_analytics")
+        .select("*", { count: "exact", head: true })
+        .eq("estabelecimento_id", estabelecimentoId)
+        .eq("tipo_evento", "visualizacao")
+        .gte("created_at", seteDiasAtras.toISOString());
+
+      // Cliques WhatsApp
+      const { count: cliquesWhatsapp } = await supabase
+        .from("estabelecimento_analytics")
+        .select("*", { count: "exact", head: true })
+        .eq("estabelecimento_id", estabelecimentoId)
+        .eq("tipo_evento", "clique_whatsapp");
+
+      // Cliques WhatsApp 7d
+      const { count: cliquesWhatsapp7d } = await supabase
+        .from("estabelecimento_analytics")
+        .select("*", { count: "exact", head: true })
+        .eq("estabelecimento_id", estabelecimentoId)
+        .eq("tipo_evento", "clique_whatsapp")
+        .gte("created_at", seteDiasAtras.toISOString());
+
+      // Outros cliques
+      const { count: cliquesTelefone } = await supabase
+        .from("estabelecimento_analytics")
+        .select("*", { count: "exact", head: true })
+        .eq("estabelecimento_id", estabelecimentoId)
+        .eq("tipo_evento", "clique_telefone");
+
+      const { count: cliquesInstagram } = await supabase
+        .from("estabelecimento_analytics")
+        .select("*", { count: "exact", head: true })
+        .eq("estabelecimento_id", estabelecimentoId)
+        .eq("tipo_evento", "clique_instagram");
+
+      const { count: cliquesSite } = await supabase
+        .from("estabelecimento_analytics")
+        .select("*", { count: "exact", head: true })
+        .eq("estabelecimento_id", estabelecimentoId)
+        .eq("tipo_evento", "clique_site");
+
+      // Favoritos
+      const { count: favoritos } = await supabase
+        .from("favoritos")
+        .select("*", { count: "exact", head: true })
+        .eq("estabelecimento_id", estabelecimentoId);
+
+      setAnalytics({
+        visualizacoes: visualizacoes || 0,
+        visualizacoes7d: visualizacoes7d || 0,
+        cliquesWhatsapp: cliquesWhatsapp || 0,
+        cliquesWhatsapp7d: cliquesWhatsapp7d || 0,
+        cliquesTelefone: cliquesTelefone || 0,
+        cliquesInstagram: cliquesInstagram || 0,
+        cliquesSite: cliquesSite || 0,
+        favoritos: favoritos || 0,
+        posicaoRanking: 0, // Calcular depois
+      });
+    } catch (error) {
+      console.error("Error loading analytics:", error);
     }
-
-    setCuponsEmitidos(count || 0);
-    
-    // Carregar cupons do mês atual
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-    
-    const { count: countMes } = await supabase
-      .from("cupons")
-      .select("*", { count: "exact", head: true })
-      .eq("estabelecimento_id", estabelecimentoId)
-      .gte("created_at", startOfMonth.toISOString());
-    
-    // Carregar analytics
-    await loadAnalytics(estabelecimentoId, countMes || 0);
   };
 
-  const loadAnalytics = async (estabelecimentoId: string, cuponsDoMes: number) => {
-    // Contar visualizações
-    const { count: visualizacoes } = await supabase
-      .from("estabelecimento_analytics")
-      .select("*", { count: "exact", head: true })
-      .eq("estabelecimento_id", estabelecimentoId)
-      .eq("tipo_evento", "visualizacao");
-    
-    // Contar cliques totais (telefone, whatsapp, instagram, site)
-    const { count: cliques } = await supabase
-      .from("estabelecimento_analytics")
-      .select("*", { count: "exact", head: true })
-      .eq("estabelecimento_id", estabelecimentoId)
-      .in("tipo_evento", ["clique_telefone", "clique_whatsapp", "clique_instagram", "clique_site"]);
-    
-    setAnalytics({
-      visualizacoes: visualizacoes || 0,
-      cliques: cliques || 0,
-      cuponsDoMes,
-    });
+  // =========================================================================
+  // HANDLERS
+  // =========================================================================
+
+  const handleUpdateEstabelecimento = async (updates: Partial<EstabelecimentoData>) => {
+    if (!userId) return false;
+
+    try {
+      const { error } = await supabase.from("estabelecimentos").update(updates).eq("id", userId);
+
+      if (error) throw error;
+
+      setEstabelecimento((prev) => (prev ? { ...prev, ...updates } : null));
+      toast.success("Dados atualizados!");
+      return true;
+    } catch (error) {
+      console.error("Error updating:", error);
+      toast.error("Erro ao salvar");
+      return false;
+    }
   };
 
   const handleLogout = async () => {
@@ -221,635 +276,95 @@ export default function AreaEstabelecimento() {
     navigate("/");
   };
 
-  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      
-      // Validar tipo de arquivo
-      if (!file.type.startsWith('image/')) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Por favor, selecione um arquivo de imagem válido",
-        });
-        return;
-      }
-      
-      try {
-        toast({
-          title: "Processando imagem...",
-          description: "Ajustando dimensões da imagem",
-        });
-        
-        // Redimensionar imagem antes de salvar
-        const resizedFile = await resizeImage(file, 800, 800, 0.85);
-        setLogoFile(resizedFile);
-        
-        toast({
-          title: "Imagem processada",
-          description: "A imagem foi ajustada com sucesso",
-        });
-      } catch (error) {
-        console.error("Erro ao processar imagem:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Não foi possível processar a imagem",
-        });
-      }
-    }
+  const handleNavigate = (tab: ActiveTab) => {
+    setActiveTab(tab);
   };
 
-  const handleInstagramChange = (value: string) => {
-    const cleanValue = value.replace(/^@/, "");
-    setFormData({ ...formData, instagram: cleanValue });
-  };
+  // =========================================================================
+  // LOADING STATE
+  // =========================================================================
 
-  const handleSave = async () => {
-    if (!userData) return;
-
-    // Validações dos campos obrigatórios
-    if (!formData.endereco || !formData.diasHorarioFuncionamento) {
-      toast({
-        variant: "destructive",
-        title: "Campos obrigatórios",
-        description: "Preencha Endereço e Horário de Funcionamento antes de salvar",
-      });
-      return;
-    }
-
-    if (!formData.telefone && !formData.whatsapp) {
-      toast({
-        variant: "destructive",
-        title: "Contato obrigatório",
-        description: "Preencha pelo menos Telefone ou WhatsApp",
-      });
-      return;
-    }
-
-    try {
-      let logoUrl = formData.logoUrl;
-
-      // Upload da logo se houver arquivo novo
-      if (logoFile) {
-        setUploading(true);
-        const fileExt = logoFile.name.split('.').pop();
-        const fileName = `${userId}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('estabelecimento-logos')
-          .upload(fileName, logoFile, {
-            upsert: true
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('estabelecimento-logos')
-          .getPublicUrl(fileName);
-        
-        logoUrl = publicUrl;
-        setUploading(false);
-      }
-
-      const { error } = await supabase
-        .from("estabelecimentos")
-        .update({
-          nome_fantasia: formData.nomeFantasia,
-          telefone: formData.telefone,
-          whatsapp: formData.whatsapp,
-          endereco: formData.endereco,
-          horario_funcionamento: formData.diasHorarioFuncionamento,
-          descricao_beneficio: formData.beneficiosAniversariante,
-          regras_utilizacao: formData.regrasAniversariante,
-          periodo_validade_beneficio: formData.periodoValidade,
-          instagram: formData.instagram,
-          site: formData.site,
-          logo_url: logoUrl,
-          categoria: formData.categoria ? [formData.categoria] : null,
-          bio: formData.bio,
-        })
-        .eq("id", userId);
-
-      if (error) throw error;
-
-      const updatedData = { ...formData, logoUrl };
-      setUserData({ ...userData, ...updatedData });
-      setFormData(updatedData);
-      setIsEditing(false);
-      setLogoFile(null);
-      
-      toast({
-        title: "Sucesso!",
-        description: "Dados atualizados com sucesso",
-      });
-    } catch (error) {
-      console.error("Erro ao salvar:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível salvar as alterações",
-      });
-    }
-  };
-
-  const handleSearchAniversariante = async () => {
-    try {
-      const { data: aniversariante, error: anivError } = await supabase
-        .from("aniversariantes")
-        .select("*")
-        .eq("cpf", searchCPF)
-        .single();
-
-      if (anivError || !aniversariante) {
-        toast({
-          variant: "destructive",
-          title: "Não encontrado",
-          description: "Nenhum aniversariante encontrado com este CPF",
-        });
-        setFoundAniversariante(null);
-        return;
-      }
-
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", aniversariante.id)
-        .single();
-
-      if (profileError || !profile) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Erro ao buscar dados do aniversariante",
-        });
-        setFoundAniversariante(null);
-        return;
-      }
-
-      setFoundAniversariante({
-        id: aniversariante.id,
-        nomeCompleto: profile.nome,
-        cpf: aniversariante.cpf,
-        dataNascimento: aniversariante.data_nascimento,
-      });
-    } catch (error) {
-      console.error("Erro ao buscar aniversariante:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao buscar aniversariante",
-      });
-      setFoundAniversariante(null);
-    }
-  };
-
-  const handleEmitirCupom = async () => {
-    if (!foundAniversariante || !userId) return;
-
-    try {
-      const codigo = `ANIV-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-      
-      const { error } = await supabase
-        .from("cupons")
-        .insert({
-          codigo: codigo,
-          estabelecimento_id: userId,
-          aniversariante_id: foundAniversariante.id,
-          data_emissao: new Date().toISOString(),
-          usado: false,
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Cupom Emitido!",
-        description: `Cupom emitido para ${foundAniversariante.nomeCompleto}`,
-      });
-
-      setSearchCPF("");
-      setFoundAniversariante(null);
-      await loadCuponsEmitidos(userId);
-    } catch (error: any) {
-      console.error("Erro ao emitir cupom:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível emitir o cupom. Tente novamente.",
-      });
-    }
-  };
-
-  // Bloquear render até autorização confirmada
-  if (authState !== 'authorized') {
+  if (authState !== "authorized") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-950 via-purple-900 to-fuchsia-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-400 text-sm">Verificando acesso...</p>
+        </div>
       </div>
     );
   }
 
+  // =========================================================================
+  // RENDER
+  // =========================================================================
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Crown className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold text-primary">ANIVERSARIANTE VIP</h1>
-          </div>
-          <div className="flex gap-2">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <Ticket className="mr-2 h-4 w-4" />
-                  Emitir Cupom
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Emitir Cupom de Aniversário</DialogTitle>
-                  <DialogDescription>
-                    Busque o aniversariante pelo CPF para emitir o cupom
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Digite o CPF"
-                      value={searchCPF}
-                      onChange={(e) => setSearchCPF(e.target.value)}
-                    />
-                    <Button onClick={handleSearchAniversariante}>
-                      <Search className="h-4 w-4" />
-                    </Button>
-                  </div>
+    <div className="min-h-screen bg-slate-950 flex">
+      {/* Sidebar */}
+      <EstablishmentSidebar
+        estabelecimento={estabelecimento}
+        activeTab={activeTab}
+        collapsed={sidebarCollapsed}
+        onNavigate={handleNavigate}
+        onCollapsedChange={setSidebarCollapsed}
+        onLogout={handleLogout}
+      />
 
-                  {foundAniversariante && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Aniversariante Encontrado</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <p><strong>Nome:</strong> {foundAniversariante.nomeCompleto}</p>
-                        <p><strong>CPF:</strong> {foundAniversariante.cpf}</p>
-                        <p><strong>Data de Nascimento:</strong> {new Date(foundAniversariante.dataNascimento).toLocaleDateString('pt-BR')}</p>
-                        <Button onClick={handleEmitirCupom} className="w-full mt-4">
-                          <Ticket className="mr-2 h-4 w-4" />
-                          Emitir Cupom
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-8 space-y-6">
-        {/* Analytics Avançado */}
-        <div className="max-w-6xl mx-auto">
-          <EstabelecimentoAnalytics estabelecimentoId={userData?.id || ''} />
-        </div>
-
-        {/* Radar de Oportunidades - Widget Premium */}
-        {userData?.endereco && (
-          <div className="max-w-6xl mx-auto mt-6">
-            <RadarOportunidades 
-              cidade={userData.cidade || ""} 
-              estado={userData.estado || ""}
-              userPlan={userData.planStatus || null}
-              estabelecimentoId={userData.id || ""}
+      {/* Main Content */}
+      <main
+        className={cn("flex-1 min-h-screen transition-all duration-200", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}
+      >
+        <div className="p-4 lg:p-8">
+          {/* Tab Content */}
+          {activeTab === "dashboard" && (
+            <EstablishmentDashboard
+              estabelecimento={estabelecimento}
+              analytics={analytics}
+              loading={loading}
+              onNavigate={handleNavigate}
             />
-          </div>
-        )}
+          )}
 
-        {/* Radar de Aniversariantes - Previsão de Demanda */}
-        {userData?.cidade && userData?.estado && (
-          <div className="max-w-6xl mx-auto mt-6">
-            <RadarAniversariantes 
-              cidade={userData.cidade}
-              estado={userData.estado}
+          {activeTab === "profile" && (
+            <EstablishmentProfile
+              estabelecimento={estabelecimento}
+              loading={loading}
+              onUpdate={handleUpdateEstabelecimento}
             />
-          </div>
-        )}
+          )}
 
-        {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-6xl mx-auto">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Gift className="h-4 w-4" />
-                Cupons Totais
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">{cuponsEmitidos}</div>
-              <p className="text-xs text-muted-foreground mt-1">Desde o início</p>
-            </CardContent>
-          </Card>
+          {activeTab === "benefit" && (
+            <EstablishmentBenefit
+              estabelecimento={estabelecimento}
+              loading={loading}
+              onUpdate={handleUpdateEstabelecimento}
+            />
+          )}
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Cupons do Mês
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">{analytics.cuponsDoMes}</div>
-              <p className="text-xs text-muted-foreground mt-1">Mês atual</p>
-            </CardContent>
-          </Card>
+          {activeTab === "photos" && (
+            <EstablishmentPhotos
+              estabelecimento={estabelecimento}
+              loading={loading}
+              onUpdate={handleUpdateEstabelecimento}
+            />
+          )}
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Eye className="h-4 w-4" />
-                Visualizações
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">{analytics.visualizacoes}</div>
-              <p className="text-xs text-muted-foreground mt-1">Total de views</p>
-            </CardContent>
-          </Card>
+          {activeTab === "analytics" && (
+            <EstablishmentAnalytics estabelecimentoId={userId || ""} analytics={analytics} loading={loading} />
+          )}
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <MousePointerClick className="h-4 w-4" />
-                Cliques
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">{analytics.cliques}</div>
-              <p className="text-xs text-muted-foreground mt-1">Links e contatos</p>
-            </CardContent>
-          </Card>
+          {activeTab === "preview" && <EstablishmentPreview estabelecimento={estabelecimento} />}
+
+          {activeTab === "settings" && (
+            <EstablishmentSettings
+              estabelecimento={estabelecimento}
+              onUpdate={handleUpdateEstabelecimento}
+              onLogout={handleLogout}
+            />
+          )}
         </div>
-
-        {/* Gestão de Conteúdo Social */}
-        <div className="max-w-3xl mx-auto mb-8">
-          <EstablishmentSocialPanel establishmentId={userId || ''} />
-        </div>
-
-        {/* Analytics de Posts */}
-        <div className="max-w-4xl mx-auto mb-8">
-          <PostAnalyticsDashboard establishmentId={userId || ''} />
-        </div>
-
-        <Card className="max-w-3xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-3xl">Dados do Estabelecimento</CardTitle>
-            <CardDescription>Gerencie as informações do seu negócio</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="nomeFantasia">Nome Fantasia</Label>
-              <Input
-                id="nomeFantasia"
-                value={formData.nomeFantasia}
-                onChange={(e) => setFormData({ ...formData, nomeFantasia: e.target.value })}
-                disabled={!isEditing}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="logoUrl">Logo do Estabelecimento</Label>
-              {formData.logoUrl && !isEditing && (
-                <div className="mb-2">
-                  <img src={formData.logoUrl} alt="Logo" className="h-24 w-24 object-cover rounded" />
-                </div>
-              )}
-              {isEditing && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="logo"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoChange}
-                      className="flex-1"
-                    />
-                    {logoFile && (
-                      <span className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Upload className="h-4 w-4" />
-                        {logoFile.name}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Formatos aceitos: JPG, PNG, WEBP (max 5MB)</p>
-                </div>
-              )}
-              {!isEditing && !formData.logoUrl && (
-                <p className="text-sm text-muted-foreground">Nenhuma logo cadastrada</p>
-              )}
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  disabled={!isEditing}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="telefone">Telefone</Label>
-                <Input
-                  id="telefone"
-                  value={formData.telefone}
-                  onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                  disabled={!isEditing}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="whatsapp">WhatsApp</Label>
-              <Input
-                id="whatsapp"
-                value={formData.whatsapp}
-                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                disabled={!isEditing}
-                placeholder="(opcional se telefone preenchido)"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="categoria">Categoria</Label>
-              <Select 
-                value={formData.categoria} 
-                onValueChange={(value) => setFormData({ ...formData, categoria: value })}
-                disabled={!isEditing}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bar">Bar</SelectItem>
-                  <SelectItem value="restaurante">Restaurante</SelectItem>
-                  <SelectItem value="balada">Balada</SelectItem>
-                  <SelectItem value="loja">Loja</SelectItem>
-                  <SelectItem value="servico">Serviço</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="endereco">
-                Endereço Completo <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="endereco"
-                value={formData.endereco}
-                onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-                disabled={!isEditing}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="diasHorarioFuncionamento">
-                Dias e Horário de Funcionamento <span className="text-destructive">*</span>
-              </Label>
-              <Textarea
-                id="diasHorarioFuncionamento"
-                placeholder="Ex: Seg a Sex: 10h às 22h | Sáb e Dom: 12h às 00h"
-                value={formData.diasHorarioFuncionamento}
-                onChange={(e) => setFormData({ ...formData, diasHorarioFuncionamento: e.target.value })}
-                disabled={!isEditing}
-                required
-              />
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="telefone">
-                  Telefone <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="telefone"
-                  placeholder="(00) 00000-0000"
-                  value={formData.telefone}
-                  onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                  disabled={!isEditing}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="instagram">Instagram (opcional)</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
-                  <Input
-                    id="instagram"
-                    placeholder="seuusuario"
-                    value={formData.instagram}
-                    onChange={(e) => handleInstagramChange(e.target.value)}
-                    className="pl-7"
-                    disabled={!isEditing}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="site">Site (opcional)</Label>
-                <Input
-                  id="site"
-                  placeholder="www.seusite.com.br"
-                  value={formData.site}
-                  onChange={(e) => setFormData({ ...formData, site: e.target.value })}
-                  disabled={!isEditing}
-                />
-              </div>
-            </div>
-
-            {/* Campo Bio - Sobre o Estabelecimento */}
-            <div className="space-y-2">
-              <Label htmlFor="bio">Sobre o estabelecimento</Label>
-              <Textarea
-                id="bio"
-                placeholder="Descreva seu estabelecimento de forma atraente para os aniversariantes..."
-                value={formData.bio}
-                onChange={(e) => setFormData({ ...formData, bio: e.target.value.slice(0, 500) })}
-                disabled={!isEditing}
-                rows={4}
-                className="resize-none"
-              />
-              <p className="text-xs text-muted-foreground text-right">
-                {formData.bio?.length || 0}/500 caracteres
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="beneficiosAniversariante">Benefícios para Aniversariantes</Label>
-              <Textarea
-                id="beneficiosAniversariante"
-                value={formData.beneficiosAniversariante}
-                onChange={(e) => setFormData({ ...formData, beneficiosAniversariante: e.target.value })}
-                disabled={!isEditing}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="regrasAniversariante">Regras para Aniversariantes</Label>
-              <Textarea
-                id="regrasAniversariante"
-                value={formData.regrasAniversariante}
-                onChange={(e) => setFormData({ ...formData, regrasAniversariante: e.target.value })}
-                disabled={!isEditing}
-                placeholder="Ex: Apresentar documento com foto. Não acumulativo com outras promoções."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="periodoValidade">Período de Validade do Benefício</Label>
-              <Select 
-                value={formData.periodoValidade} 
-                onValueChange={(value) => setFormData({ ...formData, periodoValidade: value })}
-                disabled={!isEditing}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dia">Somente no dia do aniversário</SelectItem>
-                  <SelectItem value="mes">Durante o mês do aniversário</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex gap-2">
-              {!isEditing ? (
-                <Button onClick={() => setIsEditing(true)} className="w-full">
-                  <Edit2 className="mr-2 h-4 w-4" />
-                  Editar dados
-                </Button>
-              ) : (
-                <>
-                  <Button onClick={handleSave} className="flex-1" disabled={uploading}>
-                    <Save className="mr-2 h-4 w-4" />
-                    {uploading ? "Salvando..." : "Salvar"}
-                  </Button>
-                  <Button variant="outline" onClick={() => setIsEditing(false)} className="flex-1" disabled={uploading}>
-                    Cancelar
-                  </Button>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      </main>
     </div>
   );
 }

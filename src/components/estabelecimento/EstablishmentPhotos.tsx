@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 interface EstablishmentPhotosProps {
   estabelecimento: any;
   loading: boolean;
-  onUpdate: (updates: any) => Promise<void>;
+  onUpdate: (updates: any) => Promise<boolean>;
 }
 
 export function EstablishmentPhotos({ estabelecimento, loading, onUpdate }: EstablishmentPhotosProps) {

@@ -24,6 +24,8 @@ import { EstablishmentSettings } from "@/components/estabelecimento/Establishmen
 // TYPES
 // =============================================================================
 
+import type { Json } from "@/integrations/supabase/types";
+
 export interface EstabelecimentoData {
   id: string;
   nome_fantasia: string | null;
@@ -36,7 +38,7 @@ export interface EstabelecimentoData {
   site: string | null;
   bio: string | null;
   logo_url: string | null;
-  fotos: any[] | null;
+  fotos: Json | null;
   categoria: string[] | null;
   especialidades: string[] | null;
   cep: string | null;

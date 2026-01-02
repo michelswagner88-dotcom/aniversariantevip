@@ -1,10 +1,13 @@
 // =============================================================================
-// ADMIN DASHBOARD PREMIUM - ANIVERSARIANTE VIP
-// KPIs em tempo real, gráficos interativos, alertas, ações rápidas
-// Estilo Stripe/Vercel Dashboard
+// ADMIN DASHBOARD PREMIUM v2.1 - ANIVERSARIANTE VIP
+// CORREÇÕES:
+// - BUG 1: Botões de ação rápida não funcionavam (onNavigate undefined)
+// - BUG 2: Link "Ver pendentes" não funcionava
+// - BUG 3: Formato "00 00%" corrigido
+// - BUG 4: Tratamento de erro no favoritos
 // =============================================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   TrendingUp,
   TrendingDown,
@@ -32,6 +35,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import {
   LineChart,
   Line,
@@ -54,37 +58,26 @@ import {
 // =============================================================================
 
 interface DashboardStats {
-  // Estabelecimentos
   totalEstabelecimentos: number;
   estabelecimentosAtivos: number;
   estabelecimentosPendentes: number;
   estabelecimentosNovos7d: number;
   crescimentoEstabelecimentos: number;
-
-  // Usuários
   totalUsuarios: number;
   usuariosNovos7d: number;
   aniversariantesHoje: number;
   aniversariantesSemana: number;
   crescimentoUsuarios: number;
-
-  // Engajamento
   visualizacoesTotal: number;
   visualizacoes7d: number;
   cliquesWhatsapp7d: number;
   favoritosTotal: number;
-
-  // Financeiro (placeholder - integrar com Stripe)
   mrr: number;
   mrrCrescimento: number;
   churn: number;
   pagamentosPendentes: number;
-
-  // Por cidade
   cidadesAtivas: number;
   topCidades: { cidade: string; count: number }[];
-
-  // Por categoria
   topCategorias: { categoria: string; count: number }[];
 }
 
@@ -98,7 +91,8 @@ interface Alert {
   type: "warning" | "error" | "info" | "success";
   title: string;
   description: string;
-  action?: { label: string; onClick: () => void };
+  actionLabel?: string;
+  actionTarget?: string;
   timestamp: Date;
 }
 
@@ -106,7 +100,6 @@ interface Alert {
 // COMPONENTS
 // =============================================================================
 
-// KPI Card com variação
 const KPICard = ({
   title,
   value,
@@ -128,8 +121,9 @@ const KPICard = ({
   onClick?: () => void;
   badge?: { label: string; variant: "default" | "destructive" | "secondary" };
 }) => {
-  const isPositive = change && change > 0;
-  const isNegative = change && change < 0;
+  const isPositive = change !== undefined && change > 0;
+  const isNegative = change !== undefined && change < 0;
+  const isZero = change === 0;
 
   if (loading) {
     return (
@@ -177,7 +171,7 @@ const KPICard = ({
                 className={cn(
                   isPositive && "text-emerald-400",
                   isNegative && "text-red-400",
-                  !isPositive && !isNegative && "text-slate-500",
+                  isZero && "text-slate-500",
                 )}
               >
                 {isPositive && "+"}
@@ -192,8 +186,15 @@ const KPICard = ({
   );
 };
 
-// Alert Card
-const AlertCard = ({ alert, onDismiss }: { alert: Alert; onDismiss: (id: string) => void }) => {
+const AlertCard = ({
+  alert,
+  onDismiss,
+  onAction,
+}: {
+  alert: Alert;
+  onDismiss: (id: string) => void;
+  onAction: (target: string) => void;
+}) => {
   const iconMap = {
     warning: AlertTriangle,
     error: AlertTriangle,
@@ -216,9 +217,18 @@ const AlertCard = ({ alert, onDismiss }: { alert: Alert; onDismiss: (id: string)
       <div className="flex-1 min-w-0">
         <p className="font-medium text-white text-sm">{alert.title}</p>
         <p className="text-xs text-slate-400 mt-0.5">{alert.description}</p>
-        {alert.action && (
-          <Button size="sm" variant="ghost" className="mt-2 h-7 text-xs" onClick={alert.action.onClick}>
-            {alert.action.label}
+        {alert.actionLabel && alert.actionTarget && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="mt-2 h-7 text-xs"
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log("[AdminDashboard] Alert action clicked:", alert.actionTarget);
+              onAction(alert.actionTarget!);
+            }}
+          >
+            {alert.actionLabel}
             <ExternalLink className="w-3 h-3 ml-1" />
           </Button>
         )}
@@ -229,21 +239,6 @@ const AlertCard = ({ alert, onDismiss }: { alert: Alert; onDismiss: (id: string)
     </div>
   );
 };
-
-// Mini chart para o card
-const MiniChart = ({ data, dataKey, color }: { data: any[]; dataKey: string; color: string }) => (
-  <ResponsiveContainer width="100%" height={60}>
-    <AreaChart data={data}>
-      <defs>
-        <linearGradient id={`gradient-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-          <stop offset="100%" stopColor={color} stopOpacity={0} />
-        </linearGradient>
-      </defs>
-      <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} fill={`url(#gradient-${dataKey})`} />
-    </AreaChart>
-  </ResponsiveContainer>
-);
 
 // =============================================================================
 // MAIN COMPONENT
@@ -260,6 +255,29 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // ==========================================================================
+  // NAVIGATION HANDLER - com fallback e log
+  // ==========================================================================
+  const handleNavigate = useCallback(
+    (tab: string, params?: Record<string, string>) => {
+      console.log("[AdminDashboard] Navigate requested:", { tab, params, hasOnNavigate: !!onNavigate });
+
+      if (onNavigate) {
+        onNavigate(tab, params);
+      } else {
+        // Fallback: mostrar toast informando que navegação não está disponível
+        toast.info(`Navegação para "${tab}" - função não configurada`, {
+          description: "Verifique se onNavigate foi passado como prop",
+        });
+        console.warn("[AdminDashboard] onNavigate not provided, cannot navigate to:", tab);
+      }
+    },
+    [onNavigate],
+  );
+
+  // ==========================================================================
+  // FETCH DATA
+  // ==========================================================================
   const fetchDashboardData = async () => {
     try {
       // Estabelecimentos
@@ -274,6 +292,10 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
       const seteDiasAtras = new Date();
       seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
       const novos7d = estabs?.filter((e) => new Date(e.created_at) >= seteDiasAtras).length || 0;
+
+      // Calcular crescimento corretamente
+      const totalAnterior = (totalEstabs || 0) - novos7d;
+      const crescimentoEstab = totalAnterior > 0 ? Math.round((novos7d / totalAnterior) * 100) : novos7d > 0 ? 100 : 0;
 
       // Usuários/Aniversariantes
       const { count: totalUsers } = await supabase
@@ -304,6 +326,11 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
       const usersNovos7d = aniversariantes?.filter((a) => new Date(a.created_at) >= seteDiasAtras).length || 0;
 
+      // Calcular crescimento de usuários corretamente
+      const usersAnterior = (totalUsers || 0) - usersNovos7d;
+      const crescimentoUsers =
+        usersAnterior > 0 ? Math.round((usersNovos7d / usersAnterior) * 100) : usersNovos7d > 0 ? 100 : 0;
+
       // Top cidades
       const cidadesCount: Record<string, number> = {};
       estabs?.forEach((e) => {
@@ -329,24 +356,25 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         .slice(0, 5)
         .map(([categoria, count]) => ({ categoria, count }));
 
-      // Métricas de engajamento (usando tabelas existentes)
+      // Métricas de engajamento
       let visualizacoesTotal = 0;
       let visualizacoes7d = 0;
       let cliquesWhatsapp7d = 0;
       let favoritosTotal = 0;
 
+      // Favoritos - com tratamento de erro robusto
       try {
-        // Favoritos
-        const { count: favCount } = await supabase.from("favoritos").select("id", { count: "exact" });
-        favoritosTotal = favCount || 0;
+        const { count: favCount, error: favError } = await supabase
+          .from("favoritos")
+          .select("id", { count: "exact", head: true });
 
-        // Se tiver tabela de métricas no futuro, descomentar:
-        // const { data: metrics } = await supabase
-        //   .from('establishment_metrics')
-        //   .select('event_type, created_at');
-        // if (metrics) { ... }
+        if (favError) {
+          console.warn("[AdminDashboard] Favoritos query error:", favError.message);
+        } else {
+          favoritosTotal = favCount || 0;
+        }
       } catch (e) {
-        console.log("Metrics query failed:", e);
+        console.warn("[AdminDashboard] Favoritos query failed:", e);
       }
 
       // Gerar dados do gráfico (últimos 30 dias)
@@ -372,17 +400,17 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         estabelecimentosAtivos: ativos,
         estabelecimentosPendentes: pendentes,
         estabelecimentosNovos7d: novos7d,
-        crescimentoEstabelecimentos: novos7d > 0 ? Math.round((novos7d / (totalEstabs || 1)) * 100) : 0,
+        crescimentoEstabelecimentos: crescimentoEstab,
         totalUsuarios: totalUsers || 0,
         usuariosNovos7d: usersNovos7d,
         aniversariantesHoje: anivHoje,
         aniversariantesSemana: anivSemana,
-        crescimentoUsuarios: usersNovos7d > 0 ? Math.round((usersNovos7d / (totalUsers || 1)) * 100) : 0,
+        crescimentoUsuarios: crescimentoUsers,
         visualizacoesTotal,
         visualizacoes7d,
         cliquesWhatsapp7d,
         favoritosTotal,
-        mrr: 0, // Integrar com Stripe
+        mrr: 0,
         mrrCrescimento: 0,
         churn: 0,
         pagamentosPendentes: 0,
@@ -393,7 +421,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
       setChartData({ cadastrosDiarios, engajamentoDiario: [] });
 
-      // Gerar alertas
+      // Gerar alertas - SEM onClick, apenas com target
       const newAlerts: Alert[] = [];
 
       if (pendentes > 0) {
@@ -402,10 +430,8 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           type: "warning",
           title: `${pendentes} estabelecimento(s) aguardando aprovação`,
           description: "Revise e aprove para ficarem visíveis na plataforma",
-          action: {
-            label: "Ver pendentes",
-            onClick: () => onNavigate?.("establishments", { filter: "pending" }),
-          },
+          actionLabel: "Ver pendentes",
+          actionTarget: "approval-queue",
           timestamp: new Date(),
         });
       }
@@ -422,7 +448,8 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
       setAlerts(newAlerts);
     } catch (error) {
-      console.error("Dashboard fetch error:", error);
+      console.error("[AdminDashboard] Fetch error:", error);
+      toast.error("Erro ao carregar dashboard");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -432,7 +459,6 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
   useEffect(() => {
     fetchDashboardData();
 
-    // Atualizar a cada 5 minutos
     const interval = setInterval(fetchDashboardData, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
@@ -444,6 +470,10 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
   const dismissAlert = (id: string) => {
     setAlerts((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const handleAlertAction = (target: string) => {
+    handleNavigate(target);
   };
 
   const COLORS = ["#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444"];
@@ -472,7 +502,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
       {alerts.length > 0 && (
         <div className="space-y-2">
           {alerts.map((alert) => (
-            <AlertCard key={alert.id} alert={alert} onDismiss={dismissAlert} />
+            <AlertCard key={alert.id} alert={alert} onDismiss={dismissAlert} onAction={handleAlertAction} />
           ))}
         </div>
       )}
@@ -487,7 +517,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           icon={Building2}
           iconColor="text-violet-400"
           loading={loading}
-          onClick={() => onNavigate?.("establishments")}
+          onClick={() => handleNavigate("establishments")}
           badge={
             stats?.estabelecimentosPendentes
               ? {
@@ -505,7 +535,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           icon={Users}
           iconColor="text-blue-400"
           loading={loading}
-          onClick={() => onNavigate?.("users")}
+          onClick={() => handleNavigate("users")}
         />
         <KPICard
           title="Aniversariantes Hoje"
@@ -528,7 +558,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           icon={MapPin}
           iconColor="text-emerald-400"
           loading={loading}
-          onClick={() => onNavigate?.("mapa")}
+          onClick={() => handleNavigate("mapa")}
         />
       </div>
 
@@ -654,6 +684,9 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                     </div>
                   </div>
                 ))}
+                {(!stats?.topCidades || stats.topCidades.length === 0) && (
+                  <p className="text-slate-500 text-center py-4">Nenhum dado disponível</p>
+                )}
               </div>
             )}
           </CardContent>
@@ -673,7 +706,10 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             <Button
               variant="outline"
               className="h-auto py-4 flex-col gap-2 border-slate-700 hover:bg-slate-800 hover:border-violet-500/50"
-              onClick={() => onNavigate?.("establishments", { filter: "pending" })}
+              onClick={() => {
+                console.log("[AdminDashboard] Aprovar Pendentes clicked");
+                handleNavigate("approval-queue");
+              }}
             >
               <Clock className="w-5 h-5 text-amber-400" />
               <span className="text-xs">Aprovar Pendentes</span>
@@ -687,7 +723,10 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             <Button
               variant="outline"
               className="h-auto py-4 flex-col gap-2 border-slate-700 hover:bg-slate-800 hover:border-violet-500/50"
-              onClick={() => onNavigate?.("import")}
+              onClick={() => {
+                console.log("[AdminDashboard] Importar CSV clicked");
+                handleNavigate("import");
+              }}
             >
               <Building2 className="w-5 h-5 text-violet-400" />
               <span className="text-xs">Importar CSV</span>
@@ -696,7 +735,10 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             <Button
               variant="outline"
               className="h-auto py-4 flex-col gap-2 border-slate-700 hover:bg-slate-800 hover:border-violet-500/50"
-              onClick={() => onNavigate?.("email-analytics")}
+              onClick={() => {
+                console.log("[AdminDashboard] Ver Relatórios clicked");
+                handleNavigate("email-analytics");
+              }}
             >
               <TrendingUp className="w-5 h-5 text-cyan-400" />
               <span className="text-xs">Ver Relatórios</span>
@@ -705,7 +747,10 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             <Button
               variant="outline"
               className="h-auto py-4 flex-col gap-2 border-slate-700 hover:bg-slate-800 hover:border-violet-500/50"
-              onClick={() => window.open("https://dashboard.stripe.com", "_blank")}
+              onClick={() => {
+                console.log("[AdminDashboard] Abrir Stripe clicked");
+                window.open("https://dashboard.stripe.com", "_blank");
+              }}
             >
               <CreditCard className="w-5 h-5 text-emerald-400" />
               <span className="text-xs">Abrir Stripe</span>

@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { useState, useEffect } from "react";
-import { Gift, Calendar, Check, Save, Loader2, Info, Sparkles } from "lucide-react";
+import { Gift, Calendar, Check, Save, Loader2, Info, Sparkles, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 // =============================================================================
 // TYPES
@@ -54,6 +55,7 @@ const PERIODOS_VALIDADE = [
 
 export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: EstablishmentBenefitProps) {
   const [saving, setSaving] = useState(false);
+  const [correctingField, setCorrectingField] = useState<string | null>(null);
   const [form, setForm] = useState({
     tipo_beneficio: "",
     descricao_beneficio: "",
@@ -72,6 +74,36 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
       });
     }
   }, [estabelecimento]);
+
+  // Correct text using AI
+  const handleCorrectText = async (field: "descricao_beneficio" | "regras_utilizacao") => {
+    const text = form[field];
+    if (!text.trim()) {
+      toast.error("Digite algo antes de corrigir");
+      return;
+    }
+
+    setCorrectingField(field);
+    try {
+      const { data, error } = await supabase.functions.invoke("standardize-text", {
+        body: { text },
+      });
+
+      if (error) throw error;
+
+      if (data?.correctedText) {
+        setForm(prev => ({ ...prev, [field]: data.correctedText }));
+        toast.success("Texto corrigido!");
+      } else {
+        toast.info("Texto já está correto");
+      }
+    } catch (error) {
+      console.error("Error correcting text:", error);
+      toast.error("Erro ao corrigir texto");
+    } finally {
+      setCorrectingField(null);
+    }
+  };
 
   // Handle save
   const handleSave = async () => {
@@ -174,8 +206,27 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
       {/* Descrição do Benefício */}
       <Card className="bg-card/50 border-border">
         <CardHeader>
-          <CardTitle className="text-foreground">Descrição do Benefício</CardTitle>
-          <CardDescription>Descreva claramente o que o aniversariante ganha</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-foreground">Descrição do Benefício</CardTitle>
+              <CardDescription>Descreva claramente o que o aniversariante ganha</CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => handleCorrectText("descricao_beneficio")}
+              disabled={correctingField === "descricao_beneficio"}
+              className="h-8 text-xs text-primary hover:text-primary"
+            >
+              {correctingField === "descricao_beneficio" ? (
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              ) : (
+                <Wand2 className="w-3 h-3 mr-1" />
+              )}
+              Corrigir
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <Textarea
@@ -184,6 +235,8 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
             rows={3}
             spellCheck={true}
             lang="pt-BR"
+            autoCorrect="on"
+            autoCapitalize="sentences"
             className="bg-muted border-border text-foreground resize-none"
             placeholder="Ex: Sobremesa grátis para o aniversariante + 10% de desconto para a mesa"
           />
@@ -239,12 +292,31 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
       {/* Regras de Utilização */}
       <Card className="bg-card/50 border-border">
         <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
-            <Info className="w-5 h-5 text-amber-500" />
-            Regras de Utilização
-            <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-          </CardTitle>
-          <CardDescription>Condições para usar o benefício</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <Info className="w-5 h-5 text-amber-500" />
+                Regras de Utilização
+                <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
+              </CardTitle>
+              <CardDescription>Condições para usar o benefício</CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => handleCorrectText("regras_utilizacao")}
+              disabled={correctingField === "regras_utilizacao"}
+              className="h-8 text-xs text-primary hover:text-primary"
+            >
+              {correctingField === "regras_utilizacao" ? (
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              ) : (
+                <Wand2 className="w-3 h-3 mr-1" />
+              )}
+              Corrigir
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <Textarea
@@ -253,6 +325,8 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
             rows={4}
             spellCheck={true}
             lang="pt-BR"
+            autoCorrect="on"
+            autoCapitalize="sentences"
             className="bg-muted border-border text-foreground resize-none"
             placeholder="Ex: Válido de segunda a sexta. Apresentar documento com foto. Consumação mínima de R$50 por pessoa. Não acumulativo com outras promoções."
           />

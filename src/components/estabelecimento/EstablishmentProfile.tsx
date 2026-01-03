@@ -17,6 +17,7 @@ import {
   Upload,
   Loader2,
   Check,
+  Wand2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { getCategoriasOptions } from "@/constants/categories";
+import { getCategoriasOptions, mapLegacyCategoriaToId } from "@/constants/categories";
 
 // =============================================================================
 // TYPES
@@ -73,33 +74,9 @@ interface EstablishmentProfileProps {
 const CATEGORIAS = getCategoriasOptions();
 
 const ESTADOS = [
-  "AC",
-  "AL",
-  "AP",
-  "AM",
-  "BA",
-  "CE",
-  "DF",
-  "ES",
-  "GO",
-  "MA",
-  "MT",
-  "MS",
-  "MG",
-  "PA",
-  "PB",
-  "PR",
-  "PE",
-  "PI",
-  "RJ",
-  "RN",
-  "RS",
-  "RO",
-  "RR",
-  "SC",
-  "SP",
-  "SE",
-  "TO",
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
+  "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
+  "RS", "RO", "RR", "SC", "SP", "SE", "TO",
 ];
 
 // =============================================================================
@@ -111,6 +88,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [correctingField, setCorrectingField] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     nome_fantasia: "",
@@ -133,6 +111,11 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
   // Sync form with estabelecimento data
   useEffect(() => {
     if (estabelecimento) {
+      // Map legacy category to valid ID
+      const rawCategoria = estabelecimento.categoria?.[0] || "";
+      const mappedCategoria = mapLegacyCategoriaToId(rawCategoria);
+      const validCategoria = CATEGORIAS.find(c => c.value === mappedCategoria) ? mappedCategoria : "";
+
       setForm({
         nome_fantasia: estabelecimento.nome_fantasia || "",
         telefone: estabelecimento.telefone || "",
@@ -140,7 +123,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
         instagram: estabelecimento.instagram?.replace("@", "") || "",
         site: estabelecimento.site || "",
         bio: estabelecimento.bio || "",
-        categoria: estabelecimento.categoria?.[0] || "",
+        categoria: validCategoria,
         cep: estabelecimento.cep || "",
         estado: estabelecimento.estado || "",
         cidade: estabelecimento.cidade || "",
@@ -152,6 +135,36 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
       });
     }
   }, [estabelecimento]);
+
+  // Correct text using AI
+  const handleCorrectText = async (field: "bio" | "horario_funcionamento") => {
+    const text = form[field];
+    if (!text.trim()) {
+      toast.error("Digite algo antes de corrigir");
+      return;
+    }
+
+    setCorrectingField(field);
+    try {
+      const { data, error } = await supabase.functions.invoke("standardize-text", {
+        body: { text },
+      });
+
+      if (error) throw error;
+
+      if (data?.correctedText) {
+        setForm(prev => ({ ...prev, [field]: data.correctedText }));
+        toast.success("Texto corrigido!");
+      } else {
+        toast.info("Texto já está correto");
+      }
+    } catch (error) {
+      console.error("Error correcting text:", error);
+      toast.error("Erro ao corrigir texto");
+    } finally {
+      setCorrectingField(null);
+    }
+  };
 
   // Handle logo change
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,6 +246,10 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
     setLogoPreview(null);
     // Reset form to original values
     if (estabelecimento) {
+      const rawCategoria = estabelecimento.categoria?.[0] || "";
+      const mappedCategoria = mapLegacyCategoriaToId(rawCategoria);
+      const validCategoria = CATEGORIAS.find(c => c.value === mappedCategoria) ? mappedCategoria : "";
+
       setForm({
         nome_fantasia: estabelecimento.nome_fantasia || "",
         telefone: estabelecimento.telefone || "",
@@ -240,7 +257,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
         instagram: estabelecimento.instagram?.replace("@", "") || "",
         site: estabelecimento.site || "",
         bio: estabelecimento.bio || "",
-        categoria: estabelecimento.categoria?.[0] || "",
+        categoria: validCategoria,
         cep: estabelecimento.cep || "",
         estado: estabelecimento.estado || "",
         cidade: estabelecimento.cidade || "",
@@ -250,6 +267,13 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
         complemento: estabelecimento.complemento || "",
         horario_funcionamento: estabelecimento.horario_funcionamento || "",
       });
+    }
+  };
+
+  // Handle click on hours field to enable editing
+  const handleHoursClick = () => {
+    if (!isEditing) {
+      setIsEditing(true);
     }
   };
 
@@ -269,6 +293,9 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
       </div>
     );
   }
+
+  // Get selected category for display
+  const selectedCategory = CATEGORIAS.find(c => c.value === form.categoria);
 
   return (
     <div className="space-y-6">
@@ -358,14 +385,9 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
               disabled={!isEditing}
             >
               <SelectTrigger className="bg-muted border-border text-foreground">
-                <SelectValue placeholder="Selecione uma categoria">
-                  {form.categoria && (() => {
-                    const cat = CATEGORIAS.find(c => c.value === form.categoria);
-                    return cat ? `${cat.icon} ${cat.label}` : null;
-                  })()}
-                </SelectValue>
+                <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
-              <SelectContent className="bg-card border-border z-50">
+              <SelectContent className="bg-popover border-border z-50">
                 {CATEGORIAS.map((cat) => (
                   <SelectItem key={cat.value} value={cat.value}>
                     {cat.icon} {cat.label}
@@ -373,13 +395,38 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
                 ))}
               </SelectContent>
             </Select>
+            {/* Show selected category below for clarity */}
+            {selectedCategory && !isEditing && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {selectedCategory.icon} {selectedCategory.label}
+              </p>
+            )}
           </div>
 
           {/* Bio */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-foreground">Sobre o estabelecimento</Label>
-              <span className="text-xs text-muted-foreground">{form.bio.length}/500</span>
+              <div className="flex items-center gap-2">
+                {isEditing && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCorrectText("bio")}
+                    disabled={correctingField === "bio"}
+                    className="h-7 text-xs text-primary hover:text-primary"
+                  >
+                    {correctingField === "bio" ? (
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    ) : (
+                      <Wand2 className="w-3 h-3 mr-1" />
+                    )}
+                    Corrigir
+                  </Button>
+                )}
+                <span className="text-xs text-muted-foreground">{form.bio.length}/500</span>
+              </div>
             </div>
             <Textarea
               value={form.bio}
@@ -388,6 +435,8 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
               rows={4}
               spellCheck={true}
               lang="pt-BR"
+              autoCorrect="on"
+              autoCapitalize="sentences"
               className="bg-muted border-border text-foreground disabled:opacity-70 resize-none"
               placeholder="Descreva seu estabelecimento de forma atraente..."
             />
@@ -395,20 +444,48 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
 
           {/* Horário */}
           <div className="space-y-2">
-            <Label className="text-foreground flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Horário de Funcionamento
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-foreground flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Horário de Funcionamento
+              </Label>
+              {isEditing && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleCorrectText("horario_funcionamento")}
+                  disabled={correctingField === "horario_funcionamento"}
+                  className="h-7 text-xs text-primary hover:text-primary"
+                >
+                  {correctingField === "horario_funcionamento" ? (
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-3 h-3 mr-1" />
+                  )}
+                  Corrigir
+                </Button>
+              )}
+            </div>
             <Textarea
               value={form.horario_funcionamento}
               onChange={(e) => setForm({ ...form, horario_funcionamento: e.target.value })}
-              disabled={!isEditing}
+              onClick={handleHoursClick}
+              readOnly={!isEditing}
               rows={2}
               spellCheck={true}
               lang="pt-BR"
-              className="bg-muted border-border text-foreground disabled:opacity-70 resize-none"
+              autoCorrect="on"
+              autoCapitalize="sentences"
+              className={cn(
+                "bg-muted border-border text-foreground resize-none",
+                !isEditing && "cursor-pointer hover:bg-muted/80"
+              )}
               placeholder="Ex: Seg a Sex: 10h às 22h | Sáb e Dom: 12h às 00h"
             />
+            {!isEditing && (
+              <p className="text-xs text-muted-foreground">Clique para editar</p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -510,7 +587,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
                 <SelectTrigger className="bg-muted border-border text-foreground">
                   <SelectValue placeholder="UF" />
                 </SelectTrigger>
-                <SelectContent className="bg-card border-border z-50">
+                <SelectContent className="bg-popover border-border z-50">
                   {ESTADOS.map((uf) => (
                     <SelectItem key={uf} value={uf}>
                       {uf}

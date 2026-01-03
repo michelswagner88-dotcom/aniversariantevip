@@ -4,13 +4,13 @@
 // =============================================================================
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Check, Loader2, Save, AlertCircle } from "lucide-react";
+import { Check, Loader2, Save, AlertCircle, Sparkles, ArrowRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { normalizePtBrText } from "@/lib/normalizePtBrText";
+import { normalizeWithDetails, NormalizationCorrection } from "@/lib/normalizePtBrText";
 
 // =============================================================================
 // TYPES
@@ -74,9 +74,14 @@ export function InlineSaveTextarea({
   const [originalValue, setOriginalValue] = useState(initialValue || "");
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  
+  // Estados para mostrar correções
+  const [corrections, setCorrections] = useState<NormalizationCorrection[]>([]);
+  const [showCorrections, setShowCorrections] = useState(false);
 
   // Ref para timeout do status "saved"
   const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const correctionsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync com valor externo
   useEffect(() => {
@@ -85,11 +90,14 @@ export function InlineSaveTextarea({
     setStatus("idle");
   }, [initialValue]);
 
-  // Limpar timeout ao desmontar
+  // Limpar timeouts ao desmontar
   useEffect(() => {
     return () => {
       if (savedTimeoutRef.current) {
         clearTimeout(savedTimeoutRef.current);
+      }
+      if (correctionsTimeoutRef.current) {
+        clearTimeout(correctionsTimeoutRef.current);
       }
     };
   }, []);
@@ -101,6 +109,8 @@ export function InlineSaveTextarea({
   useEffect(() => {
     if (isDirty && status !== "saving") {
       setStatus("dirty");
+      // Esconder correções quando usuário começa a editar
+      setShowCorrections(false);
     }
   }, [isDirty, status]);
 
@@ -128,11 +138,26 @@ export function InlineSaveTextarea({
 
     try {
       // Aplicar normalização se habilitada
-      const finalValue = normalize ? normalizePtBrText(value) : value;
-
-      // Se normalização alterou o valor, atualizar o campo
-      if (normalize && finalValue !== value) {
-        setValue(finalValue);
+      let finalValue = value;
+      
+      if (normalize) {
+        const result = normalizeWithDetails(value);
+        finalValue = result.text;
+        
+        // Se teve correções, mostrar indicador visual
+        if (result.wasNormalized && result.corrections.length > 0) {
+          setCorrections(result.corrections);
+          setShowCorrections(true);
+          setValue(finalValue);
+          
+          // Auto-hide após 8 segundos
+          correctionsTimeoutRef.current = setTimeout(() => {
+            setShowCorrections(false);
+          }, 8000);
+        } else if (result.wasNormalized) {
+          // Houve mudança mas sem correções de dicionário (ex: capitalização)
+          setValue(finalValue);
+        }
       }
 
       // Chamar função de salvar
@@ -234,6 +259,46 @@ export function InlineSaveTextarea({
           status === "saved" && "border-emerald-500/50",
         )}
       />
+
+      {/* Indicador visual de correções */}
+      {showCorrections && corrections.length > 0 && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm animate-in fade-in slide-in-from-top-2 duration-200"
+        >
+          <Sparkles className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <p className="font-medium text-amber-700 dark:text-amber-400">
+              Texto corrigido automaticamente
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {corrections.map((correction, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center gap-1 text-xs"
+                >
+                  <span className="line-through text-muted-foreground">
+                    {correction.original}
+                  </span>
+                  <ArrowRight className="w-3 h-3 text-amber-500" />
+                  <span className="font-medium text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded">
+                    {correction.corrected}
+                  </span>
+                </span>
+              ))}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowCorrections(false)}
+            className="text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
+            aria-label="Fechar aviso de correções"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Footer: Helper text + Contador + Botão */}
       <div className="flex items-center justify-between gap-4">

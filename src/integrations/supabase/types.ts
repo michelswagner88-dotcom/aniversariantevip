@@ -1727,6 +1727,7 @@ export type Database = {
           remaining: number
         }[]
       }
+      cleanup_expired_rate_limits: { Args: never; Returns: undefined }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
       emit_coupon: {
         Args: { p_aniversariante_id: string; p_estabelecimento_id: string }
@@ -1804,6 +1805,22 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { check_user_id?: string }; Returns: boolean }
+      is_aniversariante: { Args: { check_user_id?: string }; Returns: boolean }
+      is_colaborador: { Args: { check_user_id?: string }; Returns: boolean }
+      is_estabelecimento: { Args: { check_user_id?: string }; Returns: boolean }
+      is_establishment_owner: {
+        Args: { establishment_id: string }
+        Returns: boolean
+      }
+      log_security_event: {
+        Args: {
+          p_event_type: string
+          p_metadata?: Json
+          p_severity?: string
+          p_user_id?: string
+        }
+        Returns: undefined
+      }
       refresh_materialized_views: { Args: never; Returns: undefined }
       update_admin_last_access: {
         Args: { admin_user_id: string }

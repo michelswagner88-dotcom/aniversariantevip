@@ -358,7 +358,12 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
               disabled={!isEditing}
             >
               <SelectTrigger className="bg-muted border-border text-foreground">
-                <SelectValue placeholder="Selecione uma categoria" />
+                <SelectValue placeholder="Selecione uma categoria">
+                  {form.categoria && (() => {
+                    const cat = CATEGORIAS.find(c => c.value === form.categoria);
+                    return cat ? `${cat.icon} ${cat.label}` : null;
+                  })()}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-card border-border z-50">
                 {CATEGORIAS.map((cat) => (
@@ -381,6 +386,8 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
               onChange={(e) => setForm({ ...form, bio: e.target.value.slice(0, 500) })}
               disabled={!isEditing}
               rows={4}
+              spellCheck={true}
+              lang="pt-BR"
               className="bg-muted border-border text-foreground disabled:opacity-70 resize-none"
               placeholder="Descreva seu estabelecimento de forma atraente..."
             />
@@ -397,6 +404,8 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
               onChange={(e) => setForm({ ...form, horario_funcionamento: e.target.value })}
               disabled={!isEditing}
               rows={2}
+              spellCheck={true}
+              lang="pt-BR"
               className="bg-muted border-border text-foreground disabled:opacity-70 resize-none"
               placeholder="Ex: Seg a Sex: 10h às 22h | Sáb e Dom: 12h às 00h"
             />

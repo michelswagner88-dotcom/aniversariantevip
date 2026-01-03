@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Bell, Shield, Trash2, LogOut, Loader2 } from "lucide-react";
+import { Shield, Trash2, LogOut, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
@@ -24,29 +23,6 @@ interface EstablishmentSettingsProps {
 }
 
 export function EstablishmentSettings({ estabelecimento, onUpdate, onLogout }: EstablishmentSettingsProps) {
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [weeklyReport, setWeeklyReport] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  const handleNotificationChange = async (type: 'email' | 'weekly', value: boolean) => {
-    setSaving(true);
-    
-    try {
-      if (type === 'email') {
-        setEmailNotifications(value);
-      } else {
-        setWeeklyReport(value);
-      }
-      
-      // Note: This would save to a settings table in a real implementation
-      toast.success("Preferências atualizadas com sucesso!");
-    } catch (error) {
-      toast.error("Erro ao atualizar preferências");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleLogout = () => {
     toast.success("Saindo da conta...");
     onLogout();
@@ -64,41 +40,6 @@ export function EstablishmentSettings({ estabelecimento, onUpdate, onLogout }: E
           <p className="text-muted-foreground">Gerencie suas preferências</p>
         </div>
       </div>
-
-      {/* Notificações */}
-      <Card className="border-border bg-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <Bell className="w-5 h-5" />
-            Notificações
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-foreground">Notificações por e-mail</p>
-              <p className="text-sm text-muted-foreground">Receba atualizações sobre seu estabelecimento</p>
-            </div>
-            <Switch 
-              checked={emailNotifications}
-              onCheckedChange={(checked) => handleNotificationChange('email', checked)}
-              disabled={saving}
-            />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-foreground">Relatório semanal</p>
-              <p className="text-sm text-muted-foreground">Resumo de performance toda segunda-feira</p>
-            </div>
-            <Switch 
-              checked={weeklyReport}
-              onCheckedChange={(checked) => handleNotificationChange('weekly', checked)}
-              disabled={saving}
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Conta */}
       <Card className="border-border bg-card">

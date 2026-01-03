@@ -182,6 +182,8 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
             value={form.descricao_beneficio}
             onChange={(e) => setForm({ ...form, descricao_beneficio: e.target.value })}
             rows={3}
+            spellCheck={true}
+            lang="pt-BR"
             className="bg-muted border-border text-foreground resize-none"
             placeholder="Ex: Sobremesa grátis para o aniversariante + 10% de desconto para a mesa"
           />
@@ -249,6 +251,8 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
             value={form.regras_utilizacao}
             onChange={(e) => setForm({ ...form, regras_utilizacao: e.target.value })}
             rows={4}
+            spellCheck={true}
+            lang="pt-BR"
             className="bg-muted border-border text-foreground resize-none"
             placeholder="Ex: Válido de segunda a sexta. Apresentar documento com foto. Consumação mínima de R$50 por pessoa. Não acumulativo com outras promoções."
           />

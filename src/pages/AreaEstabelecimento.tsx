@@ -1,10 +1,11 @@
 // =============================================================================
-// ÁREA DO ESTABELECIMENTO - PREMIUM v2.0
+// ÁREA DO ESTABELECIMENTO - PREMIUM v2.1
 // Dashboard moderno estilo Stripe/Vercel
 // Sem sistema de cupons - foco em presença e engajamento
+// ATUALIZADO: Listener de auth para não perder sessão ao atualizar
 // =============================================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -96,63 +97,114 @@ export default function AreaEstabelecimento() {
 
   // UI state
   const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Use the analytics hook for real data
   const { data: hookAnalytics, isLoading: analyticsLoading } = useEstabelecimentoAnalytics(userId || undefined);
-  
+
   // Use mutations hook for cache invalidation
   const mutations = useEstabelecimentoMutations();
 
   // Transform hook data to component format
-  const analytics: AnalyticsData | null = hookAnalytics ? {
-    visualizacoes: hookAnalytics.visualizacoesPerfil,
-    visualizacoes7d: hookAnalytics.views7d,
-    cliquesWhatsapp: hookAnalytics.cliquesWhatsApp,
-    cliquesWhatsapp7d: 0, // Not tracked separately in hook
-    cliquesTelefone: hookAnalytics.cliquesTelefone,
-    cliquesInstagram: hookAnalytics.cliquesInstagram,
-    cliquesSite: hookAnalytics.cliquesSite,
-    favoritos: hookAnalytics.favoritosAdicionados,
-    posicaoRanking: 0,
-    chartData: hookAnalytics.engajamentoPorDia,
-  } : null;
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const analytics: AnalyticsData | null = hookAnalytics
+    ? {
+        visualizacoes: hookAnalytics.visualizacoesPerfil,
+        visualizacoes7d: hookAnalytics.views7d,
+        cliquesWhatsapp: hookAnalytics.cliquesWhatsApp,
+        cliquesWhatsapp7d: 0, // Not tracked separately in hook
+        cliquesTelefone: hookAnalytics.cliquesTelefone,
+        cliquesInstagram: hookAnalytics.cliquesInstagram,
+        cliquesSite: hookAnalytics.cliquesSite,
+        favoritos: hookAnalytics.favoritosAdicionados,
+        posicaoRanking: 0,
+        chartData: hookAnalytics.engajamentoPorDia,
+      }
+    : null;
 
   // =========================================================================
-  // AUTH CHECK
+  // AUTH CHECK - Com listener para mudanças de sessão
   // =========================================================================
+
+  const checkAuth = useCallback(async () => {
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        navigate("/login/estabelecimento", { replace: true });
+        return;
+      }
+
+      if (!session) {
+        console.log("No session found, redirecting to login");
+        navigate("/login/estabelecimento", { replace: true });
+        return;
+      }
+
+      // Verificar role
+      const { data: roles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id);
+
+      if (rolesError) {
+        console.error("Roles error:", rolesError);
+        navigate("/login/estabelecimento", { replace: true });
+        return;
+      }
+
+      const isEstabelecimento = roles?.some((r) => r.role === "estabelecimento");
+
+      if (!isEstabelecimento) {
+        console.log("User is not estabelecimento, redirecting");
+        toast.error("Acesso não autorizado para este painel");
+        await supabase.auth.signOut();
+        navigate("/login/estabelecimento", { replace: true });
+        return;
+      }
+
+      // Tudo OK - autorizado
+      setAuthState("authorized");
+      setUserId(session.user.id);
+    } catch (error) {
+      console.error("Auth check error:", error);
+      navigate("/login/estabelecimento", { replace: true });
+    }
+  }, [navigate]);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+    // Verificar auth ao montar
+    checkAuth();
 
+    // Listener para mudanças de autenticação (login, logout, refresh token)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event, session?.user?.id);
+
+      if (event === "SIGNED_OUT") {
+        setAuthState("unauthorized");
+        setUserId(null);
+        navigate("/login/estabelecimento", { replace: true });
+      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        // Re-verificar permissões quando sessão muda
+        checkAuth();
+      } else if (event === "INITIAL_SESSION") {
+        // Sessão inicial carregada - já tratado pelo checkAuth acima
         if (!session) {
           navigate("/login/estabelecimento", { replace: true });
-          return;
         }
-
-        const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", session.user.id);
-
-        const isEstabelecimento = roles?.some((r) => r.role === "estabelecimento");
-
-        if (!isEstabelecimento) {
-          navigate("/", { replace: true });
-          return;
-        }
-
-        setAuthState("authorized");
-        setUserId(session.user.id);
-      } catch (error) {
-        console.error("Auth error:", error);
-        navigate("/login/estabelecimento", { replace: true });
       }
-    };
+    });
 
-    checkAuth();
-  }, [navigate]);
+    // Cleanup
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate, checkAuth]);
 
   // =========================================================================
   // LOAD DATA
@@ -171,7 +223,10 @@ export default function AreaEstabelecimento() {
           .eq("id", userId)
           .single();
 
-        if (estabError) throw estabError;
+        if (estabError) {
+          console.error("Error loading estabelecimento:", estabError);
+          throw estabError;
+        }
 
         // Get email from auth
         const {
@@ -182,11 +237,9 @@ export default function AreaEstabelecimento() {
           ...estab,
           email: session?.user.email || null,
         });
-
-        // Analytics is now loaded via useEstabelecimentoAnalytics hook
       } catch (error) {
         console.error("Error loading data:", error);
-        toast.error("Erro ao carregar dados");
+        toast.error("Erro ao carregar dados do estabelecimento");
       } finally {
         setLoading(false);
       }
@@ -235,12 +288,23 @@ export default function AreaEstabelecimento() {
   // LOADING STATE
   // =========================================================================
 
-  if (authState !== "authorized") {
+  if (authState === "checking") {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-slate-400 text-sm">Verificando acesso...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (authState === "unauthorized") {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-400 text-sm">Redirecionando...</p>
         </div>
       </div>
     );
@@ -303,7 +367,11 @@ export default function AreaEstabelecimento() {
           )}
 
           {activeTab === "analytics" && (
-          <EstablishmentAnalytics estabelecimentoId={userId || ""} analytics={analytics} loading={loading || analyticsLoading} />
+            <EstablishmentAnalytics
+              estabelecimentoId={userId || ""}
+              analytics={analytics}
+              loading={loading || analyticsLoading}
+            />
           )}
 
           {activeTab === "preview" && <EstablishmentPreview estabelecimento={estabelecimento} />}

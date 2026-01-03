@@ -1,5 +1,6 @@
 // =============================================================================
 // ESTABLISHMENT SIDEBAR - Menu lateral premium
+// ATUALIZADO: Botão "Navegar pelo site" para o estabelecimento ver o site
 // =============================================================================
 
 import { useState, useEffect } from "react";
@@ -21,6 +22,7 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -130,10 +132,7 @@ export function EstablishmentSidebar({
     <div className="flex flex-col h-full">
       {/* Header */}
       <div
-        className={cn(
-          "flex items-center gap-3 px-4 py-5 border-b border-border",
-          collapsed && "justify-center px-2",
-        )}
+        className={cn("flex items-center gap-3 px-4 py-5 border-b border-border", collapsed && "justify-center px-2")}
       >
         {/* Logo */}
         <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -166,7 +165,9 @@ export function EstablishmentSidebar({
           </div>
           <Progress value={completion} className="h-1.5 bg-muted" />
           {completion < 100 && (
-            <p className="text-[10px] text-muted-foreground mt-2">Complete seu perfil para aparecer melhor nos resultados</p>
+            <p className="text-[10px] text-muted-foreground mt-2">
+              Complete seu perfil para aparecer melhor nos resultados
+            </p>
           )}
         </div>
       )}
@@ -220,7 +221,20 @@ export function EstablishmentSidebar({
 
       {/* Footer */}
       <div className="border-t border-border p-3 space-y-2">
-        {/* View Public Page */}
+        {/* Navegar pelo site - NOVO */}
+        {!collapsed && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-accent"
+            onClick={() => window.open("/", "_blank")}
+          >
+            <Globe className="w-4 h-4 mr-2" />
+            Navegar pelo site
+          </Button>
+        )}
+
+        {/* Ver página pública do estabelecimento */}
         {!collapsed && estabelecimento?.slug && (
           <Button
             variant="ghost"
@@ -229,8 +243,49 @@ export function EstablishmentSidebar({
             onClick={() => window.open(`/${estabelecimento.slug}`, "_blank")}
           >
             <ExternalLink className="w-4 h-4 mr-2" />
-            Ver página pública
+            Ver minha página
           </Button>
+        )}
+
+        {/* Quando collapsed - mostrar apenas ícones com tooltip */}
+        {collapsed && (
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-center text-muted-foreground hover:text-foreground hover:bg-accent"
+                  onClick={() => window.open("/", "_blank")}
+                >
+                  <Globe className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-card border-border">
+                <p>Navegar pelo site</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
+        {collapsed && estabelecimento?.slug && (
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-center text-muted-foreground hover:text-foreground hover:bg-accent"
+                  onClick={() => window.open(`/${estabelecimento.slug}`, "_blank")}
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-card border-border">
+                <p>Ver minha página</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
 
         {/* Logout */}

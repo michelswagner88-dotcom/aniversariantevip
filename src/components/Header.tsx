@@ -5,7 +5,7 @@
 
 import { memo, useState, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, User, Gift, Building2, LogOut, HelpCircle, X } from "lucide-react";
+import { Menu, User, Gift, Building2, LogOut, HelpCircle, X, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -29,6 +29,32 @@ interface AuthUser {
 
 const useAuth = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+
+      // Prioridade: estabelecimento > admin > colaborador > aniversariante
+      if (roles?.some((r) => r.role === "estabelecimento")) {
+        setUserRole("estabelecimento");
+      } else if (roles?.some((r) => r.role === "admin")) {
+        setUserRole("admin");
+      } else if (roles?.some((r) => r.role === "colaborador")) {
+        setUserRole("colaborador");
+      } else if (roles?.some((r) => r.role === "aniversariante")) {
+        setUserRole("aniversariante");
+      } else {
+        setUserRole(null);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar role:", error);
+      setUserRole(null);
+    }
+  };
 
   useEffect(() => {
     const checkSession = async () => {
@@ -37,6 +63,12 @@ const useAuth = () => {
           data: { session },
         } = await supabase.auth.getSession();
         setUser(session?.user ?? null);
+
+        if (session?.user) {
+          await fetchUserRole(session.user.id);
+        } else {
+          setUserRole(null);
+        }
       } catch (error) {
         console.error("Erro ao verificar sessão:", error);
       }
@@ -48,6 +80,15 @@ const useAuth = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+
+      if (session?.user) {
+        // Usar setTimeout para evitar deadlock
+        setTimeout(() => {
+          fetchUserRole(session.user.id);
+        }, 0);
+      } else {
+        setUserRole(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -56,13 +97,14 @@ const useAuth = () => {
   const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
+      setUserRole(null);
       toast.success("Logout realizado com sucesso");
     } catch (error) {
       toast.error("Erro ao fazer logout");
     }
   }, []);
 
-  return { user, signOut };
+  return { user, userRole, signOut };
 };
 
 // =============================================================================
@@ -107,10 +149,11 @@ interface MobileMenuProps {
   isOpen: boolean;
   onClose: () => void;
   user: AuthUser | null;
+  userRole: string | null;
   onSignOut: () => void;
 }
 
-const MobileMenu = memo(({ isOpen, onClose, user, onSignOut }: MobileMenuProps) => {
+const MobileMenu = memo(({ isOpen, onClose, user, userRole, onSignOut }: MobileMenuProps) => {
   const navigate = useNavigate();
 
   const handleNavigate = (path: string) => {
@@ -119,6 +162,23 @@ const MobileMenu = memo(({ isOpen, onClose, user, onSignOut }: MobileMenuProps) 
   };
 
   if (!isOpen) return null;
+
+  // Definir cores e labels baseado na role
+  const getRoleConfig = () => {
+    switch (userRole) {
+      case "estabelecimento":
+        return { bg: "bg-blue-50", badge: "bg-blue-100 text-blue-700", label: "Estabelecimento" };
+      case "admin":
+        return { bg: "bg-amber-50", badge: "bg-amber-100 text-amber-700", label: "Administrador" };
+      case "colaborador":
+        return { bg: "bg-emerald-50", badge: "bg-emerald-100 text-emerald-700", label: "Colaborador" };
+      case "aniversariante":
+      default:
+        return { bg: "bg-violet-50", badge: "bg-violet-100 text-violet-700", label: "Aniversariante" };
+    }
+  };
+
+  const roleConfig = getRoleConfig();
 
   return (
     <>
@@ -143,19 +203,84 @@ const MobileMenu = memo(({ isOpen, onClose, user, onSignOut }: MobileMenuProps) 
         <div className="p-3">
           {user ? (
             <>
-              <div className="px-3 py-3 mb-2 bg-violet-50 rounded-xl">
+              {/* User Info Card */}
+              <div className={cn("px-3 py-3 mb-2 rounded-xl", roleConfig.bg)}>
                 <p className="text-sm font-semibold text-gray-900 truncate">
                   {user.user_metadata?.full_name || "Usuário"}
                 </p>
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                {userRole && (
+                  <span
+                    className={cn(
+                      "text-[10px] font-medium uppercase tracking-wide mt-1 inline-block px-2 py-0.5 rounded-full",
+                      roleConfig.badge
+                    )}
+                  >
+                    {roleConfig.label}
+                  </span>
+                )}
               </div>
 
-              <MenuItem
-                icon={<Gift className="w-5 h-5 text-violet-600" />}
-                label="Minha Área"
-                onClick={() => handleNavigate("/area-aniversariante")}
-              />
+              {/* Menu para ESTABELECIMENTO */}
+              {userRole === "estabelecimento" && (
+                <MenuItem
+                  icon={<Building2 className="w-5 h-5 text-blue-600" />}
+                  label="Voltar ao Painel"
+                  sublabel="Gerenciar meu estabelecimento"
+                  onClick={() => handleNavigate("/area-estabelecimento")}
+                />
+              )}
+
+              {/* Menu para ADMIN */}
+              {userRole === "admin" && (
+                <MenuItem
+                  icon={<Building2 className="w-5 h-5 text-amber-600" />}
+                  label="Painel Admin"
+                  sublabel="Gerenciar plataforma"
+                  onClick={() => handleNavigate("/admin")}
+                />
+              )}
+
+              {/* Menu para COLABORADOR */}
+              {userRole === "colaborador" && (
+                <MenuItem
+                  icon={<Building2 className="w-5 h-5 text-emerald-600" />}
+                  label="Área do Colaborador"
+                  sublabel="Gerenciar cadastros"
+                  onClick={() => handleNavigate("/area-colaborador")}
+                />
+              )}
+
+              {/* Menu para ANIVERSARIANTE */}
+              {userRole === "aniversariante" && (
+                <>
+                  <MenuItem
+                    icon={<Gift className="w-5 h-5 text-violet-600" />}
+                    label="Minha Área"
+                    sublabel="Meus dados e cupons"
+                    onClick={() => handleNavigate("/area-aniversariante")}
+                  />
+                  <MenuItem
+                    icon={<Heart className="w-5 h-5 text-pink-500" />}
+                    label="Meus Favoritos"
+                    onClick={() => handleNavigate("/favoritos")}
+                  />
+                </>
+              )}
+
+              {/* Fallback: usuário logado sem role definida */}
+              {!userRole && (
+                <MenuItem
+                  icon={<User className="w-5 h-5 text-gray-600" />}
+                  label="Meu Perfil"
+                  sublabel="Escolher tipo de conta"
+                  onClick={() => handleNavigate("/selecionar-perfil")}
+                />
+              )}
+
               <div className="my-2 mx-3 border-t border-gray-100" />
+
+              {/* Logout - sempre visível */}
               <MenuItem
                 icon={<LogOut className="w-5 h-5 text-red-500" />}
                 label="Sair"
@@ -236,7 +361,7 @@ interface HeaderProps {
 
 export const Header = memo(function Header({ children }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, userRole, signOut } = useAuth();
 
   return (
     <>
@@ -259,7 +384,7 @@ export const Header = memo(function Header({ children }: HeaderProps) {
         </div>
       </header>
 
-      <MobileMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} user={user} onSignOut={signOut} />
+      <MobileMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} user={user} userRole={userRole} onSignOut={signOut} />
     </>
   );
 });

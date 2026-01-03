@@ -7,3 +7,4 @@ export { default as BusinessHours } from './BusinessHours';
 export { default as LocationSection } from './LocationSection';
 export { default as PartnerCTA } from './PartnerCTA';
 export { default as EstablishmentSkeleton } from './EstablishmentSkeleton';
+export { HorarioFuncionamentoModal } from './HorarioFuncionamentoModal';

@@ -949,13 +949,13 @@ export default function EstablishmentRegistration() {
       logo_url: coverPhoto?.urls.card || null,
       fotos: photosData,
       link_cardapio: establishmentData.menuLink || null,
-      ativo: false,
+      ativo: true,
       cadastro_completo: true,
     } as any);
 
     if (estabError) throw estabError;
     await supabase.from("user_roles").insert({ user_id: signUpData.user.id, role: "estabelecimento" });
-    toast.success("Cadastrado! Aguarde aprovação.");
+    toast.success("Cadastrado com sucesso! Seu estabelecimento já está visível.");
     navigate("/area-estabelecimento");
   };
 

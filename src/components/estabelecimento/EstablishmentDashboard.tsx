@@ -3,7 +3,7 @@
 // Estilo Stripe/Vercel
 // =============================================================================
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Eye,
   MousePointerClick,
@@ -24,6 +24,7 @@ import {
   ExternalLink,
   ChevronRight,
   Zap,
+  EyeOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import type { Json } from "@/integrations/supabase/types";
 
 // =============================================================================
@@ -75,6 +77,7 @@ interface EstablishmentDashboardProps {
   analytics: AnalyticsData | null;
   loading: boolean;
   onNavigate: (tab: ActiveTab) => void;
+  onToggleAtivo?: (ativo: boolean) => Promise<void>;
 }
 
 // =============================================================================
@@ -201,8 +204,20 @@ export function EstablishmentDashboard({
   analytics,
   loading,
   onNavigate,
+  onToggleAtivo,
 }: EstablishmentDashboardProps) {
+  const [togglingAtivo, setTogglingAtivo] = useState(false);
   const completion = useMemo(() => calculateProfileCompletion(estabelecimento), [estabelecimento]);
+
+  const handleToggleAtivo = async (checked: boolean) => {
+    if (!onToggleAtivo) return;
+    setTogglingAtivo(true);
+    try {
+      await onToggleAtivo(checked);
+    } finally {
+      setTogglingAtivo(false);
+    }
+  };
 
   const tipoConfig = estabelecimento?.tipo_beneficio ? TIPO_BENEFICIO_CONFIG[estabelecimento.tipo_beneficio] : null;
 
@@ -219,22 +234,42 @@ export function EstablishmentDashboard({
         <p className="text-muted-foreground mt-1">Aqui está o resumo do seu estabelecimento</p>
       </div>
 
-      {/* Status Alert */}
-      {!estabelecimento?.ativo && (
-        <Card className="bg-amber-500/10 border-amber-500/20">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-2 rounded-lg bg-amber-500/20">
-              <Clock className="w-5 h-5 text-amber-500" />
+      {/* Status Card - Visibility Toggle */}
+      <Card className={cn(
+        "border",
+        estabelecimento?.ativo 
+          ? "bg-emerald-500/10 border-emerald-500/20" 
+          : "bg-amber-500/10 border-amber-500/20"
+      )}>
+        <CardContent className="p-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className={cn("p-2 rounded-lg", 
+              estabelecimento?.ativo ? "bg-emerald-500/20" : "bg-amber-500/20"
+            )}>
+              {estabelecimento?.ativo 
+                ? <CheckCircle className="w-5 h-5 text-emerald-500" />
+                : <EyeOff className="w-5 h-5 text-amber-500" />
+              }
             </div>
-            <div className="flex-1">
-              <p className="font-medium text-amber-600 dark:text-amber-300">Aguardando aprovação</p>
-              <p className="text-sm text-amber-600/70 dark:text-amber-300/70">
-                Seu estabelecimento está em análise e logo estará visível para os aniversariantes.
+            <div>
+              <p className="font-medium text-foreground">
+                {estabelecimento?.ativo ? "Visível na plataforma" : "Oculto da plataforma"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {estabelecimento?.ativo 
+                  ? "Aniversariantes podem encontrar seu estabelecimento" 
+                  : "Seu estabelecimento não aparece nas buscas"
+                }
               </p>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+          <Switch 
+            checked={estabelecimento?.ativo || false}
+            onCheckedChange={handleToggleAtivo}
+            disabled={togglingAtivo}
+          />
+        </CardContent>
+      </Card>
 
       {/* Profile Completion Alert */}
       {completion.percentage < 100 && (

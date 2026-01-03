@@ -22,6 +22,7 @@ import { EstablishmentSettings } from "@/components/estabelecimento/Establishmen
 
 // Hooks
 import { useEstabelecimentoAnalytics } from "@/hooks/useEstabelecimentoAnalytics";
+import { useEstabelecimentoMutations } from "@/hooks/useEstabelecimentoMutations";
 
 // =============================================================================
 // TYPES
@@ -98,6 +99,9 @@ export default function AreaEstabelecimento() {
 
   // Use the analytics hook for real data
   const { data: hookAnalytics, isLoading: analyticsLoading } = useEstabelecimentoAnalytics(userId || undefined);
+  
+  // Use mutations hook for cache invalidation
+  const mutations = useEstabelecimentoMutations();
 
   // Transform hook data to component format
   const analytics: AnalyticsData | null = hookAnalytics ? {
@@ -199,17 +203,22 @@ export default function AreaEstabelecimento() {
     if (!userId) return false;
 
     try {
-      const { error } = await supabase.from("estabelecimentos").update(updates).eq("id", userId);
-
-      if (error) throw error;
-
+      await mutations.updateAsync({ id: userId, data: updates });
       setEstabelecimento((prev) => (prev ? { ...prev, ...updates } : null));
-      toast.success("Dados atualizados!");
       return true;
     } catch (error) {
       console.error("Error updating:", error);
-      toast.error("Erro ao salvar");
       return false;
+    }
+  };
+
+  const handleToggleAtivo = async (ativo: boolean) => {
+    if (!userId) return;
+    try {
+      await mutations.updateAsync({ id: userId, data: { ativo } });
+      setEstabelecimento((prev) => (prev ? { ...prev, ativo } : null));
+    } catch (error) {
+      console.error("Error toggling ativo:", error);
     }
   };
 
@@ -265,6 +274,7 @@ export default function AreaEstabelecimento() {
               analytics={analytics}
               loading={loading}
               onNavigate={handleNavigate}
+              onToggleAtivo={handleToggleAtivo}
             />
           )}
 

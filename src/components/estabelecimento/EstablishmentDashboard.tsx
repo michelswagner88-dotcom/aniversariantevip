@@ -214,7 +214,7 @@ const KPICard = ({
   change,
   changeLabel,
   icon: Icon,
-  iconColor = "text-violet-400",
+  iconColor = "text-muted-foreground",
   loading = false,
   onClick,
   tooltip,
@@ -234,7 +234,7 @@ const KPICard = ({
 
   if (loading) {
     return (
-      <Card className="bg-card/50 border-border">
+      <Card className="bg-card border-border">
         <CardContent className="p-5">
           <Skeleton className="h-4 w-20 mb-3" />
           <Skeleton className="h-8 w-24 mb-2" />
@@ -247,14 +247,14 @@ const KPICard = ({
   const cardContent = (
     <Card
       className={cn(
-        "bg-card/50 border-border transition-all duration-200",
-        onClick && "cursor-pointer hover:bg-accent hover:border-primary/30",
+        "bg-card border-border transition-all duration-200",
+        onClick && "cursor-pointer hover:bg-accent/50 hover:border-border",
       )}
       onClick={onClick}
     >
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-3">
-          <div className={cn("p-2 rounded-lg", iconColor.replace("text-", "bg-").replace("400", "500/20"))}>
+          <div className={cn("p-2 rounded-lg bg-muted")}>
             <Icon className={cn("w-4 h-4", iconColor)} />
           </div>
           <div className="flex items-center gap-1">
@@ -324,7 +324,7 @@ const ChecklistItemRow = ({
       disabled={isCompleted}
       className={cn(
         "w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-150 text-left",
-        isCompleted ? "bg-emerald-500/10 cursor-default" : "bg-muted/50 hover:bg-accent cursor-pointer",
+        isCompleted ? "bg-emerald-500/10 cursor-default" : "bg-muted hover:bg-accent/50 cursor-pointer",
       )}
     >
       {/* Status Icon */}
@@ -342,8 +342,8 @@ const ChecklistItemRow = ({
       </div>
 
       {/* Icon */}
-      <div className={cn("p-2 rounded-lg flex-shrink-0", isCompleted ? "bg-emerald-500/20" : "bg-primary/10")}>
-        <Icon className={cn("w-4 h-4", isCompleted ? "text-emerald-500" : "text-primary")} />
+      <div className={cn("p-2 rounded-lg flex-shrink-0", isCompleted ? "bg-emerald-500/20" : "bg-muted")}>
+        <Icon className={cn("w-4 h-4", isCompleted ? "text-emerald-500" : "text-muted-foreground")} />
       </div>
 
       {/* Text */}
@@ -441,10 +441,10 @@ export function EstablishmentDashboard({
 
       {/* CTA Principal - Baseado no que falta */}
       {primaryCTA && (
-        <Card className="bg-gradient-to-r from-primary/10 to-violet-500/10 border-primary/20">
+        <Card className="bg-card border-border">
           <CardContent className="p-5">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-primary/20">
+              <div className="p-3 rounded-xl bg-muted">
                 <primaryCTA.icon className="w-6 h-6 text-primary" />
               </div>
               <div className="flex-1">
@@ -499,7 +499,7 @@ export function EstablishmentDashboard({
             (analytics?.cliquesSite || 0)
           }
           icon={MousePointerClick}
-          iconColor="text-violet-400"
+          iconColor="text-amber-400"
           loading={loading}
           onClick={() => onNavigate("analytics")}
           tooltip="Soma de todos os cliques: WhatsApp, telefone, Instagram e site."
@@ -507,12 +507,12 @@ export function EstablishmentDashboard({
       </div>
 
       {/* Checklist de Perfil */}
-      <Card className="bg-card/50 border-border">
+      <Card className="bg-card border-border">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/20">
-                <Sparkles className="w-5 h-5 text-primary" />
+              <div className="p-2 rounded-lg bg-muted">
+                <Sparkles className="w-5 h-5 text-amber-400" />
               </div>
               <div>
                 <CardTitle className="text-foreground text-lg">Checklist do Perfil</CardTitle>
@@ -566,12 +566,12 @@ export function EstablishmentDashboard({
       </Card>
 
       {/* Benefit Card */}
-      <Card className="bg-card/50 border-border">
+      <Card className="bg-card border-border">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/20">
-                <Gift className="w-5 h-5 text-primary" />
+              <div className="p-2 rounded-lg bg-muted">
+                <Gift className="w-5 h-5 text-pink-400" />
               </div>
               <div>
                 <CardTitle className="text-foreground text-lg">Seu Benefício</CardTitle>
@@ -629,10 +629,10 @@ export function EstablishmentDashboard({
       </Card>
 
       {/* Quick Actions */}
-      <Card className="bg-card/50 border-border">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground text-lg flex items-center gap-2">
-            <Zap className="w-5 h-5 text-amber-500" />
+            <Zap className="w-5 h-5 text-amber-400" />
             Ações Rápidas
           </CardTitle>
         </CardHeader>
@@ -640,38 +640,38 @@ export function EstablishmentDashboard({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Button
               variant="outline"
-              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent hover:border-primary/50"
+              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent/50"
               onClick={() => onNavigate("profile")}
             >
-              <CheckCircle className="w-5 h-5 text-emerald-500" />
+              <CheckCircle className="w-5 h-5 text-emerald-400" />
               <span className="text-xs">Editar Perfil</span>
             </Button>
 
             <Button
               variant="outline"
-              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent hover:border-primary/50"
+              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent/50"
               onClick={() => onNavigate("photos")}
             >
-              <Camera className="w-5 h-5 text-blue-500" />
+              <Camera className="w-5 h-5 text-blue-400" />
               <span className="text-xs">Adicionar Fotos</span>
             </Button>
 
             <Button
               variant="outline"
-              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent hover:border-primary/50"
+              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent/50"
               onClick={() => onNavigate("analytics")}
             >
-              <Eye className="w-5 h-5 text-primary" />
+              <Eye className="w-5 h-5 text-cyan-400" />
               <span className="text-xs">Ver Analytics</span>
             </Button>
 
             <Button
               variant="outline"
-              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent hover:border-primary/50"
+              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent/50"
               onClick={() => window.open(`/${estabelecimento?.slug}`, "_blank")}
               disabled={!estabelecimento?.slug}
             >
-              <ExternalLink className="w-5 h-5 text-cyan-500" />
+              <ExternalLink className="w-5 h-5 text-amber-400" />
               <span className="text-xs">Ver Página</span>
             </Button>
           </div>
@@ -679,7 +679,7 @@ export function EstablishmentDashboard({
       </Card>
 
       {/* Contacts Summary */}
-      <Card className="bg-card/50 border-border">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground text-lg">Canais de Contato</CardTitle>
           <CardDescription>Cliques por canal nos últimos 30 dias</CardDescription>

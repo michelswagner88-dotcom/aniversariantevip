@@ -186,13 +186,15 @@ export function EstablishmentSidebar({
                   setMobileOpen(false);
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150",
-                  "hover:bg-accent",
-                  isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground",
+                  "relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150",
+                  "hover:bg-accent/50",
+                  isActive 
+                    ? "bg-accent text-foreground font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-0.5 before:h-5 before:bg-primary before:rounded-full" 
+                    : "text-muted-foreground hover:text-foreground",
                   collapsed && "justify-center px-2",
                 )}
               >
-                <Icon className={cn("w-[18px] h-[18px] flex-shrink-0", isActive && "text-primary")} />
+                <Icon className={cn("w-[18px] h-[18px] flex-shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
 
                 {!collapsed && <span className="flex-1 text-left truncate">{item.label}</span>}
               </button>
@@ -329,7 +331,7 @@ export function EstablishmentSidebar({
       {/* Sidebar - Desktop */}
       <aside
         className={cn(
-          "hidden lg:flex flex-col fixed inset-y-0 left-0 bg-card border-r border-border transition-all duration-200 z-30",
+          "hidden lg:flex flex-col fixed inset-y-0 left-0 bg-background border-r border-border transition-all duration-200 z-30",
           collapsed ? "w-16" : "w-64",
         )}
       >
@@ -339,7 +341,7 @@ export function EstablishmentSidebar({
       {/* Sidebar - Mobile */}
       <aside
         className={cn(
-          "lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200",
+          "lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-background border-r border-border transform transition-transform duration-200",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >

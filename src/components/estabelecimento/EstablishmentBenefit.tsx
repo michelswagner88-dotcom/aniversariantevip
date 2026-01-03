@@ -142,9 +142,9 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
       </div>
 
       {/* Tip Card */}
-      <Card className="bg-primary/5 border-primary/20">
+      <Card className="bg-muted border-border">
         <CardContent className="p-4 flex items-start gap-4">
-          <div className="p-2 rounded-lg bg-primary/20">
+          <div className="p-2 rounded-lg bg-accent">
             <Sparkles className="w-5 h-5 text-primary" />
           </div>
           <div>
@@ -158,10 +158,10 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
       </Card>
 
       {/* Tipo de Benefício */}
-      <Card className="bg-card/50 border-border">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground flex items-center gap-2">
-            <Gift className="w-5 h-5 text-primary" />
+            <Gift className="w-5 h-5 text-pink-400" />
             Tipo de Benefício
           </CardTitle>
           <CardDescription>Selecione o tipo que melhor descreve sua oferta</CardDescription>
@@ -226,7 +226,7 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
       </Card>
 
       {/* Descrição do Benefício - Usando InlineSaveTextarea */}
-      <Card className="bg-card/50 border-border">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground">Descrição do Benefício</CardTitle>
           <CardDescription>Descreva claramente o que o aniversariante ganha</CardDescription>
@@ -248,10 +248,10 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
       </Card>
 
       {/* Período de Validade */}
-      <Card className="bg-card/50 border-border">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-blue-500" />
+            <Calendar className="w-5 h-5 text-blue-400" />
             Período de Validade
           </CardTitle>
           <CardDescription>Quando o aniversariante pode usar o benefício</CardDescription>
@@ -313,10 +313,10 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
       </Card>
 
       {/* Regras de Utilização - Usando InlineSaveTextarea */}
-      <Card className="bg-card/50 border-border">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground flex items-center gap-2">
-            <Info className="w-5 h-5 text-amber-500" />
+            <Info className="w-5 h-5 text-amber-400" />
             Regras de Utilização
             <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
           </CardTitle>
@@ -338,13 +338,13 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
       </Card>
 
       {/* Preview */}
-      <Card className="bg-card/50 border-border">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground">Pré-visualização</CardTitle>
           <CardDescription>Como os aniversariantes vão ver seu benefício</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="bg-primary/10 rounded-xl p-5 border border-primary/20">
+          <div className="bg-muted rounded-xl p-5 border border-border">
             <div className="flex items-center gap-3 mb-3">
               {selectedTipo && <span className="text-2xl">{selectedTipo.emoji}</span>}
               <div>
@@ -364,7 +364,7 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
               {PERIODOS_VALIDADE.find((p) => p.id === periodoValidade)?.label}
             </div>
             {estabelecimento?.regras_utilizacao && (
-              <div className="mt-3 pt-3 border-t border-primary/20">
+              <div className="mt-3 pt-3 border-t border-border">
                 <p className="text-xs text-muted-foreground">
                   <strong>Regras:</strong> {estabelecimento.regras_utilizacao}
                 </p>

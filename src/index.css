@@ -569,74 +569,82 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 222 47% 11%;
-    --foreground: 0 0% 100%;
+    /* ========================================
+       PREMIUM B2B DESIGN SYSTEM
+       Neutral dark base + Purple accent only
+       ======================================== */
+    
+    /* Base: Deep neutral with subtle blue undertone */
+    --background: 222 20% 8%;
+    --foreground: 220 13% 95%;
 
-    --card: 222 47% 11%;
-    --card-foreground: 0 0% 100%;
+    /* Cards: Subtle elevation from background */
+    --card: 222 18% 11%;
+    --card-foreground: 220 13% 95%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 0 0% 100%;
+    /* Popover: Slightly elevated */
+    --popover: 222 16% 13%;
+    --popover-foreground: 220 13% 95%;
 
+    /* Primary: Purple ONLY for CTAs, links, focus */
     --primary: 271 81% 56%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 47% 15%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary: Neutral elevated surface */
+    --secondary: 222 16% 16%;
+    --secondary-foreground: 220 13% 91%;
 
-    --muted: 222 47% 15%;
-    --muted-foreground: 0 0% 64%;
+    /* Muted: Neutral for backgrounds */
+    --muted: 222 14% 14%;
+    --muted-foreground: 220 9% 55%;
 
-    --accent: 271 81% 56%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent: NEUTRAL for hover states, NOT purple */
+    --accent: 222 14% 18%;
+    --accent-foreground: 220 13% 95%;
 
+    /* Destructive */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 222 47% 20%;
-    --input: 222 47% 20%;
+    /* Borders: Subtle, neutral */
+    --border: 220 13% 20%;
+    --input: 220 13% 18%;
     --ring: 271 81% 56%;
 
     --radius: 0.75rem;
 
-    /* Cosmic Celebration Variables - Deep Purple Theme */
-    --cosmic-violet: 271 100% 14%; /* #240046 */
-    --cosmic-secondary: 271 100% 21%; /* #3C096C */
-    --cosmic-accent: 263 70% 76%; /* #A78BFA */
-    --cosmic-glow: 271 100% 14%;
+    /* Functional Colors - For status/feedback */
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --info: 217 91% 60%;
 
-    /* Deep Purple Brand Colors */
-    --brand-primary: 271 100% 14%; /* #240046 */
-    --brand-secondary: 271 100% 21%; /* #3C096C */
-    --brand-accent: 263 70% 76%; /* #A78BFA */
-
-    /* Premium Design Tokens */
-    --surface-base: 222 47% 11%;
-    --surface-elevated: 222 47% 15%;
-    --surface-overlay: 222 47% 18%;
+    /* Premium Surface Tokens */
+    --surface-base: 222 20% 8%;
+    --surface-elevated: 222 18% 11%;
+    --surface-overlay: 222 16% 15%;
 
     /* Border tokens */
-    --border-subtle: 0 0% 100% / 0.08;
-    --border-default: 0 0% 100% / 0.12;
-    --border-strong: 0 0% 100% / 0.2;
+    --border-subtle: 220 13% 16%;
+    --border-default: 220 13% 20%;
+    --border-strong: 220 13% 26%;
 
-    /* Text tokens - Improved contrast (WCAG AA compliant) */
-    --text-primary: 0 0% 100%;
-    --text-secondary: 0 0% 64%;
-    --text-tertiary: 0 0% 45%;
+    /* Text tokens - WCAG AA compliant */
+    --text-primary: 220 13% 95%;
+    --text-secondary: 220 9% 60%;
+    --text-tertiary: 220 7% 45%;
 
     /* Shadow tokens */
-    --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 32px -8px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 32px -8px rgba(139, 92, 246, 0.3);
+    --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 32px -8px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 32px -8px rgba(139, 92, 246, 0.25);
 
     /* Blur tokens */
     --blur-sm: 8px;
     --blur-md: 12px;
     --blur-lg: 24px;
 
-    /* Container padding tokens (Airbnb-style) */
+    /* Container padding tokens */
     --container-padding-desktop: 80px;
     --container-padding-tablet: 48px;
     --container-padding-mobile: 24px;
@@ -658,55 +666,50 @@ All colors MUST be HSL.
     --radius-xl: 1.25rem;
     --radius-2xl: 1.5rem;
 
-    /* Holographic effect custom properties */
+    /* Holographic effect properties */
     --mouse-x: 50%;
     --mouse-y: 50%;
     --border-angle: 0deg;
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 0 0% 100%;
+    /* Same premium system for dark mode */
+    --background: 222 20% 8%;
+    --foreground: 220 13% 95%;
 
-    --card: 222 47% 11%;
-    --card-foreground: 0 0% 100%;
+    --card: 222 18% 11%;
+    --card-foreground: 220 13% 95%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 222 16% 13%;
+    --popover-foreground: 220 13% 95%;
 
     --primary: 271 81% 56%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 47% 15%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 222 16% 16%;
+    --secondary-foreground: 220 13% 91%;
 
-    --muted: 222 47% 15%;
-    --muted-foreground: 0 0% 64%;
+    --muted: 222 14% 14%;
+    --muted-foreground: 220 9% 55%;
 
-    --accent: 271 81% 56%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 222 14% 18%;
+    --accent-foreground: 220 13% 95%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 222 47% 20%;
-    --input: 222 47% 20%;
+    --border: 220 13% 20%;
+    --input: 220 13% 18%;
     --ring: 271 81% 56%;
 
-    /* Cosmic Celebration Dark Variables - Deep Purple Theme */
-    --cosmic-violet: 271 100% 14%; /* #240046 */
-    --cosmic-secondary: 271 100% 21%; /* #3C096C */
-    --cosmic-accent: 263 70% 76%; /* #A78BFA */
-    --cosmic-glow: 271 100% 14%;
+    /* Functional Colors */
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --info: 217 91% 60%;
 
-    /* Deep Purple Brand Colors */
-    --brand-primary: 271 100% 14%; /* #240046 */
-    --brand-secondary: 271 100% 21%; /* #3C096C */
-    --brand-accent: 263 70% 76%; /* #A78BFA */
-
-    /* Glassmorphism Dark */
-    --glass-bg: 0 0% 100%;
-    --glass-border: 271 81% 56%;
+    /* Glassmorphism */
+    --glass-bg: 220 13% 12%;
+    --glass-border: 220 13% 22%;
   }
 }
 

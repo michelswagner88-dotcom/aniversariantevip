@@ -305,7 +305,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-48" />
-        <Card className="bg-card/50 border-border">
+        <Card className="bg-card border-border">
           <CardContent className="p-6 space-y-4">
             <Skeleton className="h-20 w-20 rounded-xl" />
             <Skeleton className="h-10 w-full" />
@@ -348,10 +348,10 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
       </div>
 
       {/* Logo & Basic Info */}
-      <Card className="bg-card/50 border-border">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-primary" />
+            <Building2 className="w-5 h-5 text-blue-400" />
             Informações Básicas
           </CardTitle>
         </CardHeader>
@@ -459,10 +459,10 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
       </Card>
 
       {/* Sobre o Estabelecimento - SAVE INDEPENDENTE */}
-      <Card className="bg-card/50 border-border">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground flex items-center gap-2">
-            <User className="w-5 h-5 text-violet-500" />
+            <User className="w-5 h-5 text-cyan-400" />
             Sobre o Estabelecimento
           </CardTitle>
           <CardDescription>Descreva seu estabelecimento de forma atraente para os aniversariantes</CardDescription>
@@ -483,10 +483,10 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
       </Card>
 
       {/* Contatos */}
-      <Card className="bg-card/50 border-border">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground flex items-center gap-2">
-            <Phone className="w-5 h-5 text-emerald-500" />
+            <Phone className="w-5 h-5 text-emerald-400" />
             Contatos
           </CardTitle>
           <CardDescription>Informações de contato para os aniversariantes entrarem em contato</CardDescription>
@@ -548,10 +548,10 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
       </Card>
 
       {/* Endereço */}
-      <Card className="bg-card/50 border-border">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-red-500" />
+            <MapPin className="w-5 h-5 text-red-400" />
             Endereço
           </CardTitle>
           <CardDescription>Localização do seu estabelecimento para os aniversariantes encontrarem</CardDescription>

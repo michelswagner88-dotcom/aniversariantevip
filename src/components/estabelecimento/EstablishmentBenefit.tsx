@@ -1,17 +1,17 @@
 // =============================================================================
 // ESTABLISHMENT BENEFIT - Configuração do benefício para aniversariantes
+// REFATORADO: Save-per-field, normalização PT-BR local, sem API externa
 // =============================================================================
 
 import { useState, useEffect } from "react";
-import { Gift, Calendar, Check, Save, Loader2, Info, Sparkles, Wand2 } from "lucide-react";
+import { Gift, Calendar, Check, Save, Loader2, Info, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { InlineSaveTextarea } from "@/components/ui/InlineSaveTextarea";
+import { useFieldUpdate } from "@/hooks/useFieldUpdate";
 
 // =============================================================================
 // TYPES
@@ -54,91 +54,84 @@ const PERIODOS_VALIDADE = [
 // =============================================================================
 
 export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: EstablishmentBenefitProps) {
-  const [saving, setSaving] = useState(false);
-  const [correctingField, setCorrectingField] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    tipo_beneficio: "",
-    descricao_beneficio: "",
-    periodo_validade_beneficio: "mes_aniversario",
-    regras_utilizacao: "",
+  // Estado local para tipo e período (salvam junto)
+  const [tipoBeneficio, setTipoBeneficio] = useState("");
+  const [periodoValidade, setPeriodoValidade] = useState("mes_aniversario");
+  const [savingTipo, setSavingTipo] = useState(false);
+  const [savingPeriodo, setSavingPeriodo] = useState(false);
+
+  // Hook para update por campo
+  const { createFieldSaver } = useFieldUpdate({
+    estabelecimentoId: estabelecimento?.id || "",
+    onSuccess: (field) => {
+      console.log(`[Benefit] Campo ${field} salvo com sucesso`);
+    },
+    onError: (field, error) => {
+      console.error(`[Benefit] Erro ao salvar ${field}:`, error);
+    },
   });
 
-  // Sync form with estabelecimento data
+  // Sync com dados do estabelecimento
   useEffect(() => {
     if (estabelecimento) {
-      setForm({
-        tipo_beneficio: estabelecimento.tipo_beneficio || "",
-        descricao_beneficio: estabelecimento.descricao_beneficio || "",
-        periodo_validade_beneficio: estabelecimento.periodo_validade_beneficio || "mes_aniversario",
-        regras_utilizacao: estabelecimento.regras_utilizacao || "",
-      });
+      setTipoBeneficio(estabelecimento.tipo_beneficio || "");
+      setPeriodoValidade(estabelecimento.periodo_validade_beneficio || "mes_aniversario");
     }
   }, [estabelecimento]);
 
-  // Correct text using AI
-  const handleCorrectText = async (field: "descricao_beneficio" | "regras_utilizacao") => {
-    const text = form[field];
-    if (!text.trim()) {
-      toast.error("Digite algo antes de corrigir");
-      return;
-    }
-
-    setCorrectingField(field);
-    try {
-      const { data, error } = await supabase.functions.invoke("standardize-text", {
-        body: { text },
-      });
-
-      if (error) throw error;
-
-      if (data?.correctedText) {
-        setForm(prev => ({ ...prev, [field]: data.correctedText }));
-        toast.success("Texto corrigido!");
-      } else {
-        toast.info("Texto já está correto");
-      }
-    } catch (error) {
-      console.error("Error correcting text:", error);
-      toast.error("Erro ao corrigir texto");
-    } finally {
-      setCorrectingField(null);
-    }
-  };
-
-  // Handle save
-  const handleSave = async () => {
-    if (!form.tipo_beneficio) {
+  // Handler para salvar tipo de benefício
+  const handleSaveTipo = async (tipo: string) => {
+    if (!tipo) {
       toast.error("Selecione um tipo de benefício");
       return;
     }
 
-    if (!form.descricao_beneficio.trim()) {
-      toast.error("Descreva o benefício");
-      return;
-    }
-
-    setSaving(true);
-
+    setSavingTipo(true);
     try {
-      const success = await onUpdate({
-        tipo_beneficio: form.tipo_beneficio,
-        descricao_beneficio: form.descricao_beneficio,
-        periodo_validade_beneficio: form.periodo_validade_beneficio,
-        regras_utilizacao: form.regras_utilizacao || null,
-      });
-
+      const success = await onUpdate({ tipo_beneficio: tipo });
       if (success) {
-        toast.success("Benefício atualizado com sucesso!");
+        setTipoBeneficio(tipo);
+        toast.success("Tipo de benefício salvo!");
       }
     } catch (error) {
-      console.error("Error saving benefit:", error);
-      toast.error("Erro ao salvar. Tente novamente.");
+      toast.error("Erro ao salvar tipo de benefício");
     } finally {
-      setSaving(false);
+      setSavingTipo(false);
     }
   };
 
-  const selectedTipo = TIPOS_BENEFICIO.find((t) => t.id === form.tipo_beneficio);
+  // Handler para salvar período de validade
+  const handleSavePeriodo = async (periodo: string) => {
+    setSavingPeriodo(true);
+    try {
+      const success = await onUpdate({ periodo_validade_beneficio: periodo });
+      if (success) {
+        setPeriodoValidade(periodo);
+        toast.success("Período de validade salvo!");
+      }
+    } catch (error) {
+      toast.error("Erro ao salvar período");
+    } finally {
+      setSavingPeriodo(false);
+    }
+  };
+
+  const selectedTipo = TIPOS_BENEFICIO.find((t) => t.id === tipoBeneficio);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-64 bg-muted animate-pulse rounded" />
+        <div className="h-4 w-96 bg-muted animate-pulse rounded" />
+        <div className="space-y-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-32 bg-muted animate-pulse rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -173,76 +166,84 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
           </CardTitle>
           <CardDescription>Selecione o tipo que melhor descreve sua oferta</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {TIPOS_BENEFICIO.map((tipo) => (
               <button
                 key={tipo.id}
-                onClick={() => setForm({ ...form, tipo_beneficio: tipo.id })}
+                onClick={() => {
+                  setTipoBeneficio(tipo.id);
+                }}
+                disabled={savingTipo}
                 className={cn(
                   "p-4 rounded-xl border-2 transition-all duration-200 text-center",
-                  form.tipo_beneficio === tipo.id
+                  tipoBeneficio === tipo.id
                     ? "border-primary bg-primary/10"
                     : "border-border bg-muted/50 hover:border-muted-foreground/50",
+                  savingTipo && "opacity-50 cursor-not-allowed",
                 )}
               >
                 <span className="text-3xl block mb-2">{tipo.emoji}</span>
                 <span
-                  className={cn(
-                    "text-sm font-medium",
-                    form.tipo_beneficio === tipo.id ? "text-primary" : "text-foreground",
-                  )}
+                  className={cn("text-sm font-medium", tipoBeneficio === tipo.id ? "text-primary" : "text-foreground")}
                 >
                   {tipo.label}
                 </span>
-                {form.tipo_beneficio === tipo.id && <Check className="w-4 h-4 text-primary mx-auto mt-2" />}
+                {tipoBeneficio === tipo.id && <Check className="w-4 h-4 text-primary mx-auto mt-2" />}
               </button>
             ))}
           </div>
-          {selectedTipo && <p className="text-sm text-muted-foreground mt-3">{selectedTipo.description}</p>}
+
+          {selectedTipo && <p className="text-sm text-muted-foreground">{selectedTipo.description}</p>}
+
+          {/* Botão Salvar Tipo */}
+          <div className="flex justify-end pt-2">
+            <Button
+              size="sm"
+              onClick={() => handleSaveTipo(tipoBeneficio)}
+              disabled={savingTipo || tipoBeneficio === estabelecimento?.tipo_beneficio}
+              className={cn("min-w-[100px]", tipoBeneficio === estabelecimento?.tipo_beneficio && "opacity-50")}
+            >
+              {savingTipo ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : tipoBeneficio === estabelecimento?.tipo_beneficio ? (
+                <>
+                  <Check className="w-4 h-4 mr-2 text-emerald-500" />
+                  Salvo
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvar
+                </>
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Descrição do Benefício */}
+      {/* Descrição do Benefício - Usando InlineSaveTextarea */}
       <Card className="bg-card/50 border-border">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-foreground">Descrição do Benefício</CardTitle>
-              <CardDescription>Descreva claramente o que o aniversariante ganha</CardDescription>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => handleCorrectText("descricao_beneficio")}
-              disabled={correctingField === "descricao_beneficio"}
-              className="h-8 text-xs text-primary hover:text-primary"
-            >
-              {correctingField === "descricao_beneficio" ? (
-                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              ) : (
-                <Wand2 className="w-3 h-3 mr-1" />
-              )}
-              Corrigir
-            </Button>
-          </div>
+          <CardTitle className="text-foreground">Descrição do Benefício</CardTitle>
+          <CardDescription>Descreva claramente o que o aniversariante ganha</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Textarea
-            value={form.descricao_beneficio}
-            onChange={(e) => setForm({ ...form, descricao_beneficio: e.target.value })}
-            rows={3}
-            spellCheck={true}
-            lang="pt-BR"
-            autoCorrect="on"
-            autoCapitalize="sentences"
-            className="bg-muted border-border text-foreground resize-none"
+        <CardContent>
+          <InlineSaveTextarea
+            id="descricao_beneficio"
+            label=""
+            value={estabelecimento?.descricao_beneficio || ""}
             placeholder="Ex: Sobremesa grátis para o aniversariante + 10% de desconto para a mesa"
+            rows={3}
+            maxLength={500}
+            required
+            normalize
+            helperText="Seja específico e atrativo. Evite termos vagos como 'benefício especial'."
+            onSave={createFieldSaver("descricao_beneficio")}
           />
-          <p className="text-xs text-muted-foreground">
-            Seja específico e atrativo. Evite termos vagos como "benefício especial".
-          </p>
         </CardContent>
       </Card>
 
@@ -255,30 +256,22 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
           </CardTitle>
           <CardDescription>Quando o aniversariante pode usar o benefício</CardDescription>
         </CardHeader>
-        <CardContent>
-          <RadioGroup
-            value={form.periodo_validade_beneficio}
-            onValueChange={(value) => setForm({ ...form, periodo_validade_beneficio: value })}
-            className="space-y-3"
-          >
+        <CardContent className="space-y-4">
+          <RadioGroup value={periodoValidade} onValueChange={setPeriodoValidade} className="space-y-3">
             {PERIODOS_VALIDADE.map((periodo) => (
               <label
                 key={periodo.id}
                 className={cn(
                   "flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all",
-                  form.periodo_validade_beneficio === periodo.id
+                  periodoValidade === periodo.id
                     ? "border-primary bg-primary/10"
                     : "border-border bg-muted/50 hover:border-muted-foreground/50",
+                  savingPeriodo && "opacity-50 cursor-not-allowed",
                 )}
               >
-                <RadioGroupItem value={periodo.id} className="border-muted-foreground" />
+                <RadioGroupItem value={periodo.id} className="border-muted-foreground" disabled={savingPeriodo} />
                 <div>
-                  <p
-                    className={cn(
-                      "font-medium",
-                      form.periodo_validade_beneficio === periodo.id ? "text-primary" : "text-foreground",
-                    )}
-                  >
+                  <p className={cn("font-medium", periodoValidade === periodo.id ? "text-primary" : "text-foreground")}>
                     {periodo.label}
                   </p>
                   <p className="text-sm text-muted-foreground">{periodo.description}</p>
@@ -286,51 +279,61 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
               </label>
             ))}
           </RadioGroup>
+
+          {/* Botão Salvar Período */}
+          <div className="flex justify-end pt-2">
+            <Button
+              size="sm"
+              onClick={() => handleSavePeriodo(periodoValidade)}
+              disabled={savingPeriodo || periodoValidade === estabelecimento?.periodo_validade_beneficio}
+              className={cn(
+                "min-w-[100px]",
+                periodoValidade === estabelecimento?.periodo_validade_beneficio && "opacity-50",
+              )}
+            >
+              {savingPeriodo ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : periodoValidade === estabelecimento?.periodo_validade_beneficio ? (
+                <>
+                  <Check className="w-4 h-4 mr-2 text-emerald-500" />
+                  Salvo
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvar
+                </>
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Regras de Utilização */}
+      {/* Regras de Utilização - Usando InlineSaveTextarea */}
       <Card className="bg-card/50 border-border">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <Info className="w-5 h-5 text-amber-500" />
-                Regras de Utilização
-                <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-              </CardTitle>
-              <CardDescription>Condições para usar o benefício</CardDescription>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => handleCorrectText("regras_utilizacao")}
-              disabled={correctingField === "regras_utilizacao"}
-              className="h-8 text-xs text-primary hover:text-primary"
-            >
-              {correctingField === "regras_utilizacao" ? (
-                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              ) : (
-                <Wand2 className="w-3 h-3 mr-1" />
-              )}
-              Corrigir
-            </Button>
-          </div>
+          <CardTitle className="text-foreground flex items-center gap-2">
+            <Info className="w-5 h-5 text-amber-500" />
+            Regras de Utilização
+            <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
+          </CardTitle>
+          <CardDescription>Condições para usar o benefício</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Textarea
-            value={form.regras_utilizacao}
-            onChange={(e) => setForm({ ...form, regras_utilizacao: e.target.value })}
-            rows={4}
-            spellCheck={true}
-            lang="pt-BR"
-            autoCorrect="on"
-            autoCapitalize="sentences"
-            className="bg-muted border-border text-foreground resize-none"
+        <CardContent>
+          <InlineSaveTextarea
+            id="regras_utilizacao"
+            label=""
+            value={estabelecimento?.regras_utilizacao || ""}
             placeholder="Ex: Válido de segunda a sexta. Apresentar documento com foto. Consumação mínima de R$50 por pessoa. Não acumulativo com outras promoções."
+            rows={4}
+            maxLength={1000}
+            normalize
+            helperText="Seja claro nas regras para evitar mal-entendidos."
+            onSave={createFieldSaver("regras_utilizacao")}
           />
-          <p className="text-xs text-muted-foreground">Seja claro nas regras para evitar mal-entendidos.</p>
         </CardContent>
       </Card>
 
@@ -354,23 +357,22 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
               </div>
             </div>
             <p className="text-lg font-semibold text-foreground">
-              {form.descricao_beneficio || "Descreva seu benefício..."}
+              {estabelecimento?.descricao_beneficio || "Descreva seu benefício..."}
             </p>
             <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
               <Calendar className="w-4 h-4" />
-              {PERIODOS_VALIDADE.find((p) => p.id === form.periodo_validade_beneficio)?.label}
+              {PERIODOS_VALIDADE.find((p) => p.id === periodoValidade)?.label}
             </div>
+            {estabelecimento?.regras_utilizacao && (
+              <div className="mt-3 pt-3 border-t border-primary/20">
+                <p className="text-xs text-muted-foreground">
+                  <strong>Regras:</strong> {estabelecimento.regras_utilizacao}
+                </p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
-
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 px-8">
-          {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          Salvar Benefício
-        </Button>
-      </div>
     </div>
   );
 }

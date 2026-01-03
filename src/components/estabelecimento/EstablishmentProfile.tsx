@@ -1,5 +1,6 @@
 // =============================================================================
 // ESTABLISHMENT PROFILE - Edição do perfil do estabelecimento
+// REFATORADO: InlineSaveTextarea no campo bio, sem API externa para correção
 // =============================================================================
 
 import { useState, useEffect } from "react";
@@ -17,7 +18,6 @@ import {
   Upload,
   Loader2,
   Check,
-  Wand2,
   Edit3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,6 @@ import { HorarioFuncionamentoModal } from "./HorarioFuncionamentoModal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +32,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getCategoriasOptions, mapLegacyCategoriaToId } from "@/constants/categories";
+import { InlineSaveTextarea } from "@/components/ui/InlineSaveTextarea";
+import { useFieldUpdate } from "@/hooks/useFieldUpdate";
 
 // =============================================================================
 // TYPES
@@ -76,10 +77,66 @@ interface EstablishmentProfileProps {
 const CATEGORIAS = getCategoriasOptions();
 
 const ESTADOS = [
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
-  "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
-  "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+  "AC",
+  "AL",
+  "AP",
+  "AM",
+  "BA",
+  "CE",
+  "DF",
+  "ES",
+  "GO",
+  "MA",
+  "MT",
+  "MS",
+  "MG",
+  "PA",
+  "PB",
+  "PR",
+  "PE",
+  "PI",
+  "RJ",
+  "RN",
+  "RS",
+  "RO",
+  "RR",
+  "SC",
+  "SP",
+  "SE",
+  "TO",
 ];
+
+// =============================================================================
+// HELPERS - Máscaras
+// =============================================================================
+
+const formatPhone = (value: string): string => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
+const formatCEP = (value: string): string => {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+};
+
+const formatInstagram = (value: string): string => {
+  // Remove @ e espaços, lowercase
+  return value.replace(/[@\s]/g, "").toLowerCase();
+};
+
+const formatSite = (value: string): string => {
+  let site = value.trim().toLowerCase();
+  // Remove espaços
+  site = site.replace(/\s/g, "");
+  // Se não tem protocolo e não está vazio, não adiciona automaticamente
+  // (deixa o usuário decidir)
+  return site;
+};
 
 // =============================================================================
 // COMPONENT
@@ -90,7 +147,6 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [correctingField, setCorrectingField] = useState<string | null>(null);
   const [showHorarioModal, setShowHorarioModal] = useState(false);
   const [form, setForm] = useState({
     nome_fantasia: "",
@@ -98,7 +154,6 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
     whatsapp: "",
     instagram: "",
     site: "",
-    bio: "",
     categoria: "",
     cep: "",
     estado: "",
@@ -110,13 +165,18 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
     horario_funcionamento: "",
   });
 
+  // Hook para save-per-field (usado no bio)
+  const { createFieldSaver } = useFieldUpdate({
+    estabelecimentoId: estabelecimento?.id || "",
+  });
+
   // Sync form with estabelecimento data
   useEffect(() => {
     if (estabelecimento) {
       // Map legacy category to valid ID
       const rawCategoria = estabelecimento.categoria?.[0] || "";
       const mappedCategoria = mapLegacyCategoriaToId(rawCategoria);
-      const validCategoria = CATEGORIAS.find(c => c.value === mappedCategoria) ? mappedCategoria : "";
+      const validCategoria = CATEGORIAS.find((c) => c.value === mappedCategoria) ? mappedCategoria : "";
 
       setForm({
         nome_fantasia: estabelecimento.nome_fantasia || "",
@@ -124,7 +184,6 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
         whatsapp: estabelecimento.whatsapp || "",
         instagram: estabelecimento.instagram?.replace("@", "") || "",
         site: estabelecimento.site || "",
-        bio: estabelecimento.bio || "",
         categoria: validCategoria,
         cep: estabelecimento.cep || "",
         estado: estabelecimento.estado || "",
@@ -137,36 +196,6 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
       });
     }
   }, [estabelecimento]);
-
-  // Correct text using AI
-  const handleCorrectText = async (field: "bio" | "horario_funcionamento") => {
-    const text = form[field];
-    if (!text.trim()) {
-      toast.error("Digite algo antes de corrigir");
-      return;
-    }
-
-    setCorrectingField(field);
-    try {
-      const { data, error } = await supabase.functions.invoke("standardize-text", {
-        body: { text },
-      });
-
-      if (error) throw error;
-
-      if (data?.correctedText) {
-        setForm(prev => ({ ...prev, [field]: data.correctedText }));
-        toast.success("Texto corrigido!");
-      } else {
-        toast.info("Texto já está correto");
-      }
-    } catch (error) {
-      console.error("Error correcting text:", error);
-      toast.error("Erro ao corrigir texto");
-    } finally {
-      setCorrectingField(null);
-    }
-  };
 
   // Handle logo change
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,7 +211,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
     setLogoPreview(URL.createObjectURL(file));
   };
 
-  // Handle save
+  // Handle save (todos os campos exceto bio)
   const handleSave = async () => {
     setSaving(true);
 
@@ -213,7 +242,6 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
         whatsapp: form.whatsapp || null,
         instagram: form.instagram || null,
         site: form.site || null,
-        bio: form.bio || null,
         categoria: form.categoria ? [form.categoria] : null,
         cep: form.cep || null,
         estado: form.estado || null,
@@ -232,6 +260,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
         setIsEditing(false);
         setLogoFile(null);
         setLogoPreview(null);
+        toast.success("Perfil atualizado com sucesso!");
       }
     } catch (error) {
       console.error("Error saving:", error);
@@ -250,7 +279,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
     if (estabelecimento) {
       const rawCategoria = estabelecimento.categoria?.[0] || "";
       const mappedCategoria = mapLegacyCategoriaToId(rawCategoria);
-      const validCategoria = CATEGORIAS.find(c => c.value === mappedCategoria) ? mappedCategoria : "";
+      const validCategoria = CATEGORIAS.find((c) => c.value === mappedCategoria) ? mappedCategoria : "";
 
       setForm({
         nome_fantasia: estabelecimento.nome_fantasia || "",
@@ -258,7 +287,6 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
         whatsapp: estabelecimento.whatsapp || "",
         instagram: estabelecimento.instagram?.replace("@", "") || "",
         site: estabelecimento.site || "",
-        bio: estabelecimento.bio || "",
         categoria: validCategoria,
         cep: estabelecimento.cep || "",
         estado: estabelecimento.estado || "",
@@ -269,13 +297,6 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
         complemento: estabelecimento.complemento || "",
         horario_funcionamento: estabelecimento.horario_funcionamento || "",
       });
-    }
-  };
-
-  // Handle click on hours field to enable editing
-  const handleHoursClick = () => {
-    if (!isEditing) {
-      setIsEditing(true);
     }
   };
 
@@ -297,7 +318,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
   }
 
   // Get selected category for display
-  const selectedCategory = CATEGORIAS.find(c => c.value === form.categoria);
+  const selectedCategory = CATEGORIAS.find((c) => c.value === form.categoria);
 
   return (
     <div className="space-y-6">
@@ -360,7 +381,9 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
             <div className="flex-1 space-y-1">
               <p className="text-sm text-muted-foreground">Logo do estabelecimento</p>
               <p className="text-xs text-muted-foreground/70">Recomendado: 400x400px, formato JPG ou PNG</p>
-              {estabelecimento?.cnpj && <p className="text-xs text-muted-foreground/50 mt-2">CNPJ: {estabelecimento.cnpj}</p>}
+              {estabelecimento?.cnpj && (
+                <p className="text-xs text-muted-foreground/50 mt-2">CNPJ: {estabelecimento.cnpj}</p>
+              )}
             </div>
           </div>
 
@@ -387,7 +410,9 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
               disabled={!isEditing}
             >
               <SelectTrigger className="bg-muted border-border text-foreground">
-                <SelectValue placeholder="Selecione uma categoria" />
+                <SelectValue placeholder="Selecione uma categoria">
+                  {selectedCategory ? `${selectedCategory.icon} ${selectedCategory.label}` : "Selecione uma categoria"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-popover border-border z-50">
                 {CATEGORIAS.map((cat) => (
@@ -397,51 +422,6 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
                 ))}
               </SelectContent>
             </Select>
-            {/* Show selected category below for clarity */}
-            {selectedCategory && !isEditing && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {selectedCategory.icon} {selectedCategory.label}
-              </p>
-            )}
-          </div>
-
-          {/* Bio */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-foreground">Sobre o estabelecimento</Label>
-              <div className="flex items-center gap-2">
-                {isEditing && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleCorrectText("bio")}
-                    disabled={correctingField === "bio"}
-                    className="h-7 text-xs text-primary hover:text-primary"
-                  >
-                    {correctingField === "bio" ? (
-                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                    ) : (
-                      <Wand2 className="w-3 h-3 mr-1" />
-                    )}
-                    Corrigir
-                  </Button>
-                )}
-                <span className="text-xs text-muted-foreground">{form.bio.length}/500</span>
-              </div>
-            </div>
-            <Textarea
-              value={form.bio}
-              onChange={(e) => setForm({ ...form, bio: e.target.value.slice(0, 500) })}
-              disabled={!isEditing}
-              rows={4}
-              spellCheck={true}
-              lang="pt-BR"
-              autoCorrect="on"
-              autoCapitalize="sentences"
-              className="bg-muted border-border text-foreground disabled:opacity-70 resize-none"
-              placeholder="Descreva seu estabelecimento de forma atraente..."
-            />
           </div>
 
           {/* Horário */}
@@ -457,13 +437,11 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
               }}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 bg-muted border border-border rounded-lg text-foreground cursor-pointer transition-colors",
-                "hover:bg-accent/50"
+                "hover:bg-accent/50",
               )}
             >
               <Clock className="w-4 h-4 text-muted-foreground" />
-              <span className="flex-1 text-sm">
-                {form.horario_funcionamento || "Clique para definir horário"}
-              </span>
+              <span className="flex-1 text-sm">{form.horario_funcionamento || "Clique para definir horário"}</span>
               <Edit3 className="w-4 h-4 text-muted-foreground" />
             </div>
             <p className="text-xs text-muted-foreground">Clique para editar os horários de funcionamento</p>
@@ -480,6 +458,30 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
         </CardContent>
       </Card>
 
+      {/* Sobre o Estabelecimento - SAVE INDEPENDENTE */}
+      <Card className="bg-card/50 border-border">
+        <CardHeader>
+          <CardTitle className="text-foreground flex items-center gap-2">
+            <User className="w-5 h-5 text-violet-500" />
+            Sobre o Estabelecimento
+          </CardTitle>
+          <CardDescription>Descreva seu estabelecimento de forma atraente para os aniversariantes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <InlineSaveTextarea
+            id="bio"
+            label=""
+            value={estabelecimento?.bio || ""}
+            placeholder="Descreva seu estabelecimento: o que oferece, ambiente, diferenciais..."
+            rows={4}
+            maxLength={500}
+            normalize
+            helperText="Uma boa descrição aumenta suas chances de ser escolhido pelos aniversariantes."
+            onSave={createFieldSaver("bio")}
+          />
+        </CardContent>
+      </Card>
+
       {/* Contatos */}
       <Card className="bg-card/50 border-border">
         <CardHeader>
@@ -487,6 +489,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
             <Phone className="w-5 h-5 text-emerald-500" />
             Contatos
           </CardTitle>
+          <CardDescription>Informações de contato para os aniversariantes entrarem em contato</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -495,7 +498,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
               <Label className="text-foreground">Telefone</Label>
               <Input
                 value={form.telefone}
-                onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                onChange={(e) => setForm({ ...form, telefone: formatPhone(e.target.value) })}
                 disabled={!isEditing}
                 className="bg-muted border-border text-foreground disabled:opacity-70"
                 placeholder="(00) 0000-0000"
@@ -507,7 +510,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
               <Label className="text-foreground">WhatsApp</Label>
               <Input
                 value={form.whatsapp}
-                onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
+                onChange={(e) => setForm({ ...form, whatsapp: formatPhone(e.target.value) })}
                 disabled={!isEditing}
                 className="bg-muted border-border text-foreground disabled:opacity-70"
                 placeholder="(00) 00000-0000"
@@ -521,7 +524,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
                 <Input
                   value={form.instagram}
-                  onChange={(e) => setForm({ ...form, instagram: e.target.value.replace("@", "") })}
+                  onChange={(e) => setForm({ ...form, instagram: formatInstagram(e.target.value) })}
                   disabled={!isEditing}
                   className="bg-muted border-border text-foreground disabled:opacity-70 pl-7"
                   placeholder="seuusuario"
@@ -534,7 +537,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
               <Label className="text-foreground">Site</Label>
               <Input
                 value={form.site}
-                onChange={(e) => setForm({ ...form, site: e.target.value })}
+                onChange={(e) => setForm({ ...form, site: formatSite(e.target.value) })}
                 disabled={!isEditing}
                 className="bg-muted border-border text-foreground disabled:opacity-70"
                 placeholder="www.seusite.com.br"
@@ -551,6 +554,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
             <MapPin className="w-5 h-5 text-red-500" />
             Endereço
           </CardTitle>
+          <CardDescription>Localização do seu estabelecimento para os aniversariantes encontrarem</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -559,7 +563,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
               <Label className="text-foreground">CEP</Label>
               <Input
                 value={form.cep}
-                onChange={(e) => setForm({ ...form, cep: e.target.value })}
+                onChange={(e) => setForm({ ...form, cep: formatCEP(e.target.value) })}
                 disabled={!isEditing}
                 className="bg-muted border-border text-foreground disabled:opacity-70"
                 placeholder="00000-000"

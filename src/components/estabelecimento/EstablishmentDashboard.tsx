@@ -1,6 +1,6 @@
 // =============================================================================
 // ESTABLISHMENT DASHBOARD - Dashboard principal com KPIs
-// Estilo Stripe/Vercel
+// MELHORADO: Checklist visual, tooltips nos KPIs, CTA inteligente, empty states
 // =============================================================================
 
 import { useMemo, useState } from "react";
@@ -25,6 +25,12 @@ import {
   ChevronRight,
   Zap,
   EyeOff,
+  Circle,
+  Camera,
+  MapPin,
+  FileText,
+  HelpCircle,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +39,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Json } from "@/integrations/supabase/types";
 
 // =============================================================================
@@ -81,31 +88,112 @@ interface EstablishmentDashboardProps {
 }
 
 // =============================================================================
+// CHECKLIST CONFIG
+// =============================================================================
+
+interface ChecklistItem {
+  id: string;
+  label: string;
+  description: string;
+  icon: any;
+  tab: ActiveTab;
+  priority: number; // 1 = mais importante
+  check: (est: EstabelecimentoData) => boolean;
+}
+
+const CHECKLIST_ITEMS: ChecklistItem[] = [
+  {
+    id: "beneficio",
+    label: "Configurar benefício",
+    description: "O mais importante! Defina o que o aniversariante ganha.",
+    icon: Gift,
+    tab: "benefit",
+    priority: 1,
+    check: (est) => !!est.descricao_beneficio && !!est.tipo_beneficio,
+  },
+  {
+    id: "fotos",
+    label: "Adicionar fotos",
+    description: "Perfis com fotos recebem 3x mais visualizações.",
+    icon: Camera,
+    tab: "photos",
+    priority: 2,
+    check: (est) => {
+      const fotos = Array.isArray(est.fotos) ? est.fotos : [];
+      return fotos.length > 0;
+    },
+  },
+  {
+    id: "bio",
+    label: "Descrição do estabelecimento",
+    description: "Conte sobre seu espaço e diferenciais.",
+    icon: FileText,
+    tab: "profile",
+    priority: 3,
+    check: (est) => !!est.bio && est.bio.length >= 50,
+  },
+  {
+    id: "contato",
+    label: "Informações de contato",
+    description: "WhatsApp ou telefone para os clientes.",
+    icon: Phone,
+    tab: "profile",
+    priority: 4,
+    check: (est) => !!est.telefone || !!est.whatsapp,
+  },
+  {
+    id: "horario",
+    label: "Horário de funcionamento",
+    description: "Quando os aniversariantes podem ir.",
+    icon: Clock,
+    tab: "profile",
+    priority: 5,
+    check: (est) => !!est.horario_funcionamento,
+  },
+  {
+    id: "endereco",
+    label: "Endereço completo",
+    description: "Para aparecer nas buscas por localização.",
+    icon: MapPin,
+    tab: "profile",
+    priority: 6,
+    check: (est) => !!est.cidade,
+  },
+  {
+    id: "instagram",
+    label: "Instagram",
+    description: "Conecte suas redes sociais.",
+    icon: Instagram,
+    tab: "profile",
+    priority: 7,
+    check: (est) => !!est.instagram,
+  },
+];
+
+// =============================================================================
 // HELPERS
 // =============================================================================
 
-const calculateProfileCompletion = (est: EstabelecimentoData | null): { percentage: number; missing: string[] } => {
-  if (!est) return { percentage: 0, missing: [] };
+const getChecklistStatus = (est: EstabelecimentoData | null) => {
+  if (!est) return { completed: [], pending: [], percentage: 0 };
 
-  const fotos = Array.isArray(est.fotos) ? est.fotos : [];
-  const checks = [
-    { field: est.nome_fantasia, label: "Nome fantasia" },
-    { field: est.telefone || est.whatsapp, label: "Telefone ou WhatsApp" },
-    { field: est.bio, label: "Descrição do estabelecimento" },
-    { field: est.descricao_beneficio, label: "Benefício configurado" },
-    { field: fotos.length > 0, label: "Fotos" },
-    { field: est.horario_funcionamento, label: "Horário de funcionamento" },
-    { field: est.cidade, label: "Endereço" },
-    { field: est.instagram, label: "Instagram" },
-  ];
+  const completed: ChecklistItem[] = [];
+  const pending: ChecklistItem[] = [];
 
-  const filled = checks.filter((c) => c.field).length;
-  const missing = checks.filter((c) => !c.field).map((c) => c.label);
+  CHECKLIST_ITEMS.forEach((item) => {
+    if (item.check(est)) {
+      completed.push(item);
+    } else {
+      pending.push(item);
+    }
+  });
 
-  return {
-    percentage: Math.round((filled / checks.length) * 100),
-    missing,
-  };
+  // Ordenar pendentes por prioridade
+  pending.sort((a, b) => a.priority - b.priority);
+
+  const percentage = Math.round((completed.length / CHECKLIST_ITEMS.length) * 100);
+
+  return { completed, pending, percentage };
 };
 
 const TIPO_BENEFICIO_CONFIG: Record<string, { emoji: string; label: string }> = {
@@ -117,7 +205,7 @@ const TIPO_BENEFICIO_CONFIG: Record<string, { emoji: string; label: string }> = 
 };
 
 // =============================================================================
-// KPI CARD
+// KPI CARD COM TOOLTIP
 // =============================================================================
 
 const KPICard = ({
@@ -129,6 +217,7 @@ const KPICard = ({
   iconColor = "text-violet-400",
   loading = false,
   onClick,
+  tooltip,
 }: {
   title: string;
   value: string | number;
@@ -138,6 +227,7 @@ const KPICard = ({
   iconColor?: string;
   loading?: boolean;
   onClick?: () => void;
+  tooltip?: string;
 }) => {
   const isPositive = change && change > 0;
   const isNegative = change && change < 0;
@@ -154,7 +244,7 @@ const KPICard = ({
     );
   }
 
-  return (
+  const cardContent = (
     <Card
       className={cn(
         "bg-card/50 border-border transition-all duration-200",
@@ -167,7 +257,23 @@ const KPICard = ({
           <div className={cn("p-2 rounded-lg", iconColor.replace("text-", "bg-").replace("400", "500/20"))}>
             <Icon className={cn("w-4 h-4", iconColor)} />
           </div>
-          {onClick && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+          <div className="flex items-center gap-1">
+            {tooltip && (
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+                      <HelpCircle className="w-3.5 h-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[200px] text-xs">
+                    {tooltip}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {onClick && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+          </div>
         </div>
 
         <p className="text-sm text-muted-foreground mb-1">{title}</p>
@@ -193,6 +299,65 @@ const KPICard = ({
       </CardContent>
     </Card>
   );
+
+  return cardContent;
+};
+
+// =============================================================================
+// CHECKLIST ITEM COMPONENT
+// =============================================================================
+
+const ChecklistItemRow = ({
+  item,
+  isCompleted,
+  onNavigate,
+}: {
+  item: ChecklistItem;
+  isCompleted: boolean;
+  onNavigate: (tab: ActiveTab) => void;
+}) => {
+  const Icon = item.icon;
+
+  return (
+    <button
+      onClick={() => !isCompleted && onNavigate(item.tab)}
+      disabled={isCompleted}
+      className={cn(
+        "w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-150 text-left",
+        isCompleted ? "bg-emerald-500/10 cursor-default" : "bg-muted/50 hover:bg-accent cursor-pointer",
+      )}
+    >
+      {/* Status Icon */}
+      <div
+        className={cn(
+          "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0",
+          isCompleted ? "bg-emerald-500" : "bg-muted border-2 border-border",
+        )}
+      >
+        {isCompleted ? (
+          <CheckCircle className="w-4 h-4 text-white" />
+        ) : (
+          <Circle className="w-3 h-3 text-muted-foreground" />
+        )}
+      </div>
+
+      {/* Icon */}
+      <div className={cn("p-2 rounded-lg flex-shrink-0", isCompleted ? "bg-emerald-500/20" : "bg-primary/10")}>
+        <Icon className={cn("w-4 h-4", isCompleted ? "text-emerald-500" : "text-primary")} />
+      </div>
+
+      {/* Text */}
+      <div className="flex-1 min-w-0">
+        <p className={cn("font-medium text-sm", isCompleted ? "text-emerald-600 line-through" : "text-foreground")}>
+          {item.label}
+        </p>
+        <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+      </div>
+
+      {/* Arrow */}
+      {!isCompleted && <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+    </button>
+  );
 };
 
 // =============================================================================
@@ -207,7 +372,9 @@ export function EstablishmentDashboard({
   onToggleAtivo,
 }: EstablishmentDashboardProps) {
   const [togglingAtivo, setTogglingAtivo] = useState(false);
-  const completion = useMemo(() => calculateProfileCompletion(estabelecimento), [estabelecimento]);
+  const [showAllChecklist, setShowAllChecklist] = useState(false);
+
+  const checklistStatus = useMemo(() => getChecklistStatus(estabelecimento), [estabelecimento]);
 
   const handleToggleAtivo = async (checked: boolean) => {
     if (!onToggleAtivo) return;
@@ -221,10 +388,13 @@ export function EstablishmentDashboard({
 
   const tipoConfig = estabelecimento?.tipo_beneficio ? TIPO_BENEFICIO_CONFIG[estabelecimento.tipo_beneficio] : null;
 
-  // Calculate growth (mock - você pode implementar real depois)
+  // Calculate growth
   const viewsGrowth = analytics?.visualizacoes7d
     ? Math.round((analytics.visualizacoes7d / Math.max(analytics.visualizacoes - analytics.visualizacoes7d, 1)) * 100)
     : 0;
+
+  // CTA inteligente - pega o item pendente de maior prioridade
+  const primaryCTA = checklistStatus.pending[0];
 
   return (
     <div className="space-y-6">
@@ -235,35 +405,33 @@ export function EstablishmentDashboard({
       </div>
 
       {/* Status Card - Visibility Toggle */}
-      <Card className={cn(
-        "border",
-        estabelecimento?.ativo 
-          ? "bg-emerald-500/10 border-emerald-500/20" 
-          : "bg-amber-500/10 border-amber-500/20"
-      )}>
+      <Card
+        className={cn(
+          "border",
+          estabelecimento?.ativo ? "bg-emerald-500/10 border-emerald-500/20" : "bg-amber-500/10 border-amber-500/20",
+        )}
+      >
         <CardContent className="p-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className={cn("p-2 rounded-lg", 
-              estabelecimento?.ativo ? "bg-emerald-500/20" : "bg-amber-500/20"
-            )}>
-              {estabelecimento?.ativo 
-                ? <CheckCircle className="w-5 h-5 text-emerald-500" />
-                : <EyeOff className="w-5 h-5 text-amber-500" />
-              }
+            <div className={cn("p-2 rounded-lg", estabelecimento?.ativo ? "bg-emerald-500/20" : "bg-amber-500/20")}>
+              {estabelecimento?.ativo ? (
+                <CheckCircle className="w-5 h-5 text-emerald-500" />
+              ) : (
+                <EyeOff className="w-5 h-5 text-amber-500" />
+              )}
             </div>
             <div>
               <p className="font-medium text-foreground">
                 {estabelecimento?.ativo ? "Visível na plataforma" : "Oculto da plataforma"}
               </p>
               <p className="text-sm text-muted-foreground">
-                {estabelecimento?.ativo 
-                  ? "Aniversariantes podem encontrar seu estabelecimento" 
-                  : "Seu estabelecimento não aparece nas buscas"
-                }
+                {estabelecimento?.ativo
+                  ? "Aniversariantes podem encontrar seu estabelecimento"
+                  : "Seu estabelecimento não aparece nas buscas"}
               </p>
             </div>
           </div>
-          <Switch 
+          <Switch
             checked={estabelecimento?.ativo || false}
             onCheckedChange={handleToggleAtivo}
             disabled={togglingAtivo}
@@ -271,40 +439,23 @@ export function EstablishmentDashboard({
         </CardContent>
       </Card>
 
-      {/* Profile Completion Alert */}
-      {completion.percentage < 100 && (
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/20">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">Complete seu perfil</p>
-                  <p className="text-sm text-muted-foreground">Perfis completos aparecem melhor nos resultados</p>
-                </div>
+      {/* CTA Principal - Baseado no que falta */}
+      {primaryCTA && (
+        <Card className="bg-gradient-to-r from-primary/10 to-violet-500/10 border-primary/20">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-primary/20">
+                <primaryCTA.icon className="w-6 h-6 text-primary" />
               </div>
-              <span className="text-2xl font-bold text-primary">{completion.percentage}%</span>
+              <div className="flex-1">
+                <p className="font-semibold text-foreground text-lg">Próximo passo: {primaryCTA.label}</p>
+                <p className="text-sm text-muted-foreground mt-0.5">{primaryCTA.description}</p>
+              </div>
+              <Button className="bg-primary hover:bg-primary/90" onClick={() => onNavigate(primaryCTA.tab)}>
+                Completar
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
             </div>
-            <Progress value={completion.percentage} className="h-2 bg-muted" />
-            {completion.missing.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {completion.missing.slice(0, 3).map((item) => (
-                  <Badge key={item} variant="outline" className="border-primary/30 text-primary text-xs">
-                    Falta: {item}
-                  </Badge>
-                ))}
-                {completion.missing.length > 3 && (
-                  <Badge variant="outline" className="border-primary/30 text-primary text-xs">
-                    +{completion.missing.length - 3} mais
-                  </Badge>
-                )}
-              </div>
-            )}
-            <Button size="sm" className="mt-4 bg-primary hover:bg-primary/90" onClick={() => onNavigate("profile")}>
-              Completar perfil
-            </Button>
           </CardContent>
         </Card>
       )}
@@ -320,6 +471,7 @@ export function EstablishmentDashboard({
           iconColor="text-blue-400"
           loading={loading}
           onClick={() => onNavigate("analytics")}
+          tooltip="Número de vezes que seu perfil foi visualizado por aniversariantes."
         />
         <KPICard
           title="Cliques WhatsApp"
@@ -328,6 +480,7 @@ export function EstablishmentDashboard({
           iconColor="text-emerald-400"
           loading={loading}
           onClick={() => onNavigate("analytics")}
+          tooltip="Quantas vezes aniversariantes clicaram no botão do WhatsApp."
         />
         <KPICard
           title="Favoritos"
@@ -335,6 +488,7 @@ export function EstablishmentDashboard({
           icon={Heart}
           iconColor="text-red-400"
           loading={loading}
+          tooltip="Aniversariantes que salvaram seu estabelecimento como favorito."
         />
         <KPICard
           title="Total de Cliques"
@@ -348,8 +502,68 @@ export function EstablishmentDashboard({
           iconColor="text-violet-400"
           loading={loading}
           onClick={() => onNavigate("analytics")}
+          tooltip="Soma de todos os cliques: WhatsApp, telefone, Instagram e site."
         />
       </div>
+
+      {/* Checklist de Perfil */}
+      <Card className="bg-card/50 border-border">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/20">
+                <Sparkles className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-foreground text-lg">Checklist do Perfil</CardTitle>
+                <CardDescription>Complete para aparecer melhor nos resultados</CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl font-bold text-primary">{checklistStatus.percentage}%</span>
+            </div>
+          </div>
+          <Progress value={checklistStatus.percentage} className="h-2 bg-muted mt-3" />
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {/* Mostrar pendentes primeiro, depois completados */}
+          {checklistStatus.pending.slice(0, showAllChecklist ? undefined : 3).map((item) => (
+            <ChecklistItemRow key={item.id} item={item} isCompleted={false} onNavigate={onNavigate} />
+          ))}
+
+          {showAllChecklist &&
+            checklistStatus.completed.map((item) => (
+              <ChecklistItemRow key={item.id} item={item} isCompleted={true} onNavigate={onNavigate} />
+            ))}
+
+          {/* Ver mais / menos */}
+          {(checklistStatus.pending.length > 3 || checklistStatus.completed.length > 0) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-muted-foreground hover:text-foreground mt-2"
+              onClick={() => setShowAllChecklist(!showAllChecklist)}
+            >
+              {showAllChecklist
+                ? "Mostrar menos"
+                : `Ver todos (${checklistStatus.completed.length}/${CHECKLIST_ITEMS.length} completos)`}
+            </Button>
+          )}
+
+          {/* Perfil 100% completo */}
+          {checklistStatus.percentage === 100 && (
+            <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <CheckCircle className="w-6 h-6 text-emerald-500" />
+              <div>
+                <p className="font-medium text-emerald-600">Perfil completo! 🎉</p>
+                <p className="text-sm text-muted-foreground">
+                  Seu estabelecimento está otimizado para atrair aniversariantes.
+                </p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Benefit Card */}
       <Card className="bg-card/50 border-border">
@@ -396,11 +610,18 @@ export function EstablishmentDashboard({
               <p className="text-foreground font-medium">{estabelecimento.descricao_beneficio}</p>
             </div>
           ) : (
-            <div className="text-center py-6">
-              <Gift className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground mb-3">Você ainda não configurou seu benefício</p>
-              <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={() => onNavigate("benefit")}>
-                Configurar agora
+            <div className="text-center py-8 px-4">
+              <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
+                <Gift className="w-8 h-8 text-amber-500" />
+              </div>
+              <p className="font-medium text-foreground mb-1">Nenhum benefício configurado</p>
+              <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
+                Configure seu benefício para aparecer para os aniversariantes. Estabelecimentos com benefícios claros
+                recebem mais visitas!
+              </p>
+              <Button className="bg-primary hover:bg-primary/90" onClick={() => onNavigate("benefit")}>
+                <Gift className="w-4 h-4 mr-2" />
+                Configurar benefício
               </Button>
             </div>
           )}
@@ -431,7 +652,7 @@ export function EstablishmentDashboard({
               className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent hover:border-primary/50"
               onClick={() => onNavigate("photos")}
             >
-              <TrendingUp className="w-5 h-5 text-blue-500" />
+              <Camera className="w-5 h-5 text-blue-500" />
               <span className="text-xs">Adicionar Fotos</span>
             </Button>
 
@@ -447,7 +668,8 @@ export function EstablishmentDashboard({
             <Button
               variant="outline"
               className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent hover:border-primary/50"
-              onClick={() => onNavigate("preview")}
+              onClick={() => window.open(`/${estabelecimento?.slug}`, "_blank")}
+              disabled={!estabelecimento?.slug}
             >
               <ExternalLink className="w-5 h-5 text-cyan-500" />
               <span className="text-xs">Ver Página</span>
@@ -463,47 +685,60 @@ export function EstablishmentDashboard({
           <CardDescription>Cliques por canal nos últimos 30 dias</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="p-2 rounded-lg bg-emerald-500/20">
-                <MessageCircle className="w-4 h-4 text-emerald-500" />
+          {analytics?.cliquesWhatsapp ||
+          analytics?.cliquesTelefone ||
+          analytics?.cliquesInstagram ||
+          analytics?.cliquesSite ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="p-2 rounded-lg bg-emerald-500/20">
+                  <MessageCircle className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-foreground">{analytics?.cliquesWhatsapp || 0}</p>
+                  <p className="text-xs text-muted-foreground">WhatsApp</p>
+                </div>
               </div>
-              <div>
-                <p className="text-lg font-bold text-foreground">{analytics?.cliquesWhatsapp || 0}</p>
-                <p className="text-xs text-muted-foreground">WhatsApp</p>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="p-2 rounded-lg bg-blue-500/20">
-                <Phone className="w-4 h-4 text-blue-500" />
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="p-2 rounded-lg bg-blue-500/20">
+                  <Phone className="w-4 h-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-foreground">{analytics?.cliquesTelefone || 0}</p>
+                  <p className="text-xs text-muted-foreground">Telefone</p>
+                </div>
               </div>
-              <div>
-                <p className="text-lg font-bold text-foreground">{analytics?.cliquesTelefone || 0}</p>
-                <p className="text-xs text-muted-foreground">Telefone</p>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="p-2 rounded-lg bg-pink-500/20">
-                <Instagram className="w-4 h-4 text-pink-500" />
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="p-2 rounded-lg bg-pink-500/20">
+                  <Instagram className="w-4 h-4 text-pink-500" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-foreground">{analytics?.cliquesInstagram || 0}</p>
+                  <p className="text-xs text-muted-foreground">Instagram</p>
+                </div>
               </div>
-              <div>
-                <p className="text-lg font-bold text-foreground">{analytics?.cliquesInstagram || 0}</p>
-                <p className="text-xs text-muted-foreground">Instagram</p>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="p-2 rounded-lg bg-cyan-500/20">
-                <Globe className="w-4 h-4 text-cyan-500" />
-              </div>
-              <div>
-                <p className="text-lg font-bold text-foreground">{analytics?.cliquesSite || 0}</p>
-                <p className="text-xs text-muted-foreground">Site</p>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="p-2 rounded-lg bg-cyan-500/20">
+                  <Globe className="w-4 h-4 text-cyan-500" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-foreground">{analytics?.cliquesSite || 0}</p>
+                  <p className="text-xs text-muted-foreground">Site</p>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                <MousePointerClick className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground text-sm">Nenhum clique registrado ainda.</p>
+              <p className="text-xs text-muted-foreground mt-1">Complete seu perfil para aumentar a visibilidade!</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

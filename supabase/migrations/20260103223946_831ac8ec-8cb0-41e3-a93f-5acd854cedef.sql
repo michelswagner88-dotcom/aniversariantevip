@@ -1,0 +1,45 @@
+-- Fix public_estabelecimentos view to use SECURITY INVOKER instead of default SECURITY DEFINER
+-- This ensures RLS policies of the querying user are applied, not the view creator
+
+DROP VIEW IF EXISTS public_estabelecimentos;
+
+CREATE VIEW public_estabelecimentos 
+WITH (security_invoker = on) AS
+SELECT 
+    id,
+    codigo,
+    razao_social,
+    nome_fantasia,
+    categoria,
+    especialidades,
+    cidade,
+    estado,
+    bairro,
+    logradouro,
+    numero,
+    complemento,
+    cep,
+    endereco,
+    latitude,
+    longitude,
+    telefone,
+    whatsapp,
+    instagram,
+    site,
+    horario_funcionamento,
+    descricao_beneficio,
+    periodo_validade_beneficio,
+    regras_utilizacao,
+    logo_url,
+    galeria_fotos,
+    slug,
+    ativo,
+    created_at,
+    bio,
+    beneficio_titulo,
+    beneficio_validade,
+    beneficio_regras,
+    tipo_beneficio,
+    fotos
+FROM estabelecimentos
+WHERE ativo = true AND deleted_at IS NULL;

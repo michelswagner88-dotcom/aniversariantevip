@@ -402,7 +402,15 @@ export const Header = memo(function Header({ children }: HeaderProps) {
           <div className="flex items-center justify-between h-12">
             <Logo />
             <div className="flex items-center gap-2">
-              <UserInfo user={user} role={userRole} />
+              {user && (
+                <button
+                  onClick={() => setMenuOpen(true)}
+                  className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-white/10 transition-colors"
+                  aria-label="Abrir menu do usuário"
+                >
+                  <UserInfo user={user} role={userRole} />
+                </button>
+              )}
               <button
                 onClick={() => setMenuOpen(true)}
                 className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"

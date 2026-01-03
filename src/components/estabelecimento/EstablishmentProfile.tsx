@@ -18,8 +18,10 @@ import {
   Loader2,
   Check,
   Wand2,
+  Edit3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HorarioFuncionamentoModal } from "./HorarioFuncionamentoModal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,7 +91,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [correctingField, setCorrectingField] = useState<string | null>(null);
-
+  const [showHorarioModal, setShowHorarioModal] = useState(false);
   const [form, setForm] = useState({
     nome_fantasia: "",
     telefone: "",
@@ -444,49 +446,37 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
 
           {/* Horário */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-foreground flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Horário de Funcionamento
-              </Label>
-              {isEditing && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleCorrectText("horario_funcionamento")}
-                  disabled={correctingField === "horario_funcionamento"}
-                  className="h-7 text-xs text-primary hover:text-primary"
-                >
-                  {correctingField === "horario_funcionamento" ? (
-                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  ) : (
-                    <Wand2 className="w-3 h-3 mr-1" />
-                  )}
-                  Corrigir
-                </Button>
-              )}
-            </div>
-            <Textarea
-              value={form.horario_funcionamento}
-              onChange={(e) => setForm({ ...form, horario_funcionamento: e.target.value })}
-              onClick={handleHoursClick}
-              readOnly={!isEditing}
-              rows={2}
-              spellCheck={true}
-              lang="pt-BR"
-              autoCorrect="on"
-              autoCapitalize="sentences"
+            <Label className="text-foreground flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Horário de Funcionamento
+            </Label>
+            <div
+              onClick={() => {
+                if (!isEditing) setIsEditing(true);
+                setShowHorarioModal(true);
+              }}
               className={cn(
-                "bg-muted border-border text-foreground resize-none",
-                !isEditing && "cursor-pointer hover:bg-muted/80"
+                "flex items-center gap-3 px-4 py-3 bg-muted border border-border rounded-lg text-foreground cursor-pointer transition-colors",
+                "hover:bg-accent/50"
               )}
-              placeholder="Ex: Seg a Sex: 10h às 22h | Sáb e Dom: 12h às 00h"
-            />
-            {!isEditing && (
-              <p className="text-xs text-muted-foreground">Clique para editar</p>
-            )}
+            >
+              <Clock className="w-4 h-4 text-muted-foreground" />
+              <span className="flex-1 text-sm">
+                {form.horario_funcionamento || "Clique para definir horário"}
+              </span>
+              <Edit3 className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground">Clique para editar os horários de funcionamento</p>
           </div>
+
+          {/* Modal de Horário */}
+          {showHorarioModal && (
+            <HorarioFuncionamentoModal
+              value={form.horario_funcionamento}
+              onChange={(formatted) => setForm({ ...form, horario_funcionamento: formatted })}
+              onClose={() => setShowHorarioModal(false)}
+            />
+          )}
         </CardContent>
       </Card>
 

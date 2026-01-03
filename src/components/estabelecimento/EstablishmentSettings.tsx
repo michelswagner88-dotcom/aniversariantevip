@@ -83,9 +83,8 @@ export function EstablishmentSettings({ estabelecimento, onUpdate, onLogout }: E
       {/* Zona de Perigo */}
       <Card className="border-destructive/50 bg-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-destructive">
+          <CardTitle className="text-destructive">
             <Trash2 className="w-5 h-5" />
-            Zona de Perigo
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

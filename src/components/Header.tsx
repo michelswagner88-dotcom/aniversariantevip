@@ -359,6 +359,27 @@ interface HeaderProps {
   children?: React.ReactNode;
 }
 
+// Badge de tipo de conta
+const RoleBadge = memo(({ role }: { role: string | null }) => {
+  if (!role) return null;
+
+  const config: Record<string, { bg: string; text: string; label: string }> = {
+    estabelecimento: { bg: "bg-blue-500/20", text: "text-blue-200", label: "Estab." },
+    admin: { bg: "bg-amber-500/20", text: "text-amber-200", label: "Admin" },
+    colaborador: { bg: "bg-emerald-500/20", text: "text-emerald-200", label: "Colab." },
+    aniversariante: { bg: "bg-violet-400/20", text: "text-violet-200", label: "Aniv." },
+  };
+
+  const { bg, text, label } = config[role] || config.aniversariante;
+
+  return (
+    <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", bg, text)}>
+      {label}
+    </span>
+  );
+});
+RoleBadge.displayName = "RoleBadge";
+
 export const Header = memo(function Header({ children }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, userRole, signOut } = useAuth();
@@ -370,13 +391,16 @@ export const Header = memo(function Header({ children }: HeaderProps) {
           {/* Row 1: Logo + Menu */}
           <div className="flex items-center justify-between h-12">
             <Logo />
-            <button
-              onClick={() => setMenuOpen(true)}
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-              aria-label="Menu"
-            >
-              <Menu className="w-5 h-5 text-white" />
-            </button>
+            <div className="flex items-center gap-2">
+              {user && <RoleBadge role={userRole} />}
+              <button
+                onClick={() => setMenuOpen(true)}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                aria-label="Menu"
+              >
+                <Menu className="w-5 h-5 text-white" />
+              </button>
+            </div>
           </div>
 
           {/* Row 2: Search (passado como children) */}

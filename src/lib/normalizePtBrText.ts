@@ -4,6 +4,21 @@
 // =============================================================================
 
 /**
+ * Resultado da normalização com detalhes das correções
+ */
+export interface NormalizationCorrection {
+  original: string;
+  corrected: string;
+  type: "dictionary" | "punctuation" | "capitalization";
+}
+
+export interface NormalizationResult {
+  text: string;
+  corrections: NormalizationCorrection[];
+  wasNormalized: boolean;
+}
+
+/**
  * Dicionário de correções comuns em português brasileiro
  * Foco em palavras frequentes no contexto de benefícios/estabelecimentos
  */
@@ -152,10 +167,13 @@ function capitalizarFrases(text: string): string {
 }
 
 /**
- * Aplica dicionário de correções
+ * Aplica dicionário de correções e rastreia mudanças
  */
-function aplicarDicionario(text: string): string {
+function aplicarDicionarioComDetalhes(
+  text: string,
+): { result: string; corrections: NormalizationCorrection[] } {
   let result = text;
+  const corrections: NormalizationCorrection[] = [];
 
   // Ordenar por tamanho (maior primeiro) para evitar substituições parciais
   const entries = Object.entries(DICIONARIO_CORRECOES).sort((a, b) => b[0].length - a[0].length);
@@ -163,6 +181,33 @@ function aplicarDicionario(text: string): string {
   for (const [errado, correto] of entries) {
     // Criar regex case-insensitive com word boundaries
     const regex = new RegExp(`\\b${errado}\\b`, "gi");
+    
+    // Encontrar matches antes de substituir
+    const matches = text.match(regex);
+    if (matches) {
+      for (const match of matches) {
+        // Determinar a forma correta preservando capitalização
+        let correctedForm = correto;
+        if (match === match.toUpperCase()) {
+          correctedForm = correto.toUpperCase();
+        } else if (match[0] === match[0].toUpperCase()) {
+          correctedForm = correto.charAt(0).toUpperCase() + correto.slice(1);
+        }
+        
+        // Só adicionar se realmente for uma correção diferente
+        if (match.toLowerCase() !== correctedForm.toLowerCase() || match !== correctedForm) {
+          // Evitar duplicatas
+          if (!corrections.some(c => c.original.toLowerCase() === match.toLowerCase())) {
+            corrections.push({
+              original: match,
+              corrected: correctedForm,
+              type: "dictionary",
+            });
+          }
+        }
+      }
+    }
+
     result = result.replace(regex, (match) => {
       // Preservar capitalização original
       if (match === match.toUpperCase()) {
@@ -175,7 +220,7 @@ function aplicarDicionario(text: string): string {
     });
   }
 
-  return result;
+  return { result, corrections };
 }
 
 /**
@@ -195,20 +240,17 @@ function normalizarQuebrasLinha(text: string): string {
 }
 
 /**
- * Função principal de normalização de texto PT-BR
+ * Função de normalização com detalhes das correções
  *
  * @param text - Texto a ser normalizado
- * @returns Texto normalizado
- *
- * @example
- * normalizePtBrText("beneficio gratis no dia do aniversario")
- * // => "Benefício grátis no dia do aniversário"
+ * @returns Objeto com texto normalizado e lista de correções
  */
-export function normalizePtBrText(text: string): string {
+export function normalizeWithDetails(text: string): NormalizationResult {
   if (!text || typeof text !== "string") {
-    return text || "";
+    return { text: text || "", corrections: [], wasNormalized: false };
   }
 
+  const original = text;
   let result = text;
 
   // 1. Trim geral
@@ -217,8 +259,10 @@ export function normalizePtBrText(text: string): string {
   // 2. Normalizar quebras de linha
   result = normalizarQuebrasLinha(result);
 
-  // 3. Aplicar dicionário de correções
-  result = aplicarDicionario(result);
+  // 3. Aplicar dicionário de correções e coletar correções
+  const dictionaryResult = aplicarDicionarioComDetalhes(result);
+  result = dictionaryResult.result;
+  const corrections = [...dictionaryResult.corrections];
 
   // 4. Corrigir pontuação e espaçamento
   result = corrigirPontuacao(result);
@@ -229,7 +273,25 @@ export function normalizePtBrText(text: string): string {
   // 6. Trim final
   result = result.trim();
 
-  return result;
+  return {
+    text: result,
+    corrections,
+    wasNormalized: original !== result,
+  };
+}
+
+/**
+ * Função principal de normalização de texto PT-BR
+ *
+ * @param text - Texto a ser normalizado
+ * @returns Texto normalizado
+ *
+ * @example
+ * normalizePtBrText("beneficio gratis no dia do aniversario")
+ * // => "Benefício grátis no dia do aniversário"
+ */
+export function normalizePtBrText(text: string): string {
+  return normalizeWithDetails(text).text;
 }
 
 /**

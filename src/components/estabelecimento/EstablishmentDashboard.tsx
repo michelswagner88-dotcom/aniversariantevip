@@ -141,7 +141,7 @@ const KPICard = ({
 
   if (loading) {
     return (
-      <Card className="bg-slate-900/50 border-slate-800">
+      <Card className="bg-card/50 border-border">
         <CardContent className="p-5">
           <Skeleton className="h-4 w-20 mb-3" />
           <Skeleton className="h-8 w-24 mb-2" />
@@ -154,8 +154,8 @@ const KPICard = ({
   return (
     <Card
       className={cn(
-        "bg-slate-900/50 border-slate-800 transition-all duration-200",
-        onClick && "cursor-pointer hover:bg-slate-800/50 hover:border-slate-700",
+        "bg-card/50 border-border transition-all duration-200",
+        onClick && "cursor-pointer hover:bg-accent hover:border-primary/30",
       )}
       onClick={onClick}
     >
@@ -164,27 +164,27 @@ const KPICard = ({
           <div className={cn("p-2 rounded-lg", iconColor.replace("text-", "bg-").replace("400", "500/20"))}>
             <Icon className={cn("w-4 h-4", iconColor)} />
           </div>
-          {onClick && <ChevronRight className="w-4 h-4 text-slate-600" />}
+          {onClick && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
         </div>
 
-        <p className="text-sm text-slate-400 mb-1">{title}</p>
-        <p className="text-2xl font-bold text-white">{value}</p>
+        <p className="text-sm text-muted-foreground mb-1">{title}</p>
+        <p className="text-2xl font-bold text-foreground">{value}</p>
 
         {change !== undefined && (
           <div className="flex items-center gap-1 mt-2 text-xs">
-            {isPositive && <ArrowUpRight className="w-3 h-3 text-emerald-400" />}
-            {isNegative && <ArrowDownRight className="w-3 h-3 text-red-400" />}
+            {isPositive && <ArrowUpRight className="w-3 h-3 text-emerald-500" />}
+            {isNegative && <ArrowDownRight className="w-3 h-3 text-red-500" />}
             <span
               className={cn(
-                isPositive && "text-emerald-400",
-                isNegative && "text-red-400",
-                !isPositive && !isNegative && "text-slate-500",
+                isPositive && "text-emerald-500",
+                isNegative && "text-red-500",
+                !isPositive && !isNegative && "text-muted-foreground",
               )}
             >
               {isPositive && "+"}
               {change}%
             </span>
-            {changeLabel && <span className="text-slate-500 ml-1">{changeLabel}</span>}
+            {changeLabel && <span className="text-muted-foreground ml-1">{changeLabel}</span>}
           </div>
         )}
       </CardContent>
@@ -215,8 +215,8 @@ export function EstablishmentDashboard({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Olá, {estabelecimento?.nome_fantasia || "Parceiro"}! 👋</h1>
-        <p className="text-slate-400 mt-1">Aqui está o resumo do seu estabelecimento</p>
+        <h1 className="text-2xl font-bold text-foreground">Olá, {estabelecimento?.nome_fantasia || "Parceiro"}! 👋</h1>
+        <p className="text-muted-foreground mt-1">Aqui está o resumo do seu estabelecimento</p>
       </div>
 
       {/* Status Alert */}
@@ -224,11 +224,11 @@ export function EstablishmentDashboard({
         <Card className="bg-amber-500/10 border-amber-500/20">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-2 rounded-lg bg-amber-500/20">
-              <Clock className="w-5 h-5 text-amber-400" />
+              <Clock className="w-5 h-5 text-amber-500" />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-amber-300">Aguardando aprovação</p>
-              <p className="text-sm text-amber-300/70">
+              <p className="font-medium text-amber-600 dark:text-amber-300">Aguardando aprovação</p>
+              <p className="text-sm text-amber-600/70 dark:text-amber-300/70">
                 Seu estabelecimento está em análise e logo estará visível para os aniversariantes.
               </p>
             </div>
@@ -238,36 +238,36 @@ export function EstablishmentDashboard({
 
       {/* Profile Completion Alert */}
       {completion.percentage < 100 && (
-        <Card className="bg-violet-500/10 border-violet-500/20">
+        <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-violet-500/20">
-                  <Sparkles className="w-5 h-5 text-violet-400" />
+                <div className="p-2 rounded-lg bg-primary/20">
+                  <Sparkles className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium text-violet-300">Complete seu perfil</p>
-                  <p className="text-sm text-violet-300/70">Perfis completos aparecem melhor nos resultados</p>
+                  <p className="font-medium text-foreground">Complete seu perfil</p>
+                  <p className="text-sm text-muted-foreground">Perfis completos aparecem melhor nos resultados</p>
                 </div>
               </div>
-              <span className="text-2xl font-bold text-violet-400">{completion.percentage}%</span>
+              <span className="text-2xl font-bold text-primary">{completion.percentage}%</span>
             </div>
-            <Progress value={completion.percentage} className="h-2 bg-slate-800" />
+            <Progress value={completion.percentage} className="h-2 bg-muted" />
             {completion.missing.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {completion.missing.slice(0, 3).map((item) => (
-                  <Badge key={item} variant="outline" className="border-violet-500/30 text-violet-300 text-xs">
+                  <Badge key={item} variant="outline" className="border-primary/30 text-primary text-xs">
                     Falta: {item}
                   </Badge>
                 ))}
                 {completion.missing.length > 3 && (
-                  <Badge variant="outline" className="border-violet-500/30 text-violet-300 text-xs">
+                  <Badge variant="outline" className="border-primary/30 text-primary text-xs">
                     +{completion.missing.length - 3} mais
                   </Badge>
                 )}
               </div>
             )}
-            <Button size="sm" className="mt-4 bg-violet-600 hover:bg-violet-500" onClick={() => onNavigate("profile")}>
+            <Button size="sm" className="mt-4 bg-primary hover:bg-primary/90" onClick={() => onNavigate("profile")}>
               Completar perfil
             </Button>
           </CardContent>
@@ -317,22 +317,22 @@ export function EstablishmentDashboard({
       </div>
 
       {/* Benefit Card */}
-      <Card className="bg-slate-900/50 border-slate-800">
+      <Card className="bg-card/50 border-border">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-violet-500/20">
-                <Gift className="w-5 h-5 text-violet-400" />
+              <div className="p-2 rounded-lg bg-primary/20">
+                <Gift className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-white text-lg">Seu Benefício</CardTitle>
+                <CardTitle className="text-foreground text-lg">Seu Benefício</CardTitle>
                 <CardDescription>O que você oferece para aniversariantes</CardDescription>
               </div>
             </div>
             <Button
               variant="outline"
               size="sm"
-              className="border-slate-700 text-slate-300 hover:bg-slate-800"
+              className="border-border text-foreground hover:bg-accent"
               onClick={() => onNavigate("benefit")}
             >
               Editar
@@ -344,12 +344,12 @@ export function EstablishmentDashboard({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 {tipoConfig && (
-                  <Badge className="bg-violet-500/20 text-violet-300 border-violet-500/30">
+                  <Badge className="bg-primary/20 text-primary border-primary/30">
                     {tipoConfig.emoji} {tipoConfig.label}
                   </Badge>
                 )}
                 {estabelecimento.periodo_validade_beneficio && (
-                  <Badge variant="outline" className="border-slate-600 text-slate-400">
+                  <Badge variant="outline" className="border-border text-muted-foreground">
                     {estabelecimento.periodo_validade_beneficio === "dia_aniversario"
                       ? "No dia"
                       : estabelecimento.periodo_validade_beneficio === "semana_aniversario"
@@ -358,13 +358,13 @@ export function EstablishmentDashboard({
                   </Badge>
                 )}
               </div>
-              <p className="text-white font-medium">{estabelecimento.descricao_beneficio}</p>
+              <p className="text-foreground font-medium">{estabelecimento.descricao_beneficio}</p>
             </div>
           ) : (
             <div className="text-center py-6">
-              <Gift className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-              <p className="text-slate-400 mb-3">Você ainda não configurou seu benefício</p>
-              <Button size="sm" className="bg-violet-600 hover:bg-violet-500" onClick={() => onNavigate("benefit")}>
+              <Gift className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground mb-3">Você ainda não configurou seu benefício</p>
+              <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={() => onNavigate("benefit")}>
                 Configurar agora
               </Button>
             </div>
@@ -373,10 +373,10 @@ export function EstablishmentDashboard({
       </Card>
 
       {/* Quick Actions */}
-      <Card className="bg-slate-900/50 border-slate-800">
+      <Card className="bg-card/50 border-border">
         <CardHeader>
-          <CardTitle className="text-white text-lg flex items-center gap-2">
-            <Zap className="w-5 h-5 text-amber-400" />
+          <CardTitle className="text-foreground text-lg flex items-center gap-2">
+            <Zap className="w-5 h-5 text-amber-500" />
             Ações Rápidas
           </CardTitle>
         </CardHeader>
@@ -384,37 +384,37 @@ export function EstablishmentDashboard({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Button
               variant="outline"
-              className="h-auto py-4 flex-col gap-2 border-slate-700 hover:bg-slate-800 hover:border-violet-500/50"
+              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent hover:border-primary/50"
               onClick={() => onNavigate("profile")}
             >
-              <CheckCircle className="w-5 h-5 text-emerald-400" />
+              <CheckCircle className="w-5 h-5 text-emerald-500" />
               <span className="text-xs">Editar Perfil</span>
             </Button>
 
             <Button
               variant="outline"
-              className="h-auto py-4 flex-col gap-2 border-slate-700 hover:bg-slate-800 hover:border-violet-500/50"
+              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent hover:border-primary/50"
               onClick={() => onNavigate("photos")}
             >
-              <TrendingUp className="w-5 h-5 text-blue-400" />
+              <TrendingUp className="w-5 h-5 text-blue-500" />
               <span className="text-xs">Adicionar Fotos</span>
             </Button>
 
             <Button
               variant="outline"
-              className="h-auto py-4 flex-col gap-2 border-slate-700 hover:bg-slate-800 hover:border-violet-500/50"
+              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent hover:border-primary/50"
               onClick={() => onNavigate("analytics")}
             >
-              <Eye className="w-5 h-5 text-violet-400" />
+              <Eye className="w-5 h-5 text-primary" />
               <span className="text-xs">Ver Analytics</span>
             </Button>
 
             <Button
               variant="outline"
-              className="h-auto py-4 flex-col gap-2 border-slate-700 hover:bg-slate-800 hover:border-violet-500/50"
+              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent hover:border-primary/50"
               onClick={() => onNavigate("preview")}
             >
-              <ExternalLink className="w-5 h-5 text-cyan-400" />
+              <ExternalLink className="w-5 h-5 text-cyan-500" />
               <span className="text-xs">Ver Página</span>
             </Button>
           </div>
@@ -422,50 +422,50 @@ export function EstablishmentDashboard({
       </Card>
 
       {/* Contacts Summary */}
-      <Card className="bg-slate-900/50 border-slate-800">
+      <Card className="bg-card/50 border-border">
         <CardHeader>
-          <CardTitle className="text-white text-lg">Canais de Contato</CardTitle>
+          <CardTitle className="text-foreground text-lg">Canais de Contato</CardTitle>
           <CardDescription>Cliques por canal nos últimos 30 dias</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-800/50">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
               <div className="p-2 rounded-lg bg-emerald-500/20">
-                <MessageCircle className="w-4 h-4 text-emerald-400" />
+                <MessageCircle className="w-4 h-4 text-emerald-500" />
               </div>
               <div>
-                <p className="text-lg font-bold text-white">{analytics?.cliquesWhatsapp || 0}</p>
-                <p className="text-xs text-slate-500">WhatsApp</p>
+                <p className="text-lg font-bold text-foreground">{analytics?.cliquesWhatsapp || 0}</p>
+                <p className="text-xs text-muted-foreground">WhatsApp</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-800/50">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
               <div className="p-2 rounded-lg bg-blue-500/20">
-                <Phone className="w-4 h-4 text-blue-400" />
+                <Phone className="w-4 h-4 text-blue-500" />
               </div>
               <div>
-                <p className="text-lg font-bold text-white">{analytics?.cliquesTelefone || 0}</p>
-                <p className="text-xs text-slate-500">Telefone</p>
+                <p className="text-lg font-bold text-foreground">{analytics?.cliquesTelefone || 0}</p>
+                <p className="text-xs text-muted-foreground">Telefone</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-800/50">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
               <div className="p-2 rounded-lg bg-pink-500/20">
-                <Instagram className="w-4 h-4 text-pink-400" />
+                <Instagram className="w-4 h-4 text-pink-500" />
               </div>
               <div>
-                <p className="text-lg font-bold text-white">{analytics?.cliquesInstagram || 0}</p>
-                <p className="text-xs text-slate-500">Instagram</p>
+                <p className="text-lg font-bold text-foreground">{analytics?.cliquesInstagram || 0}</p>
+                <p className="text-xs text-muted-foreground">Instagram</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-800/50">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
               <div className="p-2 rounded-lg bg-cyan-500/20">
-                <Globe className="w-4 h-4 text-cyan-400" />
+                <Globe className="w-4 h-4 text-cyan-500" />
               </div>
               <div>
-                <p className="text-lg font-bold text-white">{analytics?.cliquesSite || 0}</p>
-                <p className="text-xs text-slate-500">Site</p>
+                <p className="text-lg font-bold text-foreground">{analytics?.cliquesSite || 0}</p>
+                <p className="text-xs text-muted-foreground">Site</p>
               </div>
             </div>
           </div>

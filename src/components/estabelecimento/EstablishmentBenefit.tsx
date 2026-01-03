@@ -96,11 +96,11 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
       });
 
       if (success) {
-        toast.success("Benefício atualizado!");
+        toast.success("Benefício atualizado com sucesso!");
       }
     } catch (error) {
       console.error("Error saving benefit:", error);
-      toast.error("Erro ao salvar");
+      toast.error("Erro ao salvar. Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -112,19 +112,19 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Benefício de Aniversário</h1>
-        <p className="text-slate-400 mt-1">Configure o que você oferece para aniversariantes</p>
+        <h1 className="text-2xl font-bold text-foreground">Benefício de Aniversário</h1>
+        <p className="text-muted-foreground mt-1">Configure o que você oferece para aniversariantes</p>
       </div>
 
       {/* Tip Card */}
-      <Card className="bg-violet-500/10 border-violet-500/20">
+      <Card className="bg-primary/5 border-primary/20">
         <CardContent className="p-4 flex items-start gap-4">
-          <div className="p-2 rounded-lg bg-violet-500/20">
-            <Sparkles className="w-5 h-5 text-violet-400" />
+          <div className="p-2 rounded-lg bg-primary/20">
+            <Sparkles className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <p className="font-medium text-violet-300">Dica para atrair mais clientes</p>
-            <p className="text-sm text-violet-300/70 mt-1">
+            <p className="font-medium text-foreground">Dica para atrair mais clientes</p>
+            <p className="text-sm text-muted-foreground mt-1">
               Benefícios claros e atrativos aumentam a taxa de conversão. Seja específico sobre o que o aniversariante
               ganha!
             </p>
@@ -133,10 +133,10 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
       </Card>
 
       {/* Tipo de Benefício */}
-      <Card className="bg-slate-900/50 border-slate-800">
+      <Card className="bg-card/50 border-border">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Gift className="w-5 h-5 text-violet-400" />
+          <CardTitle className="text-foreground flex items-center gap-2">
+            <Gift className="w-5 h-5 text-primary" />
             Tipo de Benefício
           </CardTitle>
           <CardDescription>Selecione o tipo que melhor descreve sua oferta</CardDescription>
@@ -150,31 +150,31 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
                 className={cn(
                   "p-4 rounded-xl border-2 transition-all duration-200 text-center",
                   form.tipo_beneficio === tipo.id
-                    ? "border-violet-500 bg-violet-500/10"
-                    : "border-slate-700 bg-slate-800/50 hover:border-slate-600",
+                    ? "border-primary bg-primary/10"
+                    : "border-border bg-muted/50 hover:border-muted-foreground/50",
                 )}
               >
                 <span className="text-3xl block mb-2">{tipo.emoji}</span>
                 <span
                   className={cn(
                     "text-sm font-medium",
-                    form.tipo_beneficio === tipo.id ? "text-violet-300" : "text-slate-300",
+                    form.tipo_beneficio === tipo.id ? "text-primary" : "text-foreground",
                   )}
                 >
                   {tipo.label}
                 </span>
-                {form.tipo_beneficio === tipo.id && <Check className="w-4 h-4 text-violet-400 mx-auto mt-2" />}
+                {form.tipo_beneficio === tipo.id && <Check className="w-4 h-4 text-primary mx-auto mt-2" />}
               </button>
             ))}
           </div>
-          {selectedTipo && <p className="text-sm text-slate-500 mt-3">{selectedTipo.description}</p>}
+          {selectedTipo && <p className="text-sm text-muted-foreground mt-3">{selectedTipo.description}</p>}
         </CardContent>
       </Card>
 
       {/* Descrição do Benefício */}
-      <Card className="bg-slate-900/50 border-slate-800">
+      <Card className="bg-card/50 border-border">
         <CardHeader>
-          <CardTitle className="text-white">Descrição do Benefício</CardTitle>
+          <CardTitle className="text-foreground">Descrição do Benefício</CardTitle>
           <CardDescription>Descreva claramente o que o aniversariante ganha</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -182,20 +182,20 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
             value={form.descricao_beneficio}
             onChange={(e) => setForm({ ...form, descricao_beneficio: e.target.value })}
             rows={3}
-            className="bg-slate-800 border-slate-700 text-white resize-none"
+            className="bg-muted border-border text-foreground resize-none"
             placeholder="Ex: Sobremesa grátis para o aniversariante + 10% de desconto para a mesa"
           />
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             Seja específico e atrativo. Evite termos vagos como "benefício especial".
           </p>
         </CardContent>
       </Card>
 
       {/* Período de Validade */}
-      <Card className="bg-slate-900/50 border-slate-800">
+      <Card className="bg-card/50 border-border">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-blue-400" />
+          <CardTitle className="text-foreground flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-blue-500" />
             Período de Validade
           </CardTitle>
           <CardDescription>Quando o aniversariante pode usar o benefício</CardDescription>
@@ -212,21 +212,21 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
                 className={cn(
                   "flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all",
                   form.periodo_validade_beneficio === periodo.id
-                    ? "border-violet-500 bg-violet-500/10"
-                    : "border-slate-700 bg-slate-800/50 hover:border-slate-600",
+                    ? "border-primary bg-primary/10"
+                    : "border-border bg-muted/50 hover:border-muted-foreground/50",
                 )}
               >
-                <RadioGroupItem value={periodo.id} className="border-slate-500" />
+                <RadioGroupItem value={periodo.id} className="border-muted-foreground" />
                 <div>
                   <p
                     className={cn(
                       "font-medium",
-                      form.periodo_validade_beneficio === periodo.id ? "text-violet-300" : "text-white",
+                      form.periodo_validade_beneficio === periodo.id ? "text-primary" : "text-foreground",
                     )}
                   >
                     {periodo.label}
                   </p>
-                  <p className="text-sm text-slate-500">{periodo.description}</p>
+                  <p className="text-sm text-muted-foreground">{periodo.description}</p>
                 </div>
               </label>
             ))}
@@ -235,12 +235,12 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
       </Card>
 
       {/* Regras de Utilização */}
-      <Card className="bg-slate-900/50 border-slate-800">
+      <Card className="bg-card/50 border-border">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Info className="w-5 h-5 text-amber-400" />
+          <CardTitle className="text-foreground flex items-center gap-2">
+            <Info className="w-5 h-5 text-amber-500" />
             Regras de Utilização
-            <span className="text-xs font-normal text-slate-500">(opcional)</span>
+            <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
           </CardTitle>
           <CardDescription>Condições para usar o benefício</CardDescription>
         </CardHeader>
@@ -249,36 +249,36 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
             value={form.regras_utilizacao}
             onChange={(e) => setForm({ ...form, regras_utilizacao: e.target.value })}
             rows={4}
-            className="bg-slate-800 border-slate-700 text-white resize-none"
+            className="bg-muted border-border text-foreground resize-none"
             placeholder="Ex: Válido de segunda a sexta. Apresentar documento com foto. Consumação mínima de R$50 por pessoa. Não acumulativo com outras promoções."
           />
-          <p className="text-xs text-slate-500">Seja claro nas regras para evitar mal-entendidos.</p>
+          <p className="text-xs text-muted-foreground">Seja claro nas regras para evitar mal-entendidos.</p>
         </CardContent>
       </Card>
 
       {/* Preview */}
-      <Card className="bg-slate-900/50 border-slate-800">
+      <Card className="bg-card/50 border-border">
         <CardHeader>
-          <CardTitle className="text-white">Pré-visualização</CardTitle>
+          <CardTitle className="text-foreground">Pré-visualização</CardTitle>
           <CardDescription>Como os aniversariantes vão ver seu benefício</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="bg-[#240046] rounded-xl p-5">
+          <div className="bg-primary/10 rounded-xl p-5 border border-primary/20">
             <div className="flex items-center gap-3 mb-3">
               {selectedTipo && <span className="text-2xl">{selectedTipo.emoji}</span>}
               <div>
-                <p className="text-xs text-white/60 uppercase tracking-wide">Benefício de Aniversário</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Benefício de Aniversário</p>
                 {selectedTipo && (
-                  <span className="inline-block px-2 py-0.5 bg-white/20 rounded-full text-xs text-white/80 mt-1">
+                  <span className="inline-block px-2 py-0.5 bg-primary/20 rounded-full text-xs text-primary mt-1">
                     {selectedTipo.label}
                   </span>
                 )}
               </div>
             </div>
-            <p className="text-lg font-semibold text-white">
+            <p className="text-lg font-semibold text-foreground">
               {form.descricao_beneficio || "Descreva seu benefício..."}
             </p>
-            <div className="flex items-center gap-2 mt-3 text-sm text-white/70">
+            <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
               <Calendar className="w-4 h-4" />
               {PERIODOS_VALIDADE.find((p) => p.id === form.periodo_validade_beneficio)?.label}
             </div>
@@ -288,7 +288,7 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving} className="bg-violet-600 hover:bg-violet-500 px-8">
+        <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 px-8">
           {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
           Salvar Benefício
         </Button>

@@ -29,6 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getCategoriasOptions } from "@/constants/categories";
 
 // =============================================================================
 // TYPES
@@ -68,20 +69,8 @@ interface EstablishmentProfileProps {
 // CONSTANTS
 // =============================================================================
 
-const CATEGORIAS = [
-  { value: "restaurante", label: "🍽️ Restaurante" },
-  { value: "bar", label: "🍺 Bar" },
-  { value: "cafeteria", label: "☕ Cafeteria" },
-  { value: "balada", label: "🎉 Balada" },
-  { value: "salao", label: "💇 Salão de Beleza" },
-  { value: "barbearia", label: "✂️ Barbearia" },
-  { value: "academia", label: "🏋️ Academia" },
-  { value: "spa", label: "🧖 Spa" },
-  { value: "loja", label: "🛍️ Loja" },
-  { value: "hotel", label: "🏨 Hotel" },
-  { value: "clinica", label: "🏥 Clínica" },
-  { value: "servico", label: "🔧 Serviço" },
-];
+// Use official categories from constants
+const CATEGORIAS = getCategoriasOptions();
 
 const ESTADOS = [
   "AC",
@@ -269,7 +258,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-48" />
-        <Card className="bg-slate-900/50 border-slate-800">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-6 space-y-4">
             <Skeleton className="h-20 w-20 rounded-xl" />
             <Skeleton className="h-10 w-full" />
@@ -286,17 +275,17 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Meu Perfil</h1>
-          <p className="text-slate-400 mt-1">Gerencie as informações do seu estabelecimento</p>
+          <h1 className="text-2xl font-bold text-foreground">Meu Perfil</h1>
+          <p className="text-muted-foreground mt-1">Gerencie as informações do seu estabelecimento</p>
         </div>
 
         {!isEditing ? (
-          <Button onClick={() => setIsEditing(true)} className="bg-violet-600 hover:bg-violet-500">
+          <Button onClick={() => setIsEditing(true)} className="bg-primary hover:bg-primary/90">
             Editar Perfil
           </Button>
         ) : (
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleCancel} disabled={saving} className="border-slate-700">
+            <Button variant="outline" onClick={handleCancel} disabled={saving} className="border-border">
               <X className="w-4 h-4 mr-2" />
               Cancelar
             </Button>
@@ -309,10 +298,10 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
       </div>
 
       {/* Logo & Basic Info */}
-      <Card className="bg-slate-900/50 border-slate-800">
+      <Card className="bg-card/50 border-border">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-violet-400" />
+          <CardTitle className="text-foreground flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-primary" />
             Informações Básicas
           </CardTitle>
         </CardHeader>
@@ -320,7 +309,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
           {/* Logo */}
           <div className="flex items-start gap-6">
             <div className="relative">
-              <div className="w-24 h-24 rounded-xl bg-slate-800 flex items-center justify-center overflow-hidden border-2 border-slate-700">
+              <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center overflow-hidden border-2 border-border">
                 {logoPreview || estabelecimento?.logo_url ? (
                   <img
                     src={logoPreview || estabelecimento?.logo_url || ""}
@@ -328,53 +317,53 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <Building2 className="w-8 h-8 text-slate-500" />
+                  <Building2 className="w-8 h-8 text-muted-foreground" />
                 )}
               </div>
               {isEditing && (
-                <label className="absolute -bottom-2 -right-2 p-2 bg-violet-600 rounded-full cursor-pointer hover:bg-violet-500 transition-colors">
-                  <Upload className="w-4 h-4 text-white" />
+                <label className="absolute -bottom-2 -right-2 p-2 bg-primary rounded-full cursor-pointer hover:bg-primary/90 transition-colors">
+                  <Upload className="w-4 h-4 text-primary-foreground" />
                   <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                 </label>
               )}
             </div>
 
             <div className="flex-1 space-y-1">
-              <p className="text-sm text-slate-400">Logo do estabelecimento</p>
-              <p className="text-xs text-slate-500">Recomendado: 400x400px, formato JPG ou PNG</p>
-              {estabelecimento?.cnpj && <p className="text-xs text-slate-600 mt-2">CNPJ: {estabelecimento.cnpj}</p>}
+              <p className="text-sm text-muted-foreground">Logo do estabelecimento</p>
+              <p className="text-xs text-muted-foreground/70">Recomendado: 400x400px, formato JPG ou PNG</p>
+              {estabelecimento?.cnpj && <p className="text-xs text-muted-foreground/50 mt-2">CNPJ: {estabelecimento.cnpj}</p>}
             </div>
           </div>
 
-          <Separator className="bg-slate-800" />
+          <Separator className="bg-border" />
 
           {/* Nome */}
           <div className="space-y-2">
-            <Label className="text-slate-300">Nome Fantasia</Label>
+            <Label className="text-foreground">Nome Fantasia</Label>
             <Input
               value={form.nome_fantasia}
               onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })}
               disabled={!isEditing}
-              className="bg-slate-800 border-slate-700 text-white disabled:opacity-70"
+              className="bg-muted border-border text-foreground disabled:opacity-70"
               placeholder="Nome do seu estabelecimento"
             />
           </div>
 
           {/* Categoria */}
           <div className="space-y-2">
-            <Label className="text-slate-300">Categoria</Label>
+            <Label className="text-foreground">Categoria</Label>
             <Select
               value={form.categoria}
               onValueChange={(value) => setForm({ ...form, categoria: value })}
               disabled={!isEditing}
             >
-              <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+              <SelectTrigger className="bg-muted border-border text-foreground">
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-900 border-slate-700">
+              <SelectContent className="bg-card border-border z-50">
                 {CATEGORIAS.map((cat) => (
                   <SelectItem key={cat.value} value={cat.value}>
-                    {cat.label}
+                    {cat.icon} {cat.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -384,22 +373,22 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
           {/* Bio */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-slate-300">Sobre o estabelecimento</Label>
-              <span className="text-xs text-slate-500">{form.bio.length}/500</span>
+              <Label className="text-foreground">Sobre o estabelecimento</Label>
+              <span className="text-xs text-muted-foreground">{form.bio.length}/500</span>
             </div>
             <Textarea
               value={form.bio}
               onChange={(e) => setForm({ ...form, bio: e.target.value.slice(0, 500) })}
               disabled={!isEditing}
               rows={4}
-              className="bg-slate-800 border-slate-700 text-white disabled:opacity-70 resize-none"
+              className="bg-muted border-border text-foreground disabled:opacity-70 resize-none"
               placeholder="Descreva seu estabelecimento de forma atraente..."
             />
           </div>
 
           {/* Horário */}
           <div className="space-y-2">
-            <Label className="text-slate-300 flex items-center gap-2">
+            <Label className="text-foreground flex items-center gap-2">
               <Clock className="w-4 h-4" />
               Horário de Funcionamento
             </Label>
@@ -408,7 +397,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
               onChange={(e) => setForm({ ...form, horario_funcionamento: e.target.value })}
               disabled={!isEditing}
               rows={2}
-              className="bg-slate-800 border-slate-700 text-white disabled:opacity-70 resize-none"
+              className="bg-muted border-border text-foreground disabled:opacity-70 resize-none"
               placeholder="Ex: Seg a Sex: 10h às 22h | Sáb e Dom: 12h às 00h"
             />
           </div>
@@ -416,10 +405,10 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
       </Card>
 
       {/* Contatos */}
-      <Card className="bg-slate-900/50 border-slate-800">
+      <Card className="bg-card/50 border-border">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Phone className="w-5 h-5 text-emerald-400" />
+          <CardTitle className="text-foreground flex items-center gap-2">
+            <Phone className="w-5 h-5 text-emerald-500" />
             Contatos
           </CardTitle>
         </CardHeader>
@@ -427,38 +416,38 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Telefone */}
             <div className="space-y-2">
-              <Label className="text-slate-300">Telefone</Label>
+              <Label className="text-foreground">Telefone</Label>
               <Input
                 value={form.telefone}
                 onChange={(e) => setForm({ ...form, telefone: e.target.value })}
                 disabled={!isEditing}
-                className="bg-slate-800 border-slate-700 text-white disabled:opacity-70"
+                className="bg-muted border-border text-foreground disabled:opacity-70"
                 placeholder="(00) 0000-0000"
               />
             </div>
 
             {/* WhatsApp */}
             <div className="space-y-2">
-              <Label className="text-slate-300">WhatsApp</Label>
+              <Label className="text-foreground">WhatsApp</Label>
               <Input
                 value={form.whatsapp}
                 onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
                 disabled={!isEditing}
-                className="bg-slate-800 border-slate-700 text-white disabled:opacity-70"
+                className="bg-muted border-border text-foreground disabled:opacity-70"
                 placeholder="(00) 00000-0000"
               />
             </div>
 
             {/* Instagram */}
             <div className="space-y-2">
-              <Label className="text-slate-300">Instagram</Label>
+              <Label className="text-foreground">Instagram</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">@</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
                 <Input
                   value={form.instagram}
                   onChange={(e) => setForm({ ...form, instagram: e.target.value.replace("@", "") })}
                   disabled={!isEditing}
-                  className="bg-slate-800 border-slate-700 text-white disabled:opacity-70 pl-7"
+                  className="bg-muted border-border text-foreground disabled:opacity-70 pl-7"
                   placeholder="seuusuario"
                 />
               </div>
@@ -466,12 +455,12 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
 
             {/* Site */}
             <div className="space-y-2">
-              <Label className="text-slate-300">Site</Label>
+              <Label className="text-foreground">Site</Label>
               <Input
                 value={form.site}
                 onChange={(e) => setForm({ ...form, site: e.target.value })}
                 disabled={!isEditing}
-                className="bg-slate-800 border-slate-700 text-white disabled:opacity-70"
+                className="bg-muted border-border text-foreground disabled:opacity-70"
                 placeholder="www.seusite.com.br"
               />
             </div>
@@ -480,10 +469,10 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
       </Card>
 
       {/* Endereço */}
-      <Card className="bg-slate-900/50 border-slate-800">
+      <Card className="bg-card/50 border-border">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-red-400" />
+          <CardTitle className="text-foreground flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-red-500" />
             Endereço
           </CardTitle>
         </CardHeader>
@@ -491,28 +480,28 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* CEP */}
             <div className="space-y-2">
-              <Label className="text-slate-300">CEP</Label>
+              <Label className="text-foreground">CEP</Label>
               <Input
                 value={form.cep}
                 onChange={(e) => setForm({ ...form, cep: e.target.value })}
                 disabled={!isEditing}
-                className="bg-slate-800 border-slate-700 text-white disabled:opacity-70"
+                className="bg-muted border-border text-foreground disabled:opacity-70"
                 placeholder="00000-000"
               />
             </div>
 
             {/* Estado */}
             <div className="space-y-2">
-              <Label className="text-slate-300">Estado</Label>
+              <Label className="text-foreground">Estado</Label>
               <Select
                 value={form.estado}
                 onValueChange={(value) => setForm({ ...form, estado: value })}
                 disabled={!isEditing}
               >
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                <SelectTrigger className="bg-muted border-border text-foreground">
                   <SelectValue placeholder="UF" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-slate-700">
+                <SelectContent className="bg-card border-border z-50">
                   {ESTADOS.map((uf) => (
                     <SelectItem key={uf} value={uf}>
                       {uf}
@@ -524,12 +513,12 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
 
             {/* Cidade */}
             <div className="space-y-2">
-              <Label className="text-slate-300">Cidade</Label>
+              <Label className="text-foreground">Cidade</Label>
               <Input
                 value={form.cidade}
                 onChange={(e) => setForm({ ...form, cidade: e.target.value })}
                 disabled={!isEditing}
-                className="bg-slate-800 border-slate-700 text-white disabled:opacity-70"
+                className="bg-muted border-border text-foreground disabled:opacity-70"
                 placeholder="Cidade"
               />
             </div>
@@ -538,24 +527,24 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Bairro */}
             <div className="space-y-2">
-              <Label className="text-slate-300">Bairro</Label>
+              <Label className="text-foreground">Bairro</Label>
               <Input
                 value={form.bairro}
                 onChange={(e) => setForm({ ...form, bairro: e.target.value })}
                 disabled={!isEditing}
-                className="bg-slate-800 border-slate-700 text-white disabled:opacity-70"
+                className="bg-muted border-border text-foreground disabled:opacity-70"
                 placeholder="Bairro"
               />
             </div>
 
             {/* Logradouro */}
             <div className="space-y-2">
-              <Label className="text-slate-300">Rua/Avenida</Label>
+              <Label className="text-foreground">Rua/Avenida</Label>
               <Input
                 value={form.logradouro}
                 onChange={(e) => setForm({ ...form, logradouro: e.target.value })}
                 disabled={!isEditing}
-                className="bg-slate-800 border-slate-700 text-white disabled:opacity-70"
+                className="bg-muted border-border text-foreground disabled:opacity-70"
                 placeholder="Rua/Avenida"
               />
             </div>
@@ -564,24 +553,24 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Número */}
             <div className="space-y-2">
-              <Label className="text-slate-300">Número</Label>
+              <Label className="text-foreground">Número</Label>
               <Input
                 value={form.numero}
                 onChange={(e) => setForm({ ...form, numero: e.target.value })}
                 disabled={!isEditing}
-                className="bg-slate-800 border-slate-700 text-white disabled:opacity-70"
+                className="bg-muted border-border text-foreground disabled:opacity-70"
                 placeholder="Nº"
               />
             </div>
 
             {/* Complemento */}
             <div className="space-y-2">
-              <Label className="text-slate-300">Complemento</Label>
+              <Label className="text-foreground">Complemento</Label>
               <Input
                 value={form.complemento}
                 onChange={(e) => setForm({ ...form, complemento: e.target.value })}
                 disabled={!isEditing}
-                className="bg-slate-800 border-slate-700 text-white disabled:opacity-70"
+                className="bg-muted border-border text-foreground disabled:opacity-70"
                 placeholder="Sala, Loja, etc."
               />
             </div>

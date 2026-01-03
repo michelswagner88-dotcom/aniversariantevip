@@ -86,12 +86,12 @@ const calculateProfileCompletion = (est: EstabelecimentoData | null): number => 
 };
 
 const getStatusConfig = (est: EstabelecimentoData | null) => {
-  if (!est) return { label: "Carregando...", color: "text-slate-400", icon: Clock };
+  if (!est) return { label: "Carregando...", color: "text-muted-foreground", icon: Clock };
 
   if (est.ativo) {
-    return { label: "Ativo", color: "text-emerald-400", icon: CheckCircle, bg: "bg-emerald-500/20" };
+    return { label: "Ativo", color: "text-emerald-500", icon: CheckCircle, bg: "bg-emerald-500/20" };
   }
-  return { label: "Pendente", color: "text-amber-400", icon: AlertCircle, bg: "bg-amber-500/20" };
+  return { label: "Pendente", color: "text-amber-500", icon: AlertCircle, bg: "bg-amber-500/20" };
 };
 
 // =============================================================================
@@ -131,22 +131,22 @@ export function EstablishmentSidebar({
       {/* Header */}
       <div
         className={cn(
-          "flex items-center gap-3 px-4 py-5 border-b border-slate-800",
+          "flex items-center gap-3 px-4 py-5 border-b border-border",
           collapsed && "justify-center px-2",
         )}
       >
         {/* Logo */}
-        <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
           {estabelecimento?.logo_url ? (
             <img src={estabelecimento.logo_url} alt="" className="w-full h-full object-cover" />
           ) : (
-            <Cake className="w-5 h-5 text-violet-400" />
+            <Cake className="w-5 h-5 text-primary" />
           )}
         </div>
 
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <h1 className="font-semibold text-white text-sm truncate">
+            <h1 className="font-semibold text-foreground text-sm truncate">
               {estabelecimento?.nome_fantasia || "Meu Estabelecimento"}
             </h1>
             <div className="flex items-center gap-1.5 mt-0.5">
@@ -159,14 +159,14 @@ export function EstablishmentSidebar({
 
       {/* Profile Completion - Only when not collapsed */}
       {!collapsed && completion < 100 && (
-        <div className="px-4 py-3 border-b border-slate-800">
+        <div className="px-4 py-3 border-b border-border">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-slate-400">Perfil completo</span>
-            <span className="text-xs font-medium text-violet-400">{completion}%</span>
+            <span className="text-xs text-muted-foreground">Perfil completo</span>
+            <span className="text-xs font-medium text-primary">{completion}%</span>
           </div>
-          <Progress value={completion} className="h-1.5 bg-slate-800" />
+          <Progress value={completion} className="h-1.5 bg-muted" />
           {completion < 100 && (
-            <p className="text-[10px] text-slate-500 mt-2">Complete seu perfil para aparecer melhor nos resultados</p>
+            <p className="text-[10px] text-muted-foreground mt-2">Complete seu perfil para aparecer melhor nos resultados</p>
           )}
         </div>
       )}
@@ -186,12 +186,12 @@ export function EstablishmentSidebar({
                 }}
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150",
-                  "hover:bg-white/5",
-                  isActive ? "bg-violet-500/10 text-violet-300 font-medium" : "text-slate-400 hover:text-white",
+                  "hover:bg-accent",
+                  isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground",
                   collapsed && "justify-center px-2",
                 )}
               >
-                <Icon className={cn("w-[18px] h-[18px] flex-shrink-0", isActive && "text-violet-400")} />
+                <Icon className={cn("w-[18px] h-[18px] flex-shrink-0", isActive && "text-primary")} />
 
                 {!collapsed && <span className="flex-1 text-left truncate">{item.label}</span>}
               </button>
@@ -203,9 +203,9 @@ export function EstablishmentSidebar({
                   <TooltipProvider delayDuration={0}>
                     <Tooltip>
                       <TooltipTrigger asChild>{menuButton}</TooltipTrigger>
-                      <TooltipContent side="right" className="bg-slate-800 border-slate-700">
+                      <TooltipContent side="right" className="bg-card border-border">
                         <p>{item.label}</p>
-                        <p className="text-xs text-slate-400">{item.description}</p>
+                        <p className="text-xs text-muted-foreground">{item.description}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -219,13 +219,13 @@ export function EstablishmentSidebar({
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-slate-800 p-3 space-y-2">
+      <div className="border-t border-border p-3 space-y-2">
         {/* View Public Page */}
         {!collapsed && estabelecimento?.slug && (
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start text-slate-400 hover:text-white hover:bg-white/5"
+            className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-accent"
             onClick={() => window.open(`/${estabelecimento.slug}`, "_blank")}
           >
             <ExternalLink className="w-4 h-4 mr-2" />
@@ -239,7 +239,7 @@ export function EstablishmentSidebar({
           size="sm"
           onClick={onLogout}
           className={cn(
-            "w-full text-slate-400 hover:text-red-400 hover:bg-red-500/10",
+            "w-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10",
             collapsed ? "justify-center" : "justify-start",
           )}
         >
@@ -251,7 +251,7 @@ export function EstablishmentSidebar({
       {/* Collapse Toggle - Desktop */}
       <button
         onClick={() => onCollapsedChange(!collapsed)}
-        className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 rounded-full bg-slate-800 border border-slate-700 items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+        className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 rounded-full bg-card border border-border items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
       >
         {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3 rotate-90" />}
       </button>
@@ -263,7 +263,7 @@ export function EstablishmentSidebar({
       {/* Mobile Toggle */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-40 p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-card border border-border text-muted-foreground shadow-lg"
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -274,7 +274,7 @@ export function EstablishmentSidebar({
       {/* Sidebar - Desktop */}
       <aside
         className={cn(
-          "hidden lg:flex flex-col fixed inset-y-0 left-0 bg-slate-950 border-r border-slate-800 transition-all duration-200 z-30",
+          "hidden lg:flex flex-col fixed inset-y-0 left-0 bg-card border-r border-border transition-all duration-200 z-30",
           collapsed ? "w-16" : "w-64",
         )}
       >
@@ -284,13 +284,13 @@ export function EstablishmentSidebar({
       {/* Sidebar - Mobile */}
       <aside
         className={cn(
-          "lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-slate-950 border-r border-slate-800 transform transition-transform duration-200",
+          "lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <button
           onClick={() => setMobileOpen(false)}
-          className="absolute top-4 right-4 p-1 text-slate-400 hover:text-white"
+          className="absolute top-4 right-4 p-1 text-muted-foreground hover:text-foreground"
         >
           <X className="w-5 h-5" />
         </button>

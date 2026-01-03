@@ -359,26 +359,36 @@ interface HeaderProps {
   children?: React.ReactNode;
 }
 
-// Badge de tipo de conta
-const RoleBadge = memo(({ role }: { role: string | null }) => {
-  if (!role) return null;
+// User info com nome e badge
+const UserInfo = memo(({ user, role }: { user: AuthUser | null; role: string | null }) => {
+  if (!user) return null;
 
-  const config: Record<string, { bg: string; text: string; label: string }> = {
+  const roleConfig: Record<string, { bg: string; text: string; label: string }> = {
     estabelecimento: { bg: "bg-blue-500/20", text: "text-blue-200", label: "Estab." },
     admin: { bg: "bg-amber-500/20", text: "text-amber-200", label: "Admin" },
     colaborador: { bg: "bg-emerald-500/20", text: "text-emerald-200", label: "Colab." },
     aniversariante: { bg: "bg-violet-400/20", text: "text-violet-200", label: "Aniv." },
   };
 
-  const { bg, text, label } = config[role] || config.aniversariante;
+  const config = role ? roleConfig[role] || roleConfig.aniversariante : null;
+  const displayName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuário";
 
   return (
-    <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", bg, text)}>
-      {label}
-    </span>
+    <div className="flex items-center gap-2">
+      {/* Nome - visível apenas em desktop */}
+      <span className="hidden sm:block text-xs text-white/80 font-medium truncate max-w-[120px]">
+        {displayName}
+      </span>
+      {/* Badge de role */}
+      {config && (
+        <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", config.bg, config.text)}>
+          {config.label}
+        </span>
+      )}
+    </div>
   );
 });
-RoleBadge.displayName = "RoleBadge";
+UserInfo.displayName = "UserInfo";
 
 export const Header = memo(function Header({ children }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -392,7 +402,7 @@ export const Header = memo(function Header({ children }: HeaderProps) {
           <div className="flex items-center justify-between h-12">
             <Logo />
             <div className="flex items-center gap-2">
-              {user && <RoleBadge role={userRole} />}
+              <UserInfo user={user} role={userRole} />
               <button
                 onClick={() => setMenuOpen(true)}
                 className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"

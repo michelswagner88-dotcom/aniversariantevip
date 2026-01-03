@@ -20,6 +20,9 @@ import { EstablishmentAnalytics } from "@/components/estabelecimento/Establishme
 import { EstablishmentPreview } from "@/components/estabelecimento/EstablishmentPreview";
 import { EstablishmentSettings } from "@/components/estabelecimento/EstablishmentSettings";
 
+// Hooks
+import { useEstabelecimentoAnalytics } from "@/hooks/useEstabelecimentoAnalytics";
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -69,6 +72,8 @@ export interface AnalyticsData {
   cliquesSite: number;
   favoritos: number;
   posicaoRanking: number;
+  // Chart data from useEstabelecimentoAnalytics hook
+  chartData?: Array<{ date: string; views: number; clicks: number }>;
 }
 
 type ActiveTab = "dashboard" | "profile" | "benefit" | "photos" | "analytics" | "preview" | "settings";
@@ -86,11 +91,27 @@ export default function AreaEstabelecimento() {
 
   // Data state
   const [estabelecimento, setEstabelecimento] = useState<EstabelecimentoData | null>(null);
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   // UI state
   const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
+
+  // Use the analytics hook for real data
+  const { data: hookAnalytics, isLoading: analyticsLoading } = useEstabelecimentoAnalytics(userId || undefined);
+
+  // Transform hook data to component format
+  const analytics: AnalyticsData | null = hookAnalytics ? {
+    visualizacoes: hookAnalytics.visualizacoesPerfil,
+    visualizacoes7d: hookAnalytics.views7d,
+    cliquesWhatsapp: hookAnalytics.cliquesWhatsApp,
+    cliquesWhatsapp7d: 0, // Not tracked separately in hook
+    cliquesTelefone: hookAnalytics.cliquesTelefone,
+    cliquesInstagram: hookAnalytics.cliquesInstagram,
+    cliquesSite: hookAnalytics.cliquesSite,
+    favoritos: hookAnalytics.favoritosAdicionados,
+    posicaoRanking: 0,
+    chartData: hookAnalytics.engajamentoPorDia,
+  } : null;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // =========================================================================
@@ -158,8 +179,7 @@ export default function AreaEstabelecimento() {
           email: session?.user.email || null,
         });
 
-        // Load analytics
-        await loadAnalytics(userId);
+        // Analytics is now loaded via useEstabelecimentoAnalytics hook
       } catch (error) {
         console.error("Error loading data:", error);
         toast.error("Erro ao carregar dados");
@@ -170,86 +190,6 @@ export default function AreaEstabelecimento() {
 
     loadData();
   }, [authState, userId]);
-
-  // =========================================================================
-  // LOAD ANALYTICS
-  // =========================================================================
-
-  const loadAnalytics = async (estabelecimentoId: string) => {
-    try {
-      const seteDiasAtras = new Date();
-      seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
-
-      // Visualizações totais
-      const { count: visualizacoes } = await supabase
-        .from("estabelecimento_analytics")
-        .select("*", { count: "exact", head: true })
-        .eq("estabelecimento_id", estabelecimentoId)
-        .eq("tipo_evento", "visualizacao");
-
-      // Visualizações 7 dias
-      const { count: visualizacoes7d } = await supabase
-        .from("estabelecimento_analytics")
-        .select("*", { count: "exact", head: true })
-        .eq("estabelecimento_id", estabelecimentoId)
-        .eq("tipo_evento", "visualizacao")
-        .gte("created_at", seteDiasAtras.toISOString());
-
-      // Cliques WhatsApp
-      const { count: cliquesWhatsapp } = await supabase
-        .from("estabelecimento_analytics")
-        .select("*", { count: "exact", head: true })
-        .eq("estabelecimento_id", estabelecimentoId)
-        .eq("tipo_evento", "clique_whatsapp");
-
-      // Cliques WhatsApp 7d
-      const { count: cliquesWhatsapp7d } = await supabase
-        .from("estabelecimento_analytics")
-        .select("*", { count: "exact", head: true })
-        .eq("estabelecimento_id", estabelecimentoId)
-        .eq("tipo_evento", "clique_whatsapp")
-        .gte("created_at", seteDiasAtras.toISOString());
-
-      // Outros cliques
-      const { count: cliquesTelefone } = await supabase
-        .from("estabelecimento_analytics")
-        .select("*", { count: "exact", head: true })
-        .eq("estabelecimento_id", estabelecimentoId)
-        .eq("tipo_evento", "clique_telefone");
-
-      const { count: cliquesInstagram } = await supabase
-        .from("estabelecimento_analytics")
-        .select("*", { count: "exact", head: true })
-        .eq("estabelecimento_id", estabelecimentoId)
-        .eq("tipo_evento", "clique_instagram");
-
-      const { count: cliquesSite } = await supabase
-        .from("estabelecimento_analytics")
-        .select("*", { count: "exact", head: true })
-        .eq("estabelecimento_id", estabelecimentoId)
-        .eq("tipo_evento", "clique_site");
-
-      // Favoritos
-      const { count: favoritos } = await supabase
-        .from("favoritos")
-        .select("*", { count: "exact", head: true })
-        .eq("estabelecimento_id", estabelecimentoId);
-
-      setAnalytics({
-        visualizacoes: visualizacoes || 0,
-        visualizacoes7d: visualizacoes7d || 0,
-        cliquesWhatsapp: cliquesWhatsapp || 0,
-        cliquesWhatsapp7d: cliquesWhatsapp7d || 0,
-        cliquesTelefone: cliquesTelefone || 0,
-        cliquesInstagram: cliquesInstagram || 0,
-        cliquesSite: cliquesSite || 0,
-        favoritos: favoritos || 0,
-        posicaoRanking: 0, // Calcular depois
-      });
-    } catch (error) {
-      console.error("Error loading analytics:", error);
-    }
-  };
 
   // =========================================================================
   // HANDLERS
@@ -353,7 +293,7 @@ export default function AreaEstabelecimento() {
           )}
 
           {activeTab === "analytics" && (
-            <EstablishmentAnalytics estabelecimentoId={userId || ""} analytics={analytics} loading={loading} />
+          <EstablishmentAnalytics estabelecimentoId={userId || ""} analytics={analytics} loading={loading || analyticsLoading} />
           )}
 
           {activeTab === "preview" && <EstablishmentPreview estabelecimento={estabelecimento} />}

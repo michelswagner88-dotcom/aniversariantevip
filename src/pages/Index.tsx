@@ -132,21 +132,7 @@ const ALL_CATEGORIES = [
 // HOOKS
 // =============================================================================
 
-const useAuth = () => {
-  const [user, setUser] = useState<any>(null);
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setUser(session?.user ?? null));
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
-    return () => subscription.unsubscribe();
-  }, []);
-  const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-    toast.success("Logout realizado");
-  }, []);
-  return { user, signOut };
-};
+import { useUserRole, type UserRole } from "@/hooks/useUserRole";
 
 const useAvailableCities = (estabelecimentos: any[]) => {
   return useMemo(() => {
@@ -439,8 +425,39 @@ const MenuBtnDark = ({ icon, label, sub, onClick, danger }: any) => (
 const Header = memo(
   ({ children, onUseCurrentLocation }: { children?: React.ReactNode; onUseCurrentLocation?: () => void }) => {
     const [menuOpen, setMenuOpen] = useState(false);
-    const { user, signOut } = useAuth();
+    const { user, role, signOut } = useUserRole();
     const navigate = useNavigate();
+
+    // Determina a área correta baseado na role
+    const getMyAreaPath = () => {
+      switch (role) {
+        case "estabelecimento":
+          return "/area-estabelecimento";
+        case "admin":
+          return "/admin/dashboard";
+        case "colaborador":
+          return "/admin/dashboard";
+        case "aniversariante":
+        default:
+          return "/area-aniversariante";
+      }
+    };
+
+    const getMyAreaLabel = () => {
+      switch (role) {
+        case "estabelecimento":
+          return { label: "Gerenciar Estabelecimento", sub: "Painel do parceiro" };
+        case "admin":
+        case "colaborador":
+          return { label: "Painel Admin", sub: "Gerenciar plataforma" };
+        case "aniversariante":
+        default:
+          return { label: "Minha Área", sub: "Gerencie seu perfil" };
+      }
+    };
+
+    const areaInfo = getMyAreaLabel();
+    const isAniversariante = role === "aniversariante" || !role;
 
     return (
       <>
@@ -515,26 +532,35 @@ const Header = memo(
                         {user.user_metadata?.full_name || "Usuário"}
                       </p>
                       <p className="text-xs text-white/60 truncate">{user.email}</p>
+                      {role && role !== "aniversariante" && (
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-white/20 text-xs text-white/80 capitalize">
+                          {role === "estabelecimento" ? "Parceiro" : role}
+                        </span>
+                      )}
                     </div>
 
                     <MenuBtnDark
-                      icon={<Gift className="w-5 h-5 text-fuchsia-400" />}
-                      label="Minha Área"
-                      sub="Gerencie seu perfil"
+                      icon={role === "estabelecimento" ? <Building2 className="w-5 h-5 text-blue-400" /> : <Gift className="w-5 h-5 text-fuchsia-400" />}
+                      label={areaInfo.label}
+                      sub={areaInfo.sub}
                       onClick={() => {
-                        navigate("/area-aniversariante");
+                        navigate(getMyAreaPath());
                         setMenuOpen(false);
                       }}
                     />
-                    <MenuBtnDark
-                      icon={<Heart className="w-5 h-5 text-pink-400" />}
-                      label="Meus Favoritos"
-                      sub="Lugares salvos"
-                      onClick={() => {
-                        navigate("/meus-favoritos");
-                        setMenuOpen(false);
-                      }}
-                    />
+
+                    {/* Favoritos - só para aniversariante */}
+                    {isAniversariante && (
+                      <MenuBtnDark
+                        icon={<Heart className="w-5 h-5 text-pink-400" />}
+                        label="Meus Favoritos"
+                        sub="Lugares salvos"
+                        onClick={() => {
+                          navigate("/meus-favoritos");
+                          setMenuOpen(false);
+                        }}
+                      />
+                    )}
 
                     <div className="my-3 mx-2 border-t border-white/10" />
 
@@ -543,6 +569,7 @@ const Header = memo(
                       label="Sair"
                       onClick={() => {
                         signOut();
+                        toast.success("Logout realizado");
                         setMenuOpen(false);
                       }}
                       danger
@@ -1306,8 +1333,9 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const categoria = searchParams.get("categoria") || "all";
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, role } = useUserRole();
   const isLoggedIn = !!user;
+  const isAniversariante = role === "aniversariante" || !role;
 
   const { isInteracting, handleInteractionStart, handleInteractionEnd } = useCarouselInteraction();
   const rotation = useRotatingCategories(isInteracting);

@@ -68,6 +68,7 @@ const Afiliado = lazy(() => import("./pages/Afiliado"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const RoleRedirect = lazy(() => import("./pages/RoleRedirect"));
 
 // Componente interno para usar hooks
 const AppContent = () => {
@@ -447,10 +448,24 @@ const App = () => (
                       />
 
                       {/* ============================================ */}
-                      {/* ALIASES - Rotas curtas */}
+                      {/* ALIASES - Rotas curtas com redirect por role */}
                       {/* ============================================ */}
-                      <Route path="/favoritos" element={<Navigate to="/meus-favoritos" replace />} />
-                      <Route path="/perfil" element={<Navigate to="/area-aniversariante" replace />} />
+                      <Route
+                        path="/favoritos"
+                        element={
+                          <LazyRoute>
+                            <RoleRedirect type="favoritos" />
+                          </LazyRoute>
+                        }
+                      />
+                      <Route
+                        path="/perfil"
+                        element={
+                          <LazyRoute>
+                            <RoleRedirect type="perfil" />
+                          </LazyRoute>
+                        }
+                      />
                       <Route path="/termos" element={<Navigate to="/termos-uso" replace />} />
                       <Route path="/privacidade" element={<Navigate to="/politica-privacidade" replace />} />
                       <Route path="/dashboard" element={<Navigate to="/" replace />} />

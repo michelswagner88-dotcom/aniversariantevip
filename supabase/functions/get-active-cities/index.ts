@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.83.0';
 import { checkRateLimit, getRequestIdentifier, rateLimitExceededResponse } from "../_shared/rateLimit.ts";
 import { validarOrigem, getCorsHeaders } from "../_shared/cors.ts";
+import { isValidLatLng, sanitizeSearchTerm, logSecurityEvent } from "../_shared/validation.ts";
 
 interface ActiveCity {
   cidade: string;
@@ -76,8 +77,23 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     );
 
-    const { userLat, userLng, searchTerm, includeNearby }: RequestBody = 
-      req.method === 'POST' ? await req.json() : {};
+    const body: RequestBody = req.method === 'POST' ? await req.json() : {};
+    let { userLat, userLng, searchTerm, includeNearby } = body;
+
+    // VALIDAÇÃO: Sanitizar termo de busca
+    if (searchTerm) {
+      searchTerm = sanitizeSearchTerm(searchTerm, 100);
+    }
+
+    // VALIDAÇÃO: Verificar coordenadas se fornecidas
+    if (userLat !== undefined && userLng !== undefined) {
+      if (!isValidLatLng(userLat, userLng)) {
+        logSecurityEvent('get_cities_invalid_coords', { userLat, userLng }, 'warn');
+        // Ignorar coordenadas inválidas em vez de falhar
+        userLat = undefined;
+        userLng = undefined;
+      }
+    }
 
     console.log('Fetching active cities...', { userLat, userLng, searchTerm, includeNearby });
 

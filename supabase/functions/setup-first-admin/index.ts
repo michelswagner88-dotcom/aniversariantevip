@@ -1,6 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { validarOrigem, getCorsHeaders } from "../_shared/cors.ts";
+import { 
+  isValidEmail, 
+  isValidPassword, 
+  sanitizeName,
+  logSecurityEvent 
+} from "../_shared/validation.ts";
+import { sanitizarEmail } from "../_shared/sanitize.ts";
+import { checkRateLimit, getRequestIdentifier, rateLimitExceededResponse } from "../_shared/rateLimit.ts";
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -11,6 +19,9 @@ serve(async (req) => {
 
   // Validar origem
   if (!validarOrigem(req)) {
+    logSecurityEvent('setup_admin_blocked_origin', { 
+      origin: req.headers.get('origin') 
+    }, 'warn');
     return new Response(
       JSON.stringify({ error: 'Origem não autorizada' }),
       { 
@@ -20,13 +31,28 @@ serve(async (req) => {
     );
   }
 
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+  // FASE 2: Rate limiting - apenas 3 tentativas por hora por IP
+  const identifier = getRequestIdentifier(req);
+  const { allowed, remaining } = await checkRateLimit(
+    supabaseUrl,
+    supabaseServiceKey,
+    identifier,
+    { limit: 3, windowMinutes: 60, keyPrefix: "setup_admin" }
+  );
+
+  if (!allowed) {
+    logSecurityEvent('setup_admin_rate_limited', { identifier }, 'warn');
+    return rateLimitExceededResponse(remaining);
+  }
+
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { email, password, nome } = await req.json();
+    const body = await req.json();
+    const { email: rawEmail, password, nome: rawNome } = body;
 
     // FASE 2: Proteção adicional - Extrair IP e User Agent
     const clientIP = req.headers.get('x-forwarded-for') || 
@@ -35,6 +61,57 @@ serve(async (req) => {
     const userAgent = req.headers.get('user-agent') || 'unknown';
 
     console.log(`Setup Admin: Tentativa de criação de admin de IP ${clientIP}`);
+
+    // VALIDAÇÃO 1: Email obrigatório e formato válido
+    if (!rawEmail) {
+      return new Response(
+        JSON.stringify({ error: 'Email é obrigatório' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const email = sanitizarEmail(rawEmail);
+    if (!isValidEmail(email)) {
+      logSecurityEvent('setup_admin_invalid_email', { email: rawEmail }, 'warn');
+      return new Response(
+        JSON.stringify({ error: 'Formato de email inválido' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // VALIDAÇÃO 2: Senha obrigatória e requisitos mínimos
+    if (!password) {
+      return new Response(
+        JSON.stringify({ error: 'Senha é obrigatória' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const passwordValidation = isValidPassword(password);
+    if (!passwordValidation.valid) {
+      logSecurityEvent('setup_admin_weak_password', { email }, 'warn');
+      return new Response(
+        JSON.stringify({ error: passwordValidation.message }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // VALIDAÇÃO 3: Nome obrigatório e sanitizado
+    if (!rawNome) {
+      return new Response(
+        JSON.stringify({ error: 'Nome é obrigatório' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const nome = sanitizeName(rawNome);
+    if (!nome) {
+      logSecurityEvent('setup_admin_invalid_name', { nome: rawNome }, 'warn');
+      return new Response(
+        JSON.stringify({ error: 'Nome inválido. Use apenas letras e espaços (mínimo 2 caracteres)' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     console.log('Verificando se já existem admins...');
     
@@ -47,7 +124,7 @@ serve(async (req) => {
     if (count && count > 0) {
       // Log tentativa de criar admin quando já existe
       await supabase.from('admin_access_logs').insert({
-        email: email || 'unknown',
+        email: email,
         action: 'setup_admin_duplicate_attempt',
         endpoint: '/setup-first-admin',
         ip_address: clientIP,
@@ -58,6 +135,8 @@ serve(async (req) => {
           existing_admins_count: count
         }
       });
+
+      logSecurityEvent('setup_admin_already_exists', { email, count }, 'warn');
 
       return new Response(
         JSON.stringify({ error: 'Já existem administradores cadastrados' }),
@@ -147,6 +226,11 @@ serve(async (req) => {
       }
     });
 
+    logSecurityEvent('setup_admin_success', { 
+      userId: userData.user.id, 
+      email 
+    }, 'info');
+
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -160,10 +244,10 @@ serve(async (req) => {
     console.error('Erro completo:', error);
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     
+    logSecurityEvent('setup_admin_error', { error: errorMessage }, 'error');
+    
     // Log erro na criação do admin
     try {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
       const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
       
       const clientIP = req.headers.get('x-forwarded-for') || 

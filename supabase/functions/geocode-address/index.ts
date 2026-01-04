@@ -1,4 +1,6 @@
 import { validarOrigem, getCorsHeaders } from "../_shared/cors.ts";
+import { sanitizeAddress, logSecurityEvent } from "../_shared/validation.ts";
+import { checkRateLimit, getRequestIdentifier, rateLimitExceededResponse } from "../_shared/rateLimit.ts";
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -9,18 +11,50 @@ Deno.serve(async (req) => {
 
   // Validar origem
   if (!validarOrigem(req)) {
+    logSecurityEvent('geocode_blocked_origin', { 
+      origin: req.headers.get('origin') 
+    }, 'warn');
     return new Response(
       JSON.stringify({ success: false, error: 'Origem não autorizada' }),
       { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+  // Rate limiting: 30 requisições por hora por IP
+  const identifier = getRequestIdentifier(req);
+  const { allowed, remaining } = await checkRateLimit(
+    supabaseUrl,
+    supabaseServiceKey,
+    identifier,
+    { limit: 30, windowMinutes: 60, keyPrefix: "geocode" }
+  );
+
+  if (!allowed) {
+    logSecurityEvent('geocode_rate_limited', { identifier }, 'warn');
+    return rateLimitExceededResponse(remaining);
+  }
+
   try {
-    const { endereco } = await req.json();
+    const { endereco: rawEndereco } = await req.json();
     
-    if (!endereco || typeof endereco !== 'string') {
+    // VALIDAÇÃO: Endereço obrigatório e sanitizado
+    if (!rawEndereco || typeof rawEndereco !== 'string') {
       return new Response(
         JSON.stringify({ success: false, error: 'Endereço é obrigatório' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const endereco = sanitizeAddress(rawEndereco, 300);
+    if (!endereco) {
+      logSecurityEvent('geocode_invalid_address', { 
+        endereco: rawEndereco.substring(0, 50) 
+      }, 'warn');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Endereço inválido ou muito longo (máximo 300 caracteres)' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

@@ -10,11 +10,12 @@
 // ✅ Acessibilidade WCAG 2.1 AAA
 // ✅ Reduced motion support
 // ✅ Badge contador
+// ✅ Role-based navigation (estabelecimento vs aniversariante)
 // =============================================================================
 
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Search, Heart, User } from "lucide-react";
+import { Home, Search, Heart, User, Building2, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -30,15 +31,31 @@ interface NavItem {
   authRequired?: boolean;
 }
 
+type UserRole = "aniversariante" | "estabelecimento" | "colaborador" | "admin" | null;
+
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
-const NAV_ITEMS: NavItem[] = [
+const NAV_ITEMS_ANIVERSARIANTE: NavItem[] = [
   { id: "home", label: "Início", icon: Home, path: "/" },
   { id: "search", label: "Buscar", icon: Search, path: "/explorar" },
   { id: "favorites", label: "Favoritos", icon: Heart, path: "/meus-favoritos", authRequired: true },
   { id: "profile", label: "Perfil", icon: User, path: "/area-aniversariante", authRequired: true },
+];
+
+const NAV_ITEMS_ESTABELECIMENTO: NavItem[] = [
+  { id: "home", label: "Início", icon: Home, path: "/" },
+  { id: "search", label: "Buscar", icon: Search, path: "/explorar" },
+  { id: "panel", label: "Minha Área", icon: Building2, path: "/area-estabelecimento", authRequired: true },
+  { id: "settings", label: "Config", icon: Settings, path: "/area-estabelecimento?tab=configuracoes", authRequired: true },
+];
+
+const NAV_ITEMS_DEFAULT: NavItem[] = [
+  { id: "home", label: "Início", icon: Home, path: "/" },
+  { id: "search", label: "Buscar", icon: Search, path: "/explorar" },
+  { id: "favorites", label: "Favoritos", icon: Heart, path: "/meus-favoritos", authRequired: true },
+  { id: "profile", label: "Perfil", icon: User, path: "/login", authRequired: true },
 ];
 
 // =============================================================================
@@ -62,13 +79,45 @@ const useReducedMotion = (): boolean => {
 
 const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole>(null);
 
   useEffect(() => {
+    const fetchUserRole = async (userId: string) => {
+      try {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId);
+
+        if (roles && roles.length > 0) {
+          // Prioridade: estabelecimento > admin > colaborador > aniversariante
+          if (roles.some((r) => r.role === "estabelecimento")) {
+            setUserRole("estabelecimento");
+          } else if (roles.some((r) => r.role === "admin")) {
+            setUserRole("admin");
+          } else if (roles.some((r) => r.role === "colaborador")) {
+            setUserRole("colaborador");
+          } else if (roles.some((r) => r.role === "aniversariante")) {
+            setUserRole("aniversariante");
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar role:", error);
+      }
+    };
+
     const checkAuth = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session?.user);
+      
+      if (session?.user) {
+        setIsAuthenticated(true);
+        fetchUserRole(session.user.id);
+      } else {
+        setIsAuthenticated(false);
+        setUserRole(null);
+      }
     };
 
     checkAuth();
@@ -76,20 +125,27 @@ const useAuth = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session?.user);
+      if (session?.user) {
+        setIsAuthenticated(true);
+        fetchUserRole(session.user.id);
+      } else {
+        setIsAuthenticated(false);
+        setUserRole(null);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  return isAuthenticated;
+  return { isAuthenticated, userRole };
 };
 
-const useFavoritesCount = (isAuthenticated: boolean) => {
+const useFavoritesCount = (isAuthenticated: boolean, userRole: UserRole) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Não buscar favoritos para estabelecimentos
+    if (!isAuthenticated || userRole === "estabelecimento") {
       setCount(0);
       return;
     }
@@ -123,7 +179,7 @@ const useFavoritesCount = (isAuthenticated: boolean) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, userRole]);
 
   return count;
 };
@@ -213,22 +269,38 @@ NavButton.displayName = "NavButton";
 export const BottomNav = memo(function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const isAuthenticated = useAuth();
-  const favoritesCount = useFavoritesCount(isAuthenticated);
+  const { isAuthenticated, userRole } = useAuth();
+  const favoritesCount = useFavoritesCount(isAuthenticated, userRole);
   const reducedMotion = useReducedMotion();
+
+  // Selecionar items de navegação baseado na role
+  const navItems = useMemo(() => {
+    if (!isAuthenticated) return NAV_ITEMS_DEFAULT;
+    if (userRole === "estabelecimento") return NAV_ITEMS_ESTABELECIMENTO;
+    return NAV_ITEMS_ANIVERSARIANTE;
+  }, [isAuthenticated, userRole]);
 
   // Detectar path ativo
   const getActiveId = useCallback(() => {
     const path = location.pathname;
+    const search = location.search;
 
     if (path === "/") return "home";
     if (path.startsWith("/explorar") || path.startsWith("/buscar")) return "search";
+    
+    // Para estabelecimento
+    if (path.startsWith("/area-estabelecimento")) {
+      if (search.includes("tab=configuracoes")) return "settings";
+      return "panel";
+    }
+    
+    // Para aniversariante
     if (path.startsWith("/meus-favoritos") || path.startsWith("/favoritos")) return "favorites";
     if (path.startsWith("/area-aniversariante") || path.startsWith("/perfil") || path.startsWith("/login"))
       return "profile";
 
     return "home";
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
   const activeId = getActiveId();
 
@@ -267,7 +339,7 @@ export const BottomNav = memo(function BottomNav() {
       aria-label="Navegação principal"
     >
       <div className="flex items-stretch h-16 max-w-lg mx-auto">
-        {NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <NavButton
             key={item.id}
             item={item}

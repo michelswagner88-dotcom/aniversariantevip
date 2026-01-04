@@ -46,6 +46,8 @@ import { getEstabelecimentoSEO } from "@/constants/seo";
 import CupomModal from "@/components/CupomModal";
 import LoginRequiredModal from "@/components/LoginRequiredModal";
 import BenefitSheet from "@/components/BenefitSheet";
+import EstablishmentContextModal from "@/components/EstablishmentContextModal";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -1050,11 +1052,17 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
 
   const [estabelecimento, setEstabelecimento] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [showCupomModal, setShowCupomModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showEstablishmentModal, setShowEstablishmentModal] = useState(false);
+
+  // Hook de role centralizado
+  const { user, role } = useUserRole();
+  const userId = user?.id || null;
+  const isEstablishment = role === "estabelecimento";
+  const isAniversariante = role === "aniversariante" || (!role && !!userId);
 
   const { isFavorito, toggleFavorito } = useFavoritos(userId);
   const {
@@ -1076,21 +1084,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
       : { title: "Carregando...", description: "Carregando informações do estabelecimento..." },
   );
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      setUserId(session?.user?.id || null);
-    };
-    checkAuth();
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setUserId(session?.user?.id || null);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+  // Auth gerenciado pelo useUserRole hook - removido useEffect duplicado
 
   useEffect(() => {
     const fetchEstabelecimento = async () => {
@@ -1121,7 +1115,13 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
   }, [id, navigate, trackPageView]);
 
   const handleBack = () => navigate(-1);
+
   const handleFavorite = async () => {
+    // Estabelecimento não pode favoritar
+    if (isEstablishment) {
+      setShowEstablishmentModal(true);
+      return;
+    }
     if (!userId || !id) {
       setShowLoginModal(true);
       return;
@@ -1129,11 +1129,18 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
     trackFavorite(id);
     await toggleFavorito(id);
   };
+
   const handleShare = () => {
     if (id) trackShare(id);
     setShowShareSheet(true);
   };
+
   const handleShowRules = () => {
+    // Estabelecimento vê modal específico
+    if (isEstablishment) {
+      setShowEstablishmentModal(true);
+      return;
+    }
     if (!userId) {
       setShowLoginModal(true);
       return;
@@ -1141,6 +1148,7 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
     if (id) trackBenefitClick(id);
     setShowRulesModal(true);
   };
+
   const handleEmitirCupom = () => {
     setShowRulesModal(false);
     setShowCupomModal(true);
@@ -1490,6 +1498,11 @@ const EstabelecimentoDetalhePremium = ({ estabelecimentoIdProp }: Estabeleciment
         onShareTelegram={handleShareTelegram}
         onShareLinkedin={handleShareLinkedin}
         onCopyLink={handleCopyLink}
+      />
+      <EstablishmentContextModal
+        open={showEstablishmentModal}
+        onOpenChange={setShowEstablishmentModal}
+        establishmentSlug={estabelecimento?.slug}
       />
     </div>
   );

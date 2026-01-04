@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { validarOrigem, getCorsHeaders } from "../_shared/cors.ts";
+import { sanitizeChatMessage, logSecurityEvent } from "../_shared/validation.ts";
+import { checkRateLimit, getRequestIdentifier, rateLimitExceededResponse } from "../_shared/rateLimit.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CAROL_SYSTEM_PROMPT = `Você é a Carol, assistente virtual do Aniversariante VIP - o maior guia de benefícios para aniversariantes do Brasil.
 
@@ -229,8 +232,6 @@ Exemplos de como DEVE responder:
 
 ## 🛠️ RESOLUÇÃO DE PROBLEMAS TÉCNICOS:
 
-### CADASTRO DE ANIVERSARIANTE:
-
 ### "Não consigo me cadastrar":
 - Verificar se email já foi usado (cada email só pode ter uma conta)
 - Verificar se CPF já foi cadastrado (CPF é único por conta)
@@ -244,131 +245,23 @@ Exemplos de como DEVE responder:
 - Se o CPF está correto mas dá erro, pode já estar cadastrado em outra conta
 - Nesse caso, tente fazer login com o email dessa conta ou recuperar a senha
 
-### "Meu cadastro não completa" / "Fica travado":
-- Todos os campos são obrigatórios: nome, CPF, data de nascimento, telefone, cidade
-- O CEP precisa ser válido (8 dígitos)
-- A data de nascimento precisa ser real e você ter entre 16 e 120 anos
-- Tente atualizar a página e preencher novamente
-
-### "Cadastrei com Google mas não consigo entrar":
-- Use sempre o botão "Continuar com Google" para entrar
-- Não tente com email/senha se cadastrou pelo Google
-- Se não funcionar, tente limpar cookies do navegador
-
-### LOGIN E ACESSO:
-
 ### "Não consigo fazer login":
 - Verificar se o email está correto
 - Se cadastrou com Google, usar o botão do Google (não email/senha)
 - Usar "Esqueci minha senha" para criar uma nova
 - Limpar cache e cookies do navegador
 
-### "Não recebo email de recuperação de senha":
-- Verificar pasta de spam/lixo eletrônico
-- Verificar se digitou o email corretamente
-- Aguardar até 5 minutos (pode demorar um pouco)
-- Tentar reenviar clicando novamente em "Esqueci minha senha"
-
-### "Minha senha não funciona":
-- A senha é sensível a maiúsculas/minúsculas
-- Tente redefinir usando "Esqueci minha senha"
-- Verifique se não está com Caps Lock ligado
-
-### PROBLEMAS VISUAIS E NAVEGAÇÃO:
-
 ### "Página não carrega / erro branco":
 - Atualizar a página (F5 ou puxar pra baixo no celular)
 - Limpar cache do navegador
 - Tentar outro navegador (Chrome funciona melhor)
 - Verificar conexão com internet
-- Se persistir, pode ser manutenção - tente em alguns minutos
 
 ### "Mapa não aparece":
 - Permitir localização quando o navegador pedir
 - Verificar se não está bloqueando permissões do site
 - Atualizar a página
-- Tentar pelo Chrome (melhor compatibilidade)
-- Se continuar, os estabelecimentos aparecem em lista também
-
-### "Não encontro estabelecimentos na minha cidade":
-- Verificar se digitou a cidade corretamente
-- Ainda estamos expandindo - pode não ter parceiros na sua região ainda
-- Sugerir estabelecimentos pra gente cadastrar! Manda pro suporte
-
-### CADASTRO DE ESTABELECIMENTO:
-
-### "CNPJ não encontrado" / "CNPJ inválido":
-- Verificar se digitou os 14 números corretamente
-- O CNPJ precisa estar ativo na Receita Federal
-- CNPJ de MEI também funciona
-- Se o CNPJ está correto mas não encontra, pode ser que a Receita não tenha os dados atualizados - preencha manualmente
-
-### "CNPJ já cadastrado":
-- Cada CNPJ só pode ter uma conta
-- Se você já cadastrou antes, tente fazer login ou recuperar a senha
-- Se outra pessoa cadastrou, entre em contato com o suporte
-
-### "Erro ao cadastrar estabelecimento":
-- Todos os campos obrigatórios precisam estar preenchidos
-- O benefício precisa ser definido (o que você vai oferecer)
-- WhatsApp é obrigatório para contato
-- A senha precisa ter 8+ caracteres, uma maiúscula e um especial
-
-### "Não consigo acessar meu painel de estabelecimento":
-- Verificar se está usando o email correto do cadastro
-- Usar "Esqueci minha senha" se não lembrar
-- Verificar se o cadastro já foi aprovado
-- Contar o suporte se continuar sem acesso
-
-### PLANOS E PAGAMENTO (ESTABELECIMENTOS):
-
-### "Não consigo fazer o pagamento":
-- Aceitos apenas cartão de crédito e débito
-- Verificar se o cartão está válido e com limite
-- Tentar outro cartão se der erro
-- Pagamento é processado pelo Stripe (seguro)
-
-### "Meu estabelecimento não aparece no site":
-- Verificar se o cadastro está completo
-- O estabelecimento precisa estar ativo
-- Pode levar alguns minutos para aparecer após ativação
-- Verificar se a cidade está preenchida corretamente
-
-### "Quero cancelar meu plano":
-- Entre em contato pelo suporte@aniversariantevip.com.br
-- O cancelamento pode ser feito a qualquer momento
-- Não há multa de cancelamento
-
-### BENEFÍCIOS E USO:
-
-### "Estabelecimento não aceita meu benefício":
-- Verificar se você está no período válido (dia/semana/mês do aniversário)
-- Cada estabelecimento tem suas próprias regras - confira na página dele
-- Apresentar documento com foto e data de nascimento (RG ou CNH)
-- Se o problema persistir, tire print e mande pro suporte
-
-### "Não sei qual documento apresentar":
-- RG (Carteira de Identidade) funciona
-- CNH (Carteira de Motorista) funciona
-- Qualquer documento oficial com foto E data de nascimento
-- O estabelecimento só confere se você faz aniversário no período
-
-### "Não encontro estabelecimentos na minha cidade":
-- Verificar se a cidade está escrita corretamente
-- Ainda estamos expandindo para novas cidades
-- Sugerir estabelecimentos para cadastro!
-
-### "Estabelecimento não aceita meu benefício":
-- Verificar se está no período válido (dia/semana/mês)
-- Confirmar as regras específicas do estabelecimento
-- Apresentar documento com foto e data de nascimento
-- Em caso de problema, entrar em contato conosco
-
-### Para estabelecimentos - "Não consigo acessar meu painel":
-- Verificar se usou email do cadastro
-- Usar "Esqueci minha senha"
-- Verificar se o cadastro foi aprovado
-- Contatar suporte se precisar
+- Os estabelecimentos aparecem em lista também
 
 ---
 
@@ -387,11 +280,6 @@ Exemplos de como DEVE responder:
 3. Rolar e clicar em "Adicionar à Tela de Início"
 4. Confirmar
 5. Ícone aparece na tela inicial!
-
-### Vantagens de instalar:
-- Acesso rápido como um app
-- Abre em tela cheia
-- Funciona offline (páginas já visitadas)
 
 ---
 
@@ -426,6 +314,11 @@ Exemplos de como DEVE responder:
 ## NAVEGAÇÃO:
 Quando precisar direcionar para uma página, use frases como "Vou te levar até lá!" e mencione qual página vai abrir. O sistema navegará automaticamente.`;
 
+// Constantes de rate limiting
+const RATE_LIMIT_MESSAGES = 30; // mensagens por hora
+const MAX_MESSAGE_LENGTH = 500;
+const MAX_HISTORY_LENGTH = 10;
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   
@@ -435,18 +328,63 @@ serve(async (req) => {
 
   // Validar origem
   if (!validarOrigem(req)) {
+    logSecurityEvent('carol_chat_blocked_origin', { 
+      origin: req.headers.get('origin') 
+    }, 'warn');
     return new Response(
       JSON.stringify({ error: 'Origem não autorizada' }),
       { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
-  try {
-    const { message, conversationHistory, userContext } = await req.json();
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    if (!message || message.trim().length === 0) {
+  // Rate limiting: 30 mensagens por hora por IP
+  const identifier = getRequestIdentifier(req);
+  const { allowed, remaining } = await checkRateLimit(
+    supabaseUrl,
+    supabaseServiceKey,
+    identifier,
+    { limit: RATE_LIMIT_MESSAGES, windowMinutes: 60, keyPrefix: "carol_chat" }
+  );
+
+  if (!allowed) {
+    logSecurityEvent('carol_chat_rate_limited', { identifier }, 'warn');
+    return new Response(
+      JSON.stringify({ 
+        response: 'Ops, muitas mensagens! 😅 Aguarde um pouco antes de enviar outra pergunta.',
+        success: false,
+        rateLimited: true
+      }),
+      {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+
+  try {
+    const { message: rawMessage, conversationHistory, userContext } = await req.json();
+
+    // VALIDAÇÃO 1: Mensagem obrigatória
+    if (!rawMessage) {
       return new Response(
         JSON.stringify({ error: 'Mensagem é obrigatória' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // VALIDAÇÃO 2: Sanitizar e validar tamanho da mensagem
+    const message = sanitizeChatMessage(rawMessage, MAX_MESSAGE_LENGTH);
+    if (!message) {
+      return new Response(
+        JSON.stringify({ 
+          error: `Mensagem inválida ou muito longa (máximo ${MAX_MESSAGE_LENGTH} caracteres)` 
+        }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -473,14 +411,20 @@ serve(async (req) => {
       content: contextualizedPrompt
     });
 
-    // Adicionar histórico (últimas 10 mensagens)
-    if (conversationHistory && conversationHistory.length > 0) {
-      const recentHistory = conversationHistory.slice(-10);
+    // Adicionar histórico (últimas MAX_HISTORY_LENGTH mensagens)
+    if (conversationHistory && Array.isArray(conversationHistory) && conversationHistory.length > 0) {
+      const recentHistory = conversationHistory.slice(-MAX_HISTORY_LENGTH);
       for (const msg of recentHistory) {
-        messages.push({
-          role: msg.type === 'user' ? 'user' : 'assistant',
-          content: msg.text
-        });
+        // Validar e sanitizar cada mensagem do histórico
+        if (msg && msg.text && typeof msg.text === 'string') {
+          const sanitizedHistoryMsg = sanitizeChatMessage(msg.text, MAX_MESSAGE_LENGTH);
+          if (sanitizedHistoryMsg) {
+            messages.push({
+              role: msg.type === 'user' ? 'user' : 'assistant',
+              content: sanitizedHistoryMsg
+            });
+          }
+        }
       }
     }
 
@@ -560,6 +504,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Erro na função carol-chat:', error);
+    logSecurityEvent('carol_chat_error', { 
+      error: error instanceof Error ? error.message : 'unknown' 
+    }, 'error');
     return new Response(
       JSON.stringify({ 
         response: "Ops, tive um probleminha técnico aqui! 😅 Pode tentar de novo? Se continuar, me manda um email em suporte@aniversariantevip.com.br",

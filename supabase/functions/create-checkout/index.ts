@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { validarOrigem, getCorsHeaders } from "../_shared/cors.ts";
+import { isValidStripePriceId, isValidPaymentType, logSecurityEvent } from "../_shared/validation.ts";
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -45,7 +46,21 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const { priceId, paymentType = 'subscription' } = await req.json();
+    
+    // VALIDAÇÃO: Price ID obrigatório
     if (!priceId) throw new Error("Price ID is required");
+    
+    // VALIDAÇÃO: Formato do Price ID (Stripe)
+    if (!isValidStripePriceId(priceId)) {
+      logSecurityEvent('checkout_invalid_price_id', { priceId, userId: user.id }, 'warn');
+      throw new Error("Invalid Price ID format");
+    }
+    
+    // VALIDAÇÃO: Tipo de pagamento válido
+    if (!isValidPaymentType(paymentType)) {
+      logSecurityEvent('checkout_invalid_payment_type', { paymentType, userId: user.id }, 'warn');
+      throw new Error("Invalid payment type. Must be 'subscription' or 'onetime'");
+    }
     
     logStep("Price ID and payment type received", { priceId, paymentType });
 

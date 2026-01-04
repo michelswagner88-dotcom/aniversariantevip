@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { validarOrigem, getCorsHeaders } from "../_shared/cors.ts";
+import { isValidUUID, logSecurityEvent } from "../_shared/validation.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -93,8 +94,17 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { estabelecimento_id } = await req.json();
     
+    // VALIDAÇÃO: ID do estabelecimento obrigatório e formato UUID válido
     if (!estabelecimento_id) {
       throw new Error("ID do estabelecimento é obrigatório");
+    }
+
+    if (!isValidUUID(estabelecimento_id)) {
+      logSecurityEvent('emit_coupon_invalid_uuid', { 
+        estabelecimento_id, 
+        userId: user.id 
+      }, 'warn');
+      throw new Error("Formato de ID do estabelecimento inválido");
     }
 
     console.log(`Emitindo cupom - User: ${user.id}, Estabelecimento: ${estabelecimento_id}`);

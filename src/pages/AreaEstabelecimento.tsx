@@ -1,8 +1,6 @@
 // =============================================================================
-// ÁREA DO ESTABELECIMENTO - PREMIUM v2.1
-// Dashboard moderno estilo Stripe/Vercel
-// Sem sistema de cupons - foco em presença e engajamento
-// ATUALIZADO: Listener de auth para não perder sessão ao atualizar
+// ÁREA DO ESTABELECIMENTO - PREMIUM LIGHT v3.0
+// Tema Light estilo Stripe/Linear
 // =============================================================================
 
 import { useEffect, useState, useCallback } from "react";
@@ -10,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 // Components
 import { EstablishmentSidebar } from "@/components/estabelecimento/EstablishmentSidebar";
@@ -74,7 +73,6 @@ export interface AnalyticsData {
   cliquesSite: number;
   favoritos: number;
   posicaoRanking: number;
-  // Chart data from useEstabelecimentoAnalytics hook
   chartData?: Array<{ date: string; views: number; clicks: number }>;
 }
 
@@ -111,7 +109,7 @@ export default function AreaEstabelecimento() {
         visualizacoes: hookAnalytics.visualizacoesPerfil,
         visualizacoes7d: hookAnalytics.views7d,
         cliquesWhatsapp: hookAnalytics.cliquesWhatsApp,
-        cliquesWhatsapp7d: 0, // Not tracked separately in hook
+        cliquesWhatsapp7d: 0,
         cliquesTelefone: hookAnalytics.cliquesTelefone,
         cliquesInstagram: hookAnalytics.cliquesInstagram,
         cliquesSite: hookAnalytics.cliquesSite,
@@ -122,7 +120,7 @@ export default function AreaEstabelecimento() {
     : null;
 
   // =========================================================================
-  // AUTH CHECK - Com listener para mudanças de sessão
+  // AUTH CHECK
   // =========================================================================
 
   const checkAuth = useCallback(async () => {
@@ -144,7 +142,6 @@ export default function AreaEstabelecimento() {
         return;
       }
 
-      // Verificar role
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("role")
@@ -166,7 +163,6 @@ export default function AreaEstabelecimento() {
         return;
       }
 
-      // Tudo OK - autorizado
       setAuthState("authorized");
       setUserId(session.user.id);
     } catch (error) {
@@ -176,10 +172,8 @@ export default function AreaEstabelecimento() {
   }, [navigate]);
 
   useEffect(() => {
-    // Verificar auth ao montar
     checkAuth();
 
-    // Listener para mudanças de autenticação (login, logout, refresh token)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -190,17 +184,14 @@ export default function AreaEstabelecimento() {
         setUserId(null);
         navigate("/login/estabelecimento", { replace: true });
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        // Re-verificar permissões quando sessão muda
         checkAuth();
       } else if (event === "INITIAL_SESSION") {
-        // Sessão inicial carregada - já tratado pelo checkAuth acima
         if (!session) {
           navigate("/login/estabelecimento", { replace: true });
         }
       }
     });
 
-    // Cleanup
     return () => {
       subscription.unsubscribe();
     };
@@ -216,7 +207,6 @@ export default function AreaEstabelecimento() {
     const loadData = async () => {
       setLoading(true);
       try {
-        // Load estabelecimento data
         const { data: estab, error: estabError } = await supabase
           .from("estabelecimentos")
           .select("*")
@@ -228,7 +218,6 @@ export default function AreaEstabelecimento() {
           throw estabError;
         }
 
-        // Get email from auth
         const {
           data: { session },
         } = await supabase.auth.getSession();
@@ -285,15 +274,15 @@ export default function AreaEstabelecimento() {
   };
 
   // =========================================================================
-  // LOADING STATE
+  // LOADING STATE - Light theme
   // =========================================================================
 
   if (authState === "checking") {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F7F7F8] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-400 text-sm">Verificando acesso...</p>
+          <Loader2 className="w-8 h-8 text-[#240046] animate-spin" />
+          <p className="text-[#6B7280] text-sm">Verificando acesso...</p>
         </div>
       </div>
     );
@@ -301,21 +290,21 @@ export default function AreaEstabelecimento() {
 
   if (authState === "unauthorized") {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F7F7F8] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-400 text-sm">Redirecionando...</p>
+          <Loader2 className="w-8 h-8 text-[#240046] animate-spin" />
+          <p className="text-[#6B7280] text-sm">Redirecionando...</p>
         </div>
       </div>
     );
   }
 
   // =========================================================================
-  // RENDER
+  // RENDER - Light theme
   // =========================================================================
 
   return (
-    <div className="min-h-screen bg-slate-950 flex">
+    <div className="min-h-screen bg-[#F7F7F8] flex">
       {/* Sidebar */}
       <EstablishmentSidebar
         estabelecimento={estabelecimento}
@@ -330,7 +319,7 @@ export default function AreaEstabelecimento() {
       <main
         className={cn("flex-1 min-h-screen transition-all duration-200", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}
       >
-        <div className="p-4 lg:p-8">
+        <div className="p-4 lg:p-8 max-w-7xl">
           {/* Tab Content */}
           {activeTab === "dashboard" && (
             <EstablishmentDashboard

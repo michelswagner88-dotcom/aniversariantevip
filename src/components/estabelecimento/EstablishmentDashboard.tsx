@@ -1,6 +1,6 @@
 // =============================================================================
-// ESTABLISHMENT DASHBOARD - Dashboard principal com KPIs
-// MELHORADO: Checklist visual, tooltips nos KPIs, CTA inteligente, empty states
+// ESTABLISHMENT DASHBOARD - Dashboard principal LIGHT
+// Tema Light Premium estilo Stripe/Linear
 // =============================================================================
 
 import { useMemo, useState } from "react";
@@ -8,8 +8,6 @@ import {
   Eye,
   MousePointerClick,
   Heart,
-  TrendingUp,
-  TrendingDown,
   ArrowUpRight,
   ArrowDownRight,
   Phone,
@@ -30,16 +28,15 @@ import {
   MapPin,
   FileText,
   HelpCircle,
-  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { StatCard } from "@/components/panel/StatCard";
+import { PanelSection } from "@/components/panel/PanelSection";
 import type { Json } from "@/integrations/supabase/types";
 
 // =============================================================================
@@ -97,7 +94,7 @@ interface ChecklistItem {
   description: string;
   icon: any;
   tab: ActiveTab;
-  priority: number; // 1 = mais importante
+  priority: number;
   check: (est: EstabelecimentoData) => boolean;
 }
 
@@ -188,7 +185,6 @@ const getChecklistStatus = (est: EstabelecimentoData | null) => {
     }
   });
 
-  // Ordenar pendentes por prioridade
   pending.sort((a, b) => a.priority - b.priority);
 
   const percentage = Math.round((completed.length / CHECKLIST_ITEMS.length) * 100);
@@ -202,105 +198,6 @@ const TIPO_BENEFICIO_CONFIG: Record<string, { emoji: string; label: string }> = 
   desconto: { emoji: "💰", label: "Desconto" },
   bonus: { emoji: "⭐", label: "Bônus" },
   gratis: { emoji: "🆓", label: "Grátis" },
-};
-
-// =============================================================================
-// KPI CARD COM TOOLTIP
-// =============================================================================
-
-const KPICard = ({
-  title,
-  value,
-  change,
-  changeLabel,
-  icon: Icon,
-  iconColor = "text-muted-foreground",
-  loading = false,
-  onClick,
-  tooltip,
-}: {
-  title: string;
-  value: string | number;
-  change?: number;
-  changeLabel?: string;
-  icon: any;
-  iconColor?: string;
-  loading?: boolean;
-  onClick?: () => void;
-  tooltip?: string;
-}) => {
-  const isPositive = change && change > 0;
-  const isNegative = change && change < 0;
-
-  if (loading) {
-    return (
-      <Card className="bg-card border-border">
-        <CardContent className="p-5">
-          <Skeleton className="h-4 w-20 mb-3" />
-          <Skeleton className="h-8 w-24 mb-2" />
-          <Skeleton className="h-3 w-16" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const cardContent = (
-    <Card
-      className={cn(
-        "bg-card border-border transition-all duration-200",
-        onClick && "cursor-pointer hover:bg-accent/50 hover:border-border",
-      )}
-      onClick={onClick}
-    >
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className={cn("p-2 rounded-lg bg-muted")}>
-            <Icon className={cn("w-4 h-4", iconColor)} />
-          </div>
-          <div className="flex items-center gap-1">
-            {tooltip && (
-              <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="p-1 text-muted-foreground hover:text-foreground transition-colors">
-                      <HelpCircle className="w-3.5 h-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[200px] text-xs">
-                    {tooltip}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-            {onClick && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-          </div>
-        </div>
-
-        <p className="text-sm text-muted-foreground mb-1">{title}</p>
-        <p className="text-2xl font-bold text-foreground">{value}</p>
-
-        {change !== undefined && (
-          <div className="flex items-center gap-1 mt-2 text-xs">
-            {isPositive && <ArrowUpRight className="w-3 h-3 text-emerald-500" />}
-            {isNegative && <ArrowDownRight className="w-3 h-3 text-red-500" />}
-            <span
-              className={cn(
-                isPositive && "text-emerald-500",
-                isNegative && "text-red-500",
-                !isPositive && !isNegative && "text-muted-foreground",
-              )}
-            >
-              {isPositive && "+"}
-              {change}%
-            </span>
-            {changeLabel && <span className="text-muted-foreground ml-1">{changeLabel}</span>}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-
-  return cardContent;
 };
 
 // =============================================================================
@@ -323,39 +220,41 @@ const ChecklistItemRow = ({
       onClick={() => !isCompleted && onNavigate(item.tab)}
       disabled={isCompleted}
       className={cn(
-        "w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-150 text-left",
-        isCompleted ? "bg-emerald-500/10 cursor-default" : "bg-muted hover:bg-accent/50 cursor-pointer",
+        "w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-150 text-left",
+        isCompleted
+          ? "bg-emerald-50 cursor-default"
+          : "bg-[#F7F7F8] hover:bg-[#EFEFEF] cursor-pointer"
       )}
     >
       {/* Status Icon */}
       <div
         className={cn(
           "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0",
-          isCompleted ? "bg-emerald-500" : "bg-muted border-2 border-border",
+          isCompleted ? "bg-emerald-500" : "bg-white border-2 border-[#E7E7EA]"
         )}
       >
         {isCompleted ? (
           <CheckCircle className="w-4 h-4 text-white" />
         ) : (
-          <Circle className="w-3 h-3 text-muted-foreground" />
+          <Circle className="w-3 h-3 text-[#9CA3AF]" />
         )}
       </div>
 
       {/* Icon */}
-      <div className={cn("p-2 rounded-lg flex-shrink-0", isCompleted ? "bg-emerald-500/20" : "bg-muted")}>
-        <Icon className={cn("w-4 h-4", isCompleted ? "text-emerald-500" : "text-muted-foreground")} />
+      <div className={cn("p-2 rounded-xl flex-shrink-0", isCompleted ? "bg-emerald-100" : "bg-white border border-[#E7E7EA]")}>
+        <Icon className={cn("w-4 h-4", isCompleted ? "text-emerald-600" : "text-[#6B7280]")} />
       </div>
 
       {/* Text */}
       <div className="flex-1 min-w-0">
-        <p className={cn("font-medium text-sm", isCompleted ? "text-emerald-600 line-through" : "text-foreground")}>
+        <p className={cn("font-medium text-sm", isCompleted ? "text-emerald-700 line-through" : "text-[#111827]")}>
           {item.label}
         </p>
-        <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+        <p className="text-xs text-[#6B7280] truncate">{item.description}</p>
       </div>
 
       {/* Arrow */}
-      {!isCompleted && <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+      {!isCompleted && <ChevronRight className="w-4 h-4 text-[#9CA3AF] flex-shrink-0" />}
     </button>
   );
 };
@@ -388,109 +287,107 @@ export function EstablishmentDashboard({
 
   const tipoConfig = estabelecimento?.tipo_beneficio ? TIPO_BENEFICIO_CONFIG[estabelecimento.tipo_beneficio] : null;
 
-  // Calculate growth
   const viewsGrowth = analytics?.visualizacoes7d
     ? Math.round((analytics.visualizacoes7d / Math.max(analytics.visualizacoes - analytics.visualizacoes7d, 1)) * 100)
     : 0;
 
-  // CTA inteligente - pega o item pendente de maior prioridade
   const primaryCTA = checklistStatus.pending[0];
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Olá, {estabelecimento?.nome_fantasia || "Parceiro"}! 👋</h1>
-        <p className="text-muted-foreground mt-1">Aqui está o resumo do seu estabelecimento</p>
+        <h1 className="text-2xl font-bold text-[#111827]">
+          Olá, {estabelecimento?.nome_fantasia || "Parceiro"}! 👋
+        </h1>
+        <p className="text-[#6B7280] mt-1">Aqui está o resumo do seu estabelecimento</p>
       </div>
 
       {/* Status Card - Visibility Toggle */}
-      <Card
+      <div
         className={cn(
-          "border",
-          estabelecimento?.ativo ? "bg-emerald-500/10 border-emerald-500/20" : "bg-amber-500/10 border-amber-500/20",
+          "rounded-2xl border p-4 flex items-center justify-between gap-4",
+          estabelecimento?.ativo
+            ? "bg-emerald-50 border-emerald-200"
+            : "bg-amber-50 border-amber-200"
         )}
       >
-        <CardContent className="p-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className={cn("p-2 rounded-lg", estabelecimento?.ativo ? "bg-emerald-500/20" : "bg-amber-500/20")}>
-              {estabelecimento?.ativo ? (
-                <CheckCircle className="w-5 h-5 text-emerald-500" />
-              ) : (
-                <EyeOff className="w-5 h-5 text-amber-500" />
-              )}
-            </div>
-            <div>
-              <p className="font-medium text-foreground">
-                {estabelecimento?.ativo ? "Visível na plataforma" : "Oculto da plataforma"}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {estabelecimento?.ativo
-                  ? "Aniversariantes podem encontrar seu estabelecimento"
-                  : "Seu estabelecimento não aparece nas buscas"}
-              </p>
-            </div>
+        <div className="flex items-center gap-4">
+          <div className={cn("p-2 rounded-xl", estabelecimento?.ativo ? "bg-emerald-100" : "bg-amber-100")}>
+            {estabelecimento?.ativo ? (
+              <CheckCircle className="w-5 h-5 text-emerald-600" />
+            ) : (
+              <EyeOff className="w-5 h-5 text-amber-600" />
+            )}
           </div>
-          <Switch
-            checked={estabelecimento?.ativo || false}
-            onCheckedChange={handleToggleAtivo}
-            disabled={togglingAtivo}
-          />
-        </CardContent>
-      </Card>
+          <div>
+            <p className="font-medium text-[#111827]">
+              {estabelecimento?.ativo ? "Visível na plataforma" : "Oculto da plataforma"}
+            </p>
+            <p className="text-sm text-[#6B7280]">
+              {estabelecimento?.ativo
+                ? "Aniversariantes podem encontrar seu estabelecimento"
+                : "Seu estabelecimento não aparece nas buscas"}
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={estabelecimento?.ativo || false}
+          onCheckedChange={handleToggleAtivo}
+          disabled={togglingAtivo}
+        />
+      </div>
 
       {/* CTA Principal - Baseado no que falta */}
       {primaryCTA && (
-        <Card className="bg-card border-border">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-muted">
-                <primaryCTA.icon className="w-6 h-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-foreground text-lg">Próximo passo: {primaryCTA.label}</p>
-                <p className="text-sm text-muted-foreground mt-0.5">{primaryCTA.description}</p>
-              </div>
-              <Button className="bg-primary hover:bg-primary/90" onClick={() => onNavigate(primaryCTA.tab)}>
-                Completar
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
+        <PanelSection>
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-[#240046]/5">
+              <primaryCTA.icon className="w-6 h-6 text-[#240046]" />
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex-1">
+              <p className="font-semibold text-[#111827] text-lg">Próximo passo: {primaryCTA.label}</p>
+              <p className="text-sm text-[#6B7280] mt-0.5">{primaryCTA.description}</p>
+            </div>
+            <Button
+              className="bg-[#240046] hover:bg-[#3C096C] text-white"
+              onClick={() => onNavigate(primaryCTA.tab)}
+            >
+              Completar
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+        </PanelSection>
       )}
 
       {/* KPIs Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
+        <StatCard
           title="Visualizações"
           value={analytics?.visualizacoes || 0}
           change={viewsGrowth}
           changeLabel="7 dias"
-          icon={Eye}
-          iconColor="text-blue-400"
+          icon={<Eye className="w-4 h-4 text-blue-500" />}
           loading={loading}
           onClick={() => onNavigate("analytics")}
           tooltip="Número de vezes que seu perfil foi visualizado por aniversariantes."
         />
-        <KPICard
+        <StatCard
           title="Cliques WhatsApp"
           value={analytics?.cliquesWhatsapp || 0}
-          icon={MessageCircle}
-          iconColor="text-emerald-400"
+          icon={<MessageCircle className="w-4 h-4 text-emerald-500" />}
           loading={loading}
           onClick={() => onNavigate("analytics")}
           tooltip="Quantas vezes aniversariantes clicaram no botão do WhatsApp."
         />
-        <KPICard
+        <StatCard
           title="Favoritos"
           value={analytics?.favoritos || 0}
-          icon={Heart}
-          iconColor="text-red-400"
+          icon={<Heart className="w-4 h-4 text-red-400" />}
           loading={loading}
           tooltip="Aniversariantes que salvaram seu estabelecimento como favorito."
         />
-        <KPICard
+        <StatCard
           title="Total de Cliques"
           value={
             (analytics?.cliquesWhatsapp || 0) +
@@ -498,8 +395,7 @@ export function EstablishmentDashboard({
             (analytics?.cliquesInstagram || 0) +
             (analytics?.cliquesSite || 0)
           }
-          icon={MousePointerClick}
-          iconColor="text-amber-400"
+          icon={<MousePointerClick className="w-4 h-4 text-amber-500" />}
           loading={loading}
           onClick={() => onNavigate("analytics")}
           tooltip="Soma de todos os cliques: WhatsApp, telefone, Instagram e site."
@@ -507,41 +403,36 @@ export function EstablishmentDashboard({
       </div>
 
       {/* Checklist de Perfil */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-muted">
-                <Sparkles className="w-5 h-5 text-amber-400" />
-              </div>
-              <div>
-                <CardTitle className="text-foreground text-lg">Checklist do Perfil</CardTitle>
-                <CardDescription>Complete para aparecer melhor nos resultados</CardDescription>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-2xl font-bold text-primary">{checklistStatus.percentage}%</span>
-            </div>
-          </div>
-          <Progress value={checklistStatus.percentage} className="h-2 bg-muted mt-3" />
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {/* Mostrar pendentes primeiro, depois completados */}
-          {checklistStatus.pending.slice(0, showAllChecklist ? undefined : 3).map((item) => (
-            <ChecklistItemRow key={item.id} item={item} isCompleted={false} onNavigate={onNavigate} />
-          ))}
+      <PanelSection
+        title="Checklist do Perfil"
+        description="Complete para aparecer melhor nos resultados"
+        icon={<Sparkles className="w-5 h-5 text-amber-500" />}
+        actions={
+          <span className="text-2xl font-bold text-[#240046]">{checklistStatus.percentage}%</span>
+        }
+      >
+        <div className="space-y-4">
+          <Progress
+            value={checklistStatus.percentage}
+            className="h-2 bg-[#E7E7EA] [&>div]:bg-[#240046]"
+          />
 
-          {showAllChecklist &&
-            checklistStatus.completed.map((item) => (
-              <ChecklistItemRow key={item.id} item={item} isCompleted={true} onNavigate={onNavigate} />
+          <div className="space-y-2">
+            {checklistStatus.pending.slice(0, showAllChecklist ? undefined : 3).map((item) => (
+              <ChecklistItemRow key={item.id} item={item} isCompleted={false} onNavigate={onNavigate} />
             ))}
 
-          {/* Ver mais / menos */}
+            {showAllChecklist &&
+              checklistStatus.completed.map((item) => (
+                <ChecklistItemRow key={item.id} item={item} isCompleted={true} onNavigate={onNavigate} />
+              ))}
+          </div>
+
           {(checklistStatus.pending.length > 3 || checklistStatus.completed.length > 0) && (
             <Button
               variant="ghost"
               size="sm"
-              className="w-full text-muted-foreground hover:text-foreground mt-2"
+              className="w-full text-[#6B7280] hover:text-[#111827] hover:bg-[#F7F7F8]"
               onClick={() => setShowAllChecklist(!showAllChecklist)}
             >
               {showAllChecklist
@@ -550,197 +441,179 @@ export function EstablishmentDashboard({
             </Button>
           )}
 
-          {/* Perfil 100% completo */}
           {checklistStatus.percentage === 100 && (
-            <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-              <CheckCircle className="w-6 h-6 text-emerald-500" />
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+              <CheckCircle className="w-6 h-6 text-emerald-600" />
               <div>
-                <p className="font-medium text-emerald-600">Perfil completo! 🎉</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="font-medium text-emerald-700">Perfil completo! 🎉</p>
+                <p className="text-sm text-[#6B7280]">
                   Seu estabelecimento está otimizado para atrair aniversariantes.
                 </p>
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </PanelSection>
 
       {/* Benefit Card */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-muted">
-                <Gift className="w-5 h-5 text-pink-400" />
-              </div>
-              <div>
-                <CardTitle className="text-foreground text-lg">Seu Benefício</CardTitle>
-                <CardDescription>O que você oferece para aniversariantes</CardDescription>
-              </div>
+      <PanelSection
+        title="Seu Benefício"
+        description="O que você oferece para aniversariantes"
+        icon={<Gift className="w-5 h-5 text-pink-500" />}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-[#E7E7EA] text-[#111827] hover:bg-[#F7F7F8]"
+            onClick={() => onNavigate("benefit")}
+          >
+            Editar
+          </Button>
+        }
+      >
+        {estabelecimento?.descricao_beneficio ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              {tipoConfig && (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#240046]/10 text-[#240046] text-xs font-medium">
+                  {tipoConfig.emoji} {tipoConfig.label}
+                </span>
+              )}
+              {estabelecimento.periodo_validade_beneficio && (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#F7F7F8] text-[#6B7280] text-xs border border-[#E7E7EA]">
+                  {estabelecimento.periodo_validade_beneficio === "dia_aniversario"
+                    ? "No dia"
+                    : estabelecimento.periodo_validade_beneficio === "semana_aniversario"
+                      ? "Na semana"
+                      : "No mês"}
+                </span>
+              )}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-border text-foreground hover:bg-accent"
-              onClick={() => onNavigate("benefit")}
-            >
-              Editar
+            <p className="text-[#111827] font-medium">{estabelecimento.descricao_beneficio}</p>
+          </div>
+        ) : (
+          <div className="text-center py-8 px-4">
+            <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto mb-4">
+              <Gift className="w-8 h-8 text-amber-600" />
+            </div>
+            <p className="font-medium text-[#111827] mb-1">Nenhum benefício configurado</p>
+            <p className="text-sm text-[#6B7280] mb-4 max-w-sm mx-auto">
+              Configure seu benefício para aparecer para os aniversariantes. Estabelecimentos com benefícios claros
+              recebem mais visitas!
+            </p>
+            <Button className="bg-[#240046] hover:bg-[#3C096C]" onClick={() => onNavigate("benefit")}>
+              <Gift className="w-4 h-4 mr-2" />
+              Configurar benefício
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          {estabelecimento?.descricao_beneficio ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                {tipoConfig && (
-                  <Badge className="bg-primary/20 text-primary border-primary/30">
-                    {tipoConfig.emoji} {tipoConfig.label}
-                  </Badge>
-                )}
-                {estabelecimento.periodo_validade_beneficio && (
-                  <Badge variant="outline" className="border-border text-muted-foreground">
-                    {estabelecimento.periodo_validade_beneficio === "dia_aniversario"
-                      ? "No dia"
-                      : estabelecimento.periodo_validade_beneficio === "semana_aniversario"
-                        ? "Na semana"
-                        : "No mês"}
-                  </Badge>
-                )}
-              </div>
-              <p className="text-foreground font-medium">{estabelecimento.descricao_beneficio}</p>
-            </div>
-          ) : (
-            <div className="text-center py-8 px-4">
-              <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
-                <Gift className="w-8 h-8 text-amber-500" />
-              </div>
-              <p className="font-medium text-foreground mb-1">Nenhum benefício configurado</p>
-              <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
-                Configure seu benefício para aparecer para os aniversariantes. Estabelecimentos com benefícios claros
-                recebem mais visitas!
-              </p>
-              <Button className="bg-primary hover:bg-primary/90" onClick={() => onNavigate("benefit")}>
-                <Gift className="w-4 h-4 mr-2" />
-                Configurar benefício
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        )}
+      </PanelSection>
 
       {/* Quick Actions */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground text-lg flex items-center gap-2">
-            <Zap className="w-5 h-5 text-amber-400" />
-            Ações Rápidas
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Button
-              variant="outline"
-              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent/50"
-              onClick={() => onNavigate("profile")}
-            >
-              <CheckCircle className="w-5 h-5 text-emerald-400" />
-              <span className="text-xs">Editar Perfil</span>
-            </Button>
+      <PanelSection
+        title="Ações Rápidas"
+        icon={<Zap className="w-5 h-5 text-amber-500" />}
+      >
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Button
+            variant="outline"
+            className="h-auto py-4 flex-col gap-2 border-[#E7E7EA] hover:bg-[#F7F7F8] hover:border-[#D1D1D6]"
+            onClick={() => onNavigate("profile")}
+          >
+            <CheckCircle className="w-5 h-5 text-emerald-500" />
+            <span className="text-xs text-[#111827]">Editar Perfil</span>
+          </Button>
 
-            <Button
-              variant="outline"
-              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent/50"
-              onClick={() => onNavigate("photos")}
-            >
-              <Camera className="w-5 h-5 text-blue-400" />
-              <span className="text-xs">Adicionar Fotos</span>
-            </Button>
+          <Button
+            variant="outline"
+            className="h-auto py-4 flex-col gap-2 border-[#E7E7EA] hover:bg-[#F7F7F8] hover:border-[#D1D1D6]"
+            onClick={() => onNavigate("photos")}
+          >
+            <Camera className="w-5 h-5 text-blue-500" />
+            <span className="text-xs text-[#111827]">Adicionar Fotos</span>
+          </Button>
 
-            <Button
-              variant="outline"
-              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent/50"
-              onClick={() => onNavigate("analytics")}
-            >
-              <Eye className="w-5 h-5 text-cyan-400" />
-              <span className="text-xs">Ver Analytics</span>
-            </Button>
+          <Button
+            variant="outline"
+            className="h-auto py-4 flex-col gap-2 border-[#E7E7EA] hover:bg-[#F7F7F8] hover:border-[#D1D1D6]"
+            onClick={() => onNavigate("analytics")}
+          >
+            <Eye className="w-5 h-5 text-cyan-500" />
+            <span className="text-xs text-[#111827]">Ver Analytics</span>
+          </Button>
 
-            <Button
-              variant="outline"
-              className="h-auto py-4 flex-col gap-2 border-border hover:bg-accent/50"
-              onClick={() => window.open(`/${estabelecimento?.slug}`, "_blank")}
-              disabled={!estabelecimento?.slug}
-            >
-              <ExternalLink className="w-5 h-5 text-amber-400" />
-              <span className="text-xs">Ver Página</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          <Button
+            variant="outline"
+            className="h-auto py-4 flex-col gap-2 border-[#E7E7EA] hover:bg-[#F7F7F8] hover:border-[#D1D1D6]"
+            onClick={() => window.open(`/${estabelecimento?.slug}`, "_blank")}
+            disabled={!estabelecimento?.slug}
+          >
+            <ExternalLink className="w-5 h-5 text-amber-500" />
+            <span className="text-xs text-[#111827]">Ver Página</span>
+          </Button>
+        </div>
+      </PanelSection>
 
       {/* Contacts Summary */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground text-lg">Canais de Contato</CardTitle>
-          <CardDescription>Cliques por canal nos últimos 30 dias</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {analytics?.cliquesWhatsapp ||
-          analytics?.cliquesTelefone ||
-          analytics?.cliquesInstagram ||
-          analytics?.cliquesSite ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="p-2 rounded-lg bg-emerald-500/20">
-                  <MessageCircle className="w-4 h-4 text-emerald-500" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-foreground">{analytics?.cliquesWhatsapp || 0}</p>
-                  <p className="text-xs text-muted-foreground">WhatsApp</p>
-                </div>
+      <PanelSection
+        title="Canais de Contato"
+        description="Cliques por canal nos últimos 30 dias"
+      >
+        {analytics?.cliquesWhatsapp ||
+        analytics?.cliquesTelefone ||
+        analytics?.cliquesInstagram ||
+        analytics?.cliquesSite ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F7F7F8] border border-[#E7E7EA]">
+              <div className="p-2 rounded-xl bg-emerald-100">
+                <MessageCircle className="w-4 h-4 text-emerald-600" />
               </div>
-
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="p-2 rounded-lg bg-blue-500/20">
-                  <Phone className="w-4 h-4 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-foreground">{analytics?.cliquesTelefone || 0}</p>
-                  <p className="text-xs text-muted-foreground">Telefone</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="p-2 rounded-lg bg-pink-500/20">
-                  <Instagram className="w-4 h-4 text-pink-500" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-foreground">{analytics?.cliquesInstagram || 0}</p>
-                  <p className="text-xs text-muted-foreground">Instagram</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="p-2 rounded-lg bg-cyan-500/20">
-                  <Globe className="w-4 h-4 text-cyan-500" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-foreground">{analytics?.cliquesSite || 0}</p>
-                  <p className="text-xs text-muted-foreground">Site</p>
-                </div>
+              <div>
+                <p className="text-lg font-bold text-[#111827]">{analytics?.cliquesWhatsapp || 0}</p>
+                <p className="text-xs text-[#6B7280]">WhatsApp</p>
               </div>
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                <MousePointerClick className="w-6 h-6 text-muted-foreground" />
+
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F7F7F8] border border-[#E7E7EA]">
+              <div className="p-2 rounded-xl bg-blue-100">
+                <Phone className="w-4 h-4 text-blue-600" />
               </div>
-              <p className="text-muted-foreground text-sm">Nenhum clique registrado ainda.</p>
-              <p className="text-xs text-muted-foreground mt-1">Complete seu perfil para aumentar a visibilidade!</p>
+              <div>
+                <p className="text-lg font-bold text-[#111827]">{analytics?.cliquesTelefone || 0}</p>
+                <p className="text-xs text-[#6B7280]">Telefone</p>
+              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F7F7F8] border border-[#E7E7EA]">
+              <div className="p-2 rounded-xl bg-pink-100">
+                <Instagram className="w-4 h-4 text-pink-600" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-[#111827]">{analytics?.cliquesInstagram || 0}</p>
+                <p className="text-xs text-[#6B7280]">Instagram</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F7F7F8] border border-[#E7E7EA]">
+              <div className="p-2 rounded-xl bg-cyan-100">
+                <Globe className="w-4 h-4 text-cyan-600" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-[#111827]">{analytics?.cliquesSite || 0}</p>
+                <p className="text-xs text-[#6B7280]">Site</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <div className="w-14 h-14 rounded-2xl bg-[#F7F7F8] border border-[#E7E7EA] flex items-center justify-center mx-auto mb-3">
+              <MousePointerClick className="w-6 h-6 text-[#9CA3AF]" />
+            </div>
+            <p className="text-[#6B7280] text-sm">Nenhum clique registrado ainda.</p>
+            <p className="text-xs text-[#9CA3AF] mt-1">Complete seu perfil para aumentar a visibilidade!</p>
+          </div>
+        )}
+      </PanelSection>
     </div>
   );
 }

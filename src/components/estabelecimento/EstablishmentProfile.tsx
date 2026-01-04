@@ -1,6 +1,6 @@
 // =============================================================================
-// ESTABLISHMENT PROFILE - Edição do perfil do estabelecimento
-// REFATORADO: InlineSaveTextarea no campo bio, sem API externa para correção
+// ESTABLISHMENT PROFILE - Edição do perfil LIGHT
+// Tema Light Premium estilo Stripe/Linear
 // =============================================================================
 
 import { useState, useEffect } from "react";
@@ -8,21 +8,16 @@ import {
   User,
   Building2,
   Phone,
-  Mail,
-  Instagram,
-  Globe,
   MapPin,
   Clock,
   Save,
   X,
   Upload,
   Loader2,
-  Check,
   Edit3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HorarioFuncionamentoModal } from "./HorarioFuncionamentoModal";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +29,7 @@ import { toast } from "sonner";
 import { getCategoriasOptions, mapLegacyCategoriaToId } from "@/constants/categories";
 import { InlineSaveTextarea } from "@/components/ui/InlineSaveTextarea";
 import { useFieldUpdate } from "@/hooks/useFieldUpdate";
+import { PanelSection } from "@/components/panel/PanelSection";
 
 // =============================================================================
 // TYPES
@@ -73,41 +69,15 @@ interface EstablishmentProfileProps {
 // CONSTANTS
 // =============================================================================
 
-// Use official categories from constants
 const CATEGORIAS = getCategoriasOptions();
 
 const ESTADOS = [
-  "AC",
-  "AL",
-  "AP",
-  "AM",
-  "BA",
-  "CE",
-  "DF",
-  "ES",
-  "GO",
-  "MA",
-  "MT",
-  "MS",
-  "MG",
-  "PA",
-  "PB",
-  "PR",
-  "PE",
-  "PI",
-  "RJ",
-  "RN",
-  "RS",
-  "RO",
-  "RR",
-  "SC",
-  "SP",
-  "SE",
-  "TO",
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
+  "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
 ];
 
 // =============================================================================
-// HELPERS - Máscaras
+// HELPERS
 // =============================================================================
 
 const formatPhone = (value: string): string => {
@@ -125,17 +95,11 @@ const formatCEP = (value: string): string => {
 };
 
 const formatInstagram = (value: string): string => {
-  // Remove @ e espaços, lowercase
   return value.replace(/[@\s]/g, "").toLowerCase();
 };
 
 const formatSite = (value: string): string => {
-  let site = value.trim().toLowerCase();
-  // Remove espaços
-  site = site.replace(/\s/g, "");
-  // Se não tem protocolo e não está vazio, não adiciona automaticamente
-  // (deixa o usuário decidir)
-  return site;
+  return value.trim().toLowerCase().replace(/\s/g, "");
 };
 
 // =============================================================================
@@ -165,15 +129,12 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
     horario_funcionamento: "",
   });
 
-  // Hook para save-per-field (usado no bio)
   const { createFieldSaver } = useFieldUpdate({
     estabelecimentoId: estabelecimento?.id || "",
   });
 
-  // Sync form with estabelecimento data
   useEffect(() => {
     if (estabelecimento) {
-      // Map legacy category to valid ID
       const rawCategoria = estabelecimento.categoria?.[0] || "";
       const mappedCategoria = mapLegacyCategoriaToId(rawCategoria);
       const validCategoria = CATEGORIAS.find((c) => c.value === mappedCategoria) ? mappedCategoria : "";
@@ -197,7 +158,6 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
     }
   }, [estabelecimento]);
 
-  // Handle logo change
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -211,14 +171,12 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
     setLogoPreview(URL.createObjectURL(file));
   };
 
-  // Handle save (todos os campos exceto bio)
   const handleSave = async () => {
     setSaving(true);
 
     try {
       let logo_url = estabelecimento?.logo_url;
 
-      // Upload logo if changed
       if (logoFile && estabelecimento?.id) {
         const fileExt = logoFile.name.split(".").pop();
         const fileName = `${estabelecimento.id}_${Date.now()}.${fileExt}`;
@@ -270,12 +228,10 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
     }
   };
 
-  // Handle cancel
   const handleCancel = () => {
     setIsEditing(false);
     setLogoFile(null);
     setLogoPreview(null);
-    // Reset form to original values
     if (estabelecimento) {
       const rawCategoria = estabelecimento.categoria?.[0] || "";
       const mappedCategoria = mapLegacyCategoriaToId(rawCategoria);
@@ -300,24 +256,20 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
     }
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <Card className="bg-card border-border">
-          <CardContent className="p-6 space-y-4">
-            <Skeleton className="h-20 w-20 rounded-xl" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-24 w-full" />
-          </CardContent>
-        </Card>
+        <Skeleton className="h-8 w-48 bg-[#E7E7EA]" />
+        <div className="bg-white border border-[#E7E7EA] rounded-2xl p-6 space-y-4">
+          <Skeleton className="h-20 w-20 rounded-xl bg-[#E7E7EA]" />
+          <Skeleton className="h-10 w-full bg-[#E7E7EA]" />
+          <Skeleton className="h-10 w-full bg-[#E7E7EA]" />
+          <Skeleton className="h-24 w-full bg-[#E7E7EA]" />
+        </div>
       </div>
     );
   }
 
-  // Get selected category for display
   const selectedCategory = CATEGORIAS.find((c) => c.value === form.categoria);
 
   return (
@@ -325,17 +277,17 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Meu Perfil</h1>
-          <p className="text-muted-foreground mt-1">Gerencie as informações do seu estabelecimento</p>
+          <h1 className="text-2xl font-bold text-[#111827]">Meu Perfil</h1>
+          <p className="text-[#6B7280] mt-1">Gerencie as informações do seu estabelecimento</p>
         </div>
 
         {!isEditing ? (
-          <Button onClick={() => setIsEditing(true)} className="bg-primary hover:bg-primary/90">
+          <Button onClick={() => setIsEditing(true)} className="bg-[#240046] hover:bg-[#3C096C]">
             Editar Perfil
           </Button>
         ) : (
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleCancel} disabled={saving} className="border-border">
+            <Button variant="outline" onClick={handleCancel} disabled={saving} className="border-[#E7E7EA] text-[#111827] hover:bg-[#F7F7F8]">
               <X className="w-4 h-4 mr-2" />
               Cancelar
             </Button>
@@ -348,18 +300,15 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
       </div>
 
       {/* Logo & Basic Info */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-blue-400" />
-            Informações Básicas
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      <PanelSection
+        title="Informações Básicas"
+        icon={<Building2 className="w-5 h-5 text-blue-500" />}
+      >
+        <div className="space-y-6">
           {/* Logo */}
           <div className="flex items-start gap-6">
             <div className="relative">
-              <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center overflow-hidden border-2 border-border">
+              <div className="w-24 h-24 rounded-xl bg-[#F7F7F8] flex items-center justify-center overflow-hidden border-2 border-[#E7E7EA]">
                 {logoPreview || estabelecimento?.logo_url ? (
                   <img
                     src={logoPreview || estabelecimento?.logo_url || ""}
@@ -367,54 +316,54 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <Building2 className="w-8 h-8 text-muted-foreground" />
+                  <Building2 className="w-8 h-8 text-[#9CA3AF]" />
                 )}
               </div>
               {isEditing && (
-                <label className="absolute -bottom-2 -right-2 p-2 bg-primary rounded-full cursor-pointer hover:bg-primary/90 transition-colors">
-                  <Upload className="w-4 h-4 text-primary-foreground" />
+                <label className="absolute -bottom-2 -right-2 p-2 bg-[#240046] rounded-full cursor-pointer hover:bg-[#3C096C] transition-colors">
+                  <Upload className="w-4 h-4 text-white" />
                   <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                 </label>
               )}
             </div>
 
             <div className="flex-1 space-y-1">
-              <p className="text-sm text-muted-foreground">Logo do estabelecimento</p>
-              <p className="text-xs text-muted-foreground/70">Recomendado: 400x400px, formato JPG ou PNG</p>
+              <p className="text-sm text-[#6B7280]">Logo do estabelecimento</p>
+              <p className="text-xs text-[#9CA3AF]">Recomendado: 400x400px, formato JPG ou PNG</p>
               {estabelecimento?.cnpj && (
-                <p className="text-xs text-muted-foreground/50 mt-2">CNPJ: {estabelecimento.cnpj}</p>
+                <p className="text-xs text-[#9CA3AF] mt-2">CNPJ: {estabelecimento.cnpj}</p>
               )}
             </div>
           </div>
 
-          <Separator className="bg-border" />
+          <Separator className="bg-[#E7E7EA]" />
 
           {/* Nome */}
           <div className="space-y-2">
-            <Label className="text-foreground">Nome Fantasia</Label>
+            <Label className="text-[#111827]">Nome Fantasia</Label>
             <Input
               value={form.nome_fantasia}
               onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })}
               disabled={!isEditing}
-              className="bg-muted border-border text-foreground disabled:opacity-70"
+              className="bg-white border-[#E7E7EA] text-[#111827] disabled:bg-[#F7F7F8] disabled:opacity-70"
               placeholder="Nome do seu estabelecimento"
             />
           </div>
 
           {/* Categoria */}
           <div className="space-y-2">
-            <Label className="text-foreground">Categoria</Label>
+            <Label className="text-[#111827]">Categoria</Label>
             <Select
               value={form.categoria}
               onValueChange={(value) => setForm({ ...form, categoria: value })}
               disabled={!isEditing}
             >
-              <SelectTrigger className="bg-muted border-border text-foreground">
+              <SelectTrigger className="bg-white border-[#E7E7EA] text-[#111827]">
                 <SelectValue placeholder="Selecione uma categoria">
                   {selectedCategory ? `${selectedCategory.icon} ${selectedCategory.label}` : "Selecione uma categoria"}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent className="bg-popover border-border z-50">
+              <SelectContent className="bg-white border-[#E7E7EA] z-50">
                 {CATEGORIAS.map((cat) => (
                   <SelectItem key={cat.value} value={cat.value}>
                     {cat.icon} {cat.label}
@@ -426,7 +375,7 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
 
           {/* Horário */}
           <div className="space-y-2">
-            <Label className="text-foreground flex items-center gap-2">
+            <Label className="text-[#111827] flex items-center gap-2">
               <Clock className="w-4 h-4" />
               Horário de Funcionamento
             </Label>
@@ -436,18 +385,17 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
                 setShowHorarioModal(true);
               }}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 bg-muted border border-border rounded-lg text-foreground cursor-pointer transition-colors",
-                "hover:bg-accent/50",
+                "flex items-center gap-3 px-4 py-3 bg-white border border-[#E7E7EA] rounded-xl text-[#111827] cursor-pointer transition-colors",
+                "hover:bg-[#F7F7F8]"
               )}
             >
-              <Clock className="w-4 h-4 text-muted-foreground" />
+              <Clock className="w-4 h-4 text-[#9CA3AF]" />
               <span className="flex-1 text-sm">{form.horario_funcionamento || "Clique para definir horário"}</span>
-              <Edit3 className="w-4 h-4 text-muted-foreground" />
+              <Edit3 className="w-4 h-4 text-[#9CA3AF]" />
             </div>
-            <p className="text-xs text-muted-foreground">Clique para editar os horários de funcionamento</p>
+            <p className="text-xs text-[#9CA3AF]">Clique para editar os horários de funcionamento</p>
           </div>
 
-          {/* Modal de Horário */}
           {showHorarioModal && (
             <HorarioFuncionamentoModal
               value={form.horario_funcionamento}
@@ -455,133 +403,114 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
               onClose={() => setShowHorarioModal(false)}
             />
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </PanelSection>
 
-      {/* Sobre o Estabelecimento - SAVE INDEPENDENTE */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
-            <User className="w-5 h-5 text-cyan-400" />
-            Sobre o Estabelecimento
-          </CardTitle>
-          <CardDescription>Descreva seu estabelecimento de forma atraente para os aniversariantes</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <InlineSaveTextarea
-            id="bio"
-            label=""
-            value={estabelecimento?.bio || ""}
-            placeholder="Descreva seu estabelecimento: o que oferece, ambiente, diferenciais..."
-            rows={4}
-            maxLength={500}
-            normalize
-            helperText="Uma boa descrição aumenta suas chances de ser escolhido pelos aniversariantes."
-            onSave={createFieldSaver("bio")}
-          />
-        </CardContent>
-      </Card>
+      {/* Sobre o Estabelecimento */}
+      <PanelSection
+        title="Sobre o Estabelecimento"
+        description="Descreva seu estabelecimento de forma atraente para os aniversariantes"
+        icon={<User className="w-5 h-5 text-cyan-500" />}
+      >
+        <InlineSaveTextarea
+          id="bio"
+          label=""
+          value={estabelecimento?.bio || ""}
+          placeholder="Descreva seu estabelecimento: o que oferece, ambiente, diferenciais..."
+          rows={4}
+          maxLength={500}
+          normalize
+          helperText="Uma boa descrição aumenta suas chances de ser escolhido pelos aniversariantes."
+          onSave={createFieldSaver("bio")}
+        />
+      </PanelSection>
 
       {/* Contatos */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
-            <Phone className="w-5 h-5 text-emerald-400" />
-            Contatos
-          </CardTitle>
-          <CardDescription>Informações de contato para os aniversariantes entrarem em contato</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Telefone */}
-            <div className="space-y-2">
-              <Label className="text-foreground">Telefone</Label>
-              <Input
-                value={form.telefone}
-                onChange={(e) => setForm({ ...form, telefone: formatPhone(e.target.value) })}
-                disabled={!isEditing}
-                className="bg-muted border-border text-foreground disabled:opacity-70"
-                placeholder="(00) 0000-0000"
-              />
-            </div>
+      <PanelSection
+        title="Contatos"
+        description="Informações de contato para os aniversariantes entrarem em contato"
+        icon={<Phone className="w-5 h-5 text-emerald-500" />}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-[#111827]">Telefone</Label>
+            <Input
+              value={form.telefone}
+              onChange={(e) => setForm({ ...form, telefone: formatPhone(e.target.value) })}
+              disabled={!isEditing}
+              className="bg-white border-[#E7E7EA] text-[#111827] disabled:bg-[#F7F7F8] disabled:opacity-70"
+              placeholder="(00) 0000-0000"
+            />
+          </div>
 
-            {/* WhatsApp */}
-            <div className="space-y-2">
-              <Label className="text-foreground">WhatsApp</Label>
-              <Input
-                value={form.whatsapp}
-                onChange={(e) => setForm({ ...form, whatsapp: formatPhone(e.target.value) })}
-                disabled={!isEditing}
-                className="bg-muted border-border text-foreground disabled:opacity-70"
-                placeholder="(00) 00000-0000"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label className="text-[#111827]">WhatsApp</Label>
+            <Input
+              value={form.whatsapp}
+              onChange={(e) => setForm({ ...form, whatsapp: formatPhone(e.target.value) })}
+              disabled={!isEditing}
+              className="bg-white border-[#E7E7EA] text-[#111827] disabled:bg-[#F7F7F8] disabled:opacity-70"
+              placeholder="(00) 00000-0000"
+            />
+          </div>
 
-            {/* Instagram */}
-            <div className="space-y-2">
-              <Label className="text-foreground">Instagram</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
-                <Input
-                  value={form.instagram}
-                  onChange={(e) => setForm({ ...form, instagram: formatInstagram(e.target.value) })}
-                  disabled={!isEditing}
-                  className="bg-muted border-border text-foreground disabled:opacity-70 pl-7"
-                  placeholder="seuusuario"
-                />
-              </div>
-            </div>
-
-            {/* Site */}
-            <div className="space-y-2">
-              <Label className="text-foreground">Site</Label>
+          <div className="space-y-2">
+            <Label className="text-[#111827]">Instagram</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]">@</span>
               <Input
-                value={form.site}
-                onChange={(e) => setForm({ ...form, site: formatSite(e.target.value) })}
+                value={form.instagram}
+                onChange={(e) => setForm({ ...form, instagram: formatInstagram(e.target.value) })}
                 disabled={!isEditing}
-                className="bg-muted border-border text-foreground disabled:opacity-70"
-                placeholder="www.seusite.com.br"
+                className="bg-white border-[#E7E7EA] text-[#111827] disabled:bg-[#F7F7F8] disabled:opacity-70 pl-7"
+                placeholder="seuusuario"
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="space-y-2">
+            <Label className="text-[#111827]">Site</Label>
+            <Input
+              value={form.site}
+              onChange={(e) => setForm({ ...form, site: formatSite(e.target.value) })}
+              disabled={!isEditing}
+              className="bg-white border-[#E7E7EA] text-[#111827] disabled:bg-[#F7F7F8] disabled:opacity-70"
+              placeholder="www.seusite.com.br"
+            />
+          </div>
+        </div>
+      </PanelSection>
 
       {/* Endereço */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-red-400" />
-            Endereço
-          </CardTitle>
-          <CardDescription>Localização do seu estabelecimento para os aniversariantes encontrarem</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <PanelSection
+        title="Endereço"
+        description="Localização do seu estabelecimento para os aniversariantes encontrarem"
+        icon={<MapPin className="w-5 h-5 text-red-400" />}
+      >
+        <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* CEP */}
             <div className="space-y-2">
-              <Label className="text-foreground">CEP</Label>
+              <Label className="text-[#111827]">CEP</Label>
               <Input
                 value={form.cep}
                 onChange={(e) => setForm({ ...form, cep: formatCEP(e.target.value) })}
                 disabled={!isEditing}
-                className="bg-muted border-border text-foreground disabled:opacity-70"
+                className="bg-white border-[#E7E7EA] text-[#111827] disabled:bg-[#F7F7F8] disabled:opacity-70"
                 placeholder="00000-000"
               />
             </div>
 
-            {/* Estado */}
             <div className="space-y-2">
-              <Label className="text-foreground">Estado</Label>
+              <Label className="text-[#111827]">Estado</Label>
               <Select
                 value={form.estado}
                 onValueChange={(value) => setForm({ ...form, estado: value })}
                 disabled={!isEditing}
               >
-                <SelectTrigger className="bg-muted border-border text-foreground">
+                <SelectTrigger className="bg-white border-[#E7E7EA] text-[#111827]">
                   <SelectValue placeholder="UF" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover border-border z-50">
+                <SelectContent className="bg-white border-[#E7E7EA] z-50">
                   {ESTADOS.map((uf) => (
                     <SelectItem key={uf} value={uf}>
                       {uf}
@@ -591,72 +520,67 @@ export function EstablishmentProfile({ estabelecimento, loading, onUpdate }: Est
               </Select>
             </div>
 
-            {/* Cidade */}
             <div className="space-y-2">
-              <Label className="text-foreground">Cidade</Label>
+              <Label className="text-[#111827]">Cidade</Label>
               <Input
                 value={form.cidade}
                 onChange={(e) => setForm({ ...form, cidade: e.target.value })}
                 disabled={!isEditing}
-                className="bg-muted border-border text-foreground disabled:opacity-70"
+                className="bg-white border-[#E7E7EA] text-[#111827] disabled:bg-[#F7F7F8] disabled:opacity-70"
                 placeholder="Cidade"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Bairro */}
             <div className="space-y-2">
-              <Label className="text-foreground">Bairro</Label>
+              <Label className="text-[#111827]">Bairro</Label>
               <Input
                 value={form.bairro}
                 onChange={(e) => setForm({ ...form, bairro: e.target.value })}
                 disabled={!isEditing}
-                className="bg-muted border-border text-foreground disabled:opacity-70"
+                className="bg-white border-[#E7E7EA] text-[#111827] disabled:bg-[#F7F7F8] disabled:opacity-70"
                 placeholder="Bairro"
               />
             </div>
 
-            {/* Logradouro */}
             <div className="space-y-2">
-              <Label className="text-foreground">Rua/Avenida</Label>
+              <Label className="text-[#111827]">Rua/Avenida</Label>
               <Input
                 value={form.logradouro}
                 onChange={(e) => setForm({ ...form, logradouro: e.target.value })}
                 disabled={!isEditing}
-                className="bg-muted border-border text-foreground disabled:opacity-70"
+                className="bg-white border-[#E7E7EA] text-[#111827] disabled:bg-[#F7F7F8] disabled:opacity-70"
                 placeholder="Rua/Avenida"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Número */}
             <div className="space-y-2">
-              <Label className="text-foreground">Número</Label>
+              <Label className="text-[#111827]">Número</Label>
               <Input
                 value={form.numero}
                 onChange={(e) => setForm({ ...form, numero: e.target.value })}
                 disabled={!isEditing}
-                className="bg-muted border-border text-foreground disabled:opacity-70"
+                className="bg-white border-[#E7E7EA] text-[#111827] disabled:bg-[#F7F7F8] disabled:opacity-70"
                 placeholder="Nº"
               />
             </div>
 
-            {/* Complemento */}
             <div className="space-y-2">
-              <Label className="text-foreground">Complemento</Label>
+              <Label className="text-[#111827]">Complemento</Label>
               <Input
                 value={form.complemento}
                 onChange={(e) => setForm({ ...form, complemento: e.target.value })}
                 disabled={!isEditing}
-                className="bg-muted border-border text-foreground disabled:opacity-70"
+                className="bg-white border-[#E7E7EA] text-[#111827] disabled:bg-[#F7F7F8] disabled:opacity-70"
                 placeholder="Sala, Loja, etc."
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </PanelSection>
     </div>
   );
 }

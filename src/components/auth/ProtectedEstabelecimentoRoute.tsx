@@ -224,7 +224,7 @@ export const ProtectedEstabelecimentoRoute = ({ children }: Props) => {
     // Determinar destino do redirect baseado no motivo
     const redirectTo =
       redirectReason === "incomplete_registration" || redirectReason === "not_found"
-        ? "/cadastro-estabelecimento"
+        ? "/cadastro/estabelecimento"
         : "/login/estabelecimento";
 
     return <Navigate to={redirectTo} state={{ from: location }} replace />;

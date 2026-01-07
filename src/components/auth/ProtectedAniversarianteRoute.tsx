@@ -44,16 +44,17 @@ export const ProtectedAniversarianteRoute = ({ children }: Props) => {
           return;
         }
 
-        // 2. Verificar role do usuário
+        // 2. Verificar role do usuário - FILTRANDO EXPLICITAMENTE por aniversariante
         const { data: roleData, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
+          .eq("role", "aniversariante")
           .maybeSingle();
 
         console.log('[GuardAniv] RoleData:', roleData, 'RoleError:', roleError);
 
-        if (!roleData || roleData.role !== "aniversariante") {
+        if (!roleData) {
           console.log('[GuardAniv] Role não é aniversariante, redirecionando para /');
           if (mounted) {
             setRedirectTo("/");

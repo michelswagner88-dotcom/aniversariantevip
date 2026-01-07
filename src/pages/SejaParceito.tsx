@@ -73,8 +73,8 @@ export default function SejaParceiro() {
 
   const handleEntrar = () => {
     if (user) {
-      // Logado: vai para painel do parceiro
-      navigate("/painel");
+      // Logado: vai para área do estabelecimento
+      navigate("/area-estabelecimento");
     } else {
       // Deslogado: vai para login de estabelecimento
       navigate("/login/estabelecimento");

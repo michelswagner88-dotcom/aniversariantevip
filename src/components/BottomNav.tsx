@@ -1,16 +1,7 @@
 // =============================================================================
 // BOTTOMNAV.TSX - ANIVERSARIANTE VIP
 // Design System: Top 1% Mundial - Nível Airbnb/iFood
-// =============================================================================
-// FEATURES IMPLEMENTADAS (Auditoria 7 IAs):
-// ✅ Bottom Navigation mobile 4 tabs (5/7)
-// ✅ Button scale no hover/tap (7/7)
-// ✅ Haptic feedback mobile (4/7)
-// ✅ Safe area iOS (notch)
-// ✅ Acessibilidade WCAG 2.1 AAA
-// ✅ Reduced motion support
-// ✅ Badge contador
-// ✅ Role-based navigation (estabelecimento vs aniversariante)
+// Usa useUserRole centralizado para consistência de roles
 // =============================================================================
 
 import { memo, useCallback, useEffect, useState, useMemo } from "react";
@@ -18,6 +9,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Home, Search, Heart, User, Building2, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/useUserRole";
 
 // =============================================================================
 // TYPES
@@ -30,8 +22,6 @@ interface NavItem {
   path: string;
   authRequired?: boolean;
 }
-
-type UserRole = "aniversariante" | "estabelecimento" | "colaborador" | "admin" | null;
 
 // =============================================================================
 // CONSTANTS
@@ -77,70 +67,7 @@ const useReducedMotion = (): boolean => {
   return reducedMotion;
 };
 
-const useAuth = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole>(null);
-
-  useEffect(() => {
-    const fetchUserRole = async (userId: string) => {
-      try {
-        const { data: roles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", userId);
-
-        if (roles && roles.length > 0) {
-          // Prioridade: estabelecimento > admin > colaborador > aniversariante
-          if (roles.some((r) => r.role === "estabelecimento")) {
-            setUserRole("estabelecimento");
-          } else if (roles.some((r) => r.role === "admin")) {
-            setUserRole("admin");
-          } else if (roles.some((r) => r.role === "colaborador")) {
-            setUserRole("colaborador");
-          } else if (roles.some((r) => r.role === "aniversariante")) {
-            setUserRole("aniversariante");
-          }
-        }
-      } catch (error) {
-        console.error("Erro ao buscar role:", error);
-      }
-    };
-
-    const checkAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        setIsAuthenticated(true);
-        fetchUserRole(session.user.id);
-      } else {
-        setIsAuthenticated(false);
-        setUserRole(null);
-      }
-    };
-
-    checkAuth();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setIsAuthenticated(true);
-        fetchUserRole(session.user.id);
-      } else {
-        setIsAuthenticated(false);
-        setUserRole(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  return { isAuthenticated, userRole };
-};
-
-const useFavoritesCount = (isAuthenticated: boolean, userRole: UserRole) => {
+const useFavoritesCount = (isAuthenticated: boolean, userRole: string | null) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -269,7 +196,8 @@ NavButton.displayName = "NavButton";
 export const BottomNav = memo(function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, userRole } = useAuth();
+  const { user, role: userRole } = useUserRole();
+  const isAuthenticated = !!user;
   const favoritesCount = useFavoritesCount(isAuthenticated, userRole);
   const reducedMotion = useReducedMotion();
 
@@ -277,7 +205,9 @@ export const BottomNav = memo(function BottomNav() {
   const navItems = useMemo(() => {
     if (!isAuthenticated) return NAV_ITEMS_DEFAULT;
     if (userRole === "estabelecimento") return NAV_ITEMS_ESTABELECIMENTO;
-    return NAV_ITEMS_ANIVERSARIANTE;
+    if (userRole === "aniversariante") return NAV_ITEMS_ANIVERSARIANTE;
+    // Admin/colaborador: usar default (não tem bottom nav específica)
+    return NAV_ITEMS_DEFAULT;
   }, [isAuthenticated, userRole]);
 
   // Detectar path ativo

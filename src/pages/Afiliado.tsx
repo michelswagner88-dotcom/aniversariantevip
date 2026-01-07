@@ -114,14 +114,14 @@ export default function Afiliado() {
   };
 
   const copyReferralLink = () => {
-    const link = `${window.location.origin}/cadastro-estabelecimento?ref=${userId}`;
+    const link = `${window.location.origin}/cadastro/estabelecimento?ref=${userId}`;
     navigator.clipboard.writeText(link);
     setCopied(true);
     toast.success('Link copiado!');
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const referralLink = `${window.location.origin}/cadastro-estabelecimento?ref=${userId}`;
+  const referralLink = `${window.location.origin}/cadastro/estabelecimento?ref=${userId}`;
 
   if (loading) {
     return (

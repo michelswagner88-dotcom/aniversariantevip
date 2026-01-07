@@ -31,27 +31,40 @@ const AuthCallback = () => {
         console.log('✅ Login OK, usuário:', user.email);
 
         // ========================================
-        // VERIFICAR SE É CADASTRO DE ESTABELECIMENTO
+        // VERIFICAR SE É CADASTRO/LOGIN DE ESTABELECIMENTO
+        // Prioridade: URL params > sessionStorage (fallback)
         // ========================================
-        const authType = sessionStorage.getItem('authType');
+        const urlParams = new URLSearchParams(window.location.search);
+        const authType = urlParams.get('type') || sessionStorage.getItem('authType');
+        const authMode = urlParams.get('mode'); // 'login' ou undefined (cadastro)
 
         if (authType === 'estabelecimento') {
-          console.log('📋 Cadastro de ESTABELECIMENTO via Google...');
+          console.log('📋 Fluxo de ESTABELECIMENTO via Google...');
           sessionStorage.removeItem('authType');
 
           // Verificar se já tem estabelecimento cadastrado
           const { data: estabData } = await supabase
             .from('estabelecimentos')
-            .select('id')
+            .select('id, cadastro_completo, cnpj, nome_fantasia')
             .eq('id', user.id)
             .maybeSingle();
 
-          if (estabData) {
-            // Já tem estabelecimento - vai para área do estabelecimento
+          // Verificar se tem role de estabelecimento
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id)
+            .eq('role', 'estabelecimento')
+            .maybeSingle();
+
+          const hasEstablishment = estabData && (estabData.cadastro_completo || estabData.cnpj);
+
+          if (hasEstablishment && roleData) {
+            // Já tem estabelecimento completo - vai para área do estabelecimento
             toast.success('Login realizado!');
             navigate('/area-estabelecimento', { replace: true });
           } else {
-            // Novo - precisa completar cadastro
+            // Novo ou incompleto - precisa completar cadastro
             toast.success('Complete o cadastro do seu estabelecimento');
             navigate('/cadastro/estabelecimento?step=2&provider=google', { replace: true });
           }

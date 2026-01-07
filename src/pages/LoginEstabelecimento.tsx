@@ -84,10 +84,11 @@ export default function LoginEstabelecimento() {
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
+      // Passar tipo via URL param para garantir fluxo correto no callback
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/area-estabelecimento`,
+          redirectTo: `${window.location.origin}/auth/callback?type=estabelecimento&mode=login`,
           queryParams: {
             access_type: "offline",
             prompt: "consent",

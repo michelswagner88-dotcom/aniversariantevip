@@ -30,14 +30,17 @@ export const RoleRedirect = ({ type }: RoleRedirectProps) => {
           navigate("/area-estabelecimento", { replace: true });
           break;
         case "admin":
-          navigate("/admin", { replace: true });
+          navigate("/admin/dashboard", { replace: true });
           break;
         case "colaborador":
-          navigate("/area-colaborador", { replace: true });
+          navigate("/admin/dashboard", { replace: true });
           break;
         case "aniversariante":
-        default:
           navigate("/area-aniversariante", { replace: true });
+          break;
+        default:
+          // Sem role definida - ir para seleção de perfil
+          navigate("/selecionar-perfil", { replace: true });
           break;
       }
     } else if (type === "favoritos") {

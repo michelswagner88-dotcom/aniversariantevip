@@ -755,11 +755,11 @@ export default function EstablishmentRegistration() {
   };
 
   const handleGoogleSignUp = async () => {
-    sessionStorage.setItem("authType", "estabelecimento");
+    // Passar tipo via URL param (persiste durante redirect OAuth)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?type=estabelecimento`,
         queryParams: { access_type: "offline", prompt: "consent" },
       },
     });

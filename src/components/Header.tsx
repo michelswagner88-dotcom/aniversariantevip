@@ -1,14 +1,15 @@
 // =============================================================================
 // HEADER.TSX - ANIVERSARIANTE VIP
 // Design: Identidade roxa + Refinamento profissional
+// Usa useUserRole centralizado para consistência de roles
 // =============================================================================
 
-import { memo, useState, useCallback, useEffect } from "react";
+import { memo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, User, Gift, Building2, LogOut, HelpCircle, X, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useUserRole } from "@/hooks/useUserRole";
 
 // =============================================================================
 // TYPES
@@ -22,90 +23,6 @@ interface AuthUser {
     avatar_url?: string;
   };
 }
-
-// =============================================================================
-// HOOKS
-// =============================================================================
-
-const useAuth = () => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
-
-  const fetchUserRole = async (userId: string) => {
-    try {
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId);
-
-      // Prioridade: estabelecimento > admin > colaborador > aniversariante
-      if (roles?.some((r) => r.role === "estabelecimento")) {
-        setUserRole("estabelecimento");
-      } else if (roles?.some((r) => r.role === "admin")) {
-        setUserRole("admin");
-      } else if (roles?.some((r) => r.role === "colaborador")) {
-        setUserRole("colaborador");
-      } else if (roles?.some((r) => r.role === "aniversariante")) {
-        setUserRole("aniversariante");
-      } else {
-        setUserRole(null);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar role:", error);
-      setUserRole(null);
-    }
-  };
-
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          await fetchUserRole(session.user.id);
-        } else {
-          setUserRole(null);
-        }
-      } catch (error) {
-        console.error("Erro ao verificar sessão:", error);
-      }
-    };
-
-    checkSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        // Usar setTimeout para evitar deadlock
-        setTimeout(() => {
-          fetchUserRole(session.user.id);
-        }, 0);
-      } else {
-        setUserRole(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signOut = useCallback(async () => {
-    try {
-      await supabase.auth.signOut();
-      setUserRole(null);
-      toast.success("Logout realizado com sucesso");
-    } catch (error) {
-      toast.error("Erro ao fazer logout");
-    }
-  }, []);
-
-  return { user, userRole, signOut };
-};
 
 // =============================================================================
 // LOGO
@@ -392,7 +309,7 @@ UserInfo.displayName = "UserInfo";
 
 export const Header = memo(function Header({ children }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { user, userRole, signOut } = useAuth();
+  const { user, role: userRole, signOut } = useUserRole();
 
   return (
     <>

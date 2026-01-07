@@ -357,6 +357,10 @@ const App = () => (
                       />
                       <Route path="/login-estabelecimento" element={<Navigate to="/login/estabelecimento" replace />} />
                       <Route path="/login-parceiro" element={<Navigate to="/login/estabelecimento" replace />} />
+                      {/* Alias para rota antiga de cadastro */}
+                      <Route path="/cadastro-estabelecimento" element={<Navigate to="/cadastro/estabelecimento" replace />} />
+                      {/* Alias /painel para área do estabelecimento */}
+                      <Route path="/painel" element={<Navigate to="/area-estabelecimento" replace />} />
                       <Route
                         path="/area-estabelecimento"
                         element={

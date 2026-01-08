@@ -91,41 +91,30 @@ const STATE_CAPITALS: Record<string, string> = {
 
 const CATEGORY_ICONS: Record<string, any> = {
   all: Sparkles,
-  academia: Dumbbell,
   bar: Beer,
-  barbearia: Scissors,
-  cafeteria: Coffee,
+  "casa-noturna": PartyPopper,
   "casa noturna": PartyPopper,
-  entretenimento: Gamepad2,
+  gastronomia: Utensils,
   hospedagem: Hotel,
   loja: Store,
-  restaurante: Utensils,
-  salao: Paintbrush,
-  salão: Paintbrush,
-  sorveteria: IceCream,
+  "saude-beleza": Sparkles,
 };
 
 const CATEGORY_LABELS_SHORT: Record<string, string> = {
+  "casa-noturna": "Baladas",
   "casa noturna": "Baladas",
-  cafeteria: "Cafés",
-  entretenimento: "Lazer",
+  gastronomia: "Gastronomia",
   hospedagem: "Hotéis",
-  salao: "Beleza",
-  salão: "Beleza",
+  "saude-beleza": "Beleza",
 };
 
 const ALL_CATEGORIES = [
-  { id: "restaurante", label: "Restaurantes", subtitle: "Jante com vantagens" },
+  { id: "gastronomia", label: "Gastronomia", subtitle: "Restaurantes, cafés e sorveterias" },
   { id: "bar", label: "Bares", subtitle: "Brinde seu mês" },
-  { id: "academia", label: "Academias", subtitle: "Treine com benefícios" },
-  { id: "salao", label: "Salões de Beleza", subtitle: "Cuide-se no seu mês" },
-  { id: "cafeteria", label: "Cafeterias", subtitle: "Café pra celebrar" },
-  { id: "barbearia", label: "Barbearias", subtitle: "Estilo no seu mês" },
+  { id: "saude-beleza", label: "Beleza & Estética", subtitle: "Cuide-se no seu mês" },
   { id: "loja", label: "Lojas", subtitle: "Mimos e presentes" },
-  { id: "hospedagem", label: "Hospedagem", subtitle: "Descanse com desconto" },
-  { id: "entretenimento", label: "Entretenimento", subtitle: "Diversão garantida" },
-  { id: "casa noturna", label: "Casas Noturnas", subtitle: "Noite especial" },
-  { id: "sorveteria", label: "Sorveterias", subtitle: "Doce celebração" },
+  { id: "hospedagem", label: "Hotéis", subtitle: "Descanse com desconto" },
+  { id: "casa-noturna", label: "Baladas", subtitle: "Noite especial" },
 ];
 
 // =============================================================================

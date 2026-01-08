@@ -130,14 +130,22 @@ export const getWhatsAppMessage = (nome: string, categoria?: string | string[] |
   const cat = Array.isArray(categoria) ? categoria[0]?.toLowerCase() : categoria?.toLowerCase();
   
   const messages: Record<string, string> = {
+    gastronomia: `Olá! Vi o ${nome} no Aniversariante VIP e gostaria de reservar uma mesa para meu aniversário! 🎂`,
     restaurante: `Olá! Vi o ${nome} no Aniversariante VIP e gostaria de reservar uma mesa para meu aniversário! 🎂`,
     bar: `Olá! Vi o ${nome} no Aniversariante VIP e quero saber sobre o benefício de aniversário! 🍻🎂`,
+    'beleza & estética': `Olá! Vi o ${nome} no Aniversariante VIP e gostaria de agendar um horário especial de aniversário! ✨🎂`,
+    'saude-beleza': `Olá! Vi o ${nome} no Aniversariante VIP e gostaria de agendar um horário especial de aniversário! ✨🎂`,
     academia: `Olá! Vi a ${nome} no Aniversariante VIP e tenho interesse no benefício de aniversário! 💪🎂`,
     'salão de beleza': `Olá! Vi o ${nome} no Aniversariante VIP e gostaria de agendar um horário especial de aniversário! 💇‍♀️🎂`,
     barbearia: `Olá! Vi a ${nome} no Aniversariante VIP e gostaria de agendar um horário especial de aniversário! 💈🎂`,
     sorveteria: `Olá! Vi a ${nome} no Aniversariante VIP e quero saber sobre o benefício de aniversário! 🍦🎂`,
     cafeteria: `Olá! Vi a ${nome} no Aniversariante VIP e quero saber sobre o benefício de aniversário! ☕🎂`,
     confeitaria: `Olá! Vi a ${nome} no Aniversariante VIP e gostaria de encomendar algo especial! 🧁🎂`,
+    balada: `Olá! Vi a ${nome} no Aniversariante VIP e quero saber sobre entrada VIP de aniversário! 🎉🎂`,
+    'casa-noturna': `Olá! Vi a ${nome} no Aniversariante VIP e quero saber sobre entrada VIP de aniversário! 🎉🎂`,
+    hotel: `Olá! Vi o ${nome} no Aniversariante VIP e gostaria de saber sobre o benefício de aniversário! 🏨🎂`,
+    hospedagem: `Olá! Vi o ${nome} no Aniversariante VIP e gostaria de saber sobre o benefício de aniversário! 🏨🎂`,
+    loja: `Olá! Vi a ${nome} no Aniversariante VIP e quero saber sobre os descontos de aniversário! 🛍️🎂`,
   };
   
   return messages[cat || ''] || `Olá! Vi o ${nome} no Aniversariante VIP e gostaria de saber mais sobre o benefício de aniversário! 🎂`;

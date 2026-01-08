@@ -15,8 +15,11 @@ export interface GooglePhoto {
 
 // Placeholders por categoria (URLs de imagens geradas)
 export const PLACEHOLDERS_POR_CATEGORIA: Record<string, string> = {
+  'gastronomia': '/images/placeholders/restaurante.jpg',
   'restaurante': '/images/placeholders/restaurante.jpg',
   'bar': '/images/placeholders/bar.jpg',
+  'saude-beleza': '/images/placeholders/salao.jpg',
+  'beleza & estetica': '/images/placeholders/salao.jpg',
   'academia': '/images/placeholders/academia.jpg',
   'salao de beleza': '/images/placeholders/salao.jpg',
   'salao': '/images/placeholders/salao.jpg',
@@ -25,15 +28,14 @@ export const PLACEHOLDERS_POR_CATEGORIA: Record<string, string> = {
   'barbearia': '/images/placeholders/barbearia.jpg',
   'sorveteria': '/images/placeholders/sorveteria.jpg',
   'confeitaria': '/images/placeholders/confeitaria.jpg',
+  'casa-noturna': '/images/placeholders/bar.jpg',
   'casa noturna': '/images/placeholders/bar.jpg',
+  'balada': '/images/placeholders/bar.jpg',
   'hospedagem': '/images/placeholders/hospedagem.jpg',
+  'hotel': '/images/placeholders/hospedagem.jpg',
   'loja': '/images/placeholders/loja.jpg',
   'loja de presentes': '/images/placeholders/loja.jpg',
   'moda e acessorios': '/images/placeholders/loja.jpg',
-  'entretenimento': '/images/placeholders/entretenimento.jpg',
-  'saude e suplementos': '/images/placeholders/saude.jpg',
-  'servicos': '/images/placeholders/servicos.jpg',
-  'outros comercios': '/images/placeholders/estabelecimento.jpg',
   'default': '/images/placeholders/estabelecimento.jpg'
 };
 

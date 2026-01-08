@@ -43,17 +43,17 @@ const TITLE_VARIATIONS: Record<string, TitleVariation> = {
       'Feito pra você'
     ]
   },
-  'restaurante': {
+  'gastronomia': {
     titulos: [
-      'Restaurantes para comemorar',
+      'Gastronomia para comemorar',
       'Onde a festa acontece',
       'Sabores que celebram você',
       'Mesa reservada pra você',
-      'Gastronomia de aniversário'
+      'Experiências gastronômicas'
     ],
     subtitulos: [
       'Celebre com quem você ama',
-      'Experiências gastronômicas',
+      'Restaurantes, cafés e sorveterias',
       'Do casual ao sofisticado',
       'Sabores inesquecíveis',
       'Seu dia, sua escolha'
@@ -75,57 +75,9 @@ const TITLE_VARIATIONS: Record<string, TitleVariation> = {
       'Cheers pro niver!'
     ]
   },
-  'pizzaria': {
+  'saude-beleza': {
     titulos: [
-      'Pizzarias irresistíveis',
-      'Pizza de aniversário',
-      'Fatias de felicidade',
-      'Rodízio pro niver',
-      'Massa de celebração'
-    ],
-    subtitulos: [
-      'Sabor que conquista',
-      'Do forno pra festa',
-      'Cada fatia é especial',
-      'Pizza é sempre boa ideia',
-      'Celebre com muito queijo'
-    ]
-  },
-  'cafeteria': {
-    titulos: [
-      'Cafeterias aconchegantes',
-      'Café com carinho',
-      'Momentos doces',
-      'Pausa especial de niver',
-      'Aroma de celebração'
-    ],
-    subtitulos: [
-      'Momentos especiais te esperam',
-      'Aquele café diferente',
-      'Doçura que você merece',
-      'Café e boas vibes',
-      'Um mimo pra você'
-    ]
-  },
-  'academia': {
-    titulos: [
-      'Academias parceiras',
-      'Treino de aniversário',
-      'Comece o novo ciclo',
-      'Força pra mais um ano',
-      'Presente pro seu corpo'
-    ],
-    subtitulos: [
-      'Cuide de você',
-      'Novo ano, nova energia',
-      'Celebre com saúde',
-      'Endorfina garantida',
-      'O melhor presente: saúde'
-    ]
-  },
-  'salao': {
-    titulos: [
-      'Salões de beleza',
+      'Beleza & Estética',
       'Visual de aniversariante',
       'Brilhe no seu dia',
       'Renovação completa',
@@ -137,38 +89,6 @@ const TITLE_VARIATIONS: Record<string, TitleVariation> = {
       'Beleza que celebra',
       'Autoestima lá em cima',
       'Preparada pra festa'
-    ]
-  },
-  'barbearia': {
-    titulos: [
-      'Barbearias estilosas',
-      'Corte de aniversariante',
-      'Estilo pro seu dia',
-      'Barba e cabelo em dia',
-      'Visual renovado'
-    ],
-    subtitulos: [
-      'Estilo e cuidado',
-      'Preparado pra festa',
-      'Tradição e modernidade',
-      'O melhor corte da cidade',
-      'Autoestima em alta'
-    ]
-  },
-  'spa': {
-    titulos: [
-      'Spas para relaxar',
-      'Presente de relaxamento',
-      'Day spa de niver',
-      'Você merece descansar',
-      'Renovação total'
-    ],
-    subtitulos: [
-      'Você merece esse mimo',
-      'Relaxe e celebre',
-      'Paz e tranquilidade',
-      'Energia renovada',
-      'Momento só seu'
     ]
   },
   'casa-noturna': {
@@ -187,22 +107,6 @@ const TITLE_VARIATIONS: Record<string, TitleVariation> = {
       'Uma noite pra lembrar'
     ]
   },
-  'confeitaria': {
-    titulos: [
-      'Confeitarias irresistíveis',
-      'Doces de aniversário',
-      'Açúcar e celebração',
-      'Bolos que encantam',
-      'Sobremesas especiais'
-    ],
-    subtitulos: [
-      'Doces momentos',
-      'Celebre com açúcar',
-      'O doce do seu dia',
-      'Delícias pra você',
-      'Sobremesa garantida'
-    ]
-  },
   'hospedagem': {
     titulos: [
       'Hotéis e pousadas',
@@ -217,22 +121,6 @@ const TITLE_VARIATIONS: Record<string, TitleVariation> = {
       'Viaje no seu niver',
       'Conforto garantido',
       'Uma experiência única'
-    ]
-  },
-  'entretenimento': {
-    titulos: [
-      'Diversão garantida',
-      'Experiências únicas',
-      'Aventuras de niver',
-      'Momentos memoráveis',
-      'Entretenimento especial'
-    ],
-    subtitulos: [
-      'Diversão pra todos',
-      'Celebre brincando',
-      'Experiências incríveis',
-      'Alegria garantida',
-      'Pura diversão'
     ]
   },
   'loja': {
@@ -251,38 +139,6 @@ const TITLE_VARIATIONS: Record<string, TitleVariation> = {
       'Compre com vantagem'
     ]
   },
-  'sorveteria': {
-    titulos: [
-      'Sorveterias refrescantes',
-      'Doce gelado de niver',
-      'Refresque a celebração',
-      'Sorvete no seu dia',
-      'Delícias geladas'
-    ],
-    subtitulos: [
-      'Doçura pra qualquer momento',
-      'Refresque-se com estilo',
-      'Gelado e especial',
-      'O sabor da festa',
-      'Sempre cai bem'
-    ]
-  },
-  'servicos': {
-    titulos: [
-      'Serviços especiais',
-      'Experiências exclusivas',
-      'Benefícios únicos',
-      'Serviços de niver',
-      'Vantagens especiais'
-    ],
-    subtitulos: [
-      'Benefícios exclusivos',
-      'Praticidade pra você',
-      'Feito pro seu dia',
-      'Aproveite as vantagens',
-      'Serviços diferenciados'
-    ]
-  }
 };
 
 // Títulos com cidade incluída
@@ -341,18 +197,16 @@ export const SECTION_TITLES: Record<string, TitleGenerator> = {
     ])
   ),
   
-  // Aliases
-  'salao-de-beleza': (cidade, count) => SECTION_TITLES['salao'](cidade, count),
+  // Aliases para compatibilidade
+  'restaurante': (cidade, count) => SECTION_TITLES['gastronomia'](cidade, count),
+  'cafeteria': (cidade, count) => SECTION_TITLES['gastronomia'](cidade, count),
+  'sorveteria': (cidade, count) => SECTION_TITLES['gastronomia'](cidade, count),
+  'salao': (cidade, count) => SECTION_TITLES['saude-beleza'](cidade, count),
+  'salao-de-beleza': (cidade, count) => SECTION_TITLES['saude-beleza'](cidade, count),
+  'academia': (cidade, count) => SECTION_TITLES['saude-beleza'](cidade, count),
+  'barbearia': (cidade, count) => SECTION_TITLES['saude-beleza'](cidade, count),
   'loja-de-presentes': (cidade, count) => SECTION_TITLES['loja'](cidade, count),
   'moda-e-acessorios': (cidade, count) => SECTION_TITLES['loja'](cidade, count),
-  'saude-e-suplementos': (cidade, count) => ({
-    titulo: 'Saúde e Bem-estar',
-    subtitulo: cidade ? `Cuide de você em ${cidade}` : 'O melhor presente: sua saúde'
-  }),
-  'outros-comercios': () => ({
-    titulo: 'Mais lugares incríveis',
-    subtitulo: 'Benefícios esperando você'
-  }),
   
   // === SEÇÕES ESPECIAIS ===
   

@@ -13,52 +13,47 @@ interface ParsedVoiceSearch {
 
 // Mapeamento de palavras-chave para categorias (usando valores do banco)
 const KEYWORDS_CATEGORIAS: Record<string, string[]> = {
-  'Restaurantes': ['restaurante', 'restaurantes', 'comer', 'comida', 'almoço', 'jantar', 'refeição'],
+  'Gastronomia': ['restaurante', 'restaurantes', 'comer', 'comida', 'almoço', 'jantar', 'refeição', 'café', 'cafeteria', 'cafeterias', 'cappuccino', 'lanche da tarde', 'sorvete', 'sorvetes', 'sorveteria', 'açaí', 'gelato', 'picolé', 'bolo', 'bolos', 'doce', 'doces', 'confeitaria', 'torta', 'brigadeiro'],
   'Bares': ['bar', 'bares', 'beber', 'cerveja', 'drink', 'drinks', 'chopp', 'boteco'],
-  'Academias': ['academia', 'academias', 'treino', 'treinar', 'musculação', 'exercício', 'malhar'],
-  'Salões de Beleza': ['salão', 'salões', 'cabelo', 'corte', 'manicure', 'unha', 'beleza', 'cabeleireiro'],
-  'Barbearias': ['barbearia', 'barbearias', 'barba', 'barbeiro'],
-  'Cafeterias': ['café', 'cafeteria', 'cafeterias', 'cappuccino', 'lanche da tarde'],
-  'Casas Noturnas': ['balada', 'baladas', 'noturna', 'festa', 'dançar', 'club', 'boate'],
-  'Confeitarias': ['bolo', 'bolos', 'doce', 'doces', 'confeitaria', 'torta', 'brigadeiro'],
-  'Entretenimento': ['cinema', 'teatro', 'diversão', 'lazer', 'boliche', 'karaokê', 'escape'],
-  'Hospedagens': ['hotel', 'hotéis', 'pousada', 'hostel', 'hospedagem', 'dormir'],
+  'Beleza & Estética': ['academia', 'academias', 'treino', 'treinar', 'musculação', 'exercício', 'malhar', 'salão', 'salões', 'cabelo', 'corte', 'manicure', 'unha', 'beleza', 'cabeleireiro', 'barbearia', 'barbearias', 'barba', 'barbeiro', 'massagem', 'spa', 'estética', 'tatuagem'],
+  'Baladas': ['balada', 'baladas', 'noturna', 'festa', 'dançar', 'club', 'boate'],
+  'Hotéis': ['hotel', 'hotéis', 'pousada', 'hostel', 'hospedagem', 'dormir'],
   'Lojas': ['loja', 'lojas', 'comprar', 'roupa', 'roupas', 'presente', 'presentes', 'shopping'],
-  'Serviços': ['serviço', 'serviços', 'massagem', 'spa', 'estética', 'tatuagem'],
-  'Sorveterias': ['sorvete', 'sorvetes', 'sorveteria', 'açaí', 'gelato', 'picolé'],
-  'Saúde e Suplementos': ['suplemento', 'suplementos', 'vitamina', 'whey', 'farmácia', 'saúde'],
 };
 
 // Mapeamento de palavras-chave para subcategorias/especialidades
 const KEYWORDS_SUBCATEGORIAS: Record<string, { categoria: string; keywords: string[] }> = {
-  // Restaurantes
-  'Pizzaria': { categoria: 'Restaurantes', keywords: ['pizza', 'pizzaria', 'pizzas'] },
-  'Japonesa': { categoria: 'Restaurantes', keywords: ['sushi', 'japonês', 'japonesa', 'japa', 'temaki', 'sashimi'] },
-  'Churrascaria': { categoria: 'Restaurantes', keywords: ['churrasco', 'churrascaria', 'carne', 'carnes', 'rodízio de carne'] },
-  'Hamburgueria': { categoria: 'Restaurantes', keywords: ['hambúrguer', 'hamburger', 'burger', 'lanche', 'lanches'] },
-  'Italiana': { categoria: 'Restaurantes', keywords: ['italiana', 'italiano', 'massa', 'massas', 'lasanha', 'macarrão'] },
-  'Mexicana': { categoria: 'Restaurantes', keywords: ['mexicano', 'mexicana', 'taco', 'tacos', 'burrito', 'nachos'] },
-  'Árabe': { categoria: 'Restaurantes', keywords: ['árabe', 'arabe', 'esfiha', 'esfirra', 'kebab', 'quibe'] },
-  'Vegetariana': { categoria: 'Restaurantes', keywords: ['vegetariano', 'vegetariana', 'vegano', 'vegana', 'vegan'] },
-  'Frutos do Mar': { categoria: 'Restaurantes', keywords: ['frutos do mar', 'peixe', 'camarão', 'lagosta', 'marisco'] },
-  'Self-Service': { categoria: 'Restaurantes', keywords: ['self-service', 'self service', 'buffet', 'por quilo', 'kg'] },
+  // Gastronomia - Restaurantes
+  'Pizzaria': { categoria: 'Gastronomia', keywords: ['pizza', 'pizzaria', 'pizzas'] },
+  'Japonesa': { categoria: 'Gastronomia', keywords: ['sushi', 'japonês', 'japonesa', 'japa', 'temaki', 'sashimi'] },
+  'Churrascaria': { categoria: 'Gastronomia', keywords: ['churrasco', 'churrascaria', 'carne', 'carnes', 'rodízio de carne'] },
+  'Hamburgueria': { categoria: 'Gastronomia', keywords: ['hambúrguer', 'hamburger', 'burger', 'lanche', 'lanches'] },
+  'Italiana': { categoria: 'Gastronomia', keywords: ['italiana', 'italiano', 'massa', 'massas', 'lasanha', 'macarrão'] },
+  'Mexicana': { categoria: 'Gastronomia', keywords: ['mexicano', 'mexicana', 'taco', 'tacos', 'burrito', 'nachos'] },
+  'Árabe': { categoria: 'Gastronomia', keywords: ['árabe', 'arabe', 'esfiha', 'esfirra', 'kebab', 'quibe'] },
+  'Vegetariana': { categoria: 'Gastronomia', keywords: ['vegetariano', 'vegetariana', 'vegano', 'vegana', 'vegan'] },
+  'Frutos do Mar': { categoria: 'Gastronomia', keywords: ['frutos do mar', 'peixe', 'camarão', 'lagosta', 'marisco'] },
+  'Self-Service': { categoria: 'Gastronomia', keywords: ['self-service', 'self service', 'buffet', 'por quilo', 'kg'] },
+  // Gastronomia - Cafés
+  'Cafeteria': { categoria: 'Gastronomia', keywords: ['café especial', 'cappuccino', 'latte', 'cafeteria'] },
+  'Confeitaria': { categoria: 'Gastronomia', keywords: ['bolo', 'bolos', 'confeitaria', 'torta', 'brigadeiro', 'doce', 'doces'] },
+  // Gastronomia - Sorvetes
+  'Sorvete Artesanal': { categoria: 'Gastronomia', keywords: ['sorvete artesanal', 'sorvete caseiro'] },
+  'Açaí e Frozen': { categoria: 'Gastronomia', keywords: ['açaí', 'frozen', 'frozen yogurt'] },
+  'Paletas e Picolés': { categoria: 'Gastronomia', keywords: ['paleta', 'paletas', 'picolé', 'picolés'] },
   // Bares
   'Cervejaria': { categoria: 'Bares', keywords: ['cervejaria', 'cerveja artesanal', 'chopp artesanal'] },
   'Coquetelaria': { categoria: 'Bares', keywords: ['coquetel', 'coquetéis', 'drinks', 'coquetelaria', 'mixologia'] },
   'Música ao Vivo': { categoria: 'Bares', keywords: ['música ao vivo', 'show', 'banda', 'ao vivo'] },
   'Pub': { categoria: 'Bares', keywords: ['pub', 'irish pub', 'english pub'] },
   'Wine Bar': { categoria: 'Bares', keywords: ['wine bar', 'vinho', 'vinhos', 'vinícola'] },
-  // Academias
-  'CrossFit': { categoria: 'Academias', keywords: ['crossfit', 'cross fit', 'cross'] },
-  'Yoga': { categoria: 'Academias', keywords: ['yoga', 'ioga'] },
-  'Pilates': { categoria: 'Academias', keywords: ['pilates'] },
-  'Funcional': { categoria: 'Academias', keywords: ['funcional', 'treino funcional'] },
-  'Natação': { categoria: 'Academias', keywords: ['natação', 'nadar', 'piscina'] },
-  'Luta': { categoria: 'Academias', keywords: ['luta', 'jiu-jitsu', 'muay thai', 'boxe', 'mma'] },
-  // Sorveterias
-  'Sorvete Artesanal': { categoria: 'Sorveterias', keywords: ['artesanal', 'caseiro'] },
-  'Açaí e Frozen': { categoria: 'Sorveterias', keywords: ['açaí', 'frozen', 'frozen yogurt'] },
-  'Paletas e Picolés': { categoria: 'Sorveterias', keywords: ['paleta', 'paletas', 'picolé', 'picolés'] },
+  // Beleza & Estética
+  'CrossFit': { categoria: 'Beleza & Estética', keywords: ['crossfit', 'cross fit', 'cross'] },
+  'Yoga': { categoria: 'Beleza & Estética', keywords: ['yoga', 'ioga'] },
+  'Pilates': { categoria: 'Beleza & Estética', keywords: ['pilates'] },
+  'Funcional': { categoria: 'Beleza & Estética', keywords: ['funcional', 'treino funcional'] },
+  'Natação': { categoria: 'Beleza & Estética', keywords: ['natação', 'nadar', 'piscina'] },
+  'Luta': { categoria: 'Beleza & Estética', keywords: ['luta', 'jiu-jitsu', 'muay thai', 'boxe', 'mma'] },
 };
 
 // Frases que indicam uso de localização

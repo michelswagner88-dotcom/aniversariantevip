@@ -6,38 +6,27 @@
 import { memo, useRef } from "react";
 import {
   Sparkles,
-  Dumbbell,
   Beer,
-  Scissors,
-  Coffee,
   PartyPopper,
-  Gamepad2,
   Hotel,
   Store,
-  Paintbrush,
   Utensils,
-  IceCream,
   SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // =============================================================================
-// DATA
+// DATA - Categorias reorganizadas
 // =============================================================================
 
 const CATEGORIES = [
   { id: "all", label: "Todos", icon: Sparkles },
-  { id: "academia", label: "Academia", icon: Dumbbell },
-  { id: "bar", label: "Bar", icon: Beer },
-  { id: "barbearia", label: "Barbearia", icon: Scissors },
-  { id: "cafeteria", label: "Cafeteria", icon: Coffee },
-  { id: "casa noturna", label: "Casa Noturna", icon: PartyPopper },
-  { id: "entretenimento", label: "Entretenimento", icon: Gamepad2 },
-  { id: "hospedagem", label: "Hospedagem", icon: Hotel },
-  { id: "loja", label: "Loja", icon: Store },
-  { id: "restaurante", label: "Restaurante", icon: Utensils },
-  { id: "salao", label: "Salão", icon: Paintbrush },
-  { id: "sorveteria", label: "Sorveteria", icon: IceCream },
+  { id: "gastronomia", label: "Gastronomia", icon: Utensils },
+  { id: "bar", label: "Bares", icon: Beer },
+  { id: "saude-beleza", label: "Beleza", icon: Sparkles },
+  { id: "casa-noturna", label: "Baladas", icon: PartyPopper },
+  { id: "hospedagem", label: "Hotéis", icon: Hotel },
+  { id: "loja", label: "Lojas", icon: Store },
 ];
 
 // =============================================================================

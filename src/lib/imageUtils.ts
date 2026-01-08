@@ -83,8 +83,11 @@ export const getCategoryPlaceholder = (categoria?: string | string[] | null): st
   const cat = Array.isArray(categoria) ? categoria[0]?.toLowerCase() : categoria?.toLowerCase();
   
   const placeholders: Record<string, string> = {
+    gastronomia: '/images/placeholders/restaurante.jpg',
     restaurante: '/images/placeholders/restaurante.jpg',
     bar: '/images/placeholders/bar.jpg',
+    'saude-beleza': '/images/placeholders/salao.jpg',
+    'beleza & estética': '/images/placeholders/salao.jpg',
     academia: '/images/placeholders/academia.jpg',
     'salão de beleza': '/images/placeholders/salao.jpg',
     barbearia: '/images/placeholders/barbearia.jpg',
@@ -93,9 +96,9 @@ export const getCategoryPlaceholder = (categoria?: string | string[] | null): st
     sorveteria: '/images/placeholders/sorveteria.jpg',
     loja: '/images/placeholders/loja.jpg',
     hospedagem: '/images/placeholders/hospedagem.jpg',
-    entretenimento: '/images/placeholders/entretenimento.jpg',
-    'saúde e suplementos': '/images/placeholders/saude.jpg',
-    serviços: '/images/placeholders/servicos.jpg',
+    hotel: '/images/placeholders/hospedagem.jpg',
+    'casa-noturna': '/images/placeholders/bar.jpg',
+    balada: '/images/placeholders/bar.jpg',
   };
   
   return placeholders[cat || ''] || '/placeholder-estabelecimento.png';

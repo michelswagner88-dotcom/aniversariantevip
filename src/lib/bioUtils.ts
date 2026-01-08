@@ -20,32 +20,27 @@ export const gerarBioAutomatica = (dados: DadosEstabelecimento): string => {
   
   // Bio premium por categoria
   const biosPorCategoria: Record<string, string> = {
-    'Academia': `${nome} é referência em fitness em ${localizacao}. No seu aniversário, treine com benefícios exclusivos VIP!`,
+    'Gastronomia': `Experiência gastronômica de referência em ${localizacao}. ${nome} celebra seu aniversário com sabor!`,
     
     'Bar': `O point obrigatório em ${localizacao} para celebrar. ${nome} oferece vantagens especiais para aniversariantes!`,
     
-    'Barbearia': `Estilo e atitude em ${localizacao}. ${nome} cuida do seu visual com benefícios exclusivos no seu aniversário!`,
+    'Beleza & Estética': `Beleza, bem-estar e cuidado em ${localizacao}. ${nome} cuida de você com benefícios exclusivos no seu aniversário!`,
     
-    'Cafeteria': `Café especial e ambiente acolhedor em ${localizacao}. ${nome} celebra seu aniversário com você!`,
+    'Balada': `A noite é sua em ${localizacao}! ${nome} oferece entrada VIP e benefícios exclusivos para aniversariantes!`,
     
-    'Casa Noturna': `A noite é sua em ${localizacao}! ${nome} oferece entrada VIP e benefícios exclusivos para aniversariantes!`,
-    
-    'Confeitaria': `Doces momentos em ${localizacao}. ${nome} torna seu aniversário ainda mais especial!`,
-    
-    'Entretenimento': `Diversão garantida em ${localizacao}! ${nome} tem surpresas especiais para aniversariantes!`,
-    
-    'Hospedagem': `Conforto e exclusividade em ${localizacao}. ${nome} celebra seu aniversário com você!`,
+    'Hotel': `Conforto e exclusividade em ${localizacao}. ${nome} celebra seu aniversário com você!`,
     
     'Loja': `${nome} em ${localizacao} tem ofertas imperdíveis para aniversariantes. Presenteie-se!`,
     
+    // Aliases para compatibilidade
+    'Academia': `${nome} é referência em fitness em ${localizacao}. No seu aniversário, treine com benefícios exclusivos VIP!`,
+    'Barbearia': `Estilo e atitude em ${localizacao}. ${nome} cuida do seu visual com benefícios exclusivos no seu aniversário!`,
+    'Cafeteria': `Café especial e ambiente acolhedor em ${localizacao}. ${nome} celebra seu aniversário com você!`,
+    'Casa Noturna': `A noite é sua em ${localizacao}! ${nome} oferece entrada VIP e benefícios exclusivos para aniversariantes!`,
+    'Confeitaria': `Doces momentos em ${localizacao}. ${nome} torna seu aniversário ainda mais especial!`,
+    'Hospedagem': `Conforto e exclusividade em ${localizacao}. ${nome} celebra seu aniversário com você!`,
     'Restaurante': `Experiência gastronômica de referência em ${localizacao}. ${nome} celebra seu aniversário com sabor!`,
-    
     'Salão de Beleza': `Beleza e bem-estar em ${localizacao}. ${nome} cuida de você com benefícios exclusivos no seu aniversário!`,
-    
-    'Saúde e Suplementos': `Saúde e qualidade de vida em ${localizacao}. ${nome} oferece vantagens especiais para aniversariantes!`,
-    
-    'Serviços': `${nome} em ${localizacao} oferece atendimento VIP para aniversariantes. Aproveite!`,
-    
     'Sorveteria': `Sabores refrescantes em ${localizacao}! ${nome} adoça seu aniversário com benefícios exclusivos!`,
     
     'Outros': `${nome} em ${localizacao} tem benefícios exclusivos para aniversariantes. Venha celebrar!`,

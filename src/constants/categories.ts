@@ -1,9 +1,9 @@
 // =============================================================================
 // Sistema oficial de Categorias e Subcategorias - AniversarianteVIP
 // VERSÃO REORGANIZADA:
-// - Nova categoria: Saúde & Beleza (agrupa Academia, Barbearia, Salão, Serviços)
-// - Confeitaria agora é subcategoria de Cafés
-// - ORDEM ALFABÉTICA (Outros por último)
+// - Gastronomia: Agrupa Restaurantes, Cafés e Sorveterias
+// - Beleza & Estética: Renomeado de Saúde & Beleza
+// - REMOVIDAS: Lazer (Entretenimento) e Outros
 // =============================================================================
 
 export interface Subcategoria {
@@ -22,7 +22,7 @@ export interface Categoria {
 
 export const CATEGORIAS: Categoria[] = [
   // =========================================================================
-  // ORDEM ALFABÉTICA (Outros por último)
+  // ORDEM ALFABÉTICA
   // =========================================================================
 
   // 1. Baladas
@@ -69,139 +69,11 @@ export const CATEGORIAS: Categoria[] = [
     ],
   },
 
-  // 3. Cafés
-  {
-    id: "cafeteria",
-    label: "Café",
-    plural: "Cafés",
-    icon: "☕",
-    subcategorias: [
-      { id: "cafe-especial", label: "Café Especial", icon: "☕" },
-      { id: "confeitaria", label: "Confeitaria", icon: "🎂" },
-      { id: "padaria", label: "Padaria", icon: "🥖" },
-      { id: "brunch", label: "Brunch", icon: "🥞" },
-      { id: "doceria", label: "Doceria", icon: "🍰" },
-      { id: "bolos", label: "Bolos", icon: "🎂" },
-      { id: "doces-finos", label: "Doces Finos", icon: "🍬" },
-      { id: "tortas", label: "Tortas", icon: "🥧" },
-      { id: "cupcakes", label: "Cupcakes", icon: "🧁" },
-      { id: "cafe-colonial", label: "Café Colonial", icon: "🧁" },
-      { id: "chas", label: "Chás", icon: "🍵" },
-      { id: "salgados-cafe", label: "Salgados", icon: "🥐" },
-      { id: "lanches", label: "Lanches", icon: "🥪" },
-      { id: "outros-cafeteria", label: "Outros", icon: "➕" },
-    ],
-  },
-
-  // 4. Hotéis
-  {
-    id: "hospedagem",
-    label: "Hotel",
-    plural: "Hotéis",
-    icon: "🏨",
-    subcategorias: [
-      { id: "hotel", label: "Hotel", icon: "🏨" },
-      { id: "pousada", label: "Pousada", icon: "🏡" },
-      { id: "resort", label: "Resort", icon: "🏝️" },
-      { id: "day-use", label: "Day Use", icon: "☀️" },
-      { id: "hostel", label: "Hostel", icon: "🛏️" },
-      { id: "flat", label: "Flat", icon: "🏢" },
-      { id: "chale", label: "Chalé", icon: "🏔️" },
-      { id: "camping", label: "Camping", icon: "⛺" },
-      { id: "outros-hospedagem", label: "Outros", icon: "➕" },
-    ],
-  },
-
-  // 5. Lazer
-  {
-    id: "entretenimento",
-    label: "Lazer",
-    plural: "Lazer",
-    icon: "🎮",
-    subcategorias: [
-      { id: "cinema", label: "Cinema", icon: "🎬" },
-      { id: "boliche", label: "Boliche", icon: "🎳" },
-      { id: "escape-room", label: "Escape Room", icon: "🔐" },
-      { id: "parque", label: "Parque", icon: "🎢" },
-      { id: "jogos", label: "Jogos", icon: "🎮" },
-      { id: "karaoke", label: "Karaokê", icon: "🎙️" },
-      { id: "teatro", label: "Teatro", icon: "🎭" },
-      { id: "fliperama", label: "Fliperama", icon: "👾" },
-      { id: "laser-tag", label: "Laser Tag", icon: "🔫" },
-      { id: "kart", label: "Kart", icon: "🏎️" },
-      { id: "paintball", label: "Paintball", icon: "🎯" },
-      { id: "casa-festas", label: "Casa de Festas", icon: "🎈" },
-      { id: "buffet-infantil", label: "Buffet Infantil", icon: "🎂" },
-      { id: "espaco-eventos", label: "Espaço para Eventos", icon: "🏛️" },
-      { id: "outros-entretenimento", label: "Outros", icon: "➕" },
-    ],
-  },
-
-  // 6. Lojas
-  {
-    id: "loja",
-    label: "Loja",
-    plural: "Lojas",
-    icon: "🛍️",
-    subcategorias: [
-      { id: "roupas", label: "Roupas", icon: "👗" },
-      { id: "calcados", label: "Calçados", icon: "👟" },
-      { id: "cosmeticos", label: "Cosméticos", icon: "🧴" },
-      { id: "acessorios", label: "Acessórios", icon: "👜" },
-      { id: "presentes", label: "Presentes", icon: "🎁" },
-      { id: "eletronicos", label: "Eletrônicos", icon: "📱" },
-      { id: "decoracao", label: "Decoração", icon: "🏠" },
-      { id: "joias", label: "Joias", icon: "💍" },
-      { id: "bolsas", label: "Bolsas", icon: "👜" },
-      { id: "oculos", label: "Óculos", icon: "👓" },
-      { id: "perfumaria", label: "Perfumaria", icon: "🌸" },
-      { id: "chocolates", label: "Chocolates", icon: "🍫" },
-      { id: "flores", label: "Flores", icon: "💐" },
-      { id: "pet-shop", label: "Pet Shop", icon: "🐾" },
-      { id: "suplementos", label: "Suplementos", icon: "💪" },
-      { id: "brinquedos", label: "Brinquedos", icon: "🧸" },
-      { id: "papelaria", label: "Papelaria", icon: "📝" },
-      { id: "livraria", label: "Livraria", icon: "📚" },
-      { id: "sex-shop", label: "Sex Shop", icon: "❤️‍🔥" },
-      { id: "outros-loja", label: "Outros", icon: "➕" },
-    ],
-  },
-
-  // 7. Restaurantes
-  {
-    id: "restaurante",
-    label: "Restaurante",
-    plural: "Restaurantes",
-    icon: "🍽️",
-    subcategorias: [
-      { id: "pizzaria", label: "Pizzaria", icon: "🍕" },
-      { id: "churrascaria", label: "Churrascaria", icon: "🥩" },
-      { id: "japonesa", label: "Japonesa", icon: "🍣" },
-      { id: "hamburguer", label: "Hambúrguer", icon: "🍔" },
-      { id: "italiana", label: "Italiana", icon: "🍝" },
-      { id: "brasileira", label: "Brasileira", icon: "🍛" },
-      { id: "mexicana", label: "Mexicana", icon: "🌮" },
-      { id: "arabe", label: "Árabe", icon: "🥙" },
-      { id: "asiatica", label: "Asiática", icon: "🥡" },
-      { id: "frutos-mar", label: "Frutos do Mar", icon: "🦐" },
-      { id: "vegetariana", label: "Vegetariana", icon: "🥗" },
-      { id: "vegana", label: "Vegana", icon: "🌱" },
-      { id: "self-service", label: "Self-Service", icon: "🍱" },
-      { id: "rodizio", label: "Rodízio", icon: "🔄" },
-      { id: "fast-food", label: "Fast Food", icon: "🍟" },
-      { id: "caseira", label: "Caseira", icon: "🏠" },
-      { id: "cafe-manha", label: "Café da Manhã", icon: "🥐" },
-      { id: "massas", label: "Massas", icon: "🍜" },
-      { id: "carnes", label: "Carnes", icon: "🍖" },
-      { id: "outros-restaurante", label: "Outros", icon: "➕" },
-    ],
-  },
-
-  // 8. Saúde & Beleza (NOVA - agrupa Academia, Barbearia, Salão, Serviços)
+  // 3. Beleza & Estética (RENOMEADO de Saúde & Beleza)
   {
     id: "saude-beleza",
-    label: "Saúde & Beleza",
-    plural: "Saúde & Beleza",
+    label: "Beleza & Estética",
+    plural: "Beleza & Estética",
     icon: "✨",
     subcategorias: [
       // Academia
@@ -246,35 +118,106 @@ export const CATEGORIAS: Categoria[] = [
     ],
   },
 
-  // 9. Sorveterias
+  // 4. Gastronomia (NOVA - agrupa Restaurantes, Cafés e Sorveterias)
   {
-    id: "sorveteria",
-    label: "Sorveteria",
-    plural: "Sorveterias",
-    icon: "🍦",
+    id: "gastronomia",
+    label: "Gastronomia",
+    plural: "Gastronomia",
+    icon: "🍽️",
     subcategorias: [
+      // === RESTAURANTES ===
+      { id: "pizzaria", label: "Pizzaria", icon: "🍕" },
+      { id: "churrascaria", label: "Churrascaria", icon: "🥩" },
+      { id: "japonesa", label: "Japonesa", icon: "🍣" },
+      { id: "hamburguer", label: "Hambúrguer", icon: "🍔" },
+      { id: "italiana", label: "Italiana", icon: "🍝" },
+      { id: "brasileira", label: "Brasileira", icon: "🍛" },
+      { id: "mexicana", label: "Mexicana", icon: "🌮" },
+      { id: "arabe", label: "Árabe", icon: "🥙" },
+      { id: "asiatica", label: "Asiática", icon: "🥡" },
+      { id: "frutos-mar", label: "Frutos do Mar", icon: "🦐" },
+      { id: "vegetariana", label: "Vegetariana", icon: "🥗" },
+      { id: "vegana", label: "Vegana", icon: "🌱" },
+      { id: "self-service", label: "Self-Service", icon: "🍱" },
+      { id: "rodizio", label: "Rodízio", icon: "🔄" },
+      { id: "fast-food", label: "Fast Food", icon: "🍟" },
+      { id: "caseira", label: "Caseira", icon: "🏠" },
+      { id: "massas", label: "Massas", icon: "🍜" },
+      { id: "carnes", label: "Carnes", icon: "🍖" },
+      // === CAFÉS ===
+      { id: "cafe-especial", label: "Café Especial", icon: "☕" },
+      { id: "cafeteria", label: "Cafeteria", icon: "☕" },
+      { id: "confeitaria", label: "Confeitaria", icon: "🎂" },
+      { id: "padaria", label: "Padaria", icon: "🥖" },
+      { id: "brunch", label: "Brunch", icon: "🥞" },
+      { id: "doceria", label: "Doceria", icon: "🍰" },
+      { id: "bolos", label: "Bolos", icon: "🎂" },
+      { id: "doces-finos", label: "Doces Finos", icon: "🍬" },
+      { id: "tortas", label: "Tortas", icon: "🥧" },
+      { id: "cupcakes", label: "Cupcakes", icon: "🧁" },
+      { id: "cafe-colonial", label: "Café Colonial", icon: "🧁" },
+      { id: "chas", label: "Chás", icon: "🍵" },
+      { id: "salgados-cafe", label: "Salgados", icon: "🥐" },
+      { id: "lanches", label: "Lanches", icon: "🥪" },
+      // === SORVETES ===
+      { id: "sorveteria", label: "Sorveteria", icon: "🍦" },
       { id: "sorvete-artesanal", label: "Sorvete Artesanal", icon: "🍦" },
       { id: "gelato", label: "Gelato", icon: "🍨" },
       { id: "acai-sorv", label: "Açaí", icon: "🫐" },
       { id: "milkshake", label: "Milkshake", icon: "🥤" },
       { id: "picole", label: "Picolé", icon: "🍡" },
       { id: "frozen-yogurt", label: "Frozen Yogurt", icon: "🧊" },
-      { id: "outros-sorveteria", label: "Outros", icon: "➕" },
+      // === OUTROS ===
+      { id: "outros-gastronomia", label: "Outros", icon: "➕" },
     ],
   },
 
-  // 10. Outros (SEMPRE POR ÚLTIMO)
+  // 5. Hotéis
   {
-    id: "outros",
-    label: "Outro",
-    plural: "Outros",
-    icon: "➕",
+    id: "hospedagem",
+    label: "Hotel",
+    plural: "Hotéis",
+    icon: "🏨",
     subcategorias: [
-      { id: "ensaio-fotografico", label: "Ensaio Fotográfico", icon: "📸" },
-      { id: "fotografo", label: "Fotógrafo", icon: "📷" },
-      { id: "aluguel-roupas", label: "Aluguel de Roupas", icon: "👗" },
-      { id: "maquiador", label: "Maquiador", icon: "💄" },
-      { id: "outros-geral", label: "Outros", icon: "➕" },
+      { id: "hotel", label: "Hotel", icon: "🏨" },
+      { id: "pousada", label: "Pousada", icon: "🏡" },
+      { id: "resort", label: "Resort", icon: "🏝️" },
+      { id: "day-use", label: "Day Use", icon: "☀️" },
+      { id: "hostel", label: "Hostel", icon: "🛏️" },
+      { id: "flat", label: "Flat", icon: "🏢" },
+      { id: "chale", label: "Chalé", icon: "🏔️" },
+      { id: "camping", label: "Camping", icon: "⛺" },
+      { id: "outros-hospedagem", label: "Outros", icon: "➕" },
+    ],
+  },
+
+  // 6. Lojas
+  {
+    id: "loja",
+    label: "Loja",
+    plural: "Lojas",
+    icon: "🛍️",
+    subcategorias: [
+      { id: "roupas", label: "Roupas", icon: "👗" },
+      { id: "calcados", label: "Calçados", icon: "👟" },
+      { id: "cosmeticos", label: "Cosméticos", icon: "🧴" },
+      { id: "acessorios", label: "Acessórios", icon: "👜" },
+      { id: "presentes", label: "Presentes", icon: "🎁" },
+      { id: "eletronicos", label: "Eletrônicos", icon: "📱" },
+      { id: "decoracao", label: "Decoração", icon: "🏠" },
+      { id: "joias", label: "Joias", icon: "💍" },
+      { id: "bolsas", label: "Bolsas", icon: "👜" },
+      { id: "oculos", label: "Óculos", icon: "👓" },
+      { id: "perfumaria", label: "Perfumaria", icon: "🌸" },
+      { id: "chocolates", label: "Chocolates", icon: "🍫" },
+      { id: "flores", label: "Flores", icon: "💐" },
+      { id: "pet-shop", label: "Pet Shop", icon: "🐾" },
+      { id: "suplementos", label: "Suplementos", icon: "💪" },
+      { id: "brinquedos", label: "Brinquedos", icon: "🧸" },
+      { id: "papelaria", label: "Papelaria", icon: "📝" },
+      { id: "livraria", label: "Livraria", icon: "📚" },
+      { id: "sex-shop", label: "Sex Shop", icon: "❤️‍🔥" },
+      { id: "outros-loja", label: "Outros", icon: "➕" },
     ],
   },
 ];
@@ -373,7 +316,7 @@ export const getSubcategoriasOptions = (categoriaId: string) => {
 // =============================================================================
 export const mapLegacyCategoriaToId = (legacyValue: string): string => {
   const mapping: Record<string, string> = {
-    // Categorias que viraram Saúde & Beleza
+    // Categorias que viraram Beleza & Estética
     Academia: "saude-beleza",
     academia: "saude-beleza",
     Barbearia: "saude-beleza",
@@ -382,21 +325,34 @@ export const mapLegacyCategoriaToId = (legacyValue: string): string => {
     salao: "saude-beleza",
     Serviços: "saude-beleza",
     servicos: "saude-beleza",
+    "Saúde & Beleza": "saude-beleza",
+    "saude-beleza": "saude-beleza",
 
-    // Confeitaria virou Café
-    Confeitaria: "cafeteria",
-    confeitaria: "cafeteria",
+    // Categorias que viraram Gastronomia
+    Restaurante: "gastronomia",
+    restaurante: "gastronomia",
+    Cafeteria: "gastronomia",
+    cafeteria: "gastronomia",
+    Confeitaria: "gastronomia",
+    confeitaria: "gastronomia",
+    Sorveteria: "gastronomia",
+    sorveteria: "gastronomia",
 
-    // Categorias que mantiveram
+    // Categorias mantidas
     Bar: "bar",
-    Cafeteria: "cafeteria",
+    bar: "bar",
     "Casa Noturna": "casa-noturna",
-    Entretenimento: "entretenimento",
+    "casa-noturna": "casa-noturna",
     Hospedagem: "hospedagem",
+    hospedagem: "hospedagem",
     Loja: "loja",
-    Restaurante: "restaurante",
-    Sorveteria: "sorveteria",
-    Outros: "outros",
+    loja: "loja",
+
+    // Categorias removidas - mapeiam para mais próxima
+    Entretenimento: "casa-noturna", // Lazer → Baladas (mais próximo)
+    entretenimento: "casa-noturna",
+    Outros: "loja", // Outros → Lojas (fallback)
+    outros: "loja",
   };
 
   return mapping[legacyValue] || legacyValue.toLowerCase().replace(/\s+/g, "-");

@@ -61,12 +61,6 @@ export function EstablishmentBenefit({ estabelecimento, loading, onUpdate }: Est
 
   const { createFieldSaver } = useFieldUpdate({
     estabelecimentoId: estabelecimento?.id || "",
-    onSuccess: (field) => {
-      console.log(`[Benefit] Campo ${field} salvo com sucesso`);
-    },
-    onError: (field, error) => {
-      console.error(`[Benefit] Erro ao salvar ${field}:`, error);
-    },
   });
 
   useEffect(() => {

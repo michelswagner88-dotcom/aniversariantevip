@@ -148,11 +148,6 @@ export const parseVoiceSearch = (transcript: string): ParsedVoiceSearch => {
     .replace(/[.,!?]/g, '')
     .trim();
 
-  console.log('[VoiceParser] Resultado:', {
-    original: transcript,
-    parsed: { searchText, categoria, subcategoria, bairro, usarLocalizacao }
-  });
-
   return {
     searchText,
     categoria,

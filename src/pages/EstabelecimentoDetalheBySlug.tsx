@@ -19,21 +19,12 @@ const EstabelecimentoDetalheBySlug = () => {
   useEffect(() => {
     const fetchEstabelecimento = async () => {
       if (!estado || !cidade || !slug) {
-        console.log("❌ Parâmetros faltando:", { estado, cidade, slug });
         setNotFound(true);
         setLoading(false);
         return;
       }
 
       const estadoNormalizado = decodeURIComponent(estado).trim();
-
-      console.log("🔍 Buscando estabelecimento:", {
-        estadoOriginal: estado,
-        estadoNormalizado,
-        cidade,
-        slug,
-        url: window.location.pathname,
-      });
 
       const cidadeNormalizada = cidade.replace(/-/g, " ");
 
@@ -45,37 +36,18 @@ const EstabelecimentoDetalheBySlug = () => {
         .eq("ativo", true)
         .maybeSingle();
 
-      console.log("📊 Resultado da busca:", { data, error });
-
       if (error) {
-        console.error("❌ Erro na query:", error);
         setNotFound(true);
         setLoading(false);
         return;
       }
 
       if (!data) {
-        console.log("❌ Estabelecimento não encontrado com os filtros:", {
-          slug,
-          estado: estado.toUpperCase(),
-        });
-
-        // Debug: tentar buscar sem filtro de cidade
-        const { data: debugData } = await supabase
-          .from("public_estabelecimentos")
-          .select("id, nome_fantasia, cidade, estado, slug")
-          .eq("slug", slug)
-          .eq("ativo", true)
-          .maybeSingle();
-
-        console.log("🔍 Debug - Estabelecimento existe com esse slug?", debugData);
-
         setNotFound(true);
         setLoading(false);
         return;
       }
 
-      console.log("✅ Estabelecimento encontrado:", data);
       setEstabelecimentoId(data.id);
       setLoading(false);
     };

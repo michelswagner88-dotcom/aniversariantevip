@@ -109,8 +109,7 @@ const useAutoLocation = (
             setIsLoading(false);
           }
         },
-        (error) => {
-          console.log("Geolocalização negada:", error.message);
+        () => {
           setIsLoading(false);
           // Usuário negou - usa São Paulo
           onCityChange?.(DEFAULT_CITY, DEFAULT_STATE);

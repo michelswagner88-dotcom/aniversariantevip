@@ -230,7 +230,6 @@ export const fetchCNPJData = async (cnpj: string): Promise<BrasilAPICNPJResponse
   // Verifica cache primeiro
   const cachedData = getCNPJFromCache(cleanCNPJ);
   if (cachedData) {
-    console.log('CNPJ encontrado no cache local');
     return cachedData;
   }
   

@@ -64,7 +64,6 @@ const SetupAdmin = () => {
         throw new Error(data.error);
       }
 
-      console.log("Resultado da limpeza:", data);
       toast.dismiss();
       toast.success(`Sistema limpo! ${data?.message || 'Você pode criar o primeiro admin agora.'}`);
       

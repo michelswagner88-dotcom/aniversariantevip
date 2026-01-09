@@ -56,10 +56,7 @@ export const useCidadesAutocomplete = (searchTerm: string) => {
       });
 
       // Converter para array e ordenar por total (mais estabelecimentos primeiro)
-      const resultado = Array.from(cidadesMap.values()).sort((a, b) => b.total - a.total);
-
-      console.log("[Cidades] Disponíveis:", resultado.length);
-      return resultado;
+      return Array.from(cidadesMap.values()).sort((a, b) => b.total - a.total);
     },
     staleTime: 10 * 60 * 1000, // Cache por 10 minutos
     gcTime: 30 * 60 * 1000,

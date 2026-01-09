@@ -110,9 +110,6 @@ export const useAutoPopulateLogradouro = (
       
       if (validation.valid) {
         onLogradouroChange(extracted);
-        console.log('✅ Logradouro extraído automaticamente:', extracted);
-      } else {
-        console.warn('⚠️ Logradouro extraído inválido:', validation.error);
       }
     }
   }, [enderecoCompleto, currentLogradouro, extractLogradouro, validateLogradouro, onLogradouroChange]);

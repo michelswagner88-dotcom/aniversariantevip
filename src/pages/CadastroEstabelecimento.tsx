@@ -10,6 +10,12 @@
 // =============================================================================
 
 import React, { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Mail,
@@ -1495,96 +1501,94 @@ export default function EstablishmentRegistration() {
       </div>
 
       {/* MODAL HORÁRIO */}
-      {showHorarioModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg border border-zinc-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-zinc-900">Horário de Funcionamento</h2>
-              <button onClick={() => setShowHorarioModal(false)} className="text-zinc-400 hover:text-zinc-900">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-3">
-              {[
-                { key: "segunda", label: "Segunda" },
-                { key: "terca", label: "Terça" },
-                { key: "quarta", label: "Quarta" },
-                { key: "quinta", label: "Quinta" },
-                { key: "sexta", label: "Sexta" },
-                { key: "sabado", label: "Sábado" },
-                { key: "domingo", label: "Domingo" },
-              ].map(({ key, label }) => (
-                <div key={key} className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg">
-                  <input
-                    type="checkbox"
-                    checked={(horarioTemp as any)[key].aberto}
-                    onChange={(e) =>
-                      setHorarioTemp((p) => ({ ...p, [key]: { ...(p as any)[key], aberto: e.target.checked } }))
-                    }
-                    className="w-4 h-4 accent-violet-600"
-                  />
-                  <span className="text-zinc-900 text-sm w-20 font-medium">{label}</span>
-                  {(horarioTemp as any)[key].aberto ? (
-                    <div className="flex items-center gap-2 flex-1">
-                      <input
-                        type="time"
-                        value={(horarioTemp as any)[key].inicio}
-                        onChange={(e) =>
-                          setHorarioTemp((p) => ({ ...p, [key]: { ...(p as any)[key], inicio: e.target.value } }))
-                        }
-                        className="px-2 py-1 border border-zinc-300 rounded-lg w-24 text-sm text-zinc-900 bg-white"
-                      />
-                      <span className="text-zinc-500 text-sm">às</span>
-                      <input
-                        type="time"
-                        value={(horarioTemp as any)[key].fim}
-                        onChange={(e) =>
-                          setHorarioTemp((p) => ({ ...p, [key]: { ...(p as any)[key], fim: e.target.value } }))
-                        }
-                        className="px-2 py-1 border border-zinc-300 rounded-lg w-24 text-sm text-zinc-900 bg-white"
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-zinc-400 text-sm">Fechado</span>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowHorarioModal(false)}
-                className="flex-1 px-4 py-3 border border-zinc-300 text-zinc-700 rounded-xl font-semibold hover:bg-zinc-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => {
-                  const fmt = Object.entries(horarioTemp)
-                    .map(([d, i]) => {
-                      const ab = {
-                        segunda: "Seg",
-                        terca: "Ter",
-                        quarta: "Qua",
-                        quinta: "Qui",
-                        sexta: "Sex",
-                        sabado: "Sáb",
-                        domingo: "Dom",
-                      }[d];
-                      return (i as any).aberto ? `${ab}: ${(i as any).inicio}-${(i as any).fim}` : `${ab}: Fechado`;
-                    })
-                    .join(", ");
-                  setEstablishmentData((p) => ({ ...p, hoursText: fmt }));
-                  setShowHorarioModal(false);
-                  toast.success("Horário salvo!");
-                }}
-                className="flex-1 px-4 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold"
-              >
-                Salvar
-              </button>
-            </div>
+      <Dialog open={showHorarioModal} onOpenChange={setShowHorarioModal}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-violet-600" />
+              Horário de Funcionamento
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {[
+              { key: "segunda", label: "Segunda" },
+              { key: "terca", label: "Terça" },
+              { key: "quarta", label: "Quarta" },
+              { key: "quinta", label: "Quinta" },
+              { key: "sexta", label: "Sexta" },
+              { key: "sabado", label: "Sábado" },
+              { key: "domingo", label: "Domingo" },
+            ].map(({ key, label }) => (
+              <div key={key} className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg">
+                <input
+                  type="checkbox"
+                  checked={(horarioTemp as any)[key].aberto}
+                  onChange={(e) =>
+                    setHorarioTemp((p) => ({ ...p, [key]: { ...(p as any)[key], aberto: e.target.checked } }))
+                  }
+                  className="w-4 h-4 accent-violet-600"
+                />
+                <span className="text-zinc-900 text-sm w-20 font-medium">{label}</span>
+                {(horarioTemp as any)[key].aberto ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <input
+                      type="time"
+                      value={(horarioTemp as any)[key].inicio}
+                      onChange={(e) =>
+                        setHorarioTemp((p) => ({ ...p, [key]: { ...(p as any)[key], inicio: e.target.value } }))
+                      }
+                      className="px-2 py-1 border border-zinc-300 rounded-lg w-24 text-sm text-zinc-900 bg-white"
+                    />
+                    <span className="text-zinc-500 text-sm">às</span>
+                    <input
+                      type="time"
+                      value={(horarioTemp as any)[key].fim}
+                      onChange={(e) =>
+                        setHorarioTemp((p) => ({ ...p, [key]: { ...(p as any)[key], fim: e.target.value } }))
+                      }
+                      className="px-2 py-1 border border-zinc-300 rounded-lg w-24 text-sm text-zinc-900 bg-white"
+                    />
+                  </div>
+                ) : (
+                  <span className="text-zinc-400 text-sm">Fechado</span>
+                )}
+              </div>
+            ))}
           </div>
-        </div>
-      )}
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={() => setShowHorarioModal(false)}
+              className="flex-1 px-4 py-3 border border-zinc-300 text-zinc-700 rounded-xl font-semibold hover:bg-zinc-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                const fmt = Object.entries(horarioTemp)
+                  .map(([d, i]) => {
+                    const ab = {
+                      segunda: "Seg",
+                      terca: "Ter",
+                      quarta: "Qua",
+                      quinta: "Qui",
+                      sexta: "Sex",
+                      sabado: "Sáb",
+                      domingo: "Dom",
+                    }[d];
+                    return (i as any).aberto ? `${ab}: ${(i as any).inicio}-${(i as any).fim}` : `${ab}: Fechado`;
+                  })
+                  .join(", ");
+                setEstablishmentData((p) => ({ ...p, hoursText: fmt }));
+                setShowHorarioModal(false);
+                toast.success("Horário salvo!");
+              }}
+              className="flex-1 px-4 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold"
+            >
+              Salvar
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

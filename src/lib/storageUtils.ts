@@ -2,8 +2,8 @@
  * Utilitários para gerenciamento seguro de Storage
  */
 
-const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const TAMANHO_MAXIMO = 5 * 1024 * 1024; // 5MB
+const TIPOS_PERMITIDOS = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/bmp'];
+const TAMANHO_MAXIMO = 50 * 1024 * 1024; // 50MB (sistema comprime automaticamente)
 
 export interface ValidacaoArquivo {
   valido: boolean;
